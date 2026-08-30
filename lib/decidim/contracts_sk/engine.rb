@@ -4,6 +4,9 @@ require "rails/engine"
 
 module Decidim
   module ContractsSk
+    # Rails Engine for the Decidim ContractsSk module.
+    # Registers autoload paths and integrates the module
+    # into the Decidim application lifecycle.
     class Engine < ::Rails::Engine
       isolate_namespace Decidim::ContractsSk
 
