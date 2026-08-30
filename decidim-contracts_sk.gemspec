@@ -31,7 +31,13 @@ Gem::Specification.new do |spec|
 
   spec.require_paths = ["lib"]
 
-  # Runtime dependencies — added in M01-01-C
-  # spec.add_dependency "decidim-core", "~> 0.29.0"
-  # spec.add_dependency "decidim-admin", "~> 0.29.0"
+  # Runtime dependencies
+  spec.add_dependency "decidim-core",  "~> 0.29.0"
+  spec.add_dependency "decidim-admin", "~> 0.29.0"
+
+  # Development dependencies
+  spec.add_development_dependency "rspec-rails",  "~> 6.0"
+  spec.add_development_dependency "rubocop",      "~> 1.21"
+  spec.add_development_dependency "rubocop-rails", "~> 2.20"
+  spec.add_development_dependency "rubocop-rspec", "~> 2.25"
 end
