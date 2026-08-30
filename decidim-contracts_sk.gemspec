@@ -35,8 +35,9 @@ Gem::Specification.new do |spec|
   # decidim 0.29.x pins ruby ~> 3.2.0 and breaks on Ruby 3.3.
   # Use ~> 0.28.0 (last release with Ruby >= 3.1 constraint).
   # Bump to 0.29+ once civora-platform and CI both move to Ruby 3.2 pin or Decidim relaxes it.
-  spec.add_dependency "decidim-core",  "~> 0.28.0"
   spec.add_dependency "decidim-admin", "~> 0.28.0"
+  spec.add_dependency "decidim-core",  "~> 0.28.0"
+ 
 
   # Development dependencies
   spec.add_development_dependency "rspec-rails",   "~> 6.0"
