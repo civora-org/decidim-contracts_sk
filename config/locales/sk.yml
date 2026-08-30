@@ -1,0 +1,16 @@
+sk:
+  decidim:
+    contracts_sk:
+      contract:
+        title: "Zmluva"
+        reference_number: "Číslo zmluvy"
+        amount: "Suma"
+        status: "Stav"
+      admin:
+        contracts:
+          index:
+            title: "Zmluvy"
+          new:
+            title: "Nová zmluva"
+          edit:
+            title: "Upraviť zmluvu"
