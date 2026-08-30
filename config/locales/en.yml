@@ -1,0 +1,16 @@
+en:
+  decidim:
+    contracts_sk:
+      contract:
+        title: "Contract"
+        reference_number: "Reference number"
+        amount: "Amount"
+        status: "Status"
+      admin:
+        contracts:
+          index:
+            title: "Contracts"
+          new:
+            title: "New contract"
+          edit:
+            title: "Edit contract"
