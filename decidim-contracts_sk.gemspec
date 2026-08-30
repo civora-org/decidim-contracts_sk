@@ -32,12 +32,15 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Runtime dependencies
-  spec.add_dependency "decidim-core",  "~> 0.29.0"
-  spec.add_dependency "decidim-admin", "~> 0.29.0"
+  # decidim 0.29.x pins ruby ~> 3.2.0 and breaks on Ruby 3.3.
+  # Use ~> 0.28.0 (last release with Ruby >= 3.1 constraint).
+  # Bump to 0.29+ once civora-platform and CI both move to Ruby 3.2 pin or Decidim relaxes it.
+  spec.add_dependency "decidim-core",  "~> 0.28.0"
+  spec.add_dependency "decidim-admin", "~> 0.28.0"
 
   # Development dependencies
-  spec.add_development_dependency "rspec-rails",  "~> 6.0"
-  spec.add_development_dependency "rubocop",      "~> 1.21"
+  spec.add_development_dependency "rspec-rails",   "~> 6.0"
+  spec.add_development_dependency "rubocop",       "~> 1.21"
   spec.add_development_dependency "rubocop-rails", "~> 2.20"
   spec.add_development_dependency "rubocop-rspec", "~> 2.25"
 end
