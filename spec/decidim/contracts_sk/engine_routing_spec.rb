@@ -97,87 +97,91 @@ module EngineRoutingContract
   end
 end
 
-RSpec.describe "engine route table" do
-  include EngineRoutingContract
+RSpec.describe Decidim::ContractsSk::Engine do
+  describe "engine route table" do
+    include EngineRoutingContract
 
-  it "declares exactly the public read-only routes and the admin CRUD routes" do
-    expect(route_triples.sort).to eq(EngineRoutingContract::EXPECTED_ROUTES.sort)
-  end
-end
-
-RSpec.describe "public URL helpers" do
-  let(:url_helpers) { Decidim::ContractsSk::Engine.routes.url_helpers }
-
-  it "generates /contracts for contracts_path" do
-    expect(url_helpers.contracts_path).to eq("/contracts")
+    it "declares exactly the public read-only routes and the admin CRUD routes" do
+      expect(route_triples.sort).to eq(EngineRoutingContract::EXPECTED_ROUTES.sort)
+    end
   end
 
-  it "generates /contracts/1 for contract_path(1)" do
-    expect(url_helpers.contract_path(1)).to eq("/contracts/1")
-  end
-end
+  describe "public URL helpers" do
+    let(:url_helpers) { described_class.routes.url_helpers }
 
-RSpec.describe "admin URL helpers" do
-  let(:url_helpers) { Decidim::ContractsSk::Engine.routes.url_helpers }
+    it "generates /contracts for contracts_path" do
+      expect(url_helpers.contracts_path).to eq("/contracts")
+    end
 
-  it "generates /admin/contracts for admin_contracts_path" do
-    expect(url_helpers.admin_contracts_path).to eq("/admin/contracts")
-  end
-
-  it "generates /admin/contracts/7/edit for edit_admin_contract_path(7)" do
-    expect(url_helpers.edit_admin_contract_path(7)).to eq("/admin/contracts/7/edit")
+    it "generates /contracts/1 for contract_path(1)" do
+      expect(url_helpers.contract_path(1)).to eq("/contracts/1")
+    end
   end
 
-  it "exposes admin_contracts_path as the POST-able helper for create" do
-    expect(url_helpers).to respond_to(:admin_contracts_path)
-    expect(url_helpers.admin_contracts_path).to eq("/admin/contracts")
-  end
-end
+  describe "admin URL helpers" do
+    let(:url_helpers) { described_class.routes.url_helpers }
 
-RSpec.describe "public surface restriction" do
-  include EngineRoutingContract
+    it "generates /admin/contracts for admin_contracts_path" do
+      expect(url_helpers.admin_contracts_path).to eq("/admin/contracts")
+    end
 
-  it "exposes only the index and show actions on the public controller" do
-    actions = public_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
+    it "generates /admin/contracts/7/edit for edit_admin_contract_path(7)" do
+      expect(url_helpers.edit_admin_contract_path(7)).to eq("/admin/contracts/7/edit")
+    end
 
-    expect(actions).to eq(%w[index show])
-  end
-
-  it "does not map GET /contracts/new to the public controller" do
-    expect(public_routes)
-      .not_to include(["GET", "/contracts/new(.:format)", "decidim/contracts_sk/contracts#new"])
-  end
-
-  it "does not map DELETE /contracts/:id to the public controller" do
-    expect(public_routes)
-      .not_to include(["DELETE", "/contracts/:id(.:format)", "decidim/contracts_sk/contracts#destroy"])
+    it "exposes admin_contracts_path as the POST-able helper for create" do
+      # public_send keeps the old respond_to semantics in a single
+      # expectation: it proves the helper is publicly callable (NameError
+      # fails this example) and generates the POST target for create.
+      expect(url_helpers.public_send(:admin_contracts_path)).to eq("/admin/contracts")
+    end
   end
 
-  it "keeps new and destroy inside the admin namespace" do
-    expect(admin_routes).to include(
-      ["GET", "/admin/contracts/new(.:format)", "decidim/contracts_sk/admin/contracts#new"],
-      ["DELETE", "/admin/contracts/:id(.:format)", "decidim/contracts_sk/admin/contracts#destroy"]
-    )
+  describe "public surface restriction" do
+    include EngineRoutingContract
+
+    it "exposes only the index and show actions on the public controller" do
+      actions = public_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
+
+      expect(actions).to eq(%w[index show])
+    end
+
+    it "does not map GET /contracts/new to the public controller" do
+      expect(public_routes)
+        .not_to include(["GET", "/contracts/new(.:format)", "decidim/contracts_sk/contracts#new"])
+    end
+
+    it "does not map DELETE /contracts/:id to the public controller" do
+      expect(public_routes)
+        .not_to include(["DELETE", "/contracts/:id(.:format)", "decidim/contracts_sk/contracts#destroy"])
+    end
+
+    it "keeps new and destroy inside the admin namespace" do
+      expect(admin_routes).to include(
+        ["GET", "/admin/contracts/new(.:format)", "decidim/contracts_sk/admin/contracts#new"],
+        ["DELETE", "/admin/contracts/:id(.:format)", "decidim/contracts_sk/admin/contracts#destroy"]
+      )
+    end
   end
-end
 
-RSpec.describe "admin/public route separation" do
-  include EngineRoutingContract
+  describe "admin/public route separation" do
+    include EngineRoutingContract
 
-  it "routes only the two engine controllers, distinct by the admin/ segment" do
-    expect(controllers_of(route_triples))
-      .to eq(["decidim/contracts_sk/admin/contracts", "decidim/contracts_sk/contracts"])
-  end
+    it "routes only the two engine controllers, distinct by the admin/ segment" do
+      expect(controllers_of(route_triples))
+        .to eq(["decidim/contracts_sk/admin/contracts", "decidim/contracts_sk/contracts"])
+    end
 
-  it "maps no admin-prefixed path to the public controller" do
-    admin_prefixed = route_triples.select { |_, path, _| path.start_with?("/admin/") }
+    it "maps no admin-prefixed path to the public controller" do
+      admin_prefixed = route_triples.select { |_, path, _| path.start_with?("/admin/") }
 
-    expect(controllers_of(admin_prefixed)).to eq(["decidim/contracts_sk/admin/contracts"])
-  end
+      expect(controllers_of(admin_prefixed)).to eq(["decidim/contracts_sk/admin/contracts"])
+    end
 
-  it "maps no non-admin path to the admin controller" do
-    non_admin = route_triples.reject { |_, path, _| path.start_with?("/admin/") }
+    it "maps no non-admin path to the admin controller" do
+      non_admin = route_triples.reject { |_, path, _| path.start_with?("/admin/") }
 
-    expect(controllers_of(non_admin)).to eq(["decidim/contracts_sk/contracts"])
+      expect(controllers_of(non_admin)).to eq(["decidim/contracts_sk/contracts"])
+    end
   end
 end
