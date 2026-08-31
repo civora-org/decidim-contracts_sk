@@ -58,7 +58,7 @@ Recommended agents for this repository:
 | `rails` | `zai/glm-5.3-flash` | Rails/Decidim implementation |
 | `tester` | `zai/glm-5.3-flash` | Test design and verification mapping |
 | `integration` | `zai/glm-5.3-flash` | Optional future external-source/import integration |
-| `retro` | `zai/glm-5.3-flash` | Retrospective analysis |
+| `retro` | `zai/glm-5.3-flash` | Optional second-opinion retrospective analysis (router owns retros; see *Retro Policy*) |
 
 ## Engineering Guardrails
 
@@ -92,6 +92,8 @@ The main router agent must stop and request human approval before:
 - making external API calls;
 - deploy-like actions.
 
+**Standing exception (Retro Policy):** after a meaningful task the router self-reviews the arc (no delegation required) and may edit the *Process Lessons* section of `AGENTS.md` directly — including executing its growth/migration policy — without prior human approval. Committing those edits still passes the normal git gate (bundle them into the next approved commit or a dedicated `docs(agents):` commit at the next gate).
+
 ## Default Workflow
 
 1. Read `README.md`, `decidim-contracts_sk.gemspec`, `config/routes.rb`, and affected files.
@@ -101,14 +103,19 @@ The main router agent must stop and request human approval before:
 5. Implement the smallest viable approved change.
 6. Run relevant tests and safe verification steps.
 7. Summarize changes, risks, follow-ups, and DoD status.
-8. After a meaningful task, prepare a retro draft without writing retro files automatically.
+8. After a meaningful task, run the retro: the router self-reviews the arc, distills durable lessons into *Process Lessons* below, and — when the section hits its growth trigger — executes the migration policy.
 
 ### Process Lessons
 
-Distilled from retro drafts; treat as working agreements, not archive:
+Distilled from router retros; treat as working agreements, not archive.
+
+**Growth/migration policy:** this section is the *active* set and must stay scannable. When it exceeds ~15 lessons, or when lessons cluster into distinct themes (e.g., tooling vs. issue hygiene), migrate the overflow into `docs/retro-lessons.md` (dated, per-arc) and keep here only the active agreements plus a link. Migrations are covered by the Retro Policy exception.
+
+Current lessons:
 
 - **Baseline first.** Always verify the test suite runs green before starting work; fix environment/dependency drift before planning.
 - **Pinned gem source is ground truth.** Verify every Decidim/rubocop API claim against the installed gem sources (`bundle info <gem> --path`, then grep) before planning — treat issue code examples as suggestions, not facts (proven ×3 in the #45 arc).
+- **The tree is ground truth for issue state.** Milestone issues drift from the repo — #39 arrived ~80% implemented by an earlier task. Before planning, diff the issue's task list against the current tree and split it into *already shipped* / *shipped but unverified* / *genuinely missing*; plan only the remainder and restate the split in the issue's closing comment (proven in the #39 arc).
 - **Load dev tools, don't just install them.** Validate dev-dependency pins by actually activating the tool (e.g. rubocop plugins) in a real run — "installed but not loaded" can hide version incompatibilities until they detonate.
 - **Name design conflicts.** When an issue's code example conflicts with route-level scope or engineering guardrails, present it as an explicit named decision (e.g., Option A/B) at an approval gate — never silently fix, never silently obey.
 - **One consolidated follow-up issue.** Collect reviewer findings into a single prioritized issue in `civora-org/civora-platform` instead of scattering them across chat.
@@ -155,7 +162,7 @@ Use findings grouped as:
 | `/feature <description>` | Read-only plan for a new feature |
 | `/review <number>` | Read-only current-diff review tied to Issue or current diff |
 | `/verify` | Runs only safe, applicable local tests/lints |
-| `/retro <number>` | Prepares retro draft without changing files |
+| `/retro <number>` | Router self-review of an arc; distills lessons into `AGENTS.md` *Process Lessons* (pre-approved) |
 
 ## Model Verification
 
