@@ -6,6 +6,11 @@ sk:
         reference_number: "Číslo zmluvy"
         amount: "Suma"
         status: "Stav"
+      contracts:
+        index:
+          title: "Zmluvy"
+        show:
+          title: "Detail zmluvy"
       admin:
         contracts:
           index:
