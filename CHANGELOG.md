@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.4.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.3.0...v0.4.0) (2026-08-31)
+
+
+### Features
+
+* **models:** add abstract base model with table prefix (M01-01-E) ([7bad8f1](https://github.com/civora-org/decidim-contracts_sk/commit/7bad8f13862bfa5b60ed6cb6926964536ea19a89))
+
 ## [0.3.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.2.0...v0.3.0) (2026-08-31)
 
 
