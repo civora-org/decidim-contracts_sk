@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.5.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.4.1...v0.5.0) (2026-08-31)
+
+
+### Features
+
+* **locales:** add public catalogue keys and locale-contract specs (M01-01-G) ([7fb0f5d](https://github.com/civora-org/decidim-contracts_sk/commit/7fb0f5dcb7414c077a80e20448230e908cebcbe8))
+
 ## [0.4.1](https://github.com/civora-org/decidim-contracts_sk/compare/v0.4.0...v0.4.1) (2026-08-31)
 
 
