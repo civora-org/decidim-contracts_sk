@@ -108,8 +108,11 @@ The main router agent must stop and request human approval before:
 Distilled from retro drafts; treat as working agreements, not archive:
 
 - **Baseline first.** Always verify the test suite runs green before starting work; fix environment/dependency drift before planning.
+- **Pinned gem source is ground truth.** Verify every Decidim/rubocop API claim against the installed gem sources (`bundle info <gem> --path`, then grep) before planning — treat issue code examples as suggestions, not facts (proven ×3 in the #45 arc).
+- **Load dev tools, don't just install them.** Validate dev-dependency pins by actually activating the tool (e.g. rubocop plugins) in a real run — "installed but not loaded" can hide version incompatibilities until they detonate.
 - **Name design conflicts.** When an issue's code example conflicts with route-level scope or engineering guardrails, present it as an explicit named decision (e.g., Option A/B) at an approval gate — never silently fix, never silently obey.
 - **One consolidated follow-up issue.** Collect reviewer findings into a single prioritized issue in `civora-org/civora-platform` instead of scattering them across chat.
+- **Re-scope multi-item issues in place.** For consolidated follow-up issues, re-scope remaining items with explicit stage labels, and map carried-forward items to their named future homes in the closing comment before closing.
 - **Document conventions before they are needed.** Keep the *Project Conventions* section current as soon as a new convention is decided, not after it causes friction.
 
 ## Testing Expectations
