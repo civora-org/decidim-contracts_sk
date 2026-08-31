@@ -93,12 +93,22 @@ The main router agent must stop and request human approval before:
 ## Default Workflow
 
 1. Read `README.md`, `decidim-contracts_sk.gemspec`, `config/routes.rb`, and affected files.
-2. Restate the task as goal, scope/non-scope, affected areas, risks, AC, and DoD.
-3. Ask for approval before edits or migrations.
-4. Implement the smallest viable approved change.
-5. Run relevant tests and safe verification steps.
-6. Summarize changes, risks, follow-ups, and DoD status.
-7. After a meaningful task, prepare a retro draft without writing retro files automatically.
+2. Run a baseline `bundle exec rspec` (and `bundle exec rubocop`) **before** planning any task — surface environment problems when they are cheap.
+3. Restate the task as goal, scope/non-scope, affected areas, risks, AC, and DoD.
+4. Ask for approval before edits or migrations.
+5. Implement the smallest viable approved change.
+6. Run relevant tests and safe verification steps.
+7. Summarize changes, risks, follow-ups, and DoD status.
+8. After a meaningful task, prepare a retro draft without writing retro files automatically.
+
+### Process Lessons
+
+Distilled from retro drafts; treat as working agreements, not archive:
+
+- **Baseline first.** Always verify the test suite runs green before starting work; fix environment/dependency drift before planning.
+- **Name design conflicts.** When an issue's code example conflicts with route-level scope or engineering guardrails, present it as an explicit named decision (e.g., Option A/B) at an approval gate — never silently fix, never silently obey.
+- **One consolidated follow-up issue.** Collect reviewer findings into a single prioritized issue in `civora-org/civora-platform` instead of scattering them across chat.
+- **Document conventions before they are needed.** Keep the *Project Conventions* section current as soon as a new convention is decided, not after it causes friction.
 
 ## Testing Expectations
 
