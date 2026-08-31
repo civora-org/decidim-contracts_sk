@@ -6,16 +6,18 @@
 # No dummy Rails app is required: we boot only the ActionController pieces of
 # Rails and load the engine controller files directly.
 #
-# The real Decidim::ApplicationController (from decidim-core) cannot be
-# required outside a full Decidim Rails app: it inherits DecidimController
-# and includes ~20 app-coupled concerns (NeedsOrganization, ForceAuthentication,
-# Devise/Cells integrations, ...). We therefore define a MINIMAL STAND-IN for
-# Decidim::ApplicationController below, BEFORE the engine controller files are
-# loaded. The stand-in carries no callbacks of its own, so the callback
-# assertions (AC4) reflect this engine's code only.
+# The real Decidim::ApplicationController (from decidim-core) and the real
+# Decidim::Admin::ApplicationController (from decidim-admin) cannot be
+# required outside a full Decidim Rails app: they pull in the whole Decidim
+# stack (NeedsOrganization, ForceAuthentication, Devise/Cells integrations,
+# admin layout, admin permissions, ...). We therefore define MINIMAL
+# STAND-INS for both classes below, BEFORE the engine controller files are
+# loaded. The stand-ins carry no callbacks and no helpers of their own, so
+# the callback and helper assertions reflect this engine's code only.
 #
-# Once a dummy-app harness exists, delete the stub and the explicit requires
-# and let the application autoloader provide the real classes instead.
+# Once a dummy-app harness exists, delete the stand-ins and the explicit
+# requires and let the application autoloader provide the real classes
+# instead.
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
@@ -30,6 +32,16 @@ require "action_controller/railtie"
 unless defined?(Decidim::ApplicationController)
   module Decidim
     class ApplicationController < ActionController::Base
+    end
+  end
+end
+
+# Minimal stand-in for decidim-admin's Decidim::Admin::ApplicationController.
+unless defined?(Decidim::Admin::ApplicationController)
+  module Decidim
+    module Admin
+      class ApplicationController < ActionController::Base
+      end
     end
   end
 end
@@ -76,29 +88,31 @@ RSpec.describe Decidim::ContractsSk::Admin::ApplicationController do
     expect(described_class).to be_a(Class)
   end
 
-  # AC 2: the inheritance chain must be exactly
-  # Admin::ApplicationController < ContractsSk::ApplicationController <
-  # Decidim::ApplicationController. Neither class includes modules, so the
-  # first three ancestors are the class chain itself.
-  it "sits on top of the exact expected inheritance chain" do
-    expect(described_class.ancestors.first(3)).to eq(
-      [
-        Decidim::ContractsSk::Admin::ApplicationController,
-        Decidim::ContractsSk::ApplicationController,
-        Decidim::ApplicationController
-      ]
-    )
+  # AC 2: inherits Decidim's admin-level authorization machinery - direct
+  # subclass of Decidim::Admin::ApplicationController.
+  it "inherits directly from Decidim::Admin::ApplicationController" do
+    expect(described_class.superclass)
+      .to eq(Decidim::Admin::ApplicationController)
   end
 
-  # AC 3: the helper registered on the base controller stays available in
-  # admin views through inheritance.
-  it "inherits the ApplicationHelper registration from the base controller" do
+  # AC 3 (hardening regression guard): the admin controller must NOT sit on
+  # the engine's public base controller chain - admin and public behaviour
+  # stay clearly separated.
+  it "does not sit on the engine's public base controller chain" do
+    expect(described_class.ancestors)
+      .not_to include(Decidim::ContractsSk::ApplicationController)
+  end
+
+  # AC 4: the module's ApplicationHelper is registered on the admin
+  # controller itself, now that the engine's public base is out of the chain.
+  it "registers Decidim::ContractsSk::ApplicationHelper as a view helper" do
     expect(described_class._helpers)
       .to include(Decidim::ContractsSk::ApplicationHelper)
   end
 
-  # AC 4 (Option A regression guard): the ADMIN controller MUST authenticate
-  # - an :authenticate_user! before_action must be declared.
+  # AC 5 (Option A regression guard): the ADMIN controller keeps the
+  # :authenticate_user! floor - defense-in-depth under Decidim's route-level
+  # admin enforcement (OrganizationDashboardConstraint).
   it "declares an :authenticate_user! before_action" do
     callback = described_class._process_action_callbacks
                               .find { |cb| cb.filter == :authenticate_user! }
