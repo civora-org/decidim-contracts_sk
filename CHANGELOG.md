@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.3.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.2.0...v0.3.0) (2026-08-31)
+
+
+### Features
+
+* **controllers:** add base application controller and helper (M01-01-D) ([9a1a869](https://github.com/civora-org/decidim-contracts_sk/commit/9a1a8696df7da0bf2105bc4bf28b83f8cf6184e8))
+
 ## [0.2.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.1.0...v0.2.0) (2026-08-30)
 
 
