@@ -9,3 +9,6 @@
 
 # rspec failure tracking
 .rspec_status
+
+# Gems do not commit Gemfile.lock (see AGENTS.md)
+/Gemfile.lock

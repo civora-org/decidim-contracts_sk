@@ -1,8 +1,17 @@
+plugins:
+  - rubocop-rspec
+
 AllCops:
   TargetRubyVersion: 3.2
+  SuggestExtensions: false
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
 
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
+
+# Spec example-group blocks are naturally long; exclude them from the limit.
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*.rb"
