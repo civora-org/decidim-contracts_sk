@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [0.4.1](https://github.com/civora-org/decidim-contracts_sk/compare/v0.4.0...v0.4.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **admin:** harden admin base authorization ([916ecb4](https://github.com/civora-org/decidim-contracts_sk/commit/916ecb46d8704f1a5988d934876fe067034813de))
+* **admin:** inherit Decidim admin base for admin-level authorization ([7a0ef46](https://github.com/civora-org/decidim-contracts_sk/commit/7a0ef46bcf6a1b7be48d369eacd08e73abf1c070))
+
 ## [0.4.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.3.0...v0.4.0) (2026-08-31)
 
 
