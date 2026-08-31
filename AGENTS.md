@@ -31,9 +31,11 @@ Issues for this engine are tracked in the platform repository, **not** in this r
 
 ### Branch, Commit, and PR Conventions
 
-- Branch names follow the milestone task: `m01-01-d-create-base-application-controller` (pattern: `{milestone-task}-{kebab-description}`).
+- Branch names follow the milestone task: `m01-01-d-create-base-application-controller` (pattern: `{milestone-task}-{kebab-description}`); non-milestone work uses `{type}/{kebab-description}`, e.g. `docs/issue-linking-conventions`, `fix/admin-auth-hardening`.
 - PR titles mirror the issue title, e.g. `M01-01-D: Create base application controller`; PRs target `main`.
 - Commits follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`) with the milestone tag, e.g. `feat(controllers): ... (M01-01-D)`.
+- **Every PR must link to its driving issue** in `civora-org/civora-platform` (full cross-repo reference, e.g. `civora-org/civora-platform#45`).
+- **Close issues when development finishes.** GitHub closing keywords (`Closes #n`) do **not** work across repositories — close the issue explicitly (`gh issue close --repo civora-org/civora-platform`) after the PR is merged. For multi-item issues, close only when every item is done (or split items first).
 - `CHANGELOG.md` is managed by release-please from commit messages — **do not edit it manually**.
 - As a gem, `Gemfile.lock` stays uncommitted.
 
