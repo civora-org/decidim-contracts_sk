@@ -6,6 +6,11 @@ en:
         reference_number: "Reference number"
         amount: "Amount"
         status: "Status"
+      contracts:
+        index:
+          title: "Contracts"
+        show:
+          title: "Contract details"
       admin:
         contracts:
           index:
