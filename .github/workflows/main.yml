@@ -47,4 +47,4 @@ jobs:
       - name: Install dependencies
         run: bundle install --jobs 4
       - name: Audit gems
-        run: bundle exec bundler-audit check --update --ignore-config .bundler-audit.ignore
+        run: bundle exec bundler-audit check --update

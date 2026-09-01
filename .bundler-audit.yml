@@ -1,4 +1,6 @@
-# Advisory ignores — every entry needs a reason and a revisit condition.
+# bundler-audit configuration (auto-loaded; --config defaults to this file).
+#
+# ignore — advisory IDs with a documented upstream-blocked reason:
 #
 # GHSA-96qw-h329-v5rg (shakapacker < 9.5.0, High — env-var leak via
 # EnvironmentPlugin into client bundles):
@@ -8,5 +10,5 @@
 #   same pin and tracks it in civora-host CI.
 #   REVISIT: any Decidim upgrade that relaxes the shakapacker pin.
 ---
-ignored_advisories:
+ignore:
   - GHSA-96qw-h329-v5rg
