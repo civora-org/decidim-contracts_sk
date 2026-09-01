@@ -1,0 +1,12 @@
+# Dependabot scope note:
+# - github-actions: keep workflow actions current.
+# - bundler: NOT enabled — this gem intentionally does not commit Gemfile.lock,
+#   so the bundler ecosystem has nothing to update. Host-side dependency
+#   updates are handled in civora-host (docker/github-actions ecosystems only;
+#   its private git-pinned engine cannot be resolved by Dependabot).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

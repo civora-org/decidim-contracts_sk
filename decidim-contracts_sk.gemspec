@@ -42,6 +42,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec-rails", "~> 6.0"
   spec.add_development_dependency "rubocop", "~> 1.21"
   spec.add_development_dependency "rubocop-rails", "~> 2.20"
+  spec.add_development_dependency "bundler-audit", "~> 0.9"
   # rubocop-rspec 2.31 pulls rubocop-rspec_rails 2.29, whose inject_defaults!
   # API was removed in rubocop 1.90; 3.x loads via the plugins mechanism.
   spec.add_development_dependency "rubocop-rspec", "~> 3.0"

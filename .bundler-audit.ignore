@@ -1,0 +1,12 @@
+# Advisory ignores — every entry needs a reason and a revisit condition.
+#
+# GHSA-96qw-h329-v5rg (shakapacker < 9.5.0, High — env-var leak via
+# EnvironmentPlugin into client bundles):
+#   Blocked upstream: decidim-core 0.31.7 pins shakapacker ~> 8.3.0, so >= 9.5.0
+#   is unresolvable without forking Decidim. This engine ships no JS bundles,
+#   so the exposed build path is not exercised here; the host app inherits the
+#   same pin and tracks it in civora-host CI.
+#   REVISIT: any Decidim upgrade that relaxes the shakapacker pin.
+---
+ignored_advisories:
+  - GHSA-96qw-h329-v5rg
