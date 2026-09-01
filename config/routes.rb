@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 Decidim::ContractsSk::Engine.routes.draw do
-  # Public routes
-  resources :contracts, only: %i[index show]
-
-  # Admin routes
+  # Admin routes (declared before the public /:id catch-all so that the
+  # admin namespace is matched first)
   namespace :admin do
     resources :contracts
   end
+
+  # Public routes — the mount point is the catalogue itself
+  root to: "contracts#index", as: :contracts
+  get "/:id", to: "contracts#show", as: :contract
 end

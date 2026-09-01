@@ -17,7 +17,7 @@ The contract model, migrations, and controllers/views are upcoming milestones.
 
 ## Requirements
 
-- Decidim `0.28.x` (`decidim-core`, `decidim-admin`)
+- Decidim `0.31.x` (`decidim-core`, `decidim-admin`)
 - Ruby `>= 3.2`
 
 ## Installation
