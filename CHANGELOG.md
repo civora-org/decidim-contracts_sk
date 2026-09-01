@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [0.6.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.5.0...v0.6.0) (2026-09-01)
+
+
+### Features
+
+* **controllers:** add public catalogue scaffold with mount-root routes (M01-01-I/K) ([cc4c024](https://github.com/civora-org/decidim-contracts_sk/commit/cc4c024e1e87f6739334b75d37cb865210b649f3))
+* **gemspec:** target Decidim 0.31 instead of 0.28 (M01-01-I/K) ([889e71d](https://github.com/civora-org/decidim-contracts_sk/commit/889e71d49e08706db2264538a4bd2e8d3b99f8c4))
+
 ## [0.5.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.4.1...v0.5.0) (2026-08-31)
 
 
