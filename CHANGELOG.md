@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [0.6.1](https://github.com/civora-org/decidim-contracts_sk/compare/v0.6.0...v0.6.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* **ci:** exhaustive per-advisory ignores for upstream-blocked CVEs (decidim 0.31.7 pins) ([0998070](https://github.com/civora-org/decidim-contracts_sk/commit/0998070a7e67b51e96ddf542e931045ac65f2257))
+* **ci:** use bundler-audit 0.9 config format (.bundler-audit.yml, ignore key) ([57bb856](https://github.com/civora-org/decidim-contracts_sk/commit/57bb8562eaf6cfdd2d2ba13b576e2ce84a9bd709))
+* **gemspec:** raise decidim floor to 0.31.5 (CVE-2026-45573) and sort dev deps ([7cbbc2f](https://github.com/civora-org/decidim-contracts_sk/commit/7cbbc2f13cec9c0181f3dc073d8238757322a6d5))
+
 ## [0.6.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.5.0...v0.6.0) (2026-09-01)
 
 
