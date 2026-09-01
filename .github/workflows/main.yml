@@ -20,7 +20,7 @@ jobs:
           - '3.3.4'
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Set up Ruby
@@ -37,7 +37,7 @@ jobs:
     # The engine intentionally does not commit Gemfile.lock (gem convention),
     # so this audits the current CI-time resolution.
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Set up Ruby
