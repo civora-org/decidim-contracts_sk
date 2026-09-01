@@ -59,11 +59,15 @@ module EngineRoutingContract
   ADMIN_CONTROLLER = "decidim/contracts_sk/admin/contracts"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
-  # Note: Rails maps the `resources` update action to BOTH a PATCH and a
-  # PUT route entry, so the admin CRUD block counts 8 routes, not 7.
+  # The public surface is the mount point itself: the catalogue index sits
+  # at "/" and a single /:id catch-all serves show. Note: Rails' `root`
+  # helper adds NO optional format segment (path is exactly "/", not
+  # "/(.:format)" - unlike a plain `get`), and it maps the `resources`
+  # update action to BOTH a PATCH and a PUT route entry, so the admin CRUD
+  # block counts 8 routes, not 7.
   EXPECTED_ROUTES = [
-    ["GET", "/contracts(.:format)", "#{PUBLIC_CONTROLLER}#index"],
-    ["GET", "/contracts/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
+    ["GET", "/", "#{PUBLIC_CONTROLLER}#index"],
+    ["GET", "/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
@@ -109,12 +113,12 @@ RSpec.describe Decidim::ContractsSk::Engine do
   describe "public URL helpers" do
     let(:url_helpers) { described_class.routes.url_helpers }
 
-    it "generates /contracts for contracts_path" do
-      expect(url_helpers.contracts_path).to eq("/contracts")
+    it "generates / for contracts_path" do
+      expect(url_helpers.contracts_path).to eq("/")
     end
 
-    it "generates /contracts/1 for contract_path(1)" do
-      expect(url_helpers.contract_path(1)).to eq("/contracts/1")
+    it "generates /1 for contract_path(1)" do
+      expect(url_helpers.contract_path(1)).to eq("/1")
     end
   end
 
