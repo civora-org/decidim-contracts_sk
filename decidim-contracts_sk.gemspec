@@ -35,10 +35,14 @@ Gem::Specification.new do |spec|
   # 0.31.x is the current Decidim major. It supports Ruby 3.3 (verified
   # against the installed 0.31.7 gemset), and this engine targets it
   # (civora-org/civora-platform#46).
-  spec.add_dependency "decidim-admin", "~> 0.31.0"
-  spec.add_dependency "decidim-core", "~> 0.31.0"
+  # Floor is 0.31.5: earlier 0.31.x carries CVE-2026-45573 (decidim-core push
+  # subscriptions SSRF, Medium), and Decidim's meta-gems pin each other with
+  # `=`, so a loose floor lets fresh resolutions settle on unpatched lines.
+  spec.add_dependency "decidim-admin", "~> 0.31.5"
+  spec.add_dependency "decidim-core", "~> 0.31.5"
 
   # Development dependencies
+  spec.add_development_dependency "bundler-audit", "~> 0.9"
   spec.add_development_dependency "rspec-rails", "~> 6.0"
   spec.add_development_dependency "rubocop", "~> 1.21"
   spec.add_development_dependency "rubocop-rails", "~> 2.20"

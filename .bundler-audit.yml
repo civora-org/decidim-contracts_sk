@@ -1,0 +1,30 @@
+# bundler-audit configuration (auto-loaded; --config defaults to this file).
+#
+# POLICY: ignores are exhaustive per-advisory (never per-gem), so any NEW
+# advisory not listed here still fails CI and forces a fresh disposition.
+#
+# Everything below is blocked upstream by decidim-core 0.31.7 pins
+# (`rails ~> 7.2.0, >= 7.2.2.2`, `devise ~> 4.7`, `shakapacker ~> 8.3.0`):
+# Rails 7.2 is EOL (2026-08-09) and receives no further patches; devise 4.9.4
+# is the newest release and remains unpatched; shakapacker >= 9.5.0 is
+# unresolvable under the pin. This engine ships no JS bundles; the host app
+# inherits the same pins and mirrors this file in civora-host CI.
+# REVISIT: every entry — on the next Decidim upgrade that relaxes these pins.
+---
+ignore:
+  # Rails 7.2.2.2 (actionview / activestorage / activesupport)
+  - CVE-2026-33168
+  - CVE-2026-33173
+  - CVE-2026-33174
+  - CVE-2026-33195
+  - CVE-2026-33202
+  - CVE-2026-33658
+  - CVE-2026-66066
+  - CVE-2026-33169
+  - CVE-2026-33170
+  - CVE-2026-33176
+  # devise 4.9.4
+  - CVE-2026-32700
+  - CVE-2026-40295
+  # shakapacker 8.3.0
+  - GHSA-96qw-h329-v5rg
