@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.7.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.6.1...v0.7.0) (2026-09-02)
+
+
+### Features
+
+* **lifecycle:** add contract lifecycle state machine and transition rules (M02-01-A) ([e219c17](https://github.com/civora-org/decidim-contracts_sk/commit/e219c175b9ed4532568a705deae33410d16e98ad))
+
 ## [0.6.1](https://github.com/civora-org/decidim-contracts_sk/compare/v0.6.0...v0.6.1) (2026-09-01)
 
 
