@@ -8,4 +8,6 @@ module Decidim
   end
 end
 
+require_relative "contracts_sk/contract_lifecycle"
+
 require_relative "contracts_sk/engine" if defined?(Rails)
