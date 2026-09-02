@@ -1,4 +1,8 @@
-# Agent: contracts
+---
+description: Primary collaborator/router; plans tasks, chooses subagents, enforces approval gates.
+mode: subagent
+model: zai/glm-5.3
+---
 
 ## Role
 
@@ -18,9 +22,6 @@ Primary collaborator/router for `decidim-contracts_sk`.
   - deploy-like actions.
 - Runs retro after meaningful completion.
 
-## Model
-
-zai/glm-5.3
 
 ## Workflow
 

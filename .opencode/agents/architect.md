@@ -1,4 +1,8 @@
-# Agent: architect
+---
+description: Read-only architect; converts features/issues into scope, risks, task decomposition, AC and DoD.
+mode: subagent
+model: zai/glm-5.3
+---
 
 ## Role
 
@@ -15,9 +19,6 @@ Read-only architect for `decidim-contracts_sk`.
 - Define Acceptance Criteria and Definition of Done.
 - Identify approval gates.
 
-## Model
-
-zai/glm-5.3
 
 ## Output
 

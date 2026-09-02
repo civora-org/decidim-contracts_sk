@@ -1,4 +1,8 @@
-# Agent: tester
+---
+description: Test design and verification agent; maps acceptance criteria to deterministic tests.
+mode: subagent
+model: zai/glm-5.3-flash
+---
 
 ## Role
 
@@ -24,9 +28,6 @@ Test design and verification agent for `decidim-contracts_sk`.
   - stale fallback;
   - no PII in fixtures.
 
-## Model
-
-zai/glm-5.3-flash
 
 ## Output
 

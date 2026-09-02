@@ -1,4 +1,8 @@
-# Agent: integration
+---
+description: Optional future external public-data source (CRZ/open-data) integration agent; ETL design with idempotency and provenance.
+mode: subagent
+model: zai/glm-5.3-flash
+---
 
 ## Role
 
@@ -14,9 +18,6 @@ Optional future integration agent for external public-data sources.
 - Define health checks and manual fallback.
 - Use synthetic demo data only.
 
-## Model
-
-zai/glm-5.3-flash
 
 ## Data Quality Fields
 

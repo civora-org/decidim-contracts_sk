@@ -1,4 +1,8 @@
-# Agent: rails
+---
+description: Rails/Decidim engine implementation agent; implements approved scope with tests.
+mode: subagent
+model: zai/glm-5.3-flash
+---
 
 ## Role
 
@@ -14,9 +18,6 @@ Rails and Decidim engine implementation agent.
 - Adds deterministic tests for meaningful changes.
 - Never performs commit/push/PR changes without approval.
 
-## Model
-
-zai/glm-5.3-flash
 
 ## Constraints
 

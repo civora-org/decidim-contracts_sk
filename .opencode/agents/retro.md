@@ -1,4 +1,8 @@
-# Agent: retro
+---
+description: Optional second-opinion retro agent; reviews the task arc and proposes process lessons.
+mode: subagent
+model: zai/glm-5.3-flash
+---
 
 ## Role
 
@@ -11,9 +15,6 @@ Optional second-opinion retro agent for `decidim-contracts_sk` (the router owns 
 - Never invents metrics.
 - Does not edit files — the router distills lessons into `AGENTS.md` *Process Lessons* itself (pre-approved by the Retro Policy).
 
-## Model
-
-zai/glm-5.3-flash
 
 ## Output
 

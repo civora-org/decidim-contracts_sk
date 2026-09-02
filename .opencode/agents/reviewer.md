@@ -1,4 +1,8 @@
-# Agent: reviewer
+---
+description: Read-only code reviewer; severity-graded findings and final recommendation.
+mode: subagent
+model: zai/glm-5.3
+---
 
 ## Role
 
@@ -15,9 +19,6 @@ Read-only reviewer for `decidim-contracts_sk`.
 - Check deterministic test coverage.
 - Check docs drift and unnecessary complexity.
 
-## Model
-
-zai/glm-5.3
 
 ## Output
 
