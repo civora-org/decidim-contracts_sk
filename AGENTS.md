@@ -52,13 +52,13 @@ Recommended agents for this repository:
 
 | Agent | Model | Role |
 |-------|-------|------|
-| `contracts` | `zai/glm-5.3` | Primary collaborator/router for this engine |
-| `architect` | `zai/glm-5.3` | Read-only scope and decomposition |
-| `reviewer` | `zai/glm-5.3` | Read-only code review |
-| `rails` | `zai/glm-5.3-flash` | Rails/Decidim implementation |
-| `tester` | `zai/glm-5.3-flash` | Test design and verification mapping |
-| `integration` | `zai/glm-5.3-flash` | Optional future external-source/import integration |
-| `retro` | `zai/glm-5.3-flash` | Optional second-opinion retrospective analysis (router owns retros; see *Retro Policy*) |
+| `contracts` | `zai-coding-plan/glm-5.3` | Primary collaborator/router for this engine |
+| `architect` | `zai-coding-plan/glm-5.3` | Read-only scope and decomposition |
+| `reviewer` | `zai-coding-plan/glm-5.3` | Read-only code review |
+| `rails` | `zai-coding-plan/glm-5.3-flash` | Rails/Decidim implementation |
+| `tester` | `zai-coding-plan/glm-5.3-flash` | Test design and verification mapping |
+| `integration` | `zai-coding-plan/glm-5.3-flash` | Optional future external-source/import integration |
+| `retro` | `zai-coding-plan/glm-5.3-flash` | Optional second-opinion retrospective analysis (router owns retros; see *Retro Policy*) |
 
 ## Engineering Guardrails
 
@@ -121,15 +121,16 @@ Current lessons:
 - **Document conventions before they are needed.** Keep the *Project Conventions* section current as soon as a new convention is decided, not after it causes friction. Policies are usually mirrored across files (`AGENTS.md`, `opencode.jsonc`, agent/command markdown) — update every mirror in the same change, or the drift surfaces later (re-proven in the #47 arc: the platform README shipped an aspirational monorepo layout that never existed).
 - **The host app is ground truth too.** Before planning host-integration issues, diff the issue's assumptions against the actual host app the user points to — versions, boot state, DB. #46 assumed a fresh 0.28.x bootstrap while the real host was an existing 0.31.7 app, turning half the issue into a decision. When engine pins conflict with the host, move the engine to the host's major *early*: the cost of the jump grows with the engine's surface (proven in the #46 arc).
 - **DISABLE_SPRING=1 for host-app rails commands.** Spring daemonizes tool sessions in the host app and swallows command completion — prefix every host-app command with it.
-- **Release tags are the pin contract for git-pinned engines.** A `tag:` pin in the host Gemfile can only carry changes that are actually released: v0.5.0 could not resolve against Decidim 0.31.7 because the 0.31 retarget sat unreleased on engine `main`. Before planning around a tag pin, verify the tag contains the needed change; if it doesn't, cut the release rather than pinning a branch (release-please shipped v0.6.0 mid-task in the #47 arc and the deterministic pin was restored).
-- **Check org plan capabilities before promising GitHub gating.** The civora org is on the free plan: branch protection *and* rulesets 403 on private repos, and no existing repo has ever had protection. Don't write protection/required-check promises into plans or issue checklists without a capability check; the practical gate is CI (#49) plus discipline, and unlocking real protection is a pay-or-accept decision for the human.
-- **`gh auth setup-git` unlocks bundler `github:` sources.** Bundler's `github:` shorthand clones over HTTPS and fails non-interactively ("could not read Username") without a credential helper — on gh-authed machines, run `gh auth setup-git` before `bundle install` (documented in the civora-host README; proven in the #47 arc).
-- **The CI bundle is not the local bundle.** Three independent skews in the #49 arc: a config-required gem (rubocop-rake) that only local global gems masked, a brakeman version gap that made "zero warnings" stale, and CI's `vendor/bundle` directory (absent locally) whose vendored gem configs broke rubocop. Treat first CI runs as discovery — budget iterations, and re-verify tool claims against the same lock CI uses.
-- **Change one variable, then re-measure.** Editing an ignore/exclusion file and reading the *previous* run's output as the new baseline produced two wrong dispositions in the #49 arc ("only puma left" was measured with the old ignore set active). After touching any config that filters output, re-run the tool before drawing conclusions — and beware `cmd | tail; $?`, which reports `tail`'s exit status, not the tool's.
-- **Dotdirs are invisible to glob tools.** "The engine has no `.github/` at all" was a glob-hidden-dotdir artifact that propagated into issue text; the engine had working CI all along. Verify infrastructure state with `ls -a`, never with glob patterns alone.
 - **Set explicit security floors for `=`-pinned meta-gem families.** Decidim's meta-gems pin each other with `=`, so a loose floor (`~> 0.31.0`) lets *fresh* resolutions settle on an old, unpatched line (0.31.0, CVE-2026-45573) while local committed locks sit on the patched one. Raise the floor to the patched line (`~> 0.31.5`) — and run the auditor in CI against fresh resolutions, which is exactly what caught this.
+- **Decidim's initializers override plain Rails config.** `config.force_ssl = false` in `production.rb` was silently re-overridden by decidim-core's `ssl_and_hsts` initializer; the effective knob was `DECIDIM_FORCE_SSL`. For any host-app env config, check the pinned gem's initializer order first — the Rails-level setting may be dead code (proven in the #48 arc).
+- **Local checkout names drift from repo names.** `civora-org/civora-host` lives at `~/Code/decidim-app` — before cloning any civora repo, ask for (or list `~/Code` fully and inspect remotes of likely candidates) the existing local checkout; don't clone fresh just because the directory name doesn't match (proven in the #51 arc).
+- **Verify container-image script paths against the actual pinned tag.** Entry scripts drift between image versions — GlitchTip v5 renamed `run-worker.sh` to `run-celery.sh` and its stock entrypoint skips `migrate`. Before wiring a `command:`/entrypoint, `docker run --rm --entrypoint ls <image> bin/` (or equivalent) and check what init steps the image actually performs (proven in the #51 arc).
+- **Cross-component wiring fails silently at boot.** Prometheus ran "healthy" with no `alerting:` section — alerts simply never left. For any chain (app → collector → Prometheus → Alertmanager → webhook), pin every hop in structural tests and verify the last hop receives, not just that first ones emit (proven in the #51 arc).
+- **Scripts sharing a compose stack must select compose files in one place.** deploy/smoke scripts running bare `docker compose` silently strip overlay config (env vars, logging caps) from recreated services; drive file selection via `COMPOSE_FILE` in `.env` and have scripts defer to it (proven in the #51 arc).
+- **Bootstrap self-hosted UIs via their container CLI.** `manage.py migrate/createsuperuser/shell` inside the container replaces hand-clicking and enables DSN generation in-task; expect model-name drift from upstream docs and inspect the installed source, not memory (proven in the #51 arc).
+- **Offline review cannot replace a live boot.** Both the tester and reviewer passes missed boot-only failures (worker script path, missing `alerting:` section); the first `docker compose up` found them in minutes. For infra-bearing changes, the arc is not done until the real stack boots and the acceptance behavior is demonstrated live (proven in the #51 arc).
 
-*Archived lessons (tracker & issue hygiene cluster) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
+*Archived lessons (tracker & issue hygiene; engine mount-design; tooling & verification hygiene clusters) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
 
 ## Testing Expectations
 
