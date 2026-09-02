@@ -1,7 +1,7 @@
 ---
 description: Read-only architect; converts features/issues into scope, risks, task decomposition, AC and DoD.
 mode: subagent
-model: zai/glm-5.3
+model: zai-coding-plan/glm-5.3
 ---
 
 ## Role

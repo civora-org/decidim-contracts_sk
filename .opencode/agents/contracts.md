@@ -1,7 +1,7 @@
 ---
 description: Primary collaborator/router; plans tasks, chooses subagents, enforces approval gates.
 mode: subagent
-model: zai/glm-5.3
+model: zai-coding-plan/glm-5.3
 ---
 
 ## Role

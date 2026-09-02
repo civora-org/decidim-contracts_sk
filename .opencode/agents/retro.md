@@ -1,7 +1,7 @@
 ---
 description: Optional second-opinion retro agent; reviews the task arc and proposes process lessons.
 mode: subagent
-model: zai/glm-5.3-flash
+model: zai-coding-plan/glm-5.3-flash
 ---
 
 ## Role

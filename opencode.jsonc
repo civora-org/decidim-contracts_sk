@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "zai/glm-5.3-flash",
+  "model": "zai-coding-plan/glm-5.3-flash",
   "instructions": [
     "AGENTS.md",
     "README.md",
@@ -40,31 +40,31 @@
   },
   "agents": {
     "contracts": {
-      "model": "zai/glm-5.3",
+      "model": "zai-coding-plan/glm-5.3",
       "description": "Primary collaborator/router for decidim-contracts_sk. Reads AGENTS, README, CHANGELOG, local code, and Issue context. Chooses subagents. Plan first, then approval gate. Stops before edits, migrations, Git write, external calls, or deploy-like actions. Runs retro after meaningful task."
     },
     "architect": {
-      "model": "zai/glm-5.3",
+      "model": "zai-coding-plan/glm-5.3",
       "description": "Read-only. Feature or Issue to scope/non-scope, affected files, dependencies, risks, acceptance criteria, Definition of Done, task sizing, and approval gates for this Decidim engine."
     },
     "reviewer": {
-      "model": "zai/glm-5.3",
+      "model": "zai-coding-plan/glm-5.3",
       "description": "Read-only. Findings BLOCKER/HIGH/MEDIUM/LOW. Checks scope alignment, Decidim compatibility, engine isolation, migration safety, tests, docs, privacy, and unnecessary complexity."
     },
     "rails": {
-      "model": "zai/glm-5.3-flash",
+      "model": "zai-coding-plan/glm-5.3-flash",
       "description": "Approved-scope Rails and Decidim engine implementation. No core fork. Explains migrations before applying. Preserves public/admin separation. Adds deterministic tests. No commit/push/PR changes without approval."
     },
     "tester": {
-      "model": "zai/glm-5.3-flash",
+      "model": "zai-coding-plan/glm-5.3-flash",
       "description": "Maps every acceptance criterion to deterministic tests. Covers request behaviour, authorization, empty state, malformed input, regressions, and future import edge cases if applicable."
     },
     "integration": {
-      "model": "zai/glm-5.3-flash",
+      "model": "zai-coding-plan/glm-5.3-flash",
       "description": "Optional future agent for CRZ or open-data integrations. Designs idempotent imports with source metadata, retries, rate limits, timeouts, caching, health checks, safe logs, and synthetic demo data only."
     },
     "retro": {
-      "model": "zai/glm-5.3-flash",
+      "model": "zai-coding-plan/glm-5.3-flash",
       "description": "Optional second-opinion retrospective analysis. The router owns retros and edits AGENTS.md Process Lessons directly per the Retro Policy; this agent never edits files."
     }
   },

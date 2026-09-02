@@ -1,7 +1,7 @@
 ---
 description: Optional future external public-data source (CRZ/open-data) integration agent; ETL design with idempotency and provenance.
 mode: subagent
-model: zai/glm-5.3-flash
+model: zai-coding-plan/glm-5.3-flash
 ---
 
 ## Role

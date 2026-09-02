@@ -1,7 +1,7 @@
 ---
 description: Read-only code reviewer; severity-graded findings and final recommendation.
 mode: subagent
-model: zai/glm-5.3
+model: zai-coding-plan/glm-5.3
 ---
 
 ## Role

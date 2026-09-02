@@ -1,7 +1,7 @@
 ---
 description: Rails/Decidim engine implementation agent; implements approved scope with tests.
 mode: subagent
-model: zai/glm-5.3-flash
+model: zai-coding-plan/glm-5.3-flash
 ---
 
 ## Role
