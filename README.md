@@ -13,7 +13,7 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 - Base controllers — public base (no forced authentication) and admin base (sign-in required);
 - Base helper and abstract `ApplicationRecord` with the `decidim_contracts_sk_` table prefix.
 
-The contract model, migrations, and controllers/views are upcoming milestones.
+The contract model, migrations, and controllers/views are upcoming milestones — see [Milestone 02 execution order](docs/m02-execution-order.md).
 
 ## Requirements
 
