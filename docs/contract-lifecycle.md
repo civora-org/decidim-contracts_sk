@@ -34,9 +34,11 @@ below is the contract consumed by the permission-mapping milestone **M02-01-B**
 | 8 | `published` | `archive` | `archived` | `editor` |
 
 > **Note on row 1:** the `create` edge is realized as `INITIAL_STATE = :draft` —
-> it is not a machine event in `TRANSITIONS`. Authorization of creation is a
-> model-level concern owned by the Contract model milestone
-> ([civora-org/civora-platform#55]).
+> it is not a machine event in `TRANSITIONS`. Authorization of creation is
+> split: the *role gate* (editor may create) lives in the permission layer
+> ([roles-and-permissions.md](roles-and-permissions.md)); *ownership*
+> (only the authoring editor may act) is a model-level concern owned by the
+> Contract model milestone ([civora-org/civora-platform#55]).
 
 ### Role rationale
 
@@ -50,6 +52,8 @@ M02-01-B's job entirely.
 - **`reviewer`** owns exactly the three judgment gates out of `in_review`:
   return, approve, reject. Segregation of duties: the role that drafts never
   judges; the role that judges never drafts or publishes.
+
+Role→user mapping and permission checks (M02-01-B): [roles-and-permissions.md](roles-and-permissions.md).
 
 ## Approved design decisions (M02-01-A, Gate 1)
 
