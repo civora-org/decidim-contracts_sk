@@ -8,7 +8,9 @@ Dependency-driven order for the M02 tasks tracked in [`civora-org/civora-platfor
 |---|------|------------|
 | 1 | [#53](https://github.com/civora-org/civora-platform/issues/53) M02-01-A: lifecycle state machine + transition rules | — |
 | 2 | [#54](https://github.com/civora-org/civora-platform/issues/54) M02-01-B: roles → Decidim permissions mapping | #53 |
-| 3 | [#55](https://github.com/civora-org/civora-platform/issues/55) M02-02-A: Contract model + migration | #53 |
+| 3 | ✅ [#55](https://github.com/civora-org/civora-platform/issues/55) M02-02-A: Contract model + migration — **shipped (PR #28, v0.9.0)**; provenance columns + `ContractState` concern + `:db` spec toggle included | #53 |
+| 3a | [#70](https://github.com/civora-org/civora-platform/issues/70) contracts data dictionary (fills the #20 spike placeholder) | — (before #56/#58 field work) |
+| 3b | [#71](https://github.com/civora-org/civora-platform/issues/71) EPIC (V0.2 direction): CRZ import, Decidim component, project links — decompose after #70; consumes #55's provenance columns | #70 |
 | 4 | [#56](https://github.com/civora-org/civora-platform/issues/56) M02-02-B: Party + Document models | #55 |
 | 5 | [#57](https://github.com/civora-org/civora-platform/issues/57) M02-02-C: Amendment + AuditEvent models | #55 |
 | 6 | [#61](https://github.com/civora-org/civora-platform/issues/61) M02-04-A: Stage-1 dummy app harness + request specs | — (early, unblocks request specs) |
@@ -27,5 +29,5 @@ Dependency-driven order for the M02 tasks tracked in [`civora-org/civora-platfor
 ## Notes
 
 - Parallelizable: #61 (harness) can start immediately alongside #53; model tasks (#55–#57) are independent of admin/public work once #53 lands.
-- Process lesson applies: before planning #53/#55, diff task assumptions against the current tree — M01 scaffolding may already cover part of the scope.
+- Process lesson applies: before planning model/admin tasks, diff task assumptions against the current tree and against `docs/00-product/` on the platform repo — the product boundary (ADR-002, manual CRZ handoff) lives there (see `docs/contracts-domain-notes.md`).
 - Closing parents #6–#12 closes epic #3 and milestone "02 Contracts MVP"; #69 is the release gate.
