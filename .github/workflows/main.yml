@@ -30,6 +30,9 @@ jobs:
           bundler-cache: true
       - name: Run the default task
         run: bundle exec rake
+        env:
+          # Opt in to the DB-backed spec groups (in-memory SQLite, offline).
+          CONTRACTS_SK_DB: "1"
 
   audit:
     runs-on: ubuntu-latest

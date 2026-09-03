@@ -69,8 +69,11 @@ module Decidim
         ContractLifecycle.allowed_roles(from: state, event: action) & roles_for_user
       end
 
+      # Rails enum getters return Strings while ContractLifecycle is keyed
+      # on Symbols; normalize (nil-safely) at this single boundary so both
+      # state sources behave identically.
       def state
-        context[:contract]&.state || context[:state]
+        (context[:contract]&.state || context[:state])&.to_sym
       end
 
       def roles_for_user

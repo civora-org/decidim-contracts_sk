@@ -11,7 +11,17 @@ Style/StringLiterals:
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
 
+# Migrations are declarative column lists; the length budget doesn't apply.
+Metrics/MethodLength:
+  Exclude:
+    - "db/migrate/**/*.rb"
+
 # Spec example-group blocks are naturally long; exclude them from the limit.
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*.rb"
+
+# Migration-shape specs describe a file path, not a class.
+RSpec/DescribeClass:
+  Exclude:
+    - "spec/db/**/*.rb"

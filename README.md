@@ -6,14 +6,17 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 
 ## Status
 
-**Early development** (engine skeleton milestone). Currently in place:
+**Early development** (Milestone 02 in progress). Currently in place:
 
 - Engine registration — isolated `Decidim::ContractsSk` namespace, `en`/`sk` locales;
 - Routes — public contracts catalogue (`index`/`show`) and an admin CRUD namespace;
 - Base controllers — public base (no forced authentication) and admin base (sign-in required);
-- Base helper and abstract `ApplicationRecord` with the `decidim_contracts_sk_` table prefix.
+- Base helper and abstract `ApplicationRecord` with the `decidim_contracts_sk_` table prefix;
+- Contract lifecycle state machine — states and transition rules in [`docs/contract-lifecycle.md`](docs/contract-lifecycle.md);
+- Roles and permissions — engine-logical `editor`/`reviewer` roles with a config-time resolver ([`docs/roles-and-permissions.md`](docs/roles-and-permissions.md));
+- `Contract` model and migration — lifecycle-validated `state` enum, per-organization `reference` uniqueness, and manual CRZ-handoff provenance columns (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md)).
 
-The contract model, migrations, and controllers/views are upcoming milestones — see [Milestone 02 execution order](docs/m02-execution-order.md). The contract lifecycle state machine and its transition table are defined in [`docs/contract-lifecycle.md`](docs/contract-lifecycle.md).
+Admin CRUD controllers/views, and the Party, Document and Amendment models, are upcoming milestones — see [Milestone 02 execution order](docs/m02-execution-order.md).
 
 ## Requirements
 
@@ -60,6 +63,8 @@ bundle exec rspec      # run the test suite (deterministic, offline, no DB requi
 bundle exec rubocop    # lint
 bin/console            # experiment with the gem
 ```
+
+Opt-in DB-backed specs: `CONTRACTS_SK_DB=1 bundle exec rspec` additionally runs the `:db` groups against an in-memory SQLite adapter (needs the `sqlite3` dev gem).
 
 The test suite runs without a database or network — it uses guarded structural specs until a dummy-app harness lands (`civora-org/civora-platform#45`, item 2).
 

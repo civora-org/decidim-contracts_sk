@@ -13,9 +13,9 @@ module Decidim
     # Roles are engine-logical symbols only (:editor, :reviewer). Mapping them
     # onto Decidim users/permissions is intentionally out of scope here.
     #
-    # The future Contract model (civora-org/civora-platform#55) is expected to
-    # wrap this API: a `state` column validated against STATES and a
-    # model-level transition method that persists via transition!.
+    # The Contract model (civora-org/civora-platform#55) wraps this API: a
+    # `state` column validated against STATES and model-level transition
+    # methods that persist via transition!.
     module ContractLifecycle
       class InvalidTransitionError < Decidim::ContractsSk::Error; end
 

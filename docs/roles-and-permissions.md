@@ -96,7 +96,7 @@ State is read duck-typed from the permission context:
 context[:contract]&.state || context[:state]
 ```
 
-Callers (admin controllers, commands, the future Contract model #55) pass a
+Callers (admin controllers, commands, the Contract model #55) pass a
 contract-like object, a bare `:state`, or both. Transition checks and public
 read both use it; with neither reachable, transition actions and public read
 fail closed.
