@@ -12,4 +12,9 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+
+  # DB-backed examples (tagged :db) stay out of the default offline run.
+  # Opt in with CONTRACTS_SK_DB=1; those groups additionally need the sqlite3
+  # gem and skip themselves with a clear message when it is absent.
+  config.filter_run_excluding :db unless ENV["CONTRACTS_SK_DB"] == "1"
 end

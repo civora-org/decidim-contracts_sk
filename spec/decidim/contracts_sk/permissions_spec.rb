@@ -56,7 +56,7 @@ SpecUser = Struct.new(:admin, :admin_terms_accepted, :engine_roles, keyword_init
   end
 end
 
-# Minimal stand-in for the upcoming Contract model (#55): a duck-typed state
+# Minimal stand-in for the Contract model (#55): a duck-typed state
 # holder exercised via context[:contract].
 SpecContract = Struct.new(:state)
 
@@ -281,6 +281,45 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
     it "leaves non-read public actions unset" do
       expect(unset?(nil, scope: :public, action: :create, state: :published)).to be(true)
+    end
+  end
+
+  describe "String state inputs (Rails enum getters) behave exactly like Symbols" do
+    # Regression guard (civora-org/civora-platform#55): Rails enum getters
+    # return Strings while ContractLifecycle is keyed on Symbols; the
+    # permissions layer normalizes at its state boundary, so both input
+    # types must yield identical outcomes everywhere.
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "treats String states identically to Symbols across the full admin matrix" do
+      events = lifecycle::TRANSITIONS.values.flat_map(&:keys).uniq.sort
+
+      lifecycle::STATES.product(events).each do |state, event|
+        user = SpecUser.new(engine_roles: lifecycle.allowed_roles(from: state, event: event))
+
+        symbol_outcome = action_for(user, scope: :admin, action: event, state: state).allowed?
+        string_outcome = action_for(user, scope: :admin, action: event, state: state.to_s).allowed?
+        via_contract = action_for(user, scope: :admin, action: event, contract: SpecContract.new(state.to_s)).allowed?
+
+        expect(string_outcome).to eq(symbol_outcome), "String state diverged: #{event} on #{state} (context[:state])"
+        expect(via_contract).to eq(symbol_outcome), "String state diverged: #{event} on #{state} (context[:contract])"
+      end
+    end
+
+    it "treats String states identically to Symbols for public read" do
+      lifecycle::STATES.each do |state|
+        expected = lifecycle.publicly_visible?(state)
+
+        expect(action_for(nil, scope: :public, action: :read, state: state.to_s).allowed?)
+          .to eq(expected), "public read diverged for #{state.to_s.inspect} via context[:state]"
+        expect(action_for(nil, scope: :public, action: :read, contract: SpecContract.new(state.to_s)).allowed?)
+          .to eq(expected), "public read diverged for #{state.to_s.inspect} via context[:contract]"
+      end
     end
   end
 

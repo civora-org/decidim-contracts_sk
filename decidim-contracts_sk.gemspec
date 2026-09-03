@@ -49,4 +49,7 @@ Gem::Specification.new do |spec|
   # rubocop-rspec 2.31 pulls rubocop-rspec_rails 2.29, whose inject_defaults!
   # API was removed in rubocop 1.90; 3.x loads via the plugins mechanism.
   spec.add_development_dependency "rubocop-rspec", "~> 3.0"
+  # Only needed by the opt-in CONTRACTS_SK_DB=1 specs (:db groups run against
+  # an in-memory SQLite adapter; see spec/decidim/contracts_sk/contract_spec.rb).
+  spec.add_development_dependency "sqlite3", "~> 2.0"
 end

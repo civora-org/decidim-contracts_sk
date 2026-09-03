@@ -99,8 +99,8 @@ Decidim::ContractsSk::ContractLifecycle::TRANSITIONS       # nested frozen hash
 ```
 
 Query methods fail closed (`false`/`[]`/`nil` on unknown input); only
-`transition!` raises. The future Contract model (#55) wraps this: `state`
-column validated against `STATES`, model-level transition persisting via
+`transition!` raises. The Contract model (#55) wraps this: `state` column
+validated against `STATES`, model-level transition persisting via
 `transition!`.
 
 [civora-org/civora-platform#53]: https://github.com/civora-org/civora-platform/issues/53
