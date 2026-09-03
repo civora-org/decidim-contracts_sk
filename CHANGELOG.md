@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.11.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.10.0...v0.11.0) (2026-09-03)
+
+
+### Features
+
+* **spec:** add stage-1 dummy harness and request specs (M02-04-A) ([4897999](https://github.com/civora-org/decidim-contracts_sk/commit/48979995f3b501d2ad128bb8885906641927477c))
+
 ## [0.10.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.9.0...v0.10.0) (2026-09-03)
 
 
