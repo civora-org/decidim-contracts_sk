@@ -113,6 +113,8 @@ Distilled from router retros; treat as working agreements, not archive.
 
 Current lessons:
 
+- **Check the working branch before any arc starts.** Uncommitted work discovered at implementation time can sit on an already-merged docs branch; if so, re-branch off `origin/main` (stash → `checkout -b` → pop) before the commit gate — committing onto a merged branch breaks naming conventions and pollutes the feature PR (proven in the #56 arc).
+
 - **Baseline first.** Always verify the test suite runs green before starting work; fix environment/dependency drift before planning.
 - **Pinned gem source is ground truth.** Verify every Decidim/rubocop API claim against the installed gem sources (`bundle info <gem> --path`, then grep) before planning — treat issue code examples as suggestions, not facts (proven ×3 in the #45 arc).
 - **The tree is ground truth for issue state.** Milestone issues drift from the repo — #39 arrived ~80% implemented by an earlier task. Before planning, diff the issue's task list against the current tree and split it into *already shipped* / *shipped but unverified* / *genuinely missing*; plan only the remainder and restate the split in the issue's closing comment (proven in the #39 arc).

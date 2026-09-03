@@ -18,9 +18,6 @@
 
 require "spec_helper"
 
-require "active_record"
-require "active_support/core_ext/string/inflections"
-
 # Several structural examples deliberately hold several related expectations
 # (per-column semantics) and exceed the default example-length budget.
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
@@ -30,11 +27,8 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_contracts.rb" do
 
   # Fixed engine locations/identifiers as plain methods: they describe the
   # file surface, not per-example state, and keep the memoized-helper budget
-  # for the specs that need it.
-  def engine_root
-    File.expand_path("../../..", __dir__)
-  end
-
+  # for the specs that need it. (engine_root comes from the shared
+  # "contracts_sk db support" context in spec/support/.)
   def migration_files
     Dir.glob(File.join(engine_root, "db", "migrate", "*_create_decidim_contracts_sk_contracts.rb"))
   end
@@ -200,29 +194,6 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_contracts.rb" do
     let(:migration_class) do
       require migration_path
       Object.const_get(migration_class_name)
-    end
-
-    before do
-      begin
-        require "sqlite3"
-      rescue LoadError
-        skip "sqlite3 gem is not available; add it locally to run the CONTRACTS_SK_DB=1 group"
-      end
-
-      ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
-    end
-
-    after do
-      # Leave the shared process clean: the example above ends with the
-      # table migrated up, and this spec file can run after other :db
-      # groups (or share its pooled :memory: connection with them). Drop
-      # the table and cut the connection so a later group's migrate(:up)
-      # starts from an empty schema instead of "table already exists".
-      if ActiveRecord::Base.connected?
-        connection = ActiveRecord::Base.connection
-        connection.drop_table(table_name) if connection.table_exists?(table_name)
-        ActiveRecord::Base.connection_pool.disconnect!
-      end
     end
 
     it "migrates up, down, and up again with the expected columns" do

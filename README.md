@@ -15,9 +15,10 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 - Contract lifecycle state machine — states and transition rules in [`docs/contract-lifecycle.md`](docs/contract-lifecycle.md);
 - Roles and permissions — engine-logical `editor`/`reviewer` roles with a config-time resolver ([`docs/roles-and-permissions.md`](docs/roles-and-permissions.md));
 - `Contract` model and migration — lifecycle-validated `state` enum, per-organization `reference` uniqueness, and manual CRZ-handoff provenance columns (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md));
-- `Party` and `Document` models and migrations — contract-scoped parties with an `object`/`contractor` role enum and documents with a `contract`/`crz_export`/`annex`/`other` kind enum, real FK constraints onto the contracts table, and nullable file-metadata columns (validated upload deferred to M02-05-A).
+- `Party` and `Document` models and migrations — contract-scoped parties with an `object`/`contractor` role enum and documents with a `contract`/`crz_export`/`annex`/`other` kind enum, real FK constraints onto the contracts table, and nullable file-metadata columns (validated upload deferred to M02-05-A);
+- `Amendment` and `AuditEvent` models and migrations — per-contract numbered amendments (unique `(contract, version)`; immutability deferred to M02-05-B) and an append-only audit trail with explicit organization/actor tenancy and a polymorphic target that outlives the contract (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md)).
 
-Admin CRUD controllers/views and the Amendment model are upcoming milestones — see [Milestone 02 execution order](docs/m02-execution-order.md).
+Admin CRUD controllers/views are upcoming milestones — see [Milestone 02 execution order](docs/m02-execution-order.md).
 
 ## Requirements
 

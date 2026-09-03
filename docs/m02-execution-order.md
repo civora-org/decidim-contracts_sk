@@ -12,7 +12,7 @@ Dependency-driven order for the M02 tasks tracked in [`civora-org/civora-platfor
 | 3a | [#70](https://github.com/civora-org/civora-platform/issues/70) contracts data dictionary (fills the #20 spike placeholder) | — (before #56/#58 field work) |
 | 3b | [#71](https://github.com/civora-org/civora-platform/issues/71) EPIC (V0.2 direction): CRZ import, Decidim component, project links — decompose after #70; consumes #55's provenance columns | #70 |
 | 4 | ✅ [#56](https://github.com/civora-org/civora-platform/issues/56) M02-02-B: Party + Document models — **shipped**; real FKs onto contracts, role/kind vocabularies, nullable file metadata (validation deferred to #64) | #55 |
-| 5 | [#57](https://github.com/civora-org/civora-platform/issues/57) M02-02-C: Amendment + AuditEvent models | #55 |
+| 5 | ✅ [#57](https://github.com/civora-org/civora-platform/issues/57) M02-02-C: Amendment + AuditEvent models — **shipped**; append-only audit trail, unique `(contract, version)` amendments, shared `:db` spec support extracted | #55 |
 | 6 | [#61](https://github.com/civora-org/civora-platform/issues/61) M02-04-A: Stage-1 dummy app harness + request specs | — (early, unblocks request specs) |
 | 7 | [#58](https://github.com/civora-org/civora-platform/issues/58) M02-03-A: admin CRUD (editor scope) | #54, #55, #61 |
 | 8 | [#59](https://github.com/civora-org/civora-platform/issues/59) M02-03-B: admin lifecycle transitions | #58 |

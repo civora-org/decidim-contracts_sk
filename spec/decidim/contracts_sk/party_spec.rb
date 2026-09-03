@@ -6,12 +6,11 @@
 #
 # The default run asserts class-level structure only (inheritance, table
 # name, associations, frozen vocabulary, validators, enum wiring) — none of
-# it touches a DB connection. The stand-in loading pattern mirrors
-# contract_spec.rb: a minimal Decidim::ApplicationRecord is defined before
-# the engine model files are loaded, since the real one lives in decidim-core
-# and cannot be required outside a full Rails app. Minimal stand-ins for
-# Decidim::Organization / Decidim::User follow the same rule (the contract
-# associations need them in the :db group).
+# it touches a DB connection. The Decidim::ApplicationRecord /
+# Decidim::Organization / Decidim::User stand-ins live in
+# spec/support/contracts_sk_db_helpers.rb, loaded from spec_helper.rb before
+# any spec file: the real ones live in decidim-core and cannot be required
+# outside a full Rails app.
 #
 # The :db-tagged group exercises the model against the REAL migrations on an
 # in-memory SQLite adapter. It is excluded by default (see spec_helper.rb);
@@ -24,26 +23,6 @@
 
 require "spec_helper"
 
-# Workaround for activesupport 6.1.x on Ruby >= 3.3: ActiveSupport references
-# ::Logger, which is no longer a default gem. Must load before ActiveSupport.
-require "logger"
-
-require "active_record"
-require "active_support/concern"
-
-# The structural groups assert several related class-level facts per example
-# and the :db group walks several scenarios, exceeding the default budgets.
-# rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
-
-# Minimal stand-in for decidim-core's Decidim::ApplicationRecord.
-unless defined?(Decidim::ApplicationRecord)
-  module Decidim
-    class ApplicationRecord < ActiveRecord::Base
-      self.abstract_class = true
-    end
-  end
-end
-
 engine_root = File.expand_path("../../..", __dir__)
 
 require File.join(engine_root, "app/models/decidim/contracts_sk/application_record.rb")
@@ -51,27 +30,13 @@ require File.join(engine_root, "app/models/concerns/decidim/contracts_sk/contrac
 require File.join(engine_root, "app/models/decidim/contracts_sk/contract.rb")
 require File.join(engine_root, "app/models/decidim/contracts_sk/party.rb")
 # Contract's dependent: :destroy resolves ALL its associations on destroy,
-# so the sibling model must be defined too.
+# so the sibling models must be defined too.
 require File.join(engine_root, "app/models/decidim/contracts_sk/document.rb")
+require File.join(engine_root, "app/models/decidim/contracts_sk/amendment.rb")
 
-# Minimal stand-ins for the association targets: the Contract references
-# them by class_name strings, but offline nothing else defines them. Inert in
-# the structural run (no connection is opened at definition time).
-unless defined?(Decidim::Organization)
-  module Decidim
-    Organization = Class.new(ActiveRecord::Base) do
-      self.table_name = "decidim_organizations"
-    end
-  end
-end
-
-unless defined?(Decidim::User)
-  module Decidim
-    User = Class.new(ActiveRecord::Base) do
-      self.table_name = "decidim_users"
-    end
-  end
-end
+# The structural groups assert several related class-level facts per example
+# and the :db group walks several scenarios, exceeding the default budgets.
+# rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
 
 RSpec.describe Decidim::ContractsSk::Party do
   describe "class structure" do
@@ -169,70 +134,10 @@ RSpec.describe Decidim::ContractsSk::Party do
   end
 
   describe "database behaviour", :db do
-    # Fixed migration lookups as plain methods, not lets: the migration
-    # classes are deterministic engine identifiers, not per-example state
-    # (same rationale as the structural migration specs). engine_root is a
-    # method too, because a def cannot capture the file-level local.
-    def engine_root
-      File.expand_path("../../..", __dir__)
-    end
+    before { migrate_engine_schema! }
 
-    def contracts_migration_class
-      require Dir.glob(File.join(engine_root, "db/migrate/*_create_decidim_contracts_sk_contracts.rb")).first
-      CreateDecidimContractsSkContracts
-    end
-
-    def parties_migration_class
-      require Dir.glob(File.join(engine_root, "db/migrate/*_create_decidim_contracts_sk_parties.rb")).first
-      CreateDecidimContractsSkParties
-    end
-
-    def documents_migration_class
-      require Dir.glob(File.join(engine_root, "db/migrate/*_create_decidim_contracts_sk_documents.rb")).first
-      CreateDecidimContractsSkDocuments
-    end
-
-    let(:organization) { Decidim::Organization.create! }
-    let(:author) { Decidim::User.create! }
     let(:contract) do
       Decidim::ContractsSk::Contract.create!(contract_attributes)
-    end
-
-    before do
-      begin
-        require "sqlite3"
-      rescue LoadError
-        skip "sqlite3 gem is not available; add it locally to run the CONTRACTS_SK_DB=1 group"
-      end
-
-      # Other :db groups in this process (the migration specs) may leave a
-      # pooled connection — and its in-memory schema — behind: an identical
-      # :memory: config reuses the live pool instead of opening a fresh
-      # database. Cut the connection so this group starts from an empty one.
-      ActiveRecord::Base.connection_pool.disconnect! if ActiveRecord::Base.connected?
-      ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
-      # The parties table carries a real FK to the contracts table, so the
-      # parent migration must come up first. Contract#destroy cascades into
-      # BOTH child tables (dependent: :destroy), so the sibling documents
-      # table must exist here too.
-      contracts_migration_class.migrate(:up)
-      parties_migration_class.migrate(:up)
-      documents_migration_class.migrate(:up)
-      ActiveRecord::Base.connection.create_table(:decidim_organizations, &:timestamps)
-      ActiveRecord::Base.connection.create_table(:decidim_users, &:timestamps)
-    end
-
-    after do
-      ActiveRecord::Base.connection_pool.disconnect! if ActiveRecord::Base.connected?
-    end
-
-    def contract_attributes(overrides = {})
-      {
-        organization: organization,
-        author: author,
-        title: "Road reconstruction",
-        reference: "ZP-2026-001"
-      }.merge(overrides)
     end
 
     def party_attributes(overrides = {})
