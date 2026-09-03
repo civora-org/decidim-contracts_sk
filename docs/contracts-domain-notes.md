@@ -46,7 +46,29 @@ table is empty. `checksum` is deferred to the actual import milestone
 
 Deferred (additive migrations later, per downstream issues): real functional
 fields — subject matter text, amounts/currency, signature/effectivity dates,
-parties with IČO (#56), documents (#56), amendments/versions (#57).
+amendments/versions (#57); document file upload + safe validation (#64,
+M02-05-A — the #56 documents table carries nullable metadata columns only,
+see below).
+
+## Schema consequences landed in #56 (M02-02-B)
+
+`decidim_contracts_sk_parties` and `decidim_contracts_sk_documents` follow
+the #55 skeleton, keeping its "minimal constraints" stance:
+
+- **Parties** — `object` (the municipality side) / `contractor` roles, frozen
+  vocabulary + positional enum mirroring Contract's state wiring; optional
+  `ico` is a fixed 8-digit string validated at the model layer, optional
+  `address` up to 255 characters.
+- **Documents** — `contract` / `crz_export` / `annex` / `other` kinds
+  (frozen vocabulary; column and enum both default to `"contract"`).
+- **Tenancy is derived, not stored**: neither table carries an organization
+  foreign key — tenant scoping flows through `contract.organization`.
+- **Real FK constraints**: `contract_id` on both tables is a database-level
+  FK to `decidim_contracts_sk_contracts`; `Contract` declares
+  `dependent: :destroy` for both.
+- **File metadata only**: `file_name` / `content_type` / `file_size` are
+  nullable descriptive columns. File upload and safe validation are deferred
+  to **M02-05-A (#64)**; no behaviour attaches to these columns until then.
 
 ## Known gaps / drift (flagged, unowned)
 
