@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [0.8.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.7.0...v0.8.0) (2026-09-03)
+
+
+### Features
+
+* **permissions:** add config-based role resolver (M02-01-B) ([8c76d48](https://github.com/civora-org/decidim-contracts_sk/commit/8c76d4840b4cdcef6c1ae12bab50d0ad421b00d7))
+* **permissions:** add table-driven Permissions class and controller wiring (M02-01-B) ([1d7b97f](https://github.com/civora-org/decidim-contracts_sk/commit/1d7b97f3075fdddbffe2c9995d93baf3ff068361))
+
 ## [0.7.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.6.1...v0.7.0) (2026-09-02)
 
 
