@@ -48,6 +48,7 @@ With the engine mounted at `/zmluvy`:
 
 - **Public catalogue** — `GET /zmluvy/contracts` (list) and `GET /zmluvy/contracts/:id` (detail). No authentication required.
 - **Admin** — `/zmluvy/admin/contracts` (skeleton; controllers arrive with the admin CRUD milestone).
+- **Roles and permissions** — the engine-logical `editor`/`reviewer` roles map onto Decidim permissions via a config-time resolver; see [docs/roles-and-permissions.md](docs/roles-and-permissions.md).
 
 Locales: English and Slovak.
 
