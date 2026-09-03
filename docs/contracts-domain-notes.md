@@ -50,11 +50,12 @@ parties with IČO (#56), documents (#56), amendments/versions (#57).
 
 ## Known gaps / drift (flagged, unowned)
 
-- `docs/01-discovery/SPIKE-decidim-contracts-sk.md` on civora-platform is a
-  **placeholder**, yet issue #20 claims the spike package contains a
-  "data dictionary". The functional field dictionary for contracts does not
-  exist anywhere yet — it must be written before the V0.2 integration arc
-  (and ideally before admin CRUD #58 hardens form fields).
+- ~~The data dictionary does not exist anywhere yet~~ — **resolved 2026-09-03
+  (#70):** it now lives in civora-platform at
+  `docs/01-discovery/CONTRACTS-DATA-DICTIONARY.md`. #56/#58/#62/#63 should
+  diff their field sets against it. CRZ correspondences there remain
+  indicative until the #71 import arc verifies them against the live CRZ
+  open-data schema.
 - The stakeholder requirement (CRZ pull / component / project links) is not
   captured in any civora-platform issue — candidate V0.2 epic.
 
