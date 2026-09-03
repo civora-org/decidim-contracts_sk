@@ -35,6 +35,12 @@ module Decidim
       # and are destroyed with it.
       has_many :parties, dependent: :destroy
       has_many :documents, dependent: :destroy
+      has_many :amendments, dependent: :destroy
+
+      # The audit trail must survive contract deletion — dangling targets
+      # after the target's own destroy are the Decidim ActionLog precedent —
+      # so no dependent option here.
+      has_many :audit_events, as: :target
 
       validates :title, presence: true, length: { maximum: 255 }
       validates :reference, presence: true,

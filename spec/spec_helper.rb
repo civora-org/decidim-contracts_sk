@@ -2,6 +2,12 @@
 
 require "decidim/contracts_sk"
 
+# Shared deterministic support for the :db groups (stand-ins, migration
+# runner, connection juggling). Loaded before every spec file so the engine
+# model requires inside the spec files find the Decidim::ApplicationRecord
+# stand-in already defined.
+require_relative "support/contracts_sk_db_helpers"
+
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = ".rspec_status"

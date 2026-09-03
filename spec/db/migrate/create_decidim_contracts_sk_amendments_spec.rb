@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
 # ---------------------------------------------------------------------------
-# Deterministic, offline, structural specs for the engine's documents
-# migration (M02-02-B, civora-org/civora-platform#56).
+# Deterministic, offline, structural specs for the engine's amendments
+# migration (M02-02-C, civora-org/civora-platform#57).
 #
 # The default run asserts the migration as text only — the suite must stay
 # DB-less, so the file is never executed. The regexes are deliberately
 # tolerant about option order and whitespace while pinning the semantics
-# that matter: nullability, defaults, the real FK onto the contracts table,
-# the explicit index name, and reversibility (single `def change`, no
-# `execute`, no `def up`/`def down`).
+# that matter: nullability, the real FK onto the contracts table, the
+# suppressed single-column index, the unique composite index name, and
+# reversibility (single `def change`, no `execute`, no `def up`/`def down`).
 #
 # The :db-tagged group additionally runs the migration up -> down -> up
 # against an in-memory SQLite adapter. It stays excluded from the default
@@ -23,15 +23,14 @@ require "spec_helper"
 # (per-column semantics) and exceed the default example-length budget.
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
 
-RSpec.describe "db/migrate/*_create_decidim_contracts_sk_documents.rb" do
+RSpec.describe "db/migrate/*_create_decidim_contracts_sk_amendments.rb" do
   subject(:migration_source) { File.read(migration_path) }
 
   # Fixed engine locations/identifiers as plain methods: they describe the
   # file surface, not per-example state, and keep the memoized-helper budget
-  # for the specs that need it. (engine_root comes from the shared
-  # "contracts_sk db support" context in spec/support/.)
+  # for the specs that need it.
   def migration_files
-    Dir.glob(File.join(engine_root, "db", "migrate", "*_create_decidim_contracts_sk_documents.rb"))
+    Dir.glob(File.join(engine_root, "db", "migrate", "*_create_decidim_contracts_sk_amendments.rb"))
   end
 
   def migration_path
@@ -39,11 +38,11 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_documents.rb" do
   end
 
   def migration_class_name
-    "CreateDecidimContractsSkDocuments"
+    "CreateDecidimContractsSkAmendments"
   end
 
   def table_name
-    :decidim_contracts_sk_documents
+    :decidim_contracts_sk_amendments
   end
 
   # First migration line declaring a column of the given kind for `name`.
@@ -54,6 +53,15 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_documents.rb" do
       .lines
       .map(&:strip)
       .find { |line| line.match?(/\At\.(?:references|string|datetime|integer)\s+:#{name}\b/) }
+  end
+
+  # The add_index line covering the given columns (in order), tolerant about
+  # symbol-array spelling ([:a, :b] vs %i[a b]).
+  def add_index_line(*columns)
+    pattern = columns.map { |column| Regexp.escape(column.to_s) }.join(".*")
+    migration_source.lines.map(&:strip).find do |line|
+      line.match?(/\Aadd_index\s+:#{table_name}.*#{pattern}/)
+    end
   end
 
   def explicit_index_names
@@ -94,11 +102,8 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_documents.rb" do
 
       %i[
         contract
-        title
-        kind
-        file_name
-        content_type
-        file_size
+        version
+        summary
       ].each do |column|
         expect(column_line(column)).to be_present, "missing column :#{column}"
       end
@@ -106,38 +111,35 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_documents.rb" do
       expect(migration_source.lines.map(&:strip)).to include(match(/\At\.timestamps\b/))
     end
 
-    it "makes the contract reference NOT NULL with a real FK to the contracts table" do
-      expect(column_line(:contract)).to match(/\At\.references\s+:contract,\s*null:\s*false/)
+    it "makes the contract reference NOT NULL and suppresses its single-column index" do
+      # The composite (contract_id, version) index covers plain contract_id
+      # lookups, so the default index on the references line is redundant.
+      expect(column_line(:contract))
+        .to match(/\At\.references\s+:contract,\s*null:\s*false,\s*index:\s*false/)
+    end
+
+    it "puts a real FK on the contract reference, targeting the contracts table" do
       expect(migration_source)
         .to match(/foreign_key:\s*\{\s*to_table:\s*:decidim_contracts_sk_contracts\s*\}/)
     end
 
-    it "makes title NOT NULL" do
-      expect(column_line(:title)).to match(/\At\.string\s+:title,\s*null:\s*false\s*$/)
+    it "makes version a NOT NULL integer" do
+      expect(column_line(:version)).to match(/\At\.integer\s+:version,\s*null:\s*false\s*$/)
     end
 
-    it "pins kind as NOT NULL defaulting to contract" do
-      expect(column_line(:kind)).to match(/\At\.string\s+:kind,/)
-      expect(column_line(:kind)).to match(/null:\s*false/)
-      expect(column_line(:kind)).to match(/default:\s*"contract"/)
-    end
-
-    it "keeps the file metadata columns nullable" do
-      # Metadata only: validated upload handling arrives with M02-05-A.
-      expect(column_line(:file_name)).to match(/\At\.string\s+:file_name\s*$/)
-      expect(column_line(:content_type)).to match(/\At\.string\s+:content_type\s*$/)
-      expect(column_line(:file_size)).to match(/\At\.integer\s+:file_size\s*$/)
+    it "makes summary a NOT NULL string" do
+      expect(column_line(:summary)).to match(/\At\.string\s+:summary,\s*null:\s*false\s*$/)
     end
   end
 
   describe "indexes" do
-    it "indexes the contract reference under an explicit name" do
-      # Scans the whole source: the index option may wrap to its own line
-      # under the references declaration.
-      expect(migration_source)
-        .to match(/index:\s*\{\s*name:\s*"idx_contracts_sk_documents_on_contract_id"\s*\}/)
+    it "uniquely indexes (contract_id, version) under an explicit name" do
+      expect(add_index_line(:contract_id, :version)).to be_present
+      # Scans the whole source: the unique option may wrap to its own line
+      # under the add_index declaration.
+      expect(migration_source).to match(/unique:\s*true/)
       expect(explicit_index_names)
-        .to include("idx_contracts_sk_documents_on_contract_id")
+        .to include("idx_contracts_sk_amendments_on_contract_id_and_version")
     end
 
     it "keeps every explicit index name within PostgreSQL's 63-byte limit" do
@@ -167,30 +169,32 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_documents.rb" do
       Object.const_get(migration_class_name)
     end
 
-    it "migrates up, down, and up again with the expected columns and the contracts FK" do
+    it "migrates up, down, and up again with the expected columns, contracts FK and unique index" do
       migration_class.migrate(:up)
       expect(ActiveRecord::Base.connection.table_exists?(table_name)).to be(true)
 
       by_name = ActiveRecord::Base.connection.columns(table_name).index_by(&:name)
       expect(by_name.keys).to contain_exactly(
-        "id", "contract_id", "title", "kind", "file_name", "content_type", "file_size", "created_at", "updated_at"
+        "id", "contract_id", "version", "summary", "created_at", "updated_at"
       )
 
-      expect(by_name["kind"].null).to be(false)
-      expect(by_name["kind"].default).to eq("contract")
+      expect(by_name["version"].type).to eq(:integer)
 
-      %w[contract_id title].each do |name|
+      %w[contract_id version summary].each do |name|
         expect(by_name[name].null).to be(false), "#{name} must be NOT NULL"
-      end
-
-      %w[file_name content_type file_size].each do |name|
-        expect(by_name[name].null).to be(true), "#{name} must be nullable"
       end
 
       foreign_keys = ActiveRecord::Base.connection.foreign_keys(table_name)
       contract_fk = foreign_keys.find { |fk| fk.from_table.to_s == table_name.to_s }
       expect(contract_fk).to be_present, "contract_id must carry a real FK constraint"
       expect(contract_fk.to_table).to eq("decidim_contracts_sk_contracts")
+
+      unique_index = ActiveRecord::Base.connection.indexes(table_name).find do |index|
+        index.name == "idx_contracts_sk_amendments_on_contract_id_and_version"
+      end
+      expect(unique_index).to be_present, "the (contract_id, version) unique index must exist"
+      expect(unique_index.unique).to be(true)
+      expect(unique_index.columns).to eq(%w[contract_id version])
 
       migration_class.migrate(:down)
       expect(ActiveRecord::Base.connection.table_exists?(table_name)).to be(false)

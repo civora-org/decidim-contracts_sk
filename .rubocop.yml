@@ -25,3 +25,9 @@ Metrics/BlockLength:
 RSpec/DescribeClass:
   Exclude:
     - "spec/db/**/*.rb"
+
+# The shared :db support context's argument is a lookup identifier, not a
+# behavioural context description ("when/with/without" doesn't apply).
+RSpec/ContextWording:
+  Exclude:
+    - "spec/support/**/*.rb"

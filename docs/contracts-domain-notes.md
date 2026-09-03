@@ -46,9 +46,10 @@ table is empty. `checksum` is deferred to the actual import milestone
 
 Deferred (additive migrations later, per downstream issues): real functional
 fields — subject matter text, amounts/currency, signature/effectivity dates,
-amendments/versions (#57); document file upload + safe validation (#64,
-M02-05-A — the #56 documents table carries nullable metadata columns only,
-see below).
+amendments/versions (#57 landed the skeleton; immutability and the public
+version history arrive with #65); document file upload + safe validation
+(#64, M02-05-A — the #56 documents table carries nullable metadata columns
+only, see below).
 
 ## Schema consequences landed in #56 (M02-02-B)
 
@@ -69,6 +70,42 @@ the #55 skeleton, keeping its "minimal constraints" stance:
 - **File metadata only**: `file_name` / `content_type` / `file_size` are
   nullable descriptive columns. File upload and safe validation are deferred
   to **M02-05-A (#64)**; no behaviour attaches to these columns until then.
+
+## Schema consequences landed in #57 (M02-02-C)
+
+`decidim_contracts_sk_amendments` and `decidim_contracts_sk_audit_events`
+keep the "minimal constraints" stance:
+
+- **Amendments** — a numbered revision of its contract: `version` is a
+  positive integer and `(contract_id, version)` is unique (DB-level composite
+  unique index, mirrored by a model uniqueness validation scoped to
+  `contract_id`). **D1 — why a plain integer `version` and not a DB sequence
+  or timestamp:** the number is editorial information (published revisions
+  render as "version n" in the catalogue), it must be human-assignable and
+  gapless per contract at the command layer, and the composite unique index
+  doubles as the plain `contract_id` lookup index (the references line
+  suppresses the redundant single-column index). Immutability and the
+  version-sequence behaviour are deliberately **deferred to M02-05-B (#65)**
+  — M02-02-C ships the validated, mutable skeleton only.
+- **Audit events** — append-only by construction: `AuditEvent#readonly?`
+  returns `persisted?`, so every write path through the model
+  (save/update/update!/touch/update_columns/destroy) raises
+  `ActiveRecord::ReadOnlyRecord` once persisted. Accepted gaps: `#delete`,
+  `.delete_all`/`.update_all` and raw SQL bypass the model surface — DB
+  triggers were rejected because they break migration reversibility and the
+  SQLite `:db` spec harness. **D2 — explicit tenancy deviation:** unlike
+  parties/documents, the audit table carries its own
+  `decidim_organization_id` (plus `decidim_user_id` actor) instead of
+  deriving tenancy through the target: the polymorphic target has no FK and
+  may dangle after target deletion (the Decidim ActionLog precedent), so
+  tenant scoping cannot be derived through it and the trail must stay
+   attributable to organization and author regardless. The org/user refs
+   also carry real FK constraints — a deliberate second deviation from
+   Decidim's `decidim_action_logs`, which has none (RESTRICT on org/user
+   deletion; consistent with this engine's parties/documents FK policy).
+- **Nothing writes to the audit table yet** — writing is wired into the
+  lifecycle transitions in **M02-03-B (#59)**; M02-02-C guarantees only the
+  shape and the append-only surface.
 
 ## Known gaps / drift (flagged, unowned)
 
