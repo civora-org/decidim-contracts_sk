@@ -1,55 +1,13 @@
 # frozen_string_literal: true
 
-# ---------------------------------------------------------------------------
-# Stage 0 of the staged test-harness strategy (civora-org/civora-platform#45,
-# item 2): dummy-free routing-contract specs for the engine.
-#
-# Loading pattern (deterministic, offline, no dummy Rails app):
-#
-#   1. `require "logger"` before ActiveSupport loads (activesupport 6.1.x on
-#      Ruby >= 3.3 references ::Logger, which is no longer a default gem -
-#      same workaround as the other spec files in this suite);
-#   2. `require "action_controller/railtie"` defines Rails, which the engine
-#      require depends on;
-#   3. the engine, required directly as "decidim/contracts_sk/engine". A
-#      plain `require "decidim/contracts_sk"` is NOT sufficient here:
-#      spec_helper already required that file while Rails was still
-#      undefined, so its conditional engine require was skipped, and a
-#      repeat `require` would be a $LOADED_FEATURES no-op (verified - the
-#      engine would never load). The engine file itself has not been
-#      required yet, so requiring it is deterministic in every load order;
-#   4. `load` of the engine's config/routes.rb, which evaluates
-#      `Decidim::ContractsSk::Engine.routes.draw do ... end` and draws the
-#      route table. RouteSet#draw clears the table first, so a repeated
-#      `load` stays idempotent (verified).
-#
-# This load pattern is TEMPORARY: Stage 1 (minimal dummy harness, bound to
-# the public ContractsController milestone) will draw these routes naturally
-# via the mounted dummy app, at which point the manual loading above and
-# this note go away.
-#
-# Assertion style: `route_to` / `recognize_path` are intentionally NOT used.
-# They constantize the mapped controller class, which does not exist yet,
-# and raise ActionController::RoutingError ("A route matches ..., but
-# references missing controller: Decidim::ContractsSk::ContractsController"
-# - verified). Only url_helpers and route-table introspection are used here.
-# ---------------------------------------------------------------------------
+# Engine route-table specs, backed by the Stage-1 dummy harness
+# (spec/dummy; civora-org/civora-platform#61): the dummy app mounts the
+# engine at "/", so the engine's route table is drawn naturally at boot —
+# no manual loading pattern is needed anymore. The assertions use only
+# url_helpers and route-table introspection (never route_to /
+# recognize_path, which constantize the mapped controllers).
 
 require "spec_helper"
-
-# Workaround for activesupport 6.1.x on Ruby >= 3.3: ActiveSupport references
-# ::Logger, which is no longer a default gem. Must load before ActiveSupport.
-require "logger"
-
-require "action_controller/railtie"
-
-# See header comment, item 3: unlike "decidim/contracts_sk" itself (already
-# required by spec_helper with Rails undefined), the engine file is safe to
-# require here and loads the engine.
-require "decidim/contracts_sk/engine"
-
-# Draws the engine routes into the (never-initialized) engine route set.
-load File.expand_path("../../../config/routes.rb", __dir__)
 
 # Shared vocabulary and route-table introspection for the example groups
 # below. Kept in a plain module (not inside a describe block) so that its

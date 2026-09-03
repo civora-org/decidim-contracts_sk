@@ -10,5 +10,9 @@
 # rspec failure tracking
 .rspec_status
 
+# Dummy-app runtime artifacts (Stage-1 spec harness)
+/spec/dummy/log/
+/spec/dummy/tmp/
+
 # Gems do not commit Gemfile.lock (see AGENTS.md)
 /Gemfile.lock
