@@ -17,8 +17,15 @@
 # opting in via CONTRACTS_SK_DB=1 requires the sqlite3 gem, and the group
 # skips with a clear message when it is absent.
 #
-# Once a dummy-app harness exists, delete the stand-ins and the explicit
-# requires and let the application autoloader provide the real classes.
+# The :db-tagged group exercises the model against the REAL migrations on an
+# in-memory SQLite adapter. It is excluded by default (see spec_helper.rb);
+# opting in via CONTRACTS_SK_DB=1 requires the sqlite3 gem, and the group
+# skips with a clear message when it is absent.
+#
+# The model class is provided by the Stage-1 dummy harness (spec/dummy); the
+# Decidim::ApplicationRecord / Decidim::Organization / Decidim::User
+# stand-ins it builds on live in spec/support/contracts_sk_db_helpers.rb
+# (the dummy is AR-free by design).
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
@@ -26,18 +33,6 @@ require "spec_helper"
 # The structural groups assert several related class-level facts per example
 # and the :db group walks several scenarios, exceeding the default budgets.
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
-
-engine_root = File.expand_path("../../..", __dir__)
-
-require File.join(engine_root, "app/models/decidim/contracts_sk/application_record.rb")
-require File.join(engine_root, "app/models/concerns/decidim/contracts_sk/contract_state.rb")
-require File.join(engine_root, "app/models/decidim/contracts_sk/contract.rb")
-require File.join(engine_root, "app/models/decidim/contracts_sk/amendment.rb")
-require File.join(engine_root, "app/models/decidim/contracts_sk/audit_event.rb")
-# Contract#destroy cascades into parties/documents/amendments while the
-# audit trail must survive it, so every sibling must be defined here.
-require File.join(engine_root, "app/models/decidim/contracts_sk/party.rb")
-require File.join(engine_root, "app/models/decidim/contracts_sk/document.rb")
 
 RSpec.describe Decidim::ContractsSk::AuditEvent do
   describe "class structure" do

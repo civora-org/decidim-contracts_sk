@@ -66,9 +66,7 @@ bundle exec rubocop    # lint
 bin/console            # experiment with the gem
 ```
 
-Opt-in DB-backed specs: `CONTRACTS_SK_DB=1 bundle exec rspec` additionally runs the `:db` groups against an in-memory SQLite adapter (needs the `sqlite3` dev gem).
-
-The test suite runs without a database or network — it uses guarded structural specs until a dummy-app harness lands (`civora-org/civora-platform#45`, item 2).
+The test suite boots a minimal, ActiveRecord-free Rails dummy app (`spec/dummy`) that mounts the engine at `/` and drives it with request specs — it still runs without a database or network. Opt-in DB-backed specs: `CONTRACTS_SK_DB=1 bundle exec rspec` additionally runs the `:db` groups against an in-memory SQLite adapter (needs the `sqlite3` dev gem); those groups are excluded from the default run.
 
 ## Contributing
 

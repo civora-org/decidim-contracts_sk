@@ -3,78 +3,15 @@
 # ---------------------------------------------------------------------------
 # Deterministic, offline, class-level specs for the engine's base controllers.
 #
-# No dummy Rails app is required: we boot only the ActionController pieces of
-# Rails and load the engine controller files directly.
-#
-# The real Decidim::ApplicationController (from decidim-core) and the real
-# Decidim::Admin::ApplicationController (from decidim-admin) cannot be
-# required outside a full Decidim Rails app: they pull in the whole Decidim
-# stack (NeedsOrganization, ForceAuthentication, Devise/Cells integrations,
-# admin layout, admin permissions, ...). We therefore define MINIMAL
-# STAND-INS for both classes below, BEFORE the engine controller files are
-# loaded. The stand-ins carry no callbacks and no helpers of their own, so
-# the callback and helper assertions reflect this engine's code only. Each
-# stand-in also answers #permission_class_chain with a static sentinel so
-# the engine controllers' delegation past their own permissions class can
-# be asserted offline.
-#
-# Once a dummy-app harness exists, delete the stand-ins and the explicit
-# requires and let the application autoloader provide the real classes
-# instead.
+# Classes come from the Stage-1 dummy harness (spec/dummy): the stand-in
+# Decidim::ApplicationController / Decidim::Admin::ApplicationController live
+# in the dummy boot and answer #permission_class_chain with static sentinels
+# (:stand_in_public_chain / :stand_in_admin_chain), so the delegation past
+# this engine's own permissions class stays assertable offline. The engine
+# classes themselves are provided by the dummy's autoloader.
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
-
-# Workaround for activesupport 6.1.x on Ruby >= 3.3: ActiveSupport references
-# ::Logger, which is no longer a default gem. Must load before ActiveSupport.
-require "logger"
-
-require "action_controller/railtie"
-
-# The engine controllers reference the engine's permissions class (via
-# permission_class_chain), which subclasses the pinned gem's
-# Decidim::DefaultPermissions — plain Ruby once its few ActiveSupport
-# pieces are loaded, so the real files are required here by absolute path
-# (resolved through RubyGems, no shelling out).
-require "active_support/concern"
-require "active_support/core_ext/object/blank"
-require "active_support/core_ext/module/delegation"
-
-decidim_core = Gem::Specification.find_by_name("decidim-core").full_gem_path
-require File.join(decidim_core, "app/helpers/concerns/decidim/user_role_checker.rb")
-require File.join(decidim_core, "app/models/decidim/permission_action.rb")
-require File.join(decidim_core, "app/permissions/decidim/default_permissions.rb")
-
-# Minimal stand-in for decidim-core's Decidim::ApplicationController.
-unless defined?(Decidim::ApplicationController)
-  module Decidim
-    class ApplicationController < ActionController::Base
-      def permission_class_chain
-        [:stand_in_public_chain]
-      end
-    end
-  end
-end
-
-# Minimal stand-in for decidim-admin's Decidim::Admin::ApplicationController.
-unless defined?(Decidim::Admin::ApplicationController)
-  module Decidim
-    module Admin
-      class ApplicationController < ActionController::Base
-        def permission_class_chain
-          [:stand_in_admin_chain]
-        end
-      end
-    end
-  end
-end
-
-engine_root = File.expand_path("../../..", __dir__)
-
-require File.join(engine_root, "app/helpers/decidim/contracts_sk/application_helper.rb")
-require File.join(engine_root, "app/permissions/decidim/contracts_sk/permissions.rb")
-require File.join(engine_root, "app/controllers/decidim/contracts_sk/application_controller.rb")
-require File.join(engine_root, "app/controllers/decidim/contracts_sk/admin/application_controller.rb")
 
 # Nested in the Decidim::ContractsSk module namespace so the top-level
 # describe names the public base controller while resolving relative

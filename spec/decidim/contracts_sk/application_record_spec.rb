@@ -4,42 +4,15 @@
 # Deterministic, offline, class-level specs for the engine's abstract base
 # model.
 #
-# No dummy Rails app and no database are required: we boot only ActiveRecord
-# and load the engine model file directly, then assert on pure class-level
-# metadata (inheritance, abstract_class, table name prefix, default scopes,
-# association reflections). None of these touch a DB connection.
-#
-# The real Decidim::ApplicationRecord (from decidim-core) cannot be required
-# outside a full Decidim Rails app. We therefore define a MINIMAL STAND-IN
-# for Decidim::ApplicationRecord below, BEFORE the engine model file is
-# loaded. The stand-in is an abstract ActiveRecord::Base subclass carrying no
-# scopes and no associations of its own, so the regression guards (D1-A,
-# D2-B) reflect this engine's code only.
-#
-# Once a dummy-app harness exists, delete the stub and the explicit requires
-# and let the application autoloader provide the real classes instead.
+# The dummy Rails app (spec/dummy) boots the engine, so the model is provided
+# by the application autoloader; the Decidim::ApplicationRecord stand-in
+# these specs run against lives in spec/support/contracts_sk_db_helpers.rb.
+# Assertions cover pure class-level metadata (inheritance, abstract_class,
+# table name prefix, default scopes, association reflections) - none of them
+# touch a DB connection.
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
-
-# Workaround for activesupport 6.1.x on Ruby >= 3.3: ActiveSupport references
-# ::Logger, which is no longer a default gem. Must load before ActiveSupport.
-require "logger"
-
-require "active_record"
-
-# Minimal stand-in for decidim-core's Decidim::ApplicationRecord.
-unless defined?(Decidim::ApplicationRecord)
-  module Decidim
-    class ApplicationRecord < ActiveRecord::Base
-      self.abstract_class = true
-    end
-  end
-end
-
-engine_root = File.expand_path("../../..", __dir__)
-
-require File.join(engine_root, "app/models/decidim/contracts_sk/application_record.rb")
 
 RSpec.describe Decidim::ContractsSk::ApplicationRecord do
   # AC: model uses the Decidim multi-tenancy base - it loads properly as a

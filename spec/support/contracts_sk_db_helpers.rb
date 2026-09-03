@@ -4,26 +4,22 @@
 # Shared deterministic support for the engine's :db spec groups (extracted
 # per D5 of M02-02-C, civora-org/civora-platform#57).
 #
-# Loaded from spec_helper.rb BEFORE any spec file runs, so the engine model
-# requires inside the spec files find the Decidim::ApplicationRecord stand-in
-# already defined — the real one lives in decidim-core and cannot be required
-# outside a full Rails app. Guarded stand-ins for Decidim::Organization /
-# Decidim::User follow the same rule (the contract and audit-event
-# associations target them by class_name strings); they are inert in the
-# structural (offline) groups, where no connection is ever opened.
+# Loaded from spec_helper.rb after the dummy-app boot, so the engine models
+# (provided by the application autoloader) find the Decidim::ApplicationRecord
+# stand-in already defined — the real one lives in decidim-core and cannot be
+# required outside a full Decidim Rails app. The dummy is ActiveRecord-free by
+# design, so these stand-ins are the :db groups' base for the foreseeable
+# future (until Stage-2 real-Decidim fidelity). Guarded stand-ins for
+# Decidim::Organization / Decidim::User follow the same rule (the contract and
+# audit-event associations target them by class_name strings); they are inert
+# in the structural (offline) groups, where no connection is ever opened.
 #
 # The :db-tagged groups exercise models and migrations against the REAL
 # migrations on an in-memory SQLite adapter. They are excluded by default
 # (see spec_helper.rb); opting in via CONTRACTS_SK_DB=1 requires the sqlite3
 # gem, and each :db group skips with a clear message when it is absent.
-#
-# Once a dummy-app harness exists, delete the stand-ins and the per-file
-# explicit requires and let the application autoloader provide the real
-# classes instead.
 # ---------------------------------------------------------------------------
 
-# Workaround for activesupport 6.1.x on Ruby >= 3.3: ActiveSupport references
-# ::Logger, which is no longer a default gem. Must load before ActiveSupport.
 require "logger"
 
 require "active_record"

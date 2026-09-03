@@ -4,47 +4,18 @@
 # Deterministic, offline, class-level specs for the public contracts
 # scaffold controller.
 #
-# No dummy Rails app is required: we boot only the ActionController pieces
-# of Rails and load the engine controller files directly.
-#
-# The real Decidim::ApplicationController (from decidim-core) cannot be
-# required outside a full Decidim Rails app: it pulls in the whole Decidim
-# stack (NeedsOrganization, ForceAuthentication, Devise/Cells integrations,
-# ...). We therefore define a MINIMAL STAND-IN for it below, BEFORE the
-# engine controller files are loaded. The stand-in carries no callbacks
-# and no helpers of its own, so the inheritance assertion reflects this
-# engine's code only.
+# Classes come from the Stage-1 dummy harness (spec/dummy): the engine
+# classes are provided by the dummy's autoloader, and the stand-in
+# Decidim::ApplicationController lives in the dummy boot.
 #
 # The scaffold renders localized placeholders; response behaviour is a
 # host-app concern (verified against the civora host app), so these specs
 # stay structural: class identity, inheritance, and the action surface.
-#
-# Once a dummy-app harness exists, delete the stand-ins and the explicit
-# requires and let the application autoloader provide the real classes
-# instead.
+# Request-level behaviour of the same controller is covered by
+# spec/requests/contracts_spec.rb against the dummy routes.
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
-
-# Workaround for activesupport 6.1.x on Ruby >= 3.3: ActiveSupport references
-# ::Logger, which is no longer a default gem. Must load before ActiveSupport.
-require "logger"
-
-require "action_controller/railtie"
-
-# Minimal stand-in for decidim-core's Decidim::ApplicationController.
-unless defined?(Decidim::ApplicationController)
-  module Decidim
-    class ApplicationController < ActionController::Base
-    end
-  end
-end
-
-engine_root = File.expand_path("../../..", __dir__)
-
-require File.join(engine_root, "app/helpers/decidim/contracts_sk/application_helper.rb")
-require File.join(engine_root, "app/controllers/decidim/contracts_sk/application_controller.rb")
-require File.join(engine_root, "app/controllers/decidim/contracts_sk/contracts_controller.rb")
 
 # Nested in the Decidim::ContractsSk module namespace so the top-level
 # describe names the scaffold controller while resolving relative

@@ -4,19 +4,15 @@
 # Deterministic, offline, class-level specs for the engine's permissions
 # class (M02-01-B, civora-org/civora-platform#54).
 #
-# No dummy Rails app is required: Decidim::PermissionAction and
-# Decidim::DefaultPermissions (from the pinned decidim-core gem) are plain
-# Ruby once their few ActiveSupport pieces are loaded, so they are required
-# here by absolute path, resolved through RubyGems without shelling out.
-# The engine's Permissions class is loaded directly afterwards.
+# Classes come from the Stage-1 dummy harness (spec/dummy): the engine's
+# Permissions class is provided by the dummy's autoloader, and the pinned
+# gem's Decidim::PermissionAction / Decidim::DefaultPermissions are required
+# by the dummy boot.
 #
 # Fail-closed semantics asserted here follow the REAL pinned-gem classes:
 # a permission action left UNSET raises PermissionNotSetError on #allowed?
 # (Decidim's NeedsPermission#allowed_to? rescues it to false), while an
 # action explicitly disallowed answers #allowed? with false.
-#
-# Once a dummy-app harness exists, delete the explicit requires and let the
-# application autoloader provide the real classes instead.
 #
 # The exhaustive matrix example walks the full state x event x role grid on
 # both state sources, so it intentionally holds many expectations and
@@ -24,22 +20,6 @@
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
-
-# Workaround for activesupport 6.1.x on Ruby >= 3.3: ActiveSupport references
-# ::Logger, which is no longer a default gem. Must load before ActiveSupport.
-require "logger"
-
-require "active_support/concern"
-require "active_support/core_ext/object/blank"
-require "active_support/core_ext/module/delegation"
-
-decidim_core = Gem::Specification.find_by_name("decidim-core").full_gem_path
-require File.join(decidim_core, "app/helpers/concerns/decidim/user_role_checker.rb")
-require File.join(decidim_core, "app/models/decidim/permission_action.rb")
-require File.join(decidim_core, "app/permissions/decidim/default_permissions.rb")
-
-engine_root = File.expand_path("../../..", __dir__)
-require File.join(engine_root, "app/permissions/decidim/contracts_sk/permissions.rb")
 
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
 
