@@ -13,7 +13,10 @@
 # admin layout, admin permissions, ...). We therefore define MINIMAL
 # STAND-INS for both classes below, BEFORE the engine controller files are
 # loaded. The stand-ins carry no callbacks and no helpers of their own, so
-# the callback and helper assertions reflect this engine's code only.
+# the callback and helper assertions reflect this engine's code only. Each
+# stand-in also answers #permission_class_chain with a static sentinel so
+# the engine controllers' delegation past their own permissions class can
+# be asserted offline.
 #
 # Once a dummy-app harness exists, delete the stand-ins and the explicit
 # requires and let the application autoloader provide the real classes
@@ -28,10 +31,27 @@ require "logger"
 
 require "action_controller/railtie"
 
+# The engine controllers reference the engine's permissions class (via
+# permission_class_chain), which subclasses the pinned gem's
+# Decidim::DefaultPermissions — plain Ruby once its few ActiveSupport
+# pieces are loaded, so the real files are required here by absolute path
+# (resolved through RubyGems, no shelling out).
+require "active_support/concern"
+require "active_support/core_ext/object/blank"
+require "active_support/core_ext/module/delegation"
+
+decidim_core = Gem::Specification.find_by_name("decidim-core").full_gem_path
+require File.join(decidim_core, "app/helpers/concerns/decidim/user_role_checker.rb")
+require File.join(decidim_core, "app/models/decidim/permission_action.rb")
+require File.join(decidim_core, "app/permissions/decidim/default_permissions.rb")
+
 # Minimal stand-in for decidim-core's Decidim::ApplicationController.
 unless defined?(Decidim::ApplicationController)
   module Decidim
     class ApplicationController < ActionController::Base
+      def permission_class_chain
+        [:stand_in_public_chain]
+      end
     end
   end
 end
@@ -41,6 +61,9 @@ unless defined?(Decidim::Admin::ApplicationController)
   module Decidim
     module Admin
       class ApplicationController < ActionController::Base
+        def permission_class_chain
+          [:stand_in_admin_chain]
+        end
       end
     end
   end
@@ -49,6 +72,7 @@ end
 engine_root = File.expand_path("../../..", __dir__)
 
 require File.join(engine_root, "app/helpers/decidim/contracts_sk/application_helper.rb")
+require File.join(engine_root, "app/permissions/decidim/contracts_sk/permissions.rb")
 require File.join(engine_root, "app/controllers/decidim/contracts_sk/application_controller.rb")
 require File.join(engine_root, "app/controllers/decidim/contracts_sk/admin/application_controller.rb")
 
@@ -84,6 +108,13 @@ module Decidim
                                    .select { |cb| cb.filter == :authenticate_user! }
 
         expect(callbacks).to be_empty
+      end
+
+      # AC 5 (M02-01-B): the engine's permissions class is consulted FIRST
+      # for subject :contract actions; the rest of the Decidim chain follows.
+      it "prepends Decidim::ContractsSk::Permissions to the inherited chain" do
+        expect(described_class.new.permission_class_chain)
+          .to eq([Decidim::ContractsSk::Permissions, :stand_in_public_chain])
       end
 
       describe Admin::ApplicationController do
@@ -126,6 +157,14 @@ module Decidim
           # An empty list fails contain_exactly, so the callback's presence
           # and its :before kind are both proven by the single expectation.
           expect(kinds).to contain_exactly(:before)
+        end
+
+        # AC 6 (M02-01-B): the admin base gets the engine permissions class
+        # too - it does NOT inherit the public base controller, so it wires
+        # its own chain, still delegating to its own (admin) superclass.
+        it "prepends Decidim::ContractsSk::Permissions to the inherited chain" do
+          expect(described_class.new.permission_class_chain)
+            .to eq([Decidim::ContractsSk::Permissions, :stand_in_admin_chain])
         end
       end
     end

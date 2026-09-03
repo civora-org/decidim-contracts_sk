@@ -18,6 +18,10 @@ module Decidim
         helper Decidim::ContractsSk::ApplicationHelper
 
         before_action :authenticate_user!
+
+        def permission_class_chain
+          [Decidim::ContractsSk::Permissions, *super]
+        end
       end
     end
   end
