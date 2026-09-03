@@ -31,6 +31,11 @@ module Decidim
                  foreign_key: "decidim_author_id",
                  class_name: "Decidim::User"
 
+      # Contract-scoped child records: they follow the contract's tenancy
+      # and are destroyed with it.
+      has_many :parties, dependent: :destroy
+      has_many :documents, dependent: :destroy
+
       validates :title, presence: true, length: { maximum: 255 }
       validates :reference, presence: true,
                             length: { maximum: 255 },

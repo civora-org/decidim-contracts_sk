@@ -48,6 +48,10 @@ engine_root = File.expand_path("../../..", __dir__)
 require File.join(engine_root, "app/models/decidim/contracts_sk/application_record.rb")
 require File.join(engine_root, "app/models/concerns/decidim/contracts_sk/contract_state.rb")
 require File.join(engine_root, "app/models/decidim/contracts_sk/contract.rb")
+# The contract's has_many targets: the association reflections below pin
+# their namespace resolution, which requires the constants to be defined.
+require File.join(engine_root, "app/models/decidim/contracts_sk/party.rb")
+require File.join(engine_root, "app/models/decidim/contracts_sk/document.rb")
 
 # Minimal stand-ins for the association targets: the Contract references
 # them by class_name strings, but offline nothing else defines them. Inert in
@@ -100,6 +104,24 @@ RSpec.describe Decidim::ContractsSk::Contract do
       expect(reflection.macro).to eq(:belongs_to)
       expect(reflection.foreign_key).to eq("decidim_author_id")
       expect(reflection.options[:class_name]).to eq("Decidim::User")
+    end
+
+    it "has many parties in the engine namespace, destroyed with the contract" do
+      reflection = described_class.reflect_on_association(:parties)
+
+      expect(reflection.macro).to eq(:has_many)
+      expect(reflection.klass).to eq(Decidim::ContractsSk::Party)
+      expect(reflection.foreign_key).to eq("contract_id")
+      expect(reflection.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many documents in the engine namespace, destroyed with the contract" do
+      reflection = described_class.reflect_on_association(:documents)
+
+      expect(reflection.macro).to eq(:has_many)
+      expect(reflection.klass).to eq(Decidim::ContractsSk::Document)
+      expect(reflection.foreign_key).to eq("contract_id")
+      expect(reflection.options[:dependent]).to eq(:destroy)
     end
   end
 
