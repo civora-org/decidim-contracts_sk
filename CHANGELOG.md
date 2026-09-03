@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.9.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.8.0...v0.9.0) (2026-09-03)
+
+
+### Features
+
+* **models:** add contract model and migration (M02-02-A) ([6950004](https://github.com/civora-org/decidim-contracts_sk/commit/69500048f702280fb565b16e82c13c0db4c00e38))
+
 ## [0.8.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.7.0...v0.8.0) (2026-09-03)
 
 
