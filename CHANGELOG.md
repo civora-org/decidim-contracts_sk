@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [0.10.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.9.0...v0.10.0) (2026-09-03)
+
+
+### Features
+
+* **models:** add amendment and audit event models and migrations (M02-02-C) ([de70118](https://github.com/civora-org/decidim-contracts_sk/commit/de70118733c3667469a6181b54a54e63ad1cb708))
+* **models:** add party and document models and migrations (M02-02-B) ([9fd0345](https://github.com/civora-org/decidim-contracts_sk/commit/9fd034572462089457598c9da7c8d6739c503433))
+
 ## [0.9.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.8.0...v0.9.0) (2026-09-03)
 
 
