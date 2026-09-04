@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.12.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.11.0...v0.12.0) (2026-09-04)
+
+
+### Features
+
+* **admin:** add admin contracts CRUD with editor scope (M02-03-A) ([61b65cc](https://github.com/civora-org/decidim-contracts_sk/commit/61b65cc03f796fc45cfc4a5e00706f721814a184))
+
 ## [0.11.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.10.0...v0.11.0) (2026-09-03)
 
 
