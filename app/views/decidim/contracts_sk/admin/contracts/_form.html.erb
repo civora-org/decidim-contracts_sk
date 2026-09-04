@@ -1,6 +1,8 @@
 <%# url:, method: and submit_label: come from the caller (new / edit);
-    only the two editorial identity fields are rendered — the lifecycle
-    state is intentionally absent from every admin form. %>
+    the editorial identity fields and the contract content fields
+    (civora-org/civora-platform#75) are rendered — the lifecycle state and
+    the system-stamped published_at are intentionally absent from every
+    admin form. %>
 <%= form_with url: url, method: method do |form| %>
   <% if @form.errors.any? %>
     <ul>
@@ -18,6 +20,36 @@
   <div>
     <%= form.label :reference, t("decidim.contracts_sk.admin.contracts.form.reference"), for: "contract_reference" %>
     <%= form.text_field :reference, id: "contract_reference", name: "contract[reference]", value: @form.reference %>
+  </div>
+
+  <div>
+    <%= form.label :subject_matter, t("decidim.contracts_sk.admin.contracts.form.subject_matter"), for: "contract_subject_matter" %>
+    <%= form.text_area :subject_matter, id: "contract_subject_matter", name: "contract[subject_matter]", value: @form.subject_matter %>
+  </div>
+
+  <div>
+    <%= form.label :amount, t("decidim.contracts_sk.admin.contracts.form.amount"), for: "contract_amount" %>
+    <%= form.text_field :amount, id: "contract_amount", name: "contract[amount]", value: @form.amount %>
+  </div>
+
+  <div>
+    <%= form.label :currency, t("decidim.contracts_sk.admin.contracts.form.currency"), for: "contract_currency" %>
+    <%= form.text_field :currency, id: "contract_currency", name: "contract[currency]", value: @form.currency %>
+  </div>
+
+  <div>
+    <%= form.label :signed_on, t("decidim.contracts_sk.admin.contracts.form.signed_on"), for: "contract_signed_on" %>
+    <%= form.date_field :signed_on, id: "contract_signed_on", name: "contract[signed_on]", value: @form.signed_on %>
+  </div>
+
+  <div>
+    <%= form.label :effective_from, t("decidim.contracts_sk.admin.contracts.form.effective_from"), for: "contract_effective_from" %>
+    <%= form.date_field :effective_from, id: "contract_effective_from", name: "contract[effective_from]", value: @form.effective_from %>
+  </div>
+
+  <div>
+    <%= form.label :crz_url, t("decidim.contracts_sk.admin.contracts.form.crz_url"), for: "contract_crz_url" %>
+    <%= form.text_field :crz_url, id: "contract_crz_url", name: "contract[crz_url]", value: @form.crz_url %>
   </div>
 
   <div>

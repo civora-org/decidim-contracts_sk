@@ -15,6 +15,12 @@ module Decidim
       # UpdateContract, and transitions go through TransitionContract — one
       # explicit action per transition event, each a thin shell over the
       # private #transition (civora-org/civora-platform#59).
+      #
+      # Cop note: the class stays deliberately cohesive — the six transition
+      # shells exist so the derived routes map onto readable actions, and
+      # splitting them off would obscure the one-transition-per-action rule
+      # rather than simplify it.
+      # rubocop:disable Metrics/ClassLength
       class ContractsController < Admin::ApplicationController
         # Exposes the per-record allowed events to the index view; derived
         # from the lifecycle table and the user's engine roles, never
@@ -49,7 +55,14 @@ module Decidim
 
           enforce_permission_to :update, :contract, contract: @contract
 
-          @form = ContractForm.new(title: @contract.title, reference: @contract.reference)
+          @form = ContractForm.new(title: @contract.title,
+                                   reference: @contract.reference,
+                                   subject_matter: @contract.subject_matter,
+                                   amount: @contract.amount,
+                                   currency: @contract.currency,
+                                   signed_on: @contract.signed_on,
+                                   effective_from: @contract.effective_from,
+                                   crz_url: @contract.crz_url)
         end
 
         def update
@@ -165,13 +178,17 @@ module Decidim
           Contract.where(organization: current_organization)
         end
 
-        # Only the editorial identity fields are updatable through the form.
-        # state, provenance, organization and author are deliberately absent:
-        # adding them here would bypass the command layer's ownership rules.
+        # Only the editorial identity and content fields are updatable
+        # through the form (content fields per civora-org/civora-platform#75).
+        # state, provenance, organization, author and the system-stamped
+        # published_at are deliberately absent: adding them here would
+        # bypass the command layer's ownership rules.
         def form_params
-          params.require(:contract).permit(:title, :reference)
+          params.require(:contract).permit(:title, :reference, :subject_matter, :amount,
+                                           :currency, :signed_on, :effective_from, :crz_url)
         end
       end
+      # rubocop:enable Metrics/ClassLength
     end
   end
 end

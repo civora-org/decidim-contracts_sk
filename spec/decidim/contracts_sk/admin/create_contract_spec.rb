@@ -68,8 +68,41 @@ RSpec.describe Decidim::ContractsSk::Admin::CreateContract, :db do
       organization: organization,
       author: seam_user,
       title: "Road reconstruction",
-      reference: "ZP-2026-001"
+      reference: "ZP-2026-001",
+      subject_matter: nil,
+      amount: nil,
+      currency: "EUR",
+      signed_on: nil,
+      effective_from: nil,
+      crz_url: nil
     )
+  end
+
+  it "passes the content fields through to the model (civora-org/civora-platform#75)" do
+    content_form = Decidim::ContractsSk::Admin::ContractForm.new(
+      title: "Road reconstruction",
+      reference: "ZP-2026-001",
+      subject_matter: "Supply and installation of road signage",
+      amount: "1250.50",
+      currency: "EUR",
+      signed_on: "2026-09-01",
+      effective_from: "2026-08-15",
+      crz_url: "https://crz.gov.sk/record/123"
+    )
+
+    events = described_class.call(content_form, user: author, organization: organization)
+
+    expect(events).to have_key(:ok)
+
+    record = events[:ok]
+    expect(record.subject_matter).to eq("Supply and installation of road signage")
+    expect(record.amount).to eq(BigDecimal("1250.50"))
+    expect(record.currency).to eq("EUR")
+    expect(record.signed_on).to eq(Date.new(2026, 9, 1))
+    expect(record.effective_from).to eq(Date.new(2026, 8, 15))
+    expect(record.crz_url).to eq("https://crz.gov.sk/record/123")
+    # The system field has no form path at all.
+    expect(record.published_at).to be_nil
   end
 
   it "broadcasts :invalid without persisting when the model rejects the record (duplicate reference)" do

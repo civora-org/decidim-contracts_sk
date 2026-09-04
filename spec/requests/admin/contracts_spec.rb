@@ -185,6 +185,113 @@ RSpec.describe "admin contracts CRUD", type: :request do
       expect(record.state).to eq("draft")
     end
 
+    it "creates a contract with the full content field set for an editor (civora-org/civora-platform#75)" do
+      post "/admin/contracts", params: {
+        contract: {
+          title: "Road reconstruction",
+          reference: "ZP-2026-005",
+          subject_matter: "Supply and installation of road signage",
+          amount: "1250.50",
+          currency: "EUR",
+          signed_on: "2026-09-01",
+          effective_from: "2026-08-15",
+          crz_url: "https://crz.gov.sk/record/123"
+        }
+      }
+
+      expect(response).to redirect_to("/admin/contracts")
+
+      record = Decidim::ContractsSk::Contract.find_by!(reference: "ZP-2026-005")
+      expect(record.subject_matter).to eq("Supply and installation of road signage")
+      expect(record.amount).to eq(BigDecimal("1250.50"))
+      expect(record.currency).to eq("EUR")
+      expect(record.signed_on).to eq(Date.new(2026, 9, 1))
+      expect(record.effective_from).to eq(Date.new(2026, 8, 15))
+      expect(record.crz_url).to eq("https://crz.gov.sk/record/123")
+      # The publication stamp is a system field — never set through the form.
+      expect(record.published_at).to be_nil
+    end
+
+    it "updates a draft contract's content fields for an editor (civora-org/civora-platform#75)" do
+      record = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      patch "/admin/contracts/#{record.id}", params: {
+        contract: {
+          title: "Road reconstruction",
+          reference: "ZP-2026-001",
+          subject_matter: "Revised scope: signage and barrier-free access",
+          amount: "98000.40",
+          currency: "EUR",
+          signed_on: "2026-09-01",
+          effective_from: "2026-08-15",
+          crz_url: "https://crz.gov.sk/record/123"
+        }
+      }
+
+      expect(response).to redirect_to("/admin/contracts")
+      record.reload
+      expect(record.subject_matter).to eq("Revised scope: signage and barrier-free access")
+      expect(record.amount).to eq(BigDecimal("98000.40"))
+      expect(record.signed_on).to eq(Date.new(2026, 9, 1))
+      expect(record.effective_from).to eq(Date.new(2026, 8, 15))
+      expect(record.crz_url).to eq("https://crz.gov.sk/record/123")
+      expect(record.published_at).to be_nil
+    end
+
+    it "answers 422 with the alert and persists nothing when the amount is negative" do
+      post "/admin/contracts", params: {
+        contract: { title: "Road reconstruction", reference: "ZP-2026-006", amount: "-5" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(flash[:alert]).to be_present
+      expect(Decidim::ContractsSk::Contract.count).to eq(0)
+    end
+
+    it "answers 422 with the alert and persists nothing when the amount is a non-numeric string" do
+      # The :decimal cast would silently zero "abc"; the form's strict
+      # format guard must catch it before the command boundary (#75 review).
+      post "/admin/contracts", params: {
+        contract: { title: "Road reconstruction", reference: "ZP-2026-007", amount: "abc" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(flash[:alert]).to be_present
+      expect(Decidim::ContractsSk::Contract.count).to eq(0)
+    end
+
+    it "answers 422 and leaves the record untouched when an update posts a non-numeric amount" do
+      record = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      patch "/admin/contracts/#{record.id}", params: {
+        contract: { title: "Road reconstruction", reference: "ZP-2026-001", amount: "abc" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+
+      record.reload
+      expect(record.title).to eq("Road reconstruction")
+      expect(record.amount).to be_nil
+    end
+
+    it "answers 422 with the alert and persists nothing when the currency is outside the allowlist" do
+      post "/admin/contracts", params: {
+        contract: { title: "Road reconstruction", reference: "ZP-2026-008", currency: "USD" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(Decidim::ContractsSk::Contract.count).to eq(0)
+    end
+
+    it "answers 422 with the alert and persists nothing when the CRZ URL is not http(s)" do
+      post "/admin/contracts", params: {
+        contract: { title: "Road reconstruction", reference: "ZP-2026-010", crz_url: "javascript:alert(1)" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(Decidim::ContractsSk::Contract.count).to eq(0)
+    end
+
     it "updates a returned contract too (returned is editable)" do
       record = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "returned"))
 
@@ -251,12 +358,34 @@ RSpec.describe "admin contracts CRUD", type: :request do
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
     end
 
-    it "ignores injected state, source and author params on create and update" do
+    it "denies a reviewer-only user on update, leaving the content fields untouched" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[reviewer] }
+      record = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      patch "/admin/contracts/#{record.id}", params: {
+        contract: { title: "Tampered", reference: "ZP-2026-009", amount: "-5" }
+      }
+
+      expect(response).to redirect_to("/")
+      expect(flash[:alert]).to eq(unauthorized)
+
+      record.reload
+      expect(record.title).to eq("Road reconstruction")
+      expect(record.amount).to be_nil
+    end
+
+    it "ignores injected state, source, published_at and author params on create and update" do
       # Negative param-injection probe: the form allow-list (and the
       # commands' explicit attribute writes) must keep lifecycle state,
-      # provenance and authorship out of form reach.
+      # provenance, the system-stamped published_at and authorship out of
+      # form reach (civora-org/civora-platform#75).
       other_author = Decidim::User.create!
-      injected = { state: "published", source: "crz", decidim_author_id: other_author.id }
+      injected = {
+        state: "published",
+        source: "crz",
+        published_at: "2026-01-01 00:00:00",
+        decidim_author_id: other_author.id
+      }
 
       post "/admin/contracts", params: { contract: valid_params[:contract].merge(injected) }
 
@@ -264,6 +393,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
       record = Decidim::ContractsSk::Contract.find_by!(reference: "ZP-2026-002")
       expect(record.state).to eq("draft")
       expect(record.source).to eq("editorial")
+      expect(record.published_at).to be_nil
       expect(record.author).to eq(author)
 
       patch "/admin/contracts/#{record.id}", params: { contract: valid_params[:contract].merge(injected) }
@@ -272,6 +402,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
       record.reload
       expect(record.state).to eq("draft")
       expect(record.source).to eq("editorial")
+      expect(record.published_at).to be_nil
       expect(record.author).to eq(author)
       expect(record.decidim_author_id).to eq(author.id)
     end

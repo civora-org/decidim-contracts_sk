@@ -135,6 +135,69 @@ RSpec.describe Decidim::ContractsSk::Contract do
     end
   end
 
+  describe "content field validations (civora-org/civora-platform#75)" do
+    it "keeps the D1 currency allowlist frozen and EUR-only" do
+      expect(described_class::SUPPORTED_CURRENCIES).to eq(%w[EUR])
+      expect(described_class::SUPPORTED_CURRENCIES).to be_frozen
+    end
+
+    it "validates amount as a non-negative, column-capped number, nil allowed" do
+      numericality = described_class.validators_on(:amount).find do |validator|
+        validator.is_a?(ActiveModel::Validations::NumericalityValidator)
+      end
+
+      expect(numericality.options[:greater_than_or_equal_to]).to eq(0)
+      expect(numericality.options[:less_than_or_equal_to]).to eq(described_class::MAX_AMOUNT)
+      expect(numericality.options[:allow_nil]).to be(true)
+    end
+
+    it "caps the amount at the decimal(12,2) column's exact ceiling" do
+      # A BigDecimal on purpose: a Float literal of the same value is
+      # inexact and would make the boundary comparison itself unreliable.
+      expect(described_class::MAX_AMOUNT).to eq(BigDecimal("9999999999.99"))
+      expect(described_class::MAX_AMOUNT).to be_frozen
+    end
+
+    it "validates currency inclusion against the D1 allowlist" do
+      inclusion = described_class.validators_on(:currency).find do |validator|
+        validator.is_a?(ActiveModel::Validations::InclusionValidator)
+      end
+
+      expect(inclusion.options[:in]).to eq(%w[EUR])
+      expect(inclusion.options[:in]).to be_frozen
+    end
+
+    it "validates crz_url as an anchored http(s) URL, blank allowed" do
+      format_validator = described_class.validators_on(:crz_url).find do |validator|
+        validator.is_a?(ActiveModel::Validations::FormatValidator)
+      end
+
+      expect(format_validator.options[:with]).to eq(described_class::CRZ_URL_FORMAT)
+      expect(format_validator.options[:allow_blank]).to be(true)
+
+      # The anchor is load-bearing (#75 review round): Rails format: matches
+      # unanchored by default, so without \A...\z an https:// embedded in
+      # another scheme or in surrounding text would pass.
+      https_url = "https://crz.gov.sk/record/123"
+      http_url = "http://crz.gov.sk/record/123"
+      full_url = "https://crz.gov.sk/record/123?year=2026"
+      ftp_url = "ftp://crz.gov.sk/record/123"
+      script_url = "javascript:alert(1)"
+      smuggled_url = "javascript:alert(https://evil)"
+      surrounded_url = "garbage text https://crz.gov.sk more"
+      leading_newline_url = "\nhttps://crz.gov.sk/record/123"
+
+      expect(https_url).to match(described_class::CRZ_URL_FORMAT)
+      expect(http_url).to match(described_class::CRZ_URL_FORMAT)
+      expect(full_url).to match(described_class::CRZ_URL_FORMAT)
+      expect(ftp_url).not_to match(described_class::CRZ_URL_FORMAT)
+      expect(script_url).not_to match(described_class::CRZ_URL_FORMAT)
+      expect(smuggled_url).not_to match(described_class::CRZ_URL_FORMAT)
+      expect(surrounded_url).not_to match(described_class::CRZ_URL_FORMAT)
+      expect(leading_newline_url).not_to match(described_class::CRZ_URL_FORMAT)
+    end
+  end
+
   describe "state enum" do
     it "derives STATE_VALUES from the lifecycle, never hand-enumerated" do
       expect(described_class::STATE_VALUES)
@@ -256,6 +319,88 @@ RSpec.describe Decidim::ContractsSk::Contract do
       expect(contract.reload.state).to be_nil
       expect(contract).not_to be_valid
       expect(contract.errors[:state]).to be_present
+    end
+
+    describe "content fields (civora-org/civora-platform#75)" do
+      it "persists the content fields with typed values and defaults currency to EUR" do
+        attributes = contract_attributes(
+          subject_matter: "Supply and installation of road signage",
+          amount: BigDecimal("1250.50"),
+          signed_on: Date.new(2026, 9, 1),
+          effective_from: Date.new(2026, 8, 15),
+          crz_url: "https://crz.gov.sk/record/123"
+        )
+        contract = described_class.create!(attributes)
+
+        expect(contract.reload.amount).to eq(BigDecimal("1250.50"))
+        expect(contract.subject_matter).to eq("Supply and installation of road signage")
+        expect(contract.signed_on).to eq(Date.new(2026, 9, 1))
+        # Retroactive effectivity (effective_from before signed_on) persists
+        # untouched — the D2 decision: no cross-validation between the dates.
+        expect(contract.effective_from).to eq(Date.new(2026, 8, 15))
+        expect(contract.crz_url).to eq("https://crz.gov.sk/record/123")
+        expect(contract.currency).to eq("EUR")
+      end
+
+      it "defaults currency to EUR on unpersisted records too" do
+        expect(described_class.new(contract_attributes).currency).to eq("EUR")
+      end
+
+      it "rejects a negative amount" do
+        contract = described_class.new(contract_attributes(amount: BigDecimal("-1")))
+
+        expect(contract).not_to be_valid
+        expect(contract.errors[:amount]).to be_present
+      end
+
+      it "rejects an amount beyond the decimal(12,2) column's ceiling" do
+        # A bigger value would otherwise survive validation and blow up on
+        # PostgreSQL hosts with ActiveRecord::RangeError at write time
+        # (#75 review round).
+        contract = described_class.new(contract_attributes(amount: BigDecimal("10000000000")))
+
+        expect(contract).not_to be_valid
+        expect(contract.errors[:amount]).to be_present
+      end
+
+      it "rejects an unsupported currency (the D1 allowlist is EUR-only)" do
+        contract = described_class.new(contract_attributes(currency: "USD"))
+
+        expect(contract).not_to be_valid
+        expect(contract.errors[:currency]).to be_present
+      end
+
+      it "rejects a malformed CRZ URL" do
+        contract = described_class.new(contract_attributes(crz_url: "ftp://crz.gov.sk/record/123"))
+
+        expect(contract).not_to be_valid
+        expect(contract.errors[:crz_url]).to be_present
+      end
+
+      it "rejects an https:// smuggled into another scheme through the real validator" do
+        # The unanchored make_regexp product used to let this through — the
+        # \A...\z anchor is what stops it (#75 review round).
+        contract = described_class.new(contract_attributes(crz_url: "javascript:alert(https://evil)"))
+
+        expect(contract).not_to be_valid
+        expect(contract.errors[:crz_url]).to be_present
+      end
+
+      it "accepts a blank CRZ URL" do
+        contract = described_class.new(contract_attributes(crz_url: nil))
+
+        expect(contract).to be_valid
+      end
+
+      it "accepts retroactive effectivity (effective_from before signed_on, D2)" do
+        attributes = contract_attributes(
+          signed_on: Date.new(2026, 9, 1),
+          effective_from: Date.new(2026, 1, 1)
+        )
+        contract = described_class.new(attributes)
+
+        expect(contract).to be_valid
+      end
     end
   end
 end

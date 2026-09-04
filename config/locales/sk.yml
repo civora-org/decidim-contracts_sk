@@ -31,3 +31,9 @@ sk:
           form:
             title: "Názov"
             reference: "Číslo zmluvy"
+            subject_matter: "Predmet zmluvy"
+            amount: "Hodnota"
+            currency: "Mena"
+            signed_on: "Dátum podpisu"
+            effective_from: "Dátum účinnosti"
+            crz_url: "Odkaz na CRZ"
