@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.13.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.12.0...v0.13.0) (2026-09-04)
+
+
+### Features
+
+* **admin:** add lifecycle transition actions with audit trail (M02-03-B) ([461ebcf](https://github.com/civora-org/decidim-contracts_sk/commit/461ebcf13496a2b5a0b80229499b846df4bc83f7))
+
 ## [0.12.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.11.0...v0.12.0) (2026-09-04)
 
 
