@@ -19,3 +19,12 @@ sk:
             title: "Nová zmluva"
           edit:
             title: "Upraviť zmluvu"
+          create:
+            success: "Zmluva bola úspešne vytvorená."
+            error: "Zmluvu sa nepodarilo vytvoriť."
+          update:
+            success: "Zmluva bola úspešne upravená."
+            error: "Zmluvu sa nepodarilo upraviť."
+          form:
+            title: "Názov"
+            reference: "Číslo zmluvy"

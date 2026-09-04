@@ -10,6 +10,10 @@ module Decidim
     # Admin scope, subject :contract:
     # - :create is allowed when the user's engine roles include :editor
     #   (the transition-table row 1 analog).
+    # - :update is allowed when the user's engine roles include :editor AND
+    #   the record's state is editable (ContractLifecycle::EDITABLE_STATES) —
+    #   the editorial twin of the lifecycle's editability rule; reviewers can
+    #   never edit, and non-editable states deny even editors.
     # - Transition events (:submit, :return, :approve, :reject, :publish,
     #   :archive) are allowed when ContractLifecycle.allowed_roles for the
     #   record's state intersect the user's engine roles. The event list is
@@ -54,6 +58,8 @@ module Decidim
         case action
         when :create
           toggle_allow(roles_for_user.include?(:editor))
+        when :update
+          toggle_allow(roles_for_user.include?(:editor) && ContractLifecycle.editable?(state))
         when :read
           toggle_allow(roles_for_user.any?)
         when *TRANSITION_EVENTS

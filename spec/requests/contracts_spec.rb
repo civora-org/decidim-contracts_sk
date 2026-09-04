@@ -9,12 +9,10 @@
 # ContractsController), so the bodies are asserted against those exact
 # strings (en locale, the dummy's default).
 #
-# Admin paths pin the current admin/public separation: the admin routes exist
-# in the engine's route table, but no admin controller class does yet (the
-# admin CRUD milestone is civora-org/civora-platform#45). Rails raises
-# ActionController::RoutingError when it cannot resolve the controller, and
-# with config.action_dispatch.show_exceptions = :rescuable that maps to
-# 404 — the expected fail-closed answer for an unauthenticated admin surface.
+# Admin paths are covered by spec/requests/admin/contracts_spec.rb since the
+# admin CRUD milestone (civora-org/civora-platform#58); one cross-cutting
+# guard stays here: an unauthenticated admin visit must never render the
+# public catalogue body.
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
@@ -46,16 +44,13 @@ RSpec.describe "public contracts catalogue", type: :request do
     expect(response.body).to include("Contract details")
   end
 
-  it "answers 404 for the admin contracts index (admin controllers absent)" do
+  it "does not render the public catalogue body for an unauthenticated admin visit" do
     get "/admin/contracts"
 
-    expect(response).to have_http_status(:not_found)
-  end
-
-  it "answers 404 for the admin new-contract form" do
-    get "/admin/contracts/new"
-
-    expect(response).to have_http_status(:not_found)
+    # The admin base bounces the visitor (redirect, not a render) — and the
+    # bounce response must carry no catalogue content either.
+    expect(response).to have_http_status(:redirect)
+    expect(response.body).not_to include("Contracts")
   end
 end
 # rubocop:enable RSpec/MultipleExpectations

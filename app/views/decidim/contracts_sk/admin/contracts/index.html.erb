@@ -1,0 +1,26 @@
+<h1><%= t("decidim.contracts_sk.admin.contracts.index.title") %></h1>
+
+<% if allowed_to?(:create, :contract) %>
+  <p><%= link_to t("decidim.contracts_sk.admin.contracts.new.title"), new_admin_contract_path %></p>
+<% end %>
+
+<table>
+  <thead>
+    <tr>
+      <th><%= t("decidim.contracts_sk.contract.title") %></th>
+      <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
+      <th><%= t("decidim.contracts_sk.contract.status") %></th>
+      <th><%= t("decidim.contracts_sk.admin.contracts.edit.title") %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @contracts.each do |contract| %>
+      <tr>
+        <td><%= contract.title %></td>
+        <td><%= contract.reference %></td>
+        <td><%= contract.state %></td>
+        <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

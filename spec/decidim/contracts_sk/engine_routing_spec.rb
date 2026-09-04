@@ -18,11 +18,13 @@ module EngineRoutingContract
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
-  # at "/" and a single /:id catch-all serves show. Note: Rails' `root`
-  # helper adds NO optional format segment (path is exactly "/", not
+  # at "/" and a single /:id catch-all serves show. The admin surface is
+  # create/edit only: no :show (admin records are edited, not displayed) and
+  # no :destroy (deletion is not part of the workflow yet). Note: Rails'
+  # `root` helper adds NO optional format segment (path is exactly "/", not
   # "/(.:format)" - unlike a plain `get`), and it maps the `resources`
   # update action to BOTH a PATCH and a PUT route entry, so the admin CRUD
-  # block counts 8 routes, not 7.
+  # block counts 6 route entries, not 5.
   EXPECTED_ROUTES = [
     ["GET", "/", "#{PUBLIC_CONTROLLER}#index"],
     ["GET", "/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
@@ -30,10 +32,8 @@ module EngineRoutingContract
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
     ["GET", "/admin/contracts/:id/edit(.:format)", "#{ADMIN_CONTROLLER}#edit"],
-    ["GET", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#show"],
     ["PATCH", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#update"],
-    ["PUT", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#update"],
-    ["DELETE", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#destroy"]
+    ["PUT", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#update"]
   ].freeze
 
   # Normalized [verb, path, controller#action] triples for every route the
@@ -63,7 +63,7 @@ RSpec.describe Decidim::ContractsSk::Engine do
   describe "engine route table" do
     include EngineRoutingContract
 
-    it "declares exactly the public read-only routes and the admin CRUD routes" do
+    it "declares exactly the public read-only routes and the admin create/edit routes" do
       expect(route_triples.sort).to eq(EngineRoutingContract::EXPECTED_ROUTES.sort)
     end
   end
@@ -118,11 +118,17 @@ RSpec.describe Decidim::ContractsSk::Engine do
         .not_to include(["DELETE", "/contracts/:id(.:format)", "decidim/contracts_sk/contracts#destroy"])
     end
 
-    it "keeps new and destroy inside the admin namespace" do
+    it "keeps the editorial actions inside the admin namespace" do
       expect(admin_routes).to include(
         ["GET", "/admin/contracts/new(.:format)", "decidim/contracts_sk/admin/contracts#new"],
-        ["DELETE", "/admin/contracts/:id(.:format)", "decidim/contracts_sk/admin/contracts#destroy"]
+        ["GET", "/admin/contracts/:id/edit(.:format)", "decidim/contracts_sk/admin/contracts#edit"]
       )
+    end
+
+    it "exposes only the create/edit actions on the admin controller (no show, no destroy)" do
+      actions = admin_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
+
+      expect(actions).to eq(%w[create edit index new update])
     end
   end
 

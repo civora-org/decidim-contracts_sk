@@ -1,0 +1,26 @@
+<%# url:, method: and submit_label: come from the caller (new / edit);
+    only the two editorial identity fields are rendered — the lifecycle
+    state is intentionally absent from every admin form. %>
+<%= form_with url: url, method: method do |form| %>
+  <% if @form.errors.any? %>
+    <ul>
+      <% @form.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <div>
+    <%= form.label :title, t("decidim.contracts_sk.admin.contracts.form.title"), for: "contract_title" %>
+    <%= form.text_field :title, id: "contract_title", name: "contract[title]", value: @form.title %>
+  </div>
+
+  <div>
+    <%= form.label :reference, t("decidim.contracts_sk.admin.contracts.form.reference"), for: "contract_reference" %>
+    <%= form.text_field :reference, id: "contract_reference", name: "contract[reference]", value: @form.reference %>
+  </div>
+
+  <div>
+    <%= form.submit submit_label %>
+  </div>
+<% end %>

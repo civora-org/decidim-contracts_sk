@@ -148,6 +148,83 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — update (editorial twin of the lifecycle editability rule)" do
+    # Plain-method helper (not a let) so the group stays within the
+    # memoized-helpers budget while every example names its user explicitly.
+    def user_with_roles(*roles)
+      SpecUser.new(engine_roles: roles)
+    end
+
+    # The group's users carry engine_roles, so swap in the engine_roles-driven
+    # resolver for the duration of each example (restored afterwards).
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "is allowed for an editor exactly on the editable states, on both state sources" do
+      lifecycle::EDITABLE_STATES.each do |state|
+        via_state = action_for(user_with_roles(:editor), scope: :admin, action: :update, state: state)
+        via_contract = action_for(user_with_roles(:editor), scope: :admin, action: :update,
+                                                            contract: SpecContract.new(state))
+
+        expect(via_state.allowed?).to be(true), "editor must update #{state}"
+        expect(via_contract.allowed?).to be(true), "editor must update #{state} via context[:contract]"
+      end
+    end
+
+    it "is denied for an editor on every non-editable state" do
+      (lifecycle::STATES - lifecycle::EDITABLE_STATES).each do |state|
+        via_state = action_for(user_with_roles(:editor), scope: :admin, action: :update, state: state)
+        via_contract = action_for(user_with_roles(:editor), scope: :admin, action: :update,
+                                                            contract: SpecContract.new(state))
+
+        expect(via_state.allowed?).to be(false), "editor must not update #{state}"
+        expect(via_contract.allowed?).to be(false), "editor must not update #{state} via context[:contract]"
+      end
+    end
+
+    it "is denied for a reviewer even on editable states" do
+      lifecycle::EDITABLE_STATES.each do |state|
+        via_state = action_for(user_with_roles(:reviewer), scope: :admin, action: :update, state: state)
+        via_contract = action_for(user_with_roles(:reviewer), scope: :admin, action: :update,
+                                                              contract: SpecContract.new(state))
+
+        expect(via_state.allowed?).to be(false), "reviewer must not update #{state}"
+        expect(via_contract.allowed?).to be(false), "reviewer must not update #{state} via context[:contract]"
+      end
+    end
+
+    it "is disallowed (not unset) when no state is reachable — fail-closed" do
+      expect(action_for(user_with_roles(:editor), scope: :admin, action: :update).allowed?).to be(false)
+      expect(unset?(user_with_roles(:editor), scope: :admin, action: :update)).to be(false)
+    end
+
+    it "is denied for org admins without accepted terms on editable states" do
+      swap_resolver([]) do
+        lifecycle::EDITABLE_STATES.each do |state|
+          expect(action_for(org_admin_unaccepted, scope: :admin, action: :update, state: state).allowed?)
+            .to be(false), "unaccepted admin must not update #{state}"
+        end
+      end
+    end
+
+    it "treats String states (Rails enum getters) identically to Symbols" do
+      lifecycle::STATES.each do |state|
+        expected = lifecycle::EDITABLE_STATES.include?(state)
+
+        via_state = action_for(user_with_roles(:editor), scope: :admin, action: :update, state: state.to_s)
+        via_contract = action_for(user_with_roles(:editor), scope: :admin, action: :update,
+                                                            contract: SpecContract.new(state.to_s))
+
+        expect(via_state.allowed?).to eq(expected), "String state diverged for :update on #{state}"
+        expect(via_contract.allowed?).to eq(expected), "String state diverged for :update on #{state} (contract)"
+      end
+    end
+  end
+
   describe "admin scope — read (admin index)" do
     it "is allowed when the user holds any engine role" do
       swap_resolver(%i[reviewer]) do
@@ -179,7 +256,7 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
   describe "org admin without accepted terms (default resolver)" do
     it "holds no roles: every admin action is denied" do
-      actions = %i[create read] + described_class::TRANSITION_EVENTS
+      actions = %i[create read update] + described_class::TRANSITION_EVENTS
 
       lifecycle::STATES.each do |state|
         actions.each do |action|
@@ -192,7 +269,7 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
   describe "nil user" do
     it "is denied every admin action on a known state" do
-      actions = %i[create read] + described_class::TRANSITION_EVENTS
+      actions = %i[create read update] + described_class::TRANSITION_EVENTS
 
       actions.each do |action|
         expect(action_for(nil, scope: :admin, action: action, state: :draft).allowed?)
