@@ -31,3 +31,9 @@ en:
           form:
             title: "Title"
             reference: "Reference"
+            subject_matter: "Subject matter"
+            amount: "Amount"
+            currency: "Currency"
+            signed_on: "Signed on"
+            effective_from: "Effective from"
+            crz_url: "CRZ URL"

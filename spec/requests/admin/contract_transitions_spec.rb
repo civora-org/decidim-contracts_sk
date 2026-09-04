@@ -163,7 +163,12 @@ RSpec.describe "admin contract transitions", type: :request do
         %i[archive editor]
       ]
 
-      steps.each do |event, role|
+      # The publish stamp is nil for every step BEFORE publish, then present
+      # from the publish step onward — it is never cleared
+      # (civora-org/civora-platform#75).
+      publish_index = steps.index { |event, _role| event == :publish }
+
+      steps.each_with_index do |(event, role), step_index|
         from = contract.reload.state.to_sym
 
         expect do
@@ -176,6 +181,12 @@ RSpec.describe "admin contract transitions", type: :request do
         contract.reload
         expect(contract.state.to_sym)
           .to eq(Decidim::ContractsSk::ContractLifecycle.next_state(from: from, event: event))
+
+        if step_index < publish_index
+          expect(contract.published_at).to be_nil
+        else
+          expect(contract.published_at).to be_present
+        end
 
         audit = Decidim::ContractsSk::AuditEvent.order(:id).last
         expect(audit.action).to eq("contract.#{event}")

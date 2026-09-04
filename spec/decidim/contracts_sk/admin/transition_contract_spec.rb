@@ -63,6 +63,70 @@ RSpec.describe Decidim::ContractsSk::Admin::TransitionContract, :db do
     end
   end
 
+  describe "publish stamp (civora-org/civora-platform#75)" do
+    let(:contract) { Decidim::ContractsSk::Contract.create!(contract_attributes(state: "approved")) }
+
+    it "stamps published_at on publish, persisted with the state change" do
+      before = Time.current
+
+      events = described_class.call(contract, event: :publish, user: author)
+
+      expect(events).to have_key(:ok)
+
+      contract.reload
+      expect(contract.state).to eq("published")
+      expect(contract.published_at).to be_present
+      expect(contract.published_at).to be >= before
+    end
+
+    it "stamps published_at even when the event arrives as a String" do
+      # Symbol-fragility guard (#75 review round): the edge lookup, the
+      # stamp check and the audit action all normalize the event, so a
+      # future String caller gets the same transition AND the same stamp —
+      # not a state change with the stamp silently skipped.
+      events = described_class.call(contract, event: "publish", user: author)
+
+      expect(events).to have_key(:ok)
+
+      contract.reload
+      expect(contract.state).to eq("published")
+      expect(contract.published_at).to be_present
+
+      audit = Decidim::ContractsSk::AuditEvent.order(:id).last
+      expect(audit.action).to eq("contract.publish")
+    end
+
+    it "leaves published_at untouched on non-publish events" do
+      draft = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      events = described_class.call(draft, event: :submit, user: author)
+
+      expect(events).to have_key(:ok)
+
+      draft.reload
+      expect(draft.state).to eq("in_review")
+      expect(draft.published_at).to be_nil
+    end
+
+    it "rolls the stamp back with the state when the audit write fails" do
+      # The stamp is assigned inside the lock before the state write, so the
+      # same transaction covers it: an audit failure must leave neither a
+      # new state nor a publication stamp behind.
+      allow(Decidim::ContractsSk::AuditEvent).to receive(:create!)
+        .and_raise(ActiveRecord::RecordInvalid)
+
+      events = described_class.call(contract, event: :publish, user: author)
+
+      expect(events).to have_key(:invalid)
+      expect(events).not_to have_key(:ok)
+
+      contract.reload
+      expect(contract.state).to eq("approved")
+      expect(contract.published_at).to be_nil
+      expect(Decidim::ContractsSk::AuditEvent.count).to eq(0)
+    end
+  end
+
   describe "invalid paths (no mutation ever)" do
     describe "role mismatch" do
       let(:resolver_roles) { %i[reviewer] }

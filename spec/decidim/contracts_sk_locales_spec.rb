@@ -32,14 +32,30 @@ module LocaleContract
   # The acceptance-criterion key of civora-org/civora-platform#39.
   ACCEPTANCE_KEY = "decidim.contracts_sk.contract.title"
 
+  # The admin content-field form labels per locale, per the data dictionary
+  # (civora-org/civora-platform#75).
+  CONTENT_FIELD_LABELS = {
+    en: { subject_matter: "Subject matter", amount: "Amount", currency: "Currency",
+          signed_on: "Signed on", effective_from: "Effective from", crz_url: "CRZ URL" },
+    sk: { subject_matter: "Predmet zmluvy", amount: "Hodnota", currency: "Mena",
+          signed_on: "Dátum podpisu", effective_from: "Dátum účinnosti", crz_url: "Odkaz na CRZ" }
+  }.freeze
+
   # The exact expected leaf-key surface under decidim.contracts_sk, including
-  # the public catalogue keys (plan Option B of #39) and the admin CRUD keys
-  # (civora-org/civora-platform#58). Sorted alphabetically.
+  # the public catalogue keys (plan Option B of #39), the admin CRUD keys
+  # (civora-org/civora-platform#58) and the admin content-field form keys
+  # (civora-org/civora-platform#75). Sorted alphabetically.
   EXPECTED_KEYS = [
     "admin.contracts.create.error",
     "admin.contracts.create.success",
     "admin.contracts.edit.title",
+    "admin.contracts.form.amount",
+    "admin.contracts.form.crz_url",
+    "admin.contracts.form.currency",
+    "admin.contracts.form.effective_from",
     "admin.contracts.form.reference",
+    "admin.contracts.form.signed_on",
+    "admin.contracts.form.subject_matter",
     "admin.contracts.form.title",
     "admin.contracts.index.title",
     "admin.contracts.new.title",
@@ -146,6 +162,14 @@ RSpec.describe Decidim::ContractsSk do
       aggregate_failures do
         expect(backend.translate(:en, "decidim.contracts_sk.contracts.index.title")).to eq("Contracts")
         expect(backend.translate(:sk, "decidim.contracts_sk.contracts.show.title")).to eq("Detail zmluvy")
+      end
+    end
+
+    it "translates the admin content-field labels in both locales (civora-org/civora-platform#75)" do
+      LocaleContract::CONTENT_FIELD_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.admin.contracts.form.#{key}")).to eq(value)
+        end
       end
     end
   end
