@@ -5,10 +5,13 @@
 #
 # Classes come from the Stage-1 dummy harness (spec/dummy): the stand-in
 # Decidim::ApplicationController / Decidim::Admin::ApplicationController live
-# in the dummy boot and answer #permission_class_chain with static sentinels
-# (:stand_in_public_chain / :stand_in_admin_chain), so the delegation past
-# this engine's own permissions class stays assertable offline. The engine
-# classes themselves are provided by the dummy's autoloader.
+# in the dummy boot and answer #permission_class_chain with the harness' own
+# inert permission classes (DummyPublicPermissions / DummyAdminPermissions —
+# real DefaultPermissions subclasses pinned as inert by dummy_permissions_
+# spec.rb), so the delegation past this engine's own permissions class stays
+# assertable offline. The admin stand-in additionally includes the REAL
+# pinned-gem Decidim::NeedsPermission. The engine classes themselves are
+# provided by the dummy's autoloader.
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
@@ -51,7 +54,7 @@ module Decidim
       # for subject :contract actions; the rest of the Decidim chain follows.
       it "prepends Decidim::ContractsSk::Permissions to the inherited chain" do
         expect(described_class.new.permission_class_chain)
-          .to eq([Decidim::ContractsSk::Permissions, :stand_in_public_chain])
+          .to eq([Decidim::ContractsSk::Permissions, DummyPublicPermissions])
       end
 
       describe Admin::ApplicationController do
@@ -101,7 +104,7 @@ module Decidim
         # its own chain, still delegating to its own (admin) superclass.
         it "prepends Decidim::ContractsSk::Permissions to the inherited chain" do
           expect(described_class.new.permission_class_chain)
-            .to eq([Decidim::ContractsSk::Permissions, :stand_in_admin_chain])
+            .to eq([Decidim::ContractsSk::Permissions, DummyAdminPermissions])
         end
       end
     end

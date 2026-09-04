@@ -16,9 +16,10 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 - Roles and permissions — engine-logical `editor`/`reviewer` roles with a config-time resolver ([`docs/roles-and-permissions.md`](docs/roles-and-permissions.md));
 - `Contract` model and migration — lifecycle-validated `state` enum, per-organization `reference` uniqueness, and manual CRZ-handoff provenance columns (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md));
 - `Party` and `Document` models and migrations — contract-scoped parties with an `object`/`contractor` role enum and documents with a `contract`/`crz_export`/`annex`/`other` kind enum, real FK constraints onto the contracts table, and nullable file-metadata columns (validated upload deferred to M02-05-A);
-- `Amendment` and `AuditEvent` models and migrations — per-contract numbered amendments (unique `(contract, version)`; immutability deferred to M02-05-B) and an append-only audit trail with explicit organization/actor tenancy and a polymorphic target that outlives the contract (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md)).
+- `Amendment` and `AuditEvent` models and migrations — per-contract numbered amendments (unique `(contract, version)`; immutability deferred to M02-05-B) and an append-only audit trail with explicit organization/actor tenancy and a polymorphic target that outlives the contract (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md));
+- Admin contracts CRUD — `index`/`new`/`create`/`edit`/`update` behind the engine permissions (`editor` role; `update` additionally gated on lifecycle editability), with a deliberately narrow title/reference form — lifecycle state, provenance, organization and author are never form-writable (civora-org/civora-platform#58).
 
-Admin CRUD controllers/views are upcoming milestones — see [Milestone 02 execution order](docs/m02-execution-order.md).
+Transition actions and admin record views are upcoming — see [Milestone 02 execution order](docs/m02-execution-order.md).
 
 ## Requirements
 
@@ -45,14 +46,14 @@ Mount the engine in your app's `config/routes.rb` (mount point is your choice):
 mount Decidim::ContractsSk::Engine, at: "/zmluvy"
 ```
 
-> **Admin routes:** the engine declares an admin namespace (`/zmluvy/admin/contracts`). Admin controllers and full admin authorization hardening are tracked in `civora-org/civora-platform#45`; until that lands, treat the admin surface as a scaffold.
+> **Admin routes:** the engine declares an admin namespace (`/zmluvy/admin/contracts`) with a sign-in floor and engine-permission checks (`editor` role for create/edit; `update` additionally gated on lifecycle editability). Full admin authorization hardening is tracked in `civora-org/civora-platform#45`.
 
 ## Usage
 
 With the engine mounted at `/zmluvy`:
 
 - **Public catalogue** — `GET /zmluvy/contracts` (list) and `GET /zmluvy/contracts/:id` (detail). No authentication required.
-- **Admin** — `/zmluvy/admin/contracts` (skeleton; controllers arrive with the admin CRUD milestone).
+- **Admin** — `/zmluvy/admin/contracts` (list, create and edit contract records; sign-in plus the `editor` engine role required, `update` only while the record's lifecycle state is editable).
 - **Roles and permissions** — the engine-logical `editor`/`reviewer` roles map onto Decidim permissions via a config-time resolver; see [docs/roles-and-permissions.md](docs/roles-and-permissions.md).
 
 Locales: English and Slovak.

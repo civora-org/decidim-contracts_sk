@@ -19,3 +19,12 @@ en:
             title: "New contract"
           edit:
             title: "Edit contract"
+          create:
+            success: "Contract created successfully."
+            error: "Contract could not be created."
+          update:
+            success: "Contract updated successfully."
+            error: "Contract could not be updated."
+          form:
+            title: "Title"
+            reference: "Reference"

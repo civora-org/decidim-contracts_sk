@@ -33,6 +33,7 @@ answers only for subject `:contract`:
 | Scope | Subject | Action | Allowed when |
 |---|---|---|---|
 | `admin` | `contract` | `create` | user's engine roles include `editor` (transition-table row 1 analog) |
+| `admin` | `contract` | `update` | user's engine roles include `editor` **and** `ContractLifecycle.editable?(state)` (`draft`, `returned`) — the editorial twin of the lifecycle's editability rule (civora-org/civora-platform#58) |
 | `admin` | `contract` | `submit`, `return`, `approve`, `reject`, `publish`, `archive` | `ContractLifecycle.allowed_roles(from: state, event: action)` intersects the user's engine roles |
 | `admin` | `contract` | `read` | user holds **any** engine role (admin index) |
 | `public` | `contract` | `read` | `ContractLifecycle.publicly_visible?(state)` — i.e. state in `PUBLIC_STATES` (`published`, `archived`) |

@@ -33,11 +33,18 @@ module LocaleContract
   ACCEPTANCE_KEY = "decidim.contracts_sk.contract.title"
 
   # The exact expected leaf-key surface under decidim.contracts_sk, including
-  # the public catalogue keys (plan Option B of #39). Sorted alphabetically.
+  # the public catalogue keys (plan Option B of #39) and the admin CRUD keys
+  # (civora-org/civora-platform#58). Sorted alphabetically.
   EXPECTED_KEYS = [
+    "admin.contracts.create.error",
+    "admin.contracts.create.success",
     "admin.contracts.edit.title",
+    "admin.contracts.form.reference",
+    "admin.contracts.form.title",
     "admin.contracts.index.title",
     "admin.contracts.new.title",
+    "admin.contracts.update.error",
+    "admin.contracts.update.success",
     "contract.amount",
     "contract.reference_number",
     "contract.status",

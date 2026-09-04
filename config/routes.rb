@@ -2,9 +2,10 @@
 
 Decidim::ContractsSk::Engine.routes.draw do
   # Admin routes (declared before the public /:id catch-all so that the
-  # admin namespace is matched first)
+  # admin namespace is matched first). No :show — admin records are edited,
+  # not displayed; no :destroy — deletion is not part of the workflow yet.
   namespace :admin do
-    resources :contracts
+    resources :contracts, only: %i[index new create edit update]
   end
 
   # Public routes — the mount point is the catalogue itself
