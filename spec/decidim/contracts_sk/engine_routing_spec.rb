@@ -19,19 +19,27 @@ module EngineRoutingContract
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
   # at "/" and a single /:id catch-all serves show. The admin surface is
-  # create/edit only: no :show (admin records are edited, not displayed) and
-  # no :destroy (deletion is not part of the workflow yet). Note: Rails'
-  # `root` helper adds NO optional format segment (path is exactly "/", not
-  # "/(.:format)" - unlike a plain `get`), and it maps the `resources`
-  # update action to BOTH a PATCH and a PUT route entry, so the admin CRUD
-  # block counts 6 route entries, not 5.
+  # create/edit plus the lifecycle-transition member POSTs (each POST entry
+  # is derived from the ContractLifecycle transition table in routes.rb —
+  # see the derivation guard below): no :show (admin records are edited, not
+  # displayed) and no :destroy (deletion is not part of the workflow yet).
+  # Note: Rails' `root` helper adds NO optional format segment (path is
+  # exactly "/", not "/(.:format)" - unlike a plain `get`), and it maps the
+  # `resources` update action to BOTH a PATCH and a PUT route entry, so the
+  # admin CRUD block counts 6 route entries, not 5.
   EXPECTED_ROUTES = [
     ["GET", "/", "#{PUBLIC_CONTROLLER}#index"],
     ["GET", "/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
+    ["POST", "/admin/contracts/:id/approve(.:format)", "#{ADMIN_CONTROLLER}#approve"],
+    ["POST", "/admin/contracts/:id/archive(.:format)", "#{ADMIN_CONTROLLER}#archive"],
     ["GET", "/admin/contracts/:id/edit(.:format)", "#{ADMIN_CONTROLLER}#edit"],
+    ["POST", "/admin/contracts/:id/publish(.:format)", "#{ADMIN_CONTROLLER}#publish"],
+    ["POST", "/admin/contracts/:id/reject(.:format)", "#{ADMIN_CONTROLLER}#reject"],
+    ["POST", "/admin/contracts/:id/return(.:format)", "#{ADMIN_CONTROLLER}#return"],
+    ["POST", "/admin/contracts/:id/submit(.:format)", "#{ADMIN_CONTROLLER}#submit"],
     ["PATCH", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#update"],
     ["PUT", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#update"]
   ].freeze
@@ -125,10 +133,50 @@ RSpec.describe Decidim::ContractsSk::Engine do
       )
     end
 
-    it "exposes only the create/edit actions on the admin controller (no show, no destroy)" do
+    it "exposes only the CRUD and lifecycle-transition actions on the admin controller (no show, no destroy)" do
       actions = admin_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
 
-      expect(actions).to eq(%w[create edit index new update])
+      expect(actions).to eq(%w[approve archive create edit index new publish reject return submit update])
+    end
+  end
+
+  describe "lifecycle transition member routes" do
+    include EngineRoutingContract
+
+    it "derives the route event set exactly from the lifecycle transition table, in both directions" do
+      aggregate_failures do
+        expect(route_transition_events).to eq(table_transition_events)
+        expect(table_transition_events).to eq(route_transition_events)
+      end
+    end
+
+    it "names each event helper <event>_admin_contract_path (the view's derivation target)" do
+      aggregate_failures do
+        expect(url_helpers.submit_admin_contract_path(7)).to eq("/admin/contracts/7/submit")
+        expect(url_helpers.return_admin_contract_path(7)).to eq("/admin/contracts/7/return")
+      end
+    end
+
+    private
+
+    def url_helpers
+      described_class.routes.url_helpers
+    end
+
+    # The member POSTs under /admin/contracts/:id, read back from the drawn
+    # route table.
+    def route_transition_events
+      admin_routes
+        .select { |verb, path, _| verb == "POST" && path.start_with?("/admin/contracts/:id/") }
+        .map { |_, _, endpoint| endpoint.split("#", 2).last.to_sym }
+        .sort
+    end
+
+    # The same derivation routes.rb performs on the lifecycle table.
+    def table_transition_events
+      Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values
+                                                          .flat_map(&:keys)
+                                                          .uniq.sort
     end
   end
 

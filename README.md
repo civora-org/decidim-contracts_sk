@@ -19,7 +19,7 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 - `Amendment` and `AuditEvent` models and migrations — per-contract numbered amendments (unique `(contract, version)`; immutability deferred to M02-05-B) and an append-only audit trail with explicit organization/actor tenancy and a polymorphic target that outlives the contract (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md));
 - Admin contracts CRUD — `index`/`new`/`create`/`edit`/`update` behind the engine permissions (`editor` role; `update` additionally gated on lifecycle editability), with a deliberately narrow title/reference form — lifecycle state, provenance, organization and author are never form-writable (civora-org/civora-platform#58).
 
-Transition actions and admin record views are upcoming — see [Milestone 02 execution order](docs/m02-execution-order.md).
+Admin record views are upcoming — see [Milestone 02 execution order](docs/m02-execution-order.md).
 
 ## Requirements
 
@@ -46,14 +46,14 @@ Mount the engine in your app's `config/routes.rb` (mount point is your choice):
 mount Decidim::ContractsSk::Engine, at: "/zmluvy"
 ```
 
-> **Admin routes:** the engine declares an admin namespace (`/zmluvy/admin/contracts`) with a sign-in floor and engine-permission checks (`editor` role for create/edit; `update` additionally gated on lifecycle editability). Full admin authorization hardening is tracked in `civora-org/civora-platform#45`.
+> **Admin routes:** the engine declares an admin namespace (`/zmluvy/admin/contracts`) with a sign-in floor and engine-permission checks (`editor` role for create/edit; `update` additionally gated on lifecycle editability; lifecycle transitions gated to the role that owns each edge — see the [lifecycle table](docs/contract-lifecycle.md)). Full admin authorization hardening is tracked in `civora-org/civora-platform#45`.
 
 ## Usage
 
 With the engine mounted at `/zmluvy`:
 
 - **Public catalogue** — `GET /zmluvy/contracts` (list) and `GET /zmluvy/contracts/:id` (detail). No authentication required.
-- **Admin** — `/zmluvy/admin/contracts` (list, create and edit contract records; sign-in plus the `editor` engine role required, `update` only while the record's lifecycle state is editable).
+- **Admin** — `/zmluvy/admin/contracts` (list, create and edit contract records and drive lifecycle transitions — one POST action per event; sign-in plus an engine role required, each transition gated to the role that owns its edge in the [lifecycle table](docs/contract-lifecycle.md): `editor` for submit/publish/archive, `reviewer` for return/approve/reject; `update` only while the record's lifecycle state is editable).
 - **Roles and permissions** — the engine-logical `editor`/`reviewer` roles map onto Decidim permissions via a config-time resolver; see [docs/roles-and-permissions.md](docs/roles-and-permissions.md).
 
 Locales: English and Slovak.

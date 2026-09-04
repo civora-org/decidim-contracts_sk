@@ -3,8 +3,10 @@
 module Decidim
   module ContractsSk
     # An append-only audit record of something that happened to a target
-    # (today: contracts). Nothing writes to this table yet — the lifecycle
-    # transitions wire it up in M02-03-B (civora-org/civora-platform#59).
+    # (today: contracts). Written by the admin lifecycle transitions
+    # (M02-03-B, civora-org/civora-platform#59): exactly one row per
+    # successful transition, atomically with the state change, action
+    # "contract.<event>".
     #
     # Tenancy and the actor are stored explicitly (decidim_organization_id /
     # decidim_user_id), not derived through the target: the polymorphic

@@ -25,6 +25,9 @@ en:
           update:
             success: "Contract updated successfully."
             error: "Contract could not be updated."
+          transition:
+            success: "Contract transition performed successfully."
+            invalid: "Contract transition could not be performed."
           form:
             title: "Title"
             reference: "Reference"

@@ -25,6 +25,9 @@ sk:
           update:
             success: "Zmluva bola úspešne upravená."
             error: "Zmluvu sa nepodarilo upraviť."
+          transition:
+            success: "Prechod stavu zmluvy bol úspešne vykonaný."
+            invalid: "Prechod stavu zmluvy sa nepodarilo vykonať."
           form:
             title: "Názov"
             reference: "Číslo zmluvy"

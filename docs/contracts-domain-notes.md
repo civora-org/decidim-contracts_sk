@@ -103,9 +103,13 @@ keep the "minimal constraints" stance:
    also carry real FK constraints — a deliberate second deviation from
    Decidim's `decidim_action_logs`, which has none (RESTRICT on org/user
    deletion; consistent with this engine's parties/documents FK policy).
-- **Nothing writes to the audit table yet** — writing is wired into the
-  lifecycle transitions in **M02-03-B (#59)**; M02-02-C guarantees only the
-  shape and the append-only surface.
+- **Audit writes are live since M02-03-B (#59)** — each successful admin
+  lifecycle transition appends one audit event atomically with its state
+  change (single `with_lock` transaction in `Admin::TransitionContract`;
+  failed transitions write nothing). The row shape is fixed by the #57
+  migration (**D4**): `action` is `"contract.<event>"`, the polymorphic
+  target is the contract, organization and actor are stored explicitly,
+  timestamps only — no JSON payload, no from/to columns.
 
 ## Known gaps / drift (flagged, unowned)
 
