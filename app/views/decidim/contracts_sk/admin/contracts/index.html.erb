@@ -11,6 +11,7 @@
       <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
       <th><%= t("decidim.contracts_sk.contract.status") %></th>
       <th><%= t("decidim.contracts_sk.admin.contracts.edit.title") %></th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -20,6 +21,14 @@
         <td><%= contract.reference %></td>
         <td><%= contract.state %></td>
         <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
+        <td>
+          <%# Derived, never hand-enumerated: only the events the acting role may fire. %>
+          <% transition_events_for(contract).each do |event| %>
+            <%= button_to t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
+                          public_send(:"#{event}_admin_contract_path", contract),
+                          method: :post %>
+          <% end %>
+        </td>
       </tr>
     <% end %>
   </tbody>

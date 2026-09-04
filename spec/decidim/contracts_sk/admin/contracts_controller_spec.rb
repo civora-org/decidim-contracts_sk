@@ -2,11 +2,11 @@
 
 # ---------------------------------------------------------------------------
 # Deterministic, offline, structural specs for the engine's admin contracts
-# controller (civora-org/civora-platform#58). Behavioural coverage (denied
-# paths, allowed paths, validation failures) lives in
-# spec/requests/admin/contracts_spec.rb; this file pins only the class-level
-# contract: the admin/public separation and the exact action surface
-# (create/edit only — no show, no destroy).
+# controller (civora-org/civora-platform#58, #59). Behavioural coverage
+# (denied paths, allowed paths, validation failures, transitions) lives in
+# spec/requests/admin/; this file pins only the class-level contract: the
+# admin/public separation and the exact action surface (the five CRUD actions
+# plus the six lifecycle-transition actions — no show, no destroy).
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
@@ -18,9 +18,9 @@ module Decidim
         expect(described_class.superclass).to eq(Admin::ApplicationController)
       end
 
-      it "implements exactly the five admin CRUD actions (no show, no destroy)" do
+      it "implements exactly the five CRUD actions plus the six transition actions (no show, no destroy)" do
         expect(described_class.public_instance_methods(false).map(&:to_s).sort)
-          .to eq(%w[create edit index new update])
+          .to eq(%w[approve archive create edit index new publish reject return submit update])
       end
 
       it "does not sit on the engine's public base controller chain" do

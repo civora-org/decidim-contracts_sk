@@ -3,18 +3,24 @@
 module Decidim
   module ContractsSk
     module Admin
-      # Admin CRUD for contract records — create and edit only
-      # (civora-org/civora-platform#58).
+      # Admin CRUD and lifecycle transitions for contract records
+      # (civora-org/civora-platform#58, #59).
       #
       # index/new/create open with enforce_permission_to before anything
-      # else; edit/update load the record first, so the permission check can
-      # see the record's lifecycle state. Denial is handled by the inherited
-      # Decidim::NeedsPermission machinery (redirect + alert). The lifecycle
-      # state is never written from here: creation lands on
-      # the model's draft default, updates go through UpdateContract, and
-      # transitions belong to the dedicated transition milestone
-      # (civora-org/civora-platform#60).
+      # else; edit/update and the transition actions load the record first,
+      # so the permission check can see the record's lifecycle state. Denial
+      # is handled by the inherited Decidim::NeedsPermission machinery
+      # (redirect + alert). The lifecycle state is never written through the
+      # form: creation lands on the model's draft default, updates go through
+      # UpdateContract, and transitions go through TransitionContract — one
+      # explicit action per transition event, each a thin shell over the
+      # private #transition (civora-org/civora-platform#59).
       class ContractsController < Admin::ApplicationController
+        # Exposes the per-record allowed events to the index view; derived
+        # from the lifecycle table and the user's engine roles, never
+        # hand-enumerated.
+        helper_method :transition_events_for
+
         def index
           enforce_permission_to :read, :contract
 
@@ -59,6 +65,34 @@ module Decidim
           end
         end
 
+        # One explicit action per lifecycle transition event. The route set
+        # is derived from ContractLifecycle::TRANSITIONS in config/routes.rb;
+        # these named shells exist so the derived routes map onto readable
+        # controller actions.
+        def submit
+          transition(:submit)
+        end
+
+        def return
+          transition(:return)
+        end
+
+        def approve
+          transition(:approve)
+        end
+
+        def reject
+          transition(:reject)
+        end
+
+        def publish
+          transition(:publish)
+        end
+
+        def archive
+          transition(:archive)
+        end
+
         private
 
         # PRG on success: notice + back to the admin index.
@@ -82,6 +116,46 @@ module Decidim
         def update_failed
           flash.now[:alert] = t("decidim.contracts_sk.admin.contracts.update.error")
           render :edit, status: :unprocessable_entity
+        end
+
+        # Shared transition pipeline: load the record from the tenant scope,
+        # ask the permission layer (event-specific: the lifecycle edge's role
+        # set decides), then run the command. Both outcomes are PRG redirects
+        # — a failure never re-renders, because the record's state may have
+        # changed under us; the index shows the truth.
+        def transition(event)
+          @contract = contracts_scope.find(params[:id])
+
+          enforce_permission_to event, :contract, contract: @contract
+
+          TransitionContract.call(@contract, event: event, user: current_user) do
+            on(:ok) { transition_succeeded }
+            on(:invalid) { transition_failed }
+          end
+        end
+
+        def transition_succeeded
+          flash[:notice] = t("decidim.contracts_sk.admin.contracts.transition.success")
+          redirect_to admin_contracts_path
+        end
+
+        def transition_failed
+          flash[:alert] = t("decidim.contracts_sk.admin.contracts.transition.invalid")
+          redirect_to admin_contracts_path
+        end
+
+        # Events the acting user may trigger on this record right now: the
+        # lifecycle's events from the record's state, filtered by the edges
+        # whose roles intersect the user's engine roles. Uses the same
+        # config-time resolution seam as the Permissions class. Empty for a
+        # roleless user — no derivation hand-enumerated anywhere.
+        def transition_events_for(contract)
+          state = contract.state&.to_sym
+          roles = Array(Decidim::ContractsSk.role_resolver.call(current_user, {})) & ContractLifecycle::ROLES
+
+          ContractLifecycle.events_from(state).select do |event|
+            (ContractLifecycle.allowed_roles(from: state, event: event) & roles).any?
+          end
         end
 
         # Tenant-scoped record access: a contract of another organization is

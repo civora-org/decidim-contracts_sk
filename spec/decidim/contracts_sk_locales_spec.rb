@@ -43,6 +43,8 @@ module LocaleContract
     "admin.contracts.form.title",
     "admin.contracts.index.title",
     "admin.contracts.new.title",
+    "admin.contracts.transition.invalid",
+    "admin.contracts.transition.success",
     "admin.contracts.update.error",
     "admin.contracts.update.success",
     "contract.amount",
