@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.14.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.13.0...v0.14.0) (2026-09-04)
+
+
+### Features
+
+* **models:** add contract content fields migration and admin form (M02-02-D) ([935ec76](https://github.com/civora-org/decidim-contracts_sk/commit/935ec76bb8d137d5fefc8c1ae78db0b7d19c0381))
+
 ## [0.13.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.12.0...v0.13.0) (2026-09-04)
 
 
