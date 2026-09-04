@@ -32,6 +32,8 @@ Durable lessons migrated from the *Process Lessons* section of `AGENTS.md` (per 
 - **Check org plan capabilities before promising GitHub gating.** The civora org is on the free plan: branch protection *and* rulesets 403 on private repos, and no existing repo has ever had protection. Don't write protection/required-check promises into plans or issue checklists without a capability check; the practical gate is CI (#49) plus discipline, and unlocking real protection is a pay-or-accept decision for the human.
 - **Document conventions before they are needed.** Keep the *Project Conventions* section current as soon as a new convention is decided, not after it causes friction. Policies are usually mirrored across files (`AGENTS.md`, `opencode.jsonc`, agent/command markdown) — update every mirror in the same change, or the drift surfaces later (re-proven in the #47 arc: the platform README shipped an aspirational monorepo layout that never existed).
 
+> De-duplication 2026-09-04 (#75 arc retro): "Load dev tools" and "Document conventions" had stale copies left in the AGENTS.md *active* set after this cluster's migration — the copies were removed; this archive is their only home.
+
 ## Decidim host-app smoke (proven #48 arc; migrated 2026-09-03 from the #51 arc retro)
 
 - **Decidim serves nothing without an organization.** Every page of a mounted engine redirects to the system root when `current_organization` is nil, so fresh-DB smoke tests need an idempotent minimal-org seed; `Decidim.seed!` is faker-based and unsuitable for production images.
