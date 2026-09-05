@@ -62,6 +62,12 @@ en:
             success: "Contract updated successfully."
             error: "Contract could not be updated."
           transition:
+            submit: "Submit for review"
+            return: "Return for changes"
+            approve: "Approve"
+            reject: "Reject"
+            publish: "Publish"
+            archive: "Archive"
             success: "Contract transition performed successfully."
             invalid: "Contract transition could not be performed."
           form:

@@ -19,7 +19,7 @@
       <tr>
         <td><%= contract.title %></td>
         <td><%= contract.reference %></td>
-        <td><%= contract.state %></td>
+        <td><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
         <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
         <td>
           <%# Derived, never hand-enumerated: only the events the acting role may fire. %>

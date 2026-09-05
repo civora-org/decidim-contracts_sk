@@ -75,6 +75,20 @@ module LocaleContract
           archived: "Archivovaná" }
   }.freeze
 
+  # The admin lifecycle transition-event button labels per locale (M02-06-A,
+  # civora-org/civora-platform#66): the six events of
+  # ContractLifecycle::TRANSITIONS. Slovak verb infinitives, symmetric with
+  # the contract_states.* adjectives (Vrátiť -> Vrátená, Zamietnuť ->
+  # Zamietnutá, ...).
+  TRANSITION_EVENT_LABELS = {
+    en: { submit: "Submit for review", return: "Return for changes",
+          approve: "Approve", reject: "Reject", publish: "Publish",
+          archive: "Archive" },
+    sk: { submit: "Odoslať na kontrolu", return: "Vrátiť na doplnenie",
+          approve: "Schváliť", reject: "Zamietnuť", publish: "Zverejniť",
+          archive: "Archivovať" }
+  }.freeze
+
   # The CRZ-handoff PDF's own labels per locale (M02-05-C,
   # civora-org/civora-platform#74). The PDF renders Slovak only; the en
   # values exist for key parity and documentation.
@@ -175,8 +189,10 @@ module LocaleContract
   # (civora-org/civora-platform#76), the public catalogue view keys
   # (civora-org/civora-platform#62, #63), the admin/public document keys
   # (civora-org/civora-platform#73), the CRZ-handoff keys (M02-05-C,
-  # civora-org/civora-platform#74) and the amendment/version-history keys
-  # (M02-05-B, civora-org/civora-platform#65). Sorted alphabetically.
+  # civora-org/civora-platform#74), the amendment/version-history keys
+  # (M02-05-B, civora-org/civora-platform#65) and the lifecycle
+  # transition-event keys (M02-06-A, civora-org/civora-platform#66). Sorted
+  # alphabetically.
   EXPECTED_KEYS = [
     "admin.amendments.back_to_contract",
     "admin.amendments.create.error",
@@ -212,7 +228,13 @@ module LocaleContract
     "admin.contracts.form.title",
     "admin.contracts.index.title",
     "admin.contracts.new.title",
+    "admin.contracts.transition.approve",
+    "admin.contracts.transition.archive",
     "admin.contracts.transition.invalid",
+    "admin.contracts.transition.publish",
+    "admin.contracts.transition.reject",
+    "admin.contracts.transition.return",
+    "admin.contracts.transition.submit",
     "admin.contracts.transition.success",
     "admin.contracts.update.error",
     "admin.contracts.update.success",
@@ -397,6 +419,37 @@ RSpec.describe Decidim::ContractsSk do
     it "keeps en and sk in full key parity" do
       expect(leaf_paths(module_tree("sk"))).to eq(leaf_paths(module_tree("en")))
     end
+
+    # Both regression guards deliberately walk the full vocabulary matrix
+    # (every lifecycle event / every state key), so they exceed the
+    # example-length budget by design — the same convention as the matrix
+    # examples in contract_lifecycle_spec.rb.
+    # rubocop:disable RSpec/ExampleLength
+    it "labels every lifecycle transition event with a distinct sk value (civora-org/civora-platform#66)" do
+      events = Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values.flat_map(&:keys).uniq.sort
+      en_transition = module_tree("en").dig("admin", "contracts", "transition")
+      sk_transition = module_tree("sk").dig("admin", "contracts", "transition")
+      aggregate_failures do
+        events.each do |event|
+          key = event.to_s
+          expect(en_transition).to have_key(key)
+          expect(sk_transition).to have_key(key)
+          expect(sk_transition.fetch(key)).not_to eq(en_transition.fetch(key))
+        end
+      end
+    end
+
+    it "translates every contract_states key into sk with a distinct value (civora-org/civora-platform#66)" do
+      en_states = module_tree("en").fetch("contract_states")
+      sk_states = module_tree("sk").fetch("contract_states")
+      aggregate_failures do
+        en_states.each_key do |key|
+          expect(sk_states).to have_key(key)
+          expect(sk_states.fetch(key)).not_to eq(en_states.fetch(key))
+        end
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
   end
 
   describe "leaf values" do
@@ -471,6 +524,14 @@ RSpec.describe Decidim::ContractsSk do
       LocaleContract::CONTRACT_STATE_LABELS.each do |locale, labels|
         labels.each do |state, value|
           expect(backend.translate(locale, "decidim.contracts_sk.contract_states.#{state}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the lifecycle transition-event labels in both locales (M02-06-A, civora-org/civora-platform#66)" do
+      LocaleContract::TRANSITION_EVENT_LABELS.each do |locale, labels|
+        labels.each do |event, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.admin.contracts.transition.#{event}")).to eq(value)
         end
       end
     end
