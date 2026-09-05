@@ -168,7 +168,10 @@ RSpec.describe Decidim::ContractsSk::AuditEvent do
       # do not.
       party = Decidim::ContractsSk::Party.create!(contract: contract, role: "contractor", name: "Zeleň a.s.")
       document = Decidim::ContractsSk::Document.create!(contract: contract, title: "Signed contract scan")
-      amendment = Decidim::ContractsSk::Amendment.create!(contract: contract, version: 1, summary: "Revision")
+      amendment = Decidim::ContractsSk::Amendment.create!(contract: contract, version: 1,
+                                                          summary: "Revision",
+                                                          organization: organization,
+                                                          author: author)
       event = described_class.create!(audit_event_attributes)
 
       contract.destroy

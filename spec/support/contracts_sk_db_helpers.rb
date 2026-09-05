@@ -136,6 +136,15 @@ RSpec.configure do |config|
   end
 
   config.after(:each, :db) do
-    ActiveRecord::Base.connection_pool.disconnect! if ActiveRecord::Base.connected?
+    if ActiveRecord::Base.connected?
+      # Clear the schema cache before disconnecting: re-establishing the
+      # identical :memory: config can reuse the pool, whose schema cache
+      # would otherwise leak a PARTIAL schema into the next example (a
+      # standalone-migration spec that ran only some of the migrations
+      # would poison every later model access — proven by the
+      # add_amendment_lifecycle migration spec).
+      ActiveRecord::Base.connection.schema_cache.clear!
+      ActiveRecord::Base.connection_pool.disconnect!
+    end
   end
 end

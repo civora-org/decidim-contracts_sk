@@ -1,0 +1,23 @@
+<%# url:, method: and submit_label: come from the caller (new / edit); only
+    the summary is rendered — a draft amendment carries nothing else
+    content-wise: the version is sequenced by the command and the content
+    snapshot is taken at publish time from the contract's live fields
+    (civora-org/civora-platform#65, ADR-006). %>
+<%= form_with url: url, method: method do |form| %>
+  <% if @form.errors.any? %>
+    <ul>
+      <% @form.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <div>
+    <%= form.label :summary, t("decidim.contracts_sk.admin.amendments.form.summary"), for: "amendment_summary" %>
+    <%= form.text_field :summary, id: "amendment_summary", name: "amendment[summary]", value: @form.summary %>
+  </div>
+
+  <div>
+    <%= form.submit submit_label %>
+  </div>
+<% end %>

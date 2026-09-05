@@ -21,11 +21,12 @@ module Decidim
     # (Decidim::NeedsOrganization) — the same seam the admin base relies on.
     #
     # Only :id is ever read from the request. The show view renders the
-    # record's parties and documents (the latter as download links through
+    # record's parties, documents (the latter as download links through
     # the host's ActiveStorage route, M02-05-A0
-    # civora-org/civora-platform#73); amendments are deliberately not
-    # rendered yet (M02-05-B), and the index is not paginated (no new
-    # dependencies by design; the catalogue is small at this stage).
+    # civora-org/civora-platform#73) and its public version history
+    # (M02-05-B, civora-org/civora-platform#65 — published amendments
+    # only); the index is not paginated (no new dependencies by design;
+    # the catalogue is small at this stage).
     class ContractsController < Decidim::ContractsSk::ApplicationController
       def index
         @contracts = published_contracts
@@ -33,6 +34,13 @@ module Decidim
 
       def show
         @contract = published_contracts.find(params[:id])
+
+        # Public version history (M02-05-B, civora-org/civora-platform#65,
+        # ADR-006): published amendments only, newest version first. Draft
+        # amendments are NEVER publicly visible — the published scope IS
+        # the gate, mirroring the record's own published-only read; an
+        # unpublished version and an absent one are indistinguishable.
+        @amendments = @contract.amendments.published.order(version: :desc)
       end
 
       private

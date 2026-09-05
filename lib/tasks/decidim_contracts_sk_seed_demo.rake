@@ -159,11 +159,20 @@ namespace :decidim_contracts_sk do
       record.save!
     end
 
+    # Amendments are seeded as drafts only: publication (and with it the
+    # content snapshot) is the admin command's job (M02-05-B,
+    # civora-org/civora-platform#65), so the seed never fabricates
+    # published versions. Tenancy/attribution are explicit (the model
+    # requires them).
     contracts.fetch("DEMO-2026-006").amendments.find_or_create_by!(version: 1) do |a|
       a.summary = "Zmena cenníka pre separovaný odpad"
+      a.organization = organization
+      a.author = author
     end
     contracts.fetch("DEMO-2026-001").amendments.find_or_create_by!(version: 1) do |a|
       a.summary = "Prvá demonštračná zmena"
+      a.organization = organization
+      a.author = author
     end
 
     # Audit-trail samples for the terminal-state records (find_or_create keeps

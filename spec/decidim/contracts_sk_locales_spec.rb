@@ -119,15 +119,86 @@ module LocaleContract
     }
   }.freeze
 
+  # The public version-history labels per locale (M02-05-B,
+  # civora-org/civora-platform#65, ADR-006): the current/historical
+  # distinction is labelled, one heading per published version. The I18n
+  # template token mirrors the shipped YAML value verbatim (cop off for
+  # exactly that reason).
+  # rubocop:disable Style/FormatStringToken
+  VERSION_HISTORY_LABELS = {
+    en: {
+      "contracts.show.versions" => "Version history",
+      "contracts.show.current_version" => "Current version",
+      "contracts.show.version_label" => "Version %{version}",
+      "contracts.show.versions_empty" => "No amendments have been published for this contract.",
+      "contract.summary" => "Summary"
+    },
+    sk: {
+      "contracts.show.versions" => "História verzií",
+      "contracts.show.current_version" => "Aktuálna verzia",
+      "contracts.show.version_label" => "Verzia %{version}",
+      "contracts.show.versions_empty" => "K tejto zmluve nebola zverejnená žiadna zmena.",
+      "contract.summary" => "Súhrn"
+    }
+  }.freeze
+  # rubocop:enable Style/FormatStringToken
+
+  # The admin amendment labels per locale (M02-05-B,
+  # civora-org/civora-platform#65). The amendment state vocabulary
+  # (draft/published) uses its own namespace — distinct from the
+  # contract lifecycle's contract_states.*.
+  ADMIN_AMENDMENT_LABELS = {
+    en: {
+      "admin.amendments.index.title" => "Amendments",
+      "admin.amendments.states.draft" => "Draft",
+      "admin.amendments.states.published" => "Published",
+      "admin.amendments.form.version" => "Version",
+      "admin.amendments.form.summary" => "Summary",
+      "admin.amendments.form.state" => "State",
+      "admin.amendments.publish.link" => "Publish"
+    },
+    sk: {
+      "admin.amendments.index.title" => "Dodatky",
+      "admin.amendments.states.draft" => "Koncept",
+      "admin.amendments.states.published" => "Zverejnený",
+      "admin.amendments.form.version" => "Verzia",
+      "admin.amendments.form.summary" => "Súhrn",
+      "admin.amendments.form.state" => "Stav",
+      "admin.amendments.publish.link" => "Zverejniť"
+    }
+  }.freeze
+
   # The exact expected leaf-key surface under decidim.contracts_sk, including
   # the public catalogue keys (plan Option B of #39), the admin CRUD keys
   # (civora-org/civora-platform#58), the admin content-field form keys
   # (civora-org/civora-platform#75), the admin party keys
   # (civora-org/civora-platform#76), the public catalogue view keys
   # (civora-org/civora-platform#62, #63), the admin/public document keys
-  # (civora-org/civora-platform#73) and the CRZ-handoff keys (M02-05-C,
-  # civora-org/civora-platform#74). Sorted alphabetically.
+  # (civora-org/civora-platform#73), the CRZ-handoff keys (M02-05-C,
+  # civora-org/civora-platform#74) and the amendment/version-history keys
+  # (M02-05-B, civora-org/civora-platform#65). Sorted alphabetically.
   EXPECTED_KEYS = [
+    "admin.amendments.back_to_contract",
+    "admin.amendments.create.error",
+    "admin.amendments.create.success",
+    "admin.amendments.destroy.confirm",
+    "admin.amendments.destroy.error",
+    "admin.amendments.destroy.link",
+    "admin.amendments.destroy.success",
+    "admin.amendments.edit.title",
+    "admin.amendments.form.state",
+    "admin.amendments.form.summary",
+    "admin.amendments.form.version",
+    "admin.amendments.index.title",
+    "admin.amendments.new.title",
+    "admin.amendments.publish.confirm",
+    "admin.amendments.publish.error",
+    "admin.amendments.publish.link",
+    "admin.amendments.publish.success",
+    "admin.amendments.states.draft",
+    "admin.amendments.states.published",
+    "admin.amendments.update.error",
+    "admin.amendments.update.success",
     "admin.contracts.create.error",
     "admin.contracts.create.success",
     "admin.contracts.edit.title",
@@ -207,6 +278,7 @@ module LocaleContract
     "contract.signed_on",
     "contract.status",
     "contract.subject_matter",
+    "contract.summary",
     "contract.title",
     "contract_states.approved",
     "contract_states.archived",
@@ -217,11 +289,15 @@ module LocaleContract
     "contract_states.returned",
     "contracts.index.empty",
     "contracts.index.title",
+    "contracts.show.current_version",
     "contracts.show.documents",
     "contracts.show.documents_empty",
     "contracts.show.parties",
     "contracts.show.parties_empty",
     "contracts.show.title",
+    "contracts.show.version_label",
+    "contracts.show.versions",
+    "contracts.show.versions_empty",
     "crz_handoff_pdf.disclaimer",
     "crz_handoff_pdf.generated_on",
     "crz_handoff_pdf.heading"
@@ -417,6 +493,22 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the public catalogue view labels in both locales (civora-org/civora-platform#62, #63)" do
       PublicCatalogueLabels::VIEW_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the public version-history labels in both locales (M02-05-B, civora-org/civora-platform#65)" do
+      LocaleContract::VERSION_HISTORY_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin amendment labels in both locales (M02-05-B, civora-org/civora-platform#65)" do
+      LocaleContract::ADMIN_AMENDMENT_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

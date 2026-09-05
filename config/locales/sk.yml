@@ -12,6 +12,7 @@ sk:
         effective_from: "Dátum účinnosti"
         crz_url: "Odkaz na CRZ"
         published_on: "Dátum zverejnenia"
+        summary: "Súhrn"
         party:
           object: "Objednávateľ"
           contractor: "Dodávateľ"
@@ -42,6 +43,10 @@ sk:
           parties_empty: "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."
           documents: "Dokumenty"
           documents_empty: "K tejto zmluve nie sú pripojené žiadne dokumenty."
+          versions: "História verzií"
+          current_version: "Aktuálna verzia"
+          version_label: "Verzia %{version}"
+          versions_empty: "K tejto zmluve nebola zverejnená žiadna zmena."
       admin:
         contracts:
           index:
@@ -68,6 +73,37 @@ sk:
             signed_on: "Dátum podpisu"
             effective_from: "Dátum účinnosti"
             crz_url: "Odkaz na CRZ"
+        amendments:
+          index:
+            title: "Dodatky"
+          new:
+            title: "Nový dodatok"
+          edit:
+            title: "Upraviť dodatok"
+          back_to_contract: "Späť na zmluvu"
+          create:
+            success: "Dodatok bol úspešne pridaný."
+            error: "Dodatok sa nepodarilo pridať."
+          update:
+            success: "Dodatok bol úspešne upravený."
+            error: "Dodatok sa nepodarilo upraviť."
+          publish:
+            link: "Zverejniť"
+            confirm: "Zverejniť tento dodatok? Zverejnený dodatok už nie je možné zmeniť."
+            success: "Dodatok bol úspešne zverejnený."
+            error: "Dodatok sa nepodarilo zverejniť."
+          destroy:
+            link: "Odstrániť"
+            confirm: "Odstrániť tento dodatok?"
+            success: "Dodatok bol úspešne odstránený."
+            error: "Dodatok sa nepodarilo odstrániť."
+          states:
+            draft: "Koncept"
+            published: "Zverejnený"
+          form:
+            version: "Verzia"
+            summary: "Súhrn"
+            state: "Stav"
         parties:
           index:
             title: "Zmluvné strany"
