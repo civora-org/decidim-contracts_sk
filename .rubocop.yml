@@ -24,6 +24,7 @@ Metrics/MethodLength:
 Metrics/AbcSize:
   Exclude:
     - "spec/support/demo_data.rb"
+    - "lib/tasks/**/*.rake"
 
 # Spec example-group blocks and Rake task bodies are naturally long; exclude
 # them from the limit.

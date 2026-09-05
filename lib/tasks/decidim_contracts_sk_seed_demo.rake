@@ -31,9 +31,12 @@ namespace :decidim_contracts_sk do
 
     organization = Decidim::Organization.find(org_id)
     other_org = Decidim::Organization.where.not(id: org_id).first ||
-                Decidim::Organization.create!(name: "Demo other org",
-                                              host: "other-#{Digest::MD5.hexdigest(Time.now.to_f.to_s)[0,
-                                                                                                       8]}.example.org")
+                Decidim::Organization.create!(
+                  name: { en: "Demo other organization", sk: "Demo iná organizácia" },
+                  available_locales: %w[en sk], default_locale: "sk",
+                  reference_prefix: "DEMO",
+                  host: "other-#{Digest::MD5.hexdigest(Time.now.to_f.to_s)[0, 8]}.example.org"
+                )
 
     admin = demo_user!(organization, "contracts-admin@example.org", terms: true)
     editor = demo_user!(organization, "contracts-editor@example.org", terms: true)
@@ -166,7 +169,7 @@ namespace :decidim_contracts_sk do
     # Audit-trail samples for the terminal-state records (find_or_create keeps
     # the task idempotent; the model itself is append-only).
     Decidim::ContractsSk::AuditEvent.find_or_create_by!(
-      organization: organization, user: admin, target: rejected, action: "reject"
+      organization: organization, actor: admin, target: rejected, action: "reject"
     )
 
     puts "Seeded demo data for organization ##{organization.id}:"
@@ -177,7 +180,11 @@ namespace :decidim_contracts_sk do
 
   def demo_user!(organization, email, terms:)
     Decidim::User.find_or_create_by!(email: email, organization: organization) do |u|
-      u.name = email.split("@").first.tr("-", " ").capitalize
+      local = email.split("@").first
+      u.name = local.tr("-", " ").capitalize
+      u.nickname = local.tr("-", "_")
+      u.tos_agreement = "1"
+      u.accepted_tos_version = organization.tos_version
       u.password = SecureRandom.hex(16) # intentionally unknown; reset via host app
       u.admin = true
       u.admin_terms_accepted_at = Time.current if terms

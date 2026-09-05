@@ -41,10 +41,10 @@ catalogue index is the mount root; detail is `/:id`.
 
 | # | Request | Expected |
 |---|---------|----------|
-| P1 | `GET /zmluvy/` | index lists only DEMO-2026-006 and DEMO-2026-007; localized empty state if no published rows |
+| P1 | `GET /zmluvy/` | index lists only DEMO-2026-006; localized empty state if no published rows |
 | P2 | `GET /zmluvy/` as JSON-less browser without JS | same, server-rendered |
 | P3 | detail for DEMO-2026-006 | content fields, parties, downloadable documents render |
-| P4 | detail for DEMO-2026-007 | renders (archived stays public) |
+| P4 | detail for DEMO-2026-007 | **404** — the catalogue scope pins `published` only; archived visibility is a deferred decision (`app/controllers/decidim/contracts_sk/contracts_controller.rb`) |
 | P5 | detail for DEMO-2026-001..005 | **404** (non-published states) |
 | P6 | detail for DEMO-OTHER-001's id | **404** (other organization) |
 | P7 | `GET /zmluvy/999999` | **404**, indistinguishable from P5/P6 |
