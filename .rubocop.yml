@@ -11,15 +11,26 @@ Style/StringLiterals:
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
 
-# Migrations are declarative column lists; the length budget doesn't apply.
+# Migrations and demo-data seeders are declarative fixture lists; the length
+# budget doesn't apply.
 Metrics/MethodLength:
   Exclude:
     - "db/migrate/**/*.rb"
+    - "lib/tasks/**/*.rake"
+    - "spec/support/demo_data.rb"
 
-# Spec example-group blocks are naturally long; exclude them from the limit.
+# Demo-data seeders are declarative fixture lists; complexity metrics don't
+# apply.
+Metrics/AbcSize:
+  Exclude:
+    - "spec/support/demo_data.rb"
+
+# Spec example-group blocks and Rake task bodies are naturally long; exclude
+# them from the limit.
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*.rb"
+    - "lib/tasks/**/*.rake"
 
 # Migration-shape specs describe a file path, not a class.
 RSpec/DescribeClass:
