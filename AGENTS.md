@@ -131,7 +131,9 @@ Current lessons:
 
 - **Stacked PRs: rebase onto `origin/main` before creating the PR.** When the base PR merges mid-arc, `gh pr create --base <feature-branch>` fails ("No commits between"); check the base PR's merge state first, `git rebase origin/main`, and target `main` directly (proven in the #59 arc).
 
-- **Cross-repo closing keywords DO work when the PR author has push access to both repos (same org).** `Closes civora-org/civora-platform#n` in a merged PR body auto-closed the platform issue within seconds (proven in the #36/#58 arc). Keep the belt-and-braces explicit `gh issue close` — but check state first; do not assume the convention note above still holds for other org setups.
+- **Cross-repo closing keywords DO work when the PR author has push access to both repos (same org).** `Closes civora-org/civora-platform#n` in a merged PR body auto-closed the platform issue within seconds (proven in the #36/#58 arc). Keep the belt-and-braces explicit `gh issue close` — but check state first; do not state the convention note above still holds for other org setups.
+
+- **The `with_lock` + in-lock re-check discipline applies to every command that writes state another request can change — not just lifecycle transitions.** Any guard (`draft?`, `published?`, `editable?`) evaluated on a request-loaded object is TOCTOU-bypassable: two concurrent publishes both pass the stale re-check and double-write. Wrap the write in `with_lock` (which reloads under lock) and re-check inside; read attributes the write depends on (snapshots, sequence numbers) from the post-lock instance. Test it deterministically with a stale pre-loaded object, no threads (proven in the #65 arc: reviewer H-1 on the amendment commands; `TransitionContract` was already the precedent).
 
 *Archived lessons (tracker & issue hygiene; engine mount-design; tooling & verification hygiene; host-app & ops; engine implementation mechanics clusters) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
 
