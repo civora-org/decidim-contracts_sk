@@ -46,9 +46,9 @@ table is empty. `checksum` is deferred to the actual import milestone
 
 Deferred (additive migrations later, per downstream issues): real functional
 fields — subject matter text, amounts/currency, signature/effectivity dates,
-amendments/versions (#57 landed the skeleton; immutability and the public
-version history arrive with #65); safe document content validation (#64 —
-the upload/storage wiring itself has landed, see #73 below).
+  amendments/versions (#57 landed the skeleton; immutability and the public
+  version history arrive with #65); safe document content validation has
+  since landed in #64 (see below).
 
 ## Schema consequences landed in #56 (M02-02-B)
 
@@ -98,9 +98,32 @@ ActiveStorage directly on `Document`**:
 - **Removal cascades**: destroying a document destroys its attachment row
   with it (the `has_one_attached` wiring); the blob purge itself goes
   through the host's queuing backend (`purge_later`).
-- **Deferred from this arc**: document content validation (allowed kinds,
-  size caps, content-type checks) remains
-  **civora-org/civora-platform#64**; CRZ integration remains #74.
+- **Deferred from this arc**: CRZ integration remains #74. Document
+  content validation landed in #64 — see below.
+
+## Upload safety landed in #64 (M02-05-A)
+
+- **Content-type allowlist** — `Document::ALLOWED_CONTENT_TYPES`
+  (`application/pdf`, `text/plain`, `image/png`, `image/jpeg`), enforced at
+  the form boundary (`DocumentForm`), fail-closed: exact match against the
+  client-declared type, no magic-byte sniffing (Decidim-core parity — core
+  does not sniff either). The type is client-declared, so this is a safety
+  floor, not a forensic guarantee.
+- **Size cap** — `Document::MAX_FILE_SIZE` (10 MB), an engine constant,
+  deliberately not host-configurable in v0.1; validated on the form before
+  any blob is created.
+- **Filename sanitization** — `Document.sanitize_filename` is the single
+  choke point for every stored display name (attach, replace and the
+  generated CRZ export all flow through `attach_file!`): strips directory
+  components, control characters and anything outside `[A-Za-z0-9._-]`,
+  collapses separator runs, caps at 255, and falls back to `document` (+
+  preserved ASCII extension when one survives, e.g. `ččč.pdf` →
+  `document.pdf`). The stored `file_name` is **display-only by contract** —
+  it never feeds paths or headers; public downloads use the blob's own
+  ActiveStorage-sanitized name, so the download dialog and the admin table
+  may show cosmetically different renderings of the same original name.
+- **Log safety** — no file payloads or blob IO are ever logged in the
+  attach path.
 
 ## Schema consequences landed in #57 (M02-02-C)
 

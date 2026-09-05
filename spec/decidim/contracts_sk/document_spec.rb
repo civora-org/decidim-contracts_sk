@@ -24,6 +24,7 @@
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
+require "tmpdir"
 
 # The structural groups assert several related class-level facts per example
 # and the :db group walks several scenarios, exceeding the default budgets.
@@ -81,6 +82,81 @@ RSpec.describe Decidim::ContractsSk::Document do
       expect(described_class::KIND_VALUES)
         .to eq(described_class::KINDS.to_h { |kind| [kind, kind] })
       expect(described_class::KIND_VALUES).to be_frozen
+    end
+  end
+
+  describe "upload guard constants (civora-org/civora-platform#64)" do
+    it "exposes the frozen content-type allowlist" do
+      aggregate_failures do
+        expect(described_class::ALLOWED_CONTENT_TYPES)
+          .to eq(%w[application/pdf text/plain image/png image/jpeg])
+        expect(described_class::ALLOWED_CONTENT_TYPES).to be_frozen
+      end
+    end
+
+    it "caps uploads at 10 megabytes" do
+      expect(described_class::MAX_FILE_SIZE).to eq(10 * 1024 * 1024)
+    end
+  end
+
+  describe "filename sanitization (civora-org/civora-platform#64)" do
+    def sanitized(raw)
+      described_class.sanitize_filename(raw)
+    end
+
+    it "strips directory components from both separator styles" do
+      aggregate_failures do
+        expect(sanitized("../../etc/passwd")).to eq("passwd")
+        expect(sanitized("..\\windows\\system32\\evil.exe")).to eq("evil.exe")
+        expect(sanitized("a/b\\c/d.txt")).to eq("d.txt")
+      end
+    end
+
+    it "strips control characters" do
+      aggregate_failures do
+        expect(sanitized("na\u0000me\u0001.pdf")).to eq("name.pdf")
+        expect(sanitized("report\t\n.pdf")).to eq("report.pdf")
+      end
+    end
+
+    it "keeps only [A-Za-z0-9._-] and collapses repeated separators" do
+      aggregate_failures do
+        expect(sanitized("my__file--v2.pdf")).to eq("my_file-v2.pdf")
+        # Unicode (diacritics, homoglyphs) is dropped with the rest.
+        expect(sanitized("zmluva č. 4.pdf")).to eq("zmluva.4.pdf")
+        expect(sanitized("\u0441\u043empany.pdf")).to eq("mpany.pdf") # Cyrillic с, о
+      end
+    end
+
+    it "leaves normal names unchanged" do
+      aggregate_failures do
+        expect(sanitized("sample.pdf")).to eq("sample.pdf")
+        expect(sanitized("sample-notes.txt")).to eq("sample-notes.txt")
+        # The generated handoff artifact's fixed name survives verbatim.
+        expect(sanitized("crz-handoff.pdf")).to eq("crz-handoff.pdf")
+      end
+    end
+
+    it "falls back to a stable name when every character is lost" do
+      aggregate_failures do
+        expect(sanitized("..")).to eq("document")
+        expect(sanitized("...")).to eq("document")
+        expect(sanitized("ččč")).to eq("document")
+        expect(sanitized("")).to eq("document")
+        expect(sanitized(nil)).to eq("document")
+      end
+    end
+
+    it "falls back with the extension preserved when only the extension survives" do
+      aggregate_failures do
+        expect(sanitized("ččč.pdf")).to eq("document.pdf")
+        expect(sanitized(".pdf")).to eq("document.pdf")
+        expect(sanitized("..pdf")).to eq("document.pdf")
+      end
+    end
+
+    it "caps the length at MAX_FILE_NAME_LENGTH" do
+      expect(sanitized("a" * 300)).to eq("a" * described_class::MAX_FILE_NAME_LENGTH)
     end
   end
 
@@ -233,6 +309,15 @@ RSpec.describe Decidim::ContractsSk::Document do
       Rack::Test::UploadedFile.new(sample_fixture(name), content_type)
     end
 
+    # A real file on disk whose NAME is the hostile part (POSIX-legal, so no
+    # fixture file is committed with a hostile name); the directory is left
+    # to the OS temp cleaner — the upload reads lazily from the path.
+    def hostile_upload(name, content_type: "application/pdf")
+      path = File.join(Dir.mktmpdir, name)
+      File.binwrite(path, "%PDF-hostile")
+      Rack::Test::UploadedFile.new(path, content_type)
+    end
+
     it "attaches a file and syncs the metadata columns from the blob" do
       document = described_class.create!(document_attributes(kind: "contract"))
 
@@ -254,6 +339,22 @@ RSpec.describe Decidim::ContractsSk::Document do
       document.attach_file!(upload("sample.pdf", "application/octet-stream"))
 
       expect(document.reload.content_type).to eq("application/pdf")
+    end
+
+    it "persists a sanitized file_name for a hostile upload name (civora-org/civora-platform#64)" do
+      document = described_class.create!(document_attributes)
+
+      document.attach_file!(hostile_upload("zmluva č. 4.pdf"))
+
+      expect(document.reload.file_name).to eq("zmluva.4.pdf")
+    end
+
+    it "strips control characters ActiveStorage leaves in place (civora-org/civora-platform#64)" do
+      document = described_class.create!(document_attributes)
+
+      document.attach_file!(hostile_upload("na\u0001me.pdf"))
+
+      expect(document.reload.file_name).to eq("name.pdf")
     end
 
     it "replaces the file and re-syncs the metadata columns from the new blob" do

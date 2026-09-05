@@ -30,6 +30,7 @@
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
+require "tmpdir"
 
 # Stand-in for a signed-in user in the offline group: only the swapped role
 # resolver reads it (via engine_roles); the Devise-ish seam just needs a
@@ -176,6 +177,15 @@ RSpec.describe "admin document management", type: :request do
       Rack::Test::UploadedFile.new(sample_fixture(name), content_type)
     end
 
+    # A real file on disk whose NAME is the hostile part (POSIX-legal, so no
+    # fixture file is committed with a hostile name); the directory is left
+    # to the OS temp cleaner — the upload reads lazily from the path.
+    def hostile_upload(name, content_type: "application/pdf")
+      path = File.join(Dir.mktmpdir, name)
+      File.binwrite(path, "%PDF-hostile")
+      Rack::Test::UploadedFile.new(path, content_type)
+    end
+
     # Role control per group: the resolver defaults to editor, keeping the
     # role decision explicit and deterministic.
     around do |example|
@@ -312,6 +322,30 @@ RSpec.describe "admin document management", type: :request do
         expect(Decidim::ContractsSk::Document.exists?(document.id)).to be(false)
         expect(ActiveStorage::Attachment.exists?(attachment_id)).to be(false)
       end
+    end
+
+    it "persists a sanitized file_name for a hostile upload name (civora-org/civora-platform#64)" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      post "/admin/contracts/#{contract.id}/documents", params: {
+        document: { title: "Signed contract scan", kind: "contract", file: hostile_upload("zmluva č. 4.pdf") }
+      }
+
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(contract.documents.reload.sole.file_name).to eq("zmluva.4.pdf")
+    end
+
+    it "persists a sanitized file_name on the replace path too (civora-org/civora-platform#64)" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+      document = contract.documents.create!(title: "Signed contract scan", kind: "annex")
+      document.attach_file!(upload("sample.pdf", "application/pdf"))
+
+      patch "/admin/contracts/#{contract.id}/documents/#{document.id}", params: {
+        document: { file: hostile_upload("na\u0001me.pdf") }
+      }
+
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(document.reload.file_name).to eq("name.pdf")
     end
 
     it "answers 422 with the alert and persists nothing when the title is missing" do

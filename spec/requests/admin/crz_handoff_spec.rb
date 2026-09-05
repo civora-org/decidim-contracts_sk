@@ -194,6 +194,9 @@ RSpec.describe "admin CRZ handoff", type: :request do
       aggregate_failures do
         expect(document.kind).to eq("crz_export")
         expect(document.title).to eq("CRZ handoff export")
+        # The generated artifact's fixed name survives the filename
+        # sanitizer verbatim (civora-org/civora-platform#64).
+        expect(document.file_name).to eq("crz-handoff.pdf")
         expect(document.content_type).to eq("application/pdf")
         expect(document.file.download).to start_with("%PDF-")
       end
