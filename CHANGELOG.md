@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [0.17.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.16.0...v0.17.0) (2026-09-05)
+
+
+### Features
+
+* **admin:** add CRZ handoff PDF export (M02-05-C) ([3892fd9](https://github.com/civora-org/decidim-contracts_sk/commit/3892fd9eb1563978c8f0a203846327dfb6e4fabd))
+* **amendments:** add amendment lifecycle and public version history (M02-05-B) ([98f4dd1](https://github.com/civora-org/decidim-contracts_sk/commit/98f4dd18c68e0b130728784b0f6b7d4feac02525))
+* **documents:** add safe upload validation (M02-05-A) ([1e052a7](https://github.com/civora-org/decidim-contracts_sk/commit/1e052a749fc200363a775f338919b69efcd03a39))
+* **testing:** add demo seed task, spec demo data and manual test scenarios ([81c89ca](https://github.com/civora-org/decidim-contracts_sk/commit/81c89cac86a847052321efc3d885fa8d4979b7af))
+
+
+### Bug Fixes
+
+* **testing:** satisfy Decidim organization/user validations in demo seed task ([842c424](https://github.com/civora-org/decidim-contracts_sk/commit/842c4249b482a3f52c9f8b6d9d9de4fc4b4cd23b))
+
 ## [0.16.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.15.0...v0.16.0) (2026-09-05)
 
 
