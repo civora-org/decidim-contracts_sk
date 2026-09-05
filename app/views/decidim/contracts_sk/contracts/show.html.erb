@@ -1,0 +1,47 @@
+<h1><%= @contract.title %></h1>
+
+<dl>
+  <dt><%= t("decidim.contracts_sk.contract.reference_number") %></dt>
+  <dd><%= @contract.reference %></dd>
+
+  <dt><%= t("decidim.contracts_sk.contract.published_on") %></dt>
+  <%# Deterministic ISO rendering on purpose: the engine ships no locale
+      date formats, so I18n.l would depend on host-app data. %>
+  <dd><%= @contract.published_at&.to_date&.to_fs(:db) %></dd>
+
+  <dt><%= t("decidim.contracts_sk.contract.subject_matter") %></dt>
+  <dd><%= @contract.subject_matter %></dd>
+
+  <dt><%= t("decidim.contracts_sk.contract.amount") %></dt>
+  <dd><%= @contract.amount %> <%= @contract.currency %></dd>
+
+  <dt><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
+  <dd><%= @contract.signed_on&.to_fs(:db) %></dd>
+
+  <dt><%= t("decidim.contracts_sk.contract.effective_from") %></dt>
+  <dd><%= @contract.effective_from&.to_fs(:db) %></dd>
+
+  <%# The only guarded field: a link to a blank URL would render href="". %>
+  <% if @contract.crz_url.present? %>
+    <dt><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
+    <dd><%= link_to @contract.crz_url, @contract.crz_url %></dd>
+  <% end %>
+</dl>
+
+<h2><%= t("decidim.contracts_sk.contracts.show.parties") %></h2>
+<%# Materialized once: the presence check and the iteration share a single
+    loaded collection instead of issuing two identical queries. %>
+<% parties = @contract.parties.to_a %>
+<% if parties.any? %>
+  <ul>
+    <% parties.each do |party| %>
+      <li>
+        <%= t("decidim.contracts_sk.contract.party.#{party.role}") %>: <%= party.name %>
+        <% if party.ico.present? %>(<%= party.ico %>)<% end %>
+        <% if party.address.present? %> — <%= party.address %><% end %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p><%= t("decidim.contracts_sk.contracts.show.parties_empty") %></p>
+<% end %>
