@@ -62,6 +62,12 @@ sk:
             success: "Zmluva bola úspešne upravená."
             error: "Zmluvu sa nepodarilo upraviť."
           transition:
+            submit: "Odoslať na kontrolu"
+            return: "Vrátiť na doplnenie"
+            approve: "Schváliť"
+            reject: "Zamietnuť"
+            publish: "Zverejniť"
+            archive: "Archivovať"
             success: "Prechod stavu zmluvy bol úspešne vykonaný."
             invalid: "Prechod stavu zmluvy sa nepodarilo vykonať."
           form:
