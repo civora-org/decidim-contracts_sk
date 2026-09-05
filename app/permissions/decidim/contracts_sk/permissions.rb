@@ -2,10 +2,11 @@
 
 module Decidim
   module ContractsSk
-    # Permission checks for the engine's contract records, following Decidim's
-    # DefaultPermissions contract: it may set the permission action's state
-    # only for subject :contract and leaves every other action untouched, so
-    # the rest of the host's permission_class_chain decides those.
+    # Permission checks for the engine's contract records and their parties,
+    # following Decidim's DefaultPermissions contract: it may set the
+    # permission action's state only for the subjects it owns (:contract and
+    # :party) and leaves every other action untouched, so the rest of the
+    # host's permission_class_chain decides those.
     #
     # Admin scope, subject :contract:
     # - :create is allowed when the user's engine roles include :editor
@@ -20,16 +21,29 @@ module Decidim
     #   derived from ContractLifecycle::TRANSITIONS, never hand-enumerated.
     # - :read is allowed when the user holds any engine role (admin index).
     #
+    # Admin scope, subject :party (civora-org/civora-platform#76): parties
+    # are contract-scoped child records, so their decisions hang off the
+    # parent contract passed in context[:contract] and follow the same
+    # editorial rule as :update:
+    # - :create, :update and :destroy are allowed exactly when the user's
+    #   engine roles include :editor AND the parent contract's state is
+    #   editable — party composition is part of editing the record.
+    # - :read is allowed when the user holds any engine role (party index),
+    #   same rule as the contract's :read.
+    #
     # Public scope, subject :contract:
     # - :read is allowed exactly when the record's state is publicly visible
     #   (ContractLifecycle::PUBLIC_STATES). No authentication required.
     #
     # Every other scope/subject/action combination is left unset, which
     # Decidim's permission machinery treats as denied (PermissionNotSetError
-    # rescued to false — fail-closed).
+    # rescued to false — fail-closed). In particular public-scope party
+    # actions are unset: the catalogue does not render parties yet, and the
+    # admin surface is the only consumer.
     #
     # The record's state is read duck-typed from context[:contract]&.state
-    # or context[:state]; callers pass at least one.
+    # or context[:state]; callers pass at least one. For subject :party the
+    # parent contract (context[:contract]) is the natural state source.
     # Load-time note: TRANSITION_EVENTS below evaluates ContractLifecycle
     # at class-body load; this file is only ever loaded through the gem's
     # lib require chain (which defines ContractLifecycle first), never
@@ -40,7 +54,7 @@ module Decidim
                                                         .uniq.sort.freeze
 
       def permissions
-        return permission_action unless subject == :contract
+        return permission_action unless %i[contract party].include? subject
 
         case permission_action.scope
         when :admin
@@ -55,6 +69,15 @@ module Decidim
       private
 
       def admin_action
+        case subject
+        when :contract
+          contract_action
+        when :party
+          party_action
+        end
+      end
+
+      def contract_action
         case action
         when :create
           toggle_allow(roles_for_user.include?(:editor))
@@ -67,7 +90,18 @@ module Decidim
         end
       end
 
+      def party_action
+        case action
+        when :create, :update, :destroy
+          toggle_allow(roles_for_user.include?(:editor) && ContractLifecycle.editable?(state))
+        when :read
+          toggle_allow(roles_for_user.any?)
+        end
+      end
+
       def public_action
+        return unless subject == :contract
+
         toggle_allow(ContractLifecycle.publicly_visible?(state)) if action == :read
       end
 

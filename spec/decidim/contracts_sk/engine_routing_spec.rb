@@ -15,6 +15,7 @@ require "spec_helper"
 module EngineRoutingContract
   PUBLIC_CONTROLLER = "decidim/contracts_sk/contracts"
   ADMIN_CONTROLLER = "decidim/contracts_sk/admin/contracts"
+  PARTIES_CONTROLLER = "decidim/contracts_sk/admin/parties"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -23,6 +24,10 @@ module EngineRoutingContract
   # is derived from the ContractLifecycle transition table in routes.rb —
   # see the derivation guard below): no :show (admin records are edited, not
   # displayed) and no :destroy (deletion is not part of the workflow yet).
+  # Parties (civora-org/civora-platform#76) hang off their contract through
+  # the nested resource: an index plus the full add/edit/remove surface
+  # (update maps to BOTH a PATCH and a PUT route entry, so the party block
+  # counts 7 route entries, not 6).
   # Note: Rails' `root` helper adds NO optional format segment (path is
   # exactly "/", not "/(.:format)" - unlike a plain `get`), and it maps the
   # `resources` update action to BOTH a PATCH and a PUT route entry, so the
@@ -41,7 +46,14 @@ module EngineRoutingContract
     ["POST", "/admin/contracts/:id/return(.:format)", "#{ADMIN_CONTROLLER}#return"],
     ["POST", "/admin/contracts/:id/submit(.:format)", "#{ADMIN_CONTROLLER}#submit"],
     ["PATCH", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#update"],
-    ["PUT", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#update"]
+    ["PUT", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#update"],
+    ["GET", "/admin/contracts/:contract_id/parties(.:format)", "#{PARTIES_CONTROLLER}#index"],
+    ["POST", "/admin/contracts/:contract_id/parties(.:format)", "#{PARTIES_CONTROLLER}#create"],
+    ["GET", "/admin/contracts/:contract_id/parties/new(.:format)", "#{PARTIES_CONTROLLER}#new"],
+    ["GET", "/admin/contracts/:contract_id/parties/:id/edit(.:format)", "#{PARTIES_CONTROLLER}#edit"],
+    ["PATCH", "/admin/contracts/:contract_id/parties/:id(.:format)", "#{PARTIES_CONTROLLER}#update"],
+    ["PUT", "/admin/contracts/:contract_id/parties/:id(.:format)", "#{PARTIES_CONTROLLER}#update"],
+    ["DELETE", "/admin/contracts/:contract_id/parties/:id(.:format)", "#{PARTIES_CONTROLLER}#destroy"]
   ].freeze
 
   # Normalized [verb, path, controller#action] triples for every route the
@@ -59,6 +71,10 @@ module EngineRoutingContract
 
   def admin_routes
     route_triples.select { |_, _, endpoint| endpoint.start_with?("#{ADMIN_CONTROLLER}#") }
+  end
+
+  def party_routes
+    route_triples.select { |_, _, endpoint| endpoint.start_with?("#{PARTIES_CONTROLLER}#") }
   end
 
   # Distinct controller strings used by the given routes, sorted.
@@ -104,6 +120,14 @@ RSpec.describe Decidim::ContractsSk::Engine do
       # expectation: it proves the helper is publicly callable (NameError
       # fails this example) and generates the POST target for create.
       expect(url_helpers.public_send(:admin_contracts_path)).to eq("/admin/contracts")
+    end
+
+    it "generates the nested party helpers (civora-org/civora-platform#76)" do
+      aggregate_failures do
+        expect(url_helpers.admin_contract_parties_path(7)).to eq("/admin/contracts/7/parties")
+        expect(url_helpers.new_admin_contract_party_path(7)).to eq("/admin/contracts/7/parties/new")
+        expect(url_helpers.edit_admin_contract_party_path(7, 3)).to eq("/admin/contracts/7/parties/3/edit")
+      end
     end
   end
 
@@ -180,21 +204,49 @@ RSpec.describe Decidim::ContractsSk::Engine do
     end
   end
 
+  describe "nested party routes (civora-org/civora-platform#76)" do
+    include EngineRoutingContract
+
+    it "exposes exactly the index/new/create/edit/update/destroy actions on the party controller" do
+      actions = party_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
+
+      expect(actions).to eq(%w[create destroy edit index new update])
+    end
+
+    it "nests every party route under its contract" do
+      aggregate_failures do
+        expect(party_routes).to all(include(a_string_starting_with("/admin/contracts/:contract_id/parties")))
+        expect(party_routes.map { |_, path, _| path }).not_to include("/admin/parties(.:format)")
+      end
+    end
+
+    it "maps destroy to DELETE on the nested party member" do
+      expect(party_routes).to include(
+        ["DELETE", "/admin/contracts/:contract_id/parties/:id(.:format)",
+         "#{EngineRoutingContract::PARTIES_CONTROLLER}#destroy"]
+      )
+    end
+  end
+
   describe "admin/public route separation" do
     include EngineRoutingContract
 
-    it "routes only the two engine controllers, distinct by the admin/ segment" do
-      expect(controllers_of(route_triples))
-        .to eq(["decidim/contracts_sk/admin/contracts", "decidim/contracts_sk/contracts"])
+    it "routes only the engine's three controllers, distinct by the admin/ segment" do
+      expect(controllers_of(route_triples)).to eq([
+                                                    "decidim/contracts_sk/admin/contracts",
+                                                    "decidim/contracts_sk/admin/parties",
+                                                    "decidim/contracts_sk/contracts"
+                                                  ])
     end
 
     it "maps no admin-prefixed path to the public controller" do
       admin_prefixed = route_triples.select { |_, path, _| path.start_with?("/admin/") }
 
-      expect(controllers_of(admin_prefixed)).to eq(["decidim/contracts_sk/admin/contracts"])
+      expect(controllers_of(admin_prefixed))
+        .to eq(["decidim/contracts_sk/admin/contracts", "decidim/contracts_sk/admin/parties"])
     end
 
-    it "maps no non-admin path to the admin controller" do
+    it "maps no non-admin path to the admin controllers" do
       non_admin = route_triples.reject { |_, path, _| path.start_with?("/admin/") }
 
       expect(controllers_of(non_admin)).to eq(["decidim/contracts_sk/contracts"])

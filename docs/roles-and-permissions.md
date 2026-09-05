@@ -28,7 +28,7 @@ the engine's two-role vocabulary stays unchanged for MVP.
 ## Vocabulary: scope / subject / action
 
 The permissions class speaks Decidim's `PermissionAction` vocabulary and
-answers only for subject `:contract`:
+answers for subjects `:contract` and `:party`:
 
 | Scope | Subject | Action | Allowed when |
 |---|---|---|---|
@@ -36,8 +36,10 @@ answers only for subject `:contract`:
 | `admin` | `contract` | `update` | user's engine roles include `editor` **and** `ContractLifecycle.editable?(state)` (`draft`, `returned`) — the editorial twin of the lifecycle's editability rule (civora-org/civora-platform#58) |
 | `admin` | `contract` | `submit`, `return`, `approve`, `reject`, `publish`, `archive` | `ContractLifecycle.allowed_roles(from: state, event: action)` intersects the user's engine roles |
 | `admin` | `contract` | `read` | user holds **any** engine role (admin index) |
+| `admin` | `party` | `create`, `update`, `destroy` | user's engine roles include `editor` **and** the parent contract's state is lifecycle-editable (`ContractLifecycle.editable?`) — the same rule as `contract`/`update`, applied to party management (civora-org/civora-platform#76) |
+| `admin` | `party` | `read` | user holds **any** engine role (party index) |
 | `public` | `contract` | `read` | `ContractLifecycle.publicly_visible?(state)` — i.e. state in `PUBLIC_STATES` (`published`, `archived`) |
-| anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) |
+| anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) — including every `public`-scope `party` action, so parties are never publicly addressable as a subject |
 
 The transition-event list is **derived** from
 `ContractLifecycle::TRANSITIONS` (`Permissions::TRANSITION_EVENTS`), never

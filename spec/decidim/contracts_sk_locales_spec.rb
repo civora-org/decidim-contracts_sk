@@ -41,10 +41,19 @@ module LocaleContract
           signed_on: "Dátum podpisu", effective_from: "Dátum účinnosti", crz_url: "Odkaz na CRZ" }
   }.freeze
 
+  # The admin party labels per locale, per the approved Slovak translations
+  # (civora-org/civora-platform#76): object party = Objednávateľ,
+  # contractor = Dodávateľ.
+  PARTY_ROLE_LABELS = {
+    en: { object: "Object party", contractor: "Contractor" },
+    sk: { object: "Objednávateľ", contractor: "Dodávateľ" }
+  }.freeze
+
   # The exact expected leaf-key surface under decidim.contracts_sk, including
   # the public catalogue keys (plan Option B of #39), the admin CRUD keys
-  # (civora-org/civora-platform#58) and the admin content-field form keys
-  # (civora-org/civora-platform#75). Sorted alphabetically.
+  # (civora-org/civora-platform#58), the admin content-field form keys
+  # (civora-org/civora-platform#75) and the admin party keys
+  # (civora-org/civora-platform#76). Sorted alphabetically.
   EXPECTED_KEYS = [
     "admin.contracts.create.error",
     "admin.contracts.create.success",
@@ -63,6 +72,24 @@ module LocaleContract
     "admin.contracts.transition.success",
     "admin.contracts.update.error",
     "admin.contracts.update.success",
+    "admin.parties.back_to_contract",
+    "admin.parties.create.error",
+    "admin.parties.create.success",
+    "admin.parties.destroy.confirm",
+    "admin.parties.destroy.error",
+    "admin.parties.destroy.link",
+    "admin.parties.destroy.success",
+    "admin.parties.edit.title",
+    "admin.parties.form.address",
+    "admin.parties.form.ico",
+    "admin.parties.form.name",
+    "admin.parties.form.role",
+    "admin.parties.index.title",
+    "admin.parties.new.title",
+    "admin.parties.roles.contractor",
+    "admin.parties.roles.object",
+    "admin.parties.update.error",
+    "admin.parties.update.success",
     "contract.amount",
     "contract.reference_number",
     "contract.status",
@@ -169,6 +196,14 @@ RSpec.describe Decidim::ContractsSk do
       LocaleContract::CONTENT_FIELD_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.admin.contracts.form.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin party role labels in both locales (civora-org/civora-platform#76)" do
+      LocaleContract::PARTY_ROLE_LABELS.each do |locale, labels|
+        labels.each do |role, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.admin.parties.roles.#{role}")).to eq(value)
         end
       end
     end
