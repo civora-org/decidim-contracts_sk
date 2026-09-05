@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.15.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.14.0...v0.15.0) (2026-09-05)
+
+
+### Features
+
+* **admin:** add admin party management for contracts (M02-03-D) ([90505b3](https://github.com/civora-org/decidim-contracts_sk/commit/90505b3b97a8eb63bad3d76b51591253bcc40169))
+
 ## [0.14.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.13.0...v0.14.0) (2026-09-04)
 
 
