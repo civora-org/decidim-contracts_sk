@@ -2,23 +2,22 @@
 
 # ---------------------------------------------------------------------------
 # Deterministic, offline, class-level specs for the public contracts
-# scaffold controller.
+# catalogue controller.
 #
 # Classes come from the Stage-1 dummy harness (spec/dummy): the engine
 # classes are provided by the dummy's autoloader, and the stand-in
 # Decidim::ApplicationController lives in the dummy boot.
 #
-# The scaffold renders localized placeholders; response behaviour is a
-# host-app concern (verified against the civora host app), so these specs
-# stay structural: class identity, inheritance, and the action surface.
-# Request-level behaviour of the same controller is covered by
-# spec/requests/contracts_spec.rb against the dummy routes.
+# These specs stay structural: class identity, inheritance, and the action
+# surface. Request-level behaviour — the published-only scoping, rendering
+# and not-found semantics (civora-org/civora-platform#62, #63) — is covered
+# by spec/requests/contracts_spec.rb against the dummy routes.
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
 
 # Nested in the Decidim::ContractsSk module namespace so the top-level
-# describe names the scaffold controller while resolving relative
+# describe names the catalogue controller while resolving relative
 # constants inside the engine's scope.
 module Decidim
   module ContractsSk
@@ -42,7 +41,7 @@ module Decidim
           .to eq(Decidim::ContractsSk::ApplicationController)
       end
 
-      # AC 3: the public catalogue action surface is present - the scaffold
+      # AC 3: the public catalogue action surface is present - the controller
       # answers #index and #show, matching the engine's public routes.
       it "defines :index and :show as public instance methods" do
         expect(described_class.public_instance_methods)

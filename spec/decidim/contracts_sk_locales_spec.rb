@@ -52,8 +52,9 @@ module LocaleContract
   # The exact expected leaf-key surface under decidim.contracts_sk, including
   # the public catalogue keys (plan Option B of #39), the admin CRUD keys
   # (civora-org/civora-platform#58), the admin content-field form keys
-  # (civora-org/civora-platform#75) and the admin party keys
-  # (civora-org/civora-platform#76). Sorted alphabetically.
+  # (civora-org/civora-platform#75), the admin party keys
+  # (civora-org/civora-platform#76) and the public catalogue view keys
+  # (civora-org/civora-platform#62, #63). Sorted alphabetically.
   EXPECTED_KEYS = [
     "admin.contracts.create.error",
     "admin.contracts.create.success",
@@ -91,10 +92,21 @@ module LocaleContract
     "admin.parties.update.error",
     "admin.parties.update.success",
     "contract.amount",
+    "contract.crz_url",
+    "contract.currency",
+    "contract.effective_from",
+    "contract.party.contractor",
+    "contract.party.object",
+    "contract.published_on",
     "contract.reference_number",
+    "contract.signed_on",
     "contract.status",
+    "contract.subject_matter",
     "contract.title",
+    "contracts.index.empty",
     "contracts.index.title",
+    "contracts.show.parties",
+    "contracts.show.parties_empty",
     "contracts.show.title"
   ].freeze
 
@@ -141,6 +153,35 @@ module LocaleContract
     backend.load_translations(*LOCALES.map { |locale| locale_file(locale) })
     backend
   end
+end
+
+# The public catalogue's own vocabulary (civora-org/civora-platform#62, #63),
+# kept in its own module so that LocaleContract stays within its length
+# budget and the public surface stays visually separate from the admin one.
+module PublicCatalogueLabels
+  # View labels per locale, keyed by their path under decidim.contracts_sk.
+  VIEW_LABELS = {
+    en: {
+      "contract.published_on" => "Published on",
+      "contracts.index.empty" => "No published contracts yet.",
+      "contracts.show.parties" => "Parties",
+      "contracts.show.parties_empty" => "No parties have been recorded for this contract."
+    },
+    sk: {
+      "contract.published_on" => "Dátum zverejnenia",
+      "contracts.index.empty" => "Zatiaľ nie je zverejnená žiadna zmluva.",
+      "contracts.show.parties" => "Zmluvné strany",
+      "contracts.show.parties_empty" => "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."
+    }
+  }.freeze
+
+  # The public detail page's party role labels: they reuse the terminology
+  # fixed for the admin party management (#76) — object party =
+  # Objednávateľ, contractor = Dodávateľ — never a second vocabulary.
+  PARTY_ROLE_LABELS = {
+    en: { object: "Object party", contractor: "Contractor" },
+    sk: { object: "Objednávateľ", contractor: "Dodávateľ" }
+  }.freeze
 end
 
 RSpec.describe Decidim::ContractsSk do
@@ -204,6 +245,22 @@ RSpec.describe Decidim::ContractsSk do
       LocaleContract::PARTY_ROLE_LABELS.each do |locale, labels|
         labels.each do |role, value|
           expect(backend.translate(locale, "decidim.contracts_sk.admin.parties.roles.#{role}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the public catalogue view labels in both locales (civora-org/civora-platform#62, #63)" do
+      PublicCatalogueLabels::VIEW_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "keeps the established Slovak party terminology on the public detail page (civora-org/civora-platform#63)" do
+      PublicCatalogueLabels::PARTY_ROLE_LABELS.each do |locale, labels|
+        labels.each do |role, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.contract.party.#{role}")).to eq(value)
         end
       end
     end

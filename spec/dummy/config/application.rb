@@ -73,6 +73,15 @@ class DummyPublicPermissions < Decidim::DefaultPermissions; end
 unless defined?(Decidim::ApplicationController)
   module Decidim
     class ApplicationController < ActionController::Base
+      # Devise-ish seam (stubbed; overridden per-example in specs): a real
+      # host provides current_organization via Decidim::NeedsOrganization,
+      # and the engine's public catalogue reads it for its tenant scope.
+      # Mirrors the admin stand-in below: nil by default, stubbed
+      # per-example with allow_any_instance_of.
+      def current_organization
+        nil
+      end
+
       def permission_class_chain
         [DummyPublicPermissions]
       end
