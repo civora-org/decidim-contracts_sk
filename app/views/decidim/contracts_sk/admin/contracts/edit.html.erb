@@ -48,3 +48,31 @@
   </table>
 <% end %>
 
+<%# Manual CRZ-handoff export (M02-05-C, civora-org/civora-platform#74):
+    a generated, always-regenerable handoff aid for the clerical CRZ
+    record (ADR-002) — labelled on the page as an aid, never a legal
+    publication. The gates are split to mirror the controller: the
+    download link follows its own :download_crz_handoff permission
+    (editor on ANY lifecycle state), while generate/regenerate follow
+    :update (editor on an editable record) like the page's other writes. %>
+<h2><%= t("decidim.contracts_sk.admin.crz_handoff.title") %></h2>
+<p><%= t("decidim.contracts_sk.admin.crz_handoff.disclaimer") %></p>
+
+<% if allowed_to?(:download_crz_handoff, :contract, contract: @contract) && @crz_handoff_document&.file&.attached? %>
+  <p><%= link_to t("decidim.contracts_sk.admin.crz_handoff.download"),
+                 download_crz_handoff_admin_contract_path(@contract) %></p>
+<% end %>
+
+<% if allowed_to?(:update, :contract, contract: @contract) %>
+  <% if @crz_handoff_document&.file&.attached? %>
+    <%= button_to t("decidim.contracts_sk.admin.crz_handoff.replace"),
+                  generate_crz_handoff_admin_contract_path(@contract),
+                  method: :post %>
+  <% else %>
+    <%= button_to t("decidim.contracts_sk.admin.crz_handoff.generate"),
+                  generate_crz_handoff_admin_contract_path(@contract),
+                  method: :post %>
+  <% end %>
+<% end %>
+
+

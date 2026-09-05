@@ -38,6 +38,11 @@ Gem::Specification.new do |spec|
   # Floor is 0.31.5: earlier 0.31.x carries CVE-2026-45573 (decidim-core push
   # subscriptions SSRF, Medium), and Decidim's meta-gems pin each other with
   # `=`, so a loose floor lets fresh resolutions settle on unpatched lines.
+  # Pure-Ruby PDF generation for the manual CRZ-handoff export
+  # (M02-05-C, civora-org/civora-platform#74). Pinned to 2.5.x — the
+  # current stable line (2.5.0 verified installable offline).
+  spec.add_dependency "prawn", "~> 2.5.0"
+
   spec.add_dependency "decidim-admin", "~> 0.31.5"
   spec.add_dependency "decidim-core", "~> 0.31.5"
 

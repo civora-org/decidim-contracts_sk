@@ -4,7 +4,8 @@ module Decidim
   module ContractsSk
     module Admin
       # Admin CRUD and lifecycle transitions for contract records
-      # (civora-org/civora-platform#58, #59).
+      # (civora-org/civora-platform#58, #59), plus the manual CRZ-handoff
+      # download/generate pair (M02-05-C, civora-org/civora-platform#74).
       #
       # index/new/create open with enforce_permission_to before anything
       # else; edit/update and the transition actions load the record first,
@@ -55,14 +56,12 @@ module Decidim
 
           enforce_permission_to :update, :contract, contract: @contract
 
-          @form = ContractForm.new(title: @contract.title,
-                                   reference: @contract.reference,
-                                   subject_matter: @contract.subject_matter,
-                                   amount: @contract.amount,
-                                   currency: @contract.currency,
-                                   signed_on: @contract.signed_on,
-                                   effective_from: @contract.effective_from,
-                                   crz_url: @contract.crz_url)
+          @form = edit_form
+
+          # The handoff section reads the record's single crz_export document
+          # (civora-org/civora-platform#74): its presence decides between the
+          # download link + regenerate button and the plain generate button.
+          @crz_handoff_document = @contract.documents.find_by(kind: "crz_export")
         end
 
         def update
@@ -75,6 +74,39 @@ module Decidim
           UpdateContract.call(@form, @contract) do
             on(:ok) { update_succeeded }
             on(:invalid) { update_failed }
+          end
+        end
+
+        # Manual CRZ-handoff export (M02-05-C, civora-org/civora-platform#74).
+        # Both verbs share the path /admin/contracts/:id/crz_handoff but the
+        # gates are deliberately split: generating the handoff aid is
+        # editorial work on an editable record (ADR-002), so it gates exactly
+        # like :update; downloading the already-generated aid is role-gated
+        # only (editor on ANY lifecycle state) through the dedicated
+        # :download_crz_handoff permission action.
+        def download_crz_handoff
+          @contract = contracts_scope.find(params[:id])
+
+          enforce_permission_to :download_crz_handoff, :contract, contract: @contract
+
+          document = @contract.documents.find_by(kind: "crz_export")
+          return download_missing unless document&.file&.attached?
+
+          # Streams straight from the attached blob — no disk temp files.
+          send_data document.file.download,
+                    filename: document.file_name,
+                    type: document.content_type,
+                    disposition: :attachment
+        end
+
+        def generate_crz_handoff
+          @contract = contracts_scope.find(params[:id])
+
+          enforce_permission_to :update, :contract, contract: @contract
+
+          GenerateCrzHandoff.call(@contract, user: current_user) do
+            on(:ok) { generate_succeeded }
+            on(:invalid) { generate_failed }
           end
         end
 
@@ -131,6 +163,29 @@ module Decidim
           render :edit, status: :unprocessable_entity
         end
 
+        # The handoff is generated before it can be downloaded; a missing
+        # artifact sends the admin back to the edit page with a localized
+        # alert instead of a 404 (the button is hidden when absent, so this
+        # only fires on stale pages or hand-crafted requests).
+        def download_missing
+          flash[:alert] = t("decidim.contracts_sk.admin.crz_handoff.download_missing")
+          redirect_to edit_admin_contract_path(@contract)
+        end
+
+        # Both generate outcomes are PRG redirects to the edit page (the
+        # handoff section's home): a failure means the record changed under
+        # us, and there is no form to re-render — the edit page shows the
+        # truth.
+        def generate_succeeded
+          flash[:notice] = t("decidim.contracts_sk.admin.crz_handoff.create.success")
+          redirect_to edit_admin_contract_path(@contract)
+        end
+
+        def generate_failed
+          flash[:alert] = t("decidim.contracts_sk.admin.crz_handoff.create.error")
+          redirect_to edit_admin_contract_path(@contract)
+        end
+
         # Shared transition pipeline: load the record from the tenant scope,
         # ask the permission layer (event-specific: the lifecycle edge's role
         # set decides), then run the command. Both outcomes are PRG redirects
@@ -169,6 +224,19 @@ module Decidim
           ContractLifecycle.events_from(state).select do |event|
             (ContractLifecycle.allowed_roles(from: state, event: event) & roles).any?
           end
+        end
+
+        # The edit form is pre-filled from the persisted record (never from
+        # the request) — only update carries request params.
+        def edit_form
+          ContractForm.new(title: @contract.title,
+                           reference: @contract.reference,
+                           subject_matter: @contract.subject_matter,
+                           amount: @contract.amount,
+                           currency: @contract.currency,
+                           signed_on: @contract.signed_on,
+                           effective_from: @contract.effective_from,
+                           crz_url: @contract.crz_url)
         end
 
         # Tenant-scoped record access: a contract of another organization is

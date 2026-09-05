@@ -20,6 +20,17 @@ Decidim::ContractsSk::Engine.routes.draw do
         member { post event }
       end
 
+      # Manual CRZ-handoff export (M02-05-C, civora-org/civora-platform#74):
+      # a GET streams the generated handoff PDF, a POST generates (or
+      # regenerates, replacing) it. Declared explicitly — this is NOT a
+      # lifecycle event, so it deliberately sits outside the derivation
+      # above. Same path, two verbs, two explicit actions, `as:`-named so
+      # each helper reads as its action.
+      member do
+        get :crz_handoff, action: :download_crz_handoff, as: :download_crz_handoff
+        post :crz_handoff, action: :generate_crz_handoff, as: :generate_crz_handoff
+      end
+
       # Per-contract party management (civora-org/civora-platform#76):
       # dedicated nested pages (index/new/edit + destroy), deliberately no
       # nested-form JS. Tenancy is derived through the parent contract; the

@@ -5,7 +5,9 @@
 # (civora-org/civora-platform#73).
 #
 # The form needs no database connection (its validations mirror the Document
-# model's own; the file presence check runs on the in-memory upload object),
+# model's own, except the kind vocabulary, which is deliberately narrower —
+# crz_export is reserved for the generated handoff artifact; the file
+# presence check runs on the in-memory upload object),
 # so the whole file runs in the default offline suite. The file's CONTENT is
 # deliberately not validated — allowed kinds and size caps are deferred to
 # civora-org/civora-platform#64.
@@ -48,10 +50,27 @@ RSpec.describe Decidim::ContractsSk::Admin::DocumentForm do
     expect(form).to be_valid
   end
 
-  it "accepts every kind of the model's frozen vocabulary" do
-    Decidim::ContractsSk::Document::KINDS.each do |kind|
+  it "accepts every kind of the form's editor vocabulary" do
+    described_class::EDITOR_KINDS.each do |kind|
       expect(form_with(kind: kind)).to be_valid, "kind #{kind} must be legal"
     end
+  end
+
+  it "narrows the model's vocabulary exactly by the generated artifact's kind" do
+    aggregate_failures do
+      expect(described_class::EDITOR_KINDS)
+        .to eq(Decidim::ContractsSk::Document::KINDS - %w[crz_export])
+      # The model keeps the full vocabulary — generated artifacts land in
+      # crz_export legitimately.
+      expect(Decidim::ContractsSk::Document::KINDS).to include("crz_export")
+    end
+  end
+
+  it "rejects the generated artifact's kind (upload cannot collide with the handoff)" do
+    form = form_with(kind: "crz_export")
+
+    expect(form).not_to be_valid
+    expect(form.errors[:kind]).to be_present
   end
 
   it "requires a title" do

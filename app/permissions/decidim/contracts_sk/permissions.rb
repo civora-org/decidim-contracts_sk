@@ -15,6 +15,12 @@ module Decidim
     #   the record's state is editable (ContractLifecycle::EDITABLE_STATES) —
     #   the editorial twin of the lifecycle's editability rule; reviewers can
     #   never edit, and non-editable states deny even editors.
+    # - :download_crz_handoff (M02-05-C, civora-org/civora-platform#74) is
+    #   allowed when the user's engine roles include :editor, with NO
+    #   editability condition — fetching the generated handoff aid is
+    #   role-gated only, so an editor can retrieve it on any lifecycle
+    #   state (unlike :update, which stays editable-state-gated for the
+    #   generating twin action).
     # - Transition events (:submit, :return, :approve, :reject, :publish,
     #   :archive) are allowed when ContractLifecycle.allowed_roles for the
     #   record's state intersect the user's engine roles. The event list is
@@ -85,7 +91,10 @@ module Decidim
 
       def contract_action
         case action
-        when :create
+        # :create and :download_crz_handoff (M02-05-C,
+        # civora-org/civora-platform#74) share the role-only rule: editor
+        # membership decides, no lifecycle state is consulted.
+        when :create, :download_crz_handoff
           toggle_allow(roles_for_user.include?(:editor))
         when :update
           toggle_allow(roles_for_user.include?(:editor) && ContractLifecycle.editable?(state))

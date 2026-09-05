@@ -20,6 +20,18 @@ en:
           crz_export: "CRZ export"
           annex: "Annex"
           other: "Other document"
+      contract_states:
+        draft: "Draft"
+        in_review: "In review"
+        returned: "Returned for changes"
+        approved: "Approved"
+        rejected: "Rejected"
+        published: "Published"
+        archived: "Archived"
+      crz_handoff_pdf:
+        heading: "CRZ handoff aid"
+        disclaimer: "This document is a handoff aid for the CRZ record — not a legal publication."
+        generated_on: "Generated on"
       contracts:
         index:
           title: "Contracts"
@@ -112,3 +124,14 @@ en:
             kind: "Kind"
             file: "File"
             current_file: "Current file"
+        crz_handoff:
+          title: "CRZ handoff"
+          disclaimer: "The generated PDF is a handoff aid for the CRZ record — not a legal publication."
+          document_title: "CRZ handoff export"
+          download: "Download handoff PDF"
+          generate: "Generate handoff PDF"
+          replace: "Regenerate handoff PDF"
+          create:
+            success: "CRZ handoff PDF generated successfully."
+            error: "CRZ handoff PDF could not be generated."
+          download_missing: "The CRZ handoff PDF has not been generated yet."

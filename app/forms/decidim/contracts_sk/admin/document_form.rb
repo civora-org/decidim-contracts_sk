@@ -23,9 +23,19 @@ module Decidim
       # On the replace path (ReplaceDocument) the controller pre-fills
       # title/kind from the persisted record — a replace swaps the file only,
       # so the request cannot retouch the record's content fields.
+      #
+      # The form's kind vocabulary is deliberately narrower than the model's:
+      # crz_export is reserved for the generated CRZ-handoff artifact
+      # (M02-05-C, civora-org/civora-platform#74), so the upload form can
+      # neither offer nor accept it — an editor cannot upload into the
+      # generated artifact's kind. The model's KINDS stay unchanged
+      # (generated artifacts land there legitimately).
       class DocumentForm
         include ActiveModel::Model
         include ActiveModel::Attributes
+
+        # The model's frozen KINDS minus the generated artifact's kind.
+        EDITOR_KINDS = (Decidim::ContractsSk::Document::KINDS - ["crz_export"]).freeze
 
         attribute :title, :string
         attribute :kind, :string, default: "contract"
@@ -34,7 +44,7 @@ module Decidim
 
         validates :title, presence: true, length: { maximum: 255 }
         validates :kind, presence: true,
-                         inclusion: { in: Decidim::ContractsSk::Document::KINDS }
+                         inclusion: { in: EDITOR_KINDS }
         validates :file, presence: true
       end
     end

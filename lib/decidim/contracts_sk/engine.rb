@@ -15,6 +15,7 @@ module Decidim
           #{config.root}/app/commands
           #{config.root}/app/events
           #{config.root}/app/forms
+          #{config.root}/app/pdfs
           #{config.root}/app/permissions
         ]
       end

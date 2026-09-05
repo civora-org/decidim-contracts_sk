@@ -20,6 +20,18 @@ sk:
           crz_export: "Export z CRZ"
           annex: "Príloha"
           other: "Iný dokument"
+      contract_states:
+        draft: "Koncept"
+        in_review: "V recenzii"
+        returned: "Vrátená na doplnenie"
+        approved: "Schválená"
+        rejected: "Zamietnutá"
+        published: "Zverejnená"
+        archived: "Archivovaná"
+      crz_handoff_pdf:
+        heading: "Pomôcka na odovzdanie do CRZ"
+        disclaimer: "Tento dokument je pomôcka na odovzdanie do CRZ — nie právna publikácia."
+        generated_on: "Vygenerované"
       contracts:
         index:
           title: "Zmluvy"
@@ -112,3 +124,14 @@ sk:
             kind: "Typ"
             file: "Súbor"
             current_file: "Aktuálny súbor"
+        crz_handoff:
+          title: "Odovzdanie do CRZ"
+          disclaimer: "Vygenerovaný PDF je pomôcka na odovzdanie do CRZ — nie právna publikácia."
+          document_title: "Pomôcka na odovzdanie do CRZ"
+          download: "Stiahnuť pomôcku (PDF)"
+          generate: "Vygenerovať pomôcku (PDF)"
+          replace: "Vygenerovať pomôcku znova (PDF)"
+          create:
+            success: "Pomôcka na odovzdanie do CRZ bola vygenerovaná."
+            error: "Pomôcku na odovzdanie do CRZ sa nepodarilo vygenerovať."
+          download_missing: "Pomôcka na odovzdanie do CRZ ešte nebola vygenerovaná."
