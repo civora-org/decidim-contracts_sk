@@ -237,6 +237,110 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — party (contract-scoped child records, civora-org/civora-platform#76)" do
+    # The party actions the writing gate covers (see the Permissions class
+    # comment). A plain method, not a block-level constant — the constants
+    # this file owns live at the top level.
+    def party_actions
+      %i[create update destroy]
+    end
+
+    # Party decisions hang off the PARENT contract passed in
+    # context[:contract]; the same engine_roles-driven resolver swap as the
+    # sibling groups applies (restored after each example).
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "allows an editor exactly on the editable parent states, for every writing action" do
+      lifecycle::EDITABLE_STATES.each do |state|
+        party_actions.each do |party_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                       action: party_action,
+                                                                       contract: SpecContract.new(state),
+                                                                       action_subject: :party)
+
+          expect(outcome.allowed?).to be(true), "editor must #{party_action} a party on #{state}"
+        end
+      end
+    end
+
+    it "denies an editor on every non-editable parent state" do
+      (lifecycle::STATES - lifecycle::EDITABLE_STATES).each do |state|
+        party_actions.each do |party_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                       action: party_action,
+                                                                       contract: SpecContract.new(state),
+                                                                       action_subject: :party)
+
+          expect(outcome.allowed?).to be(false), "editor must not #{party_action} a party on #{state}"
+        end
+      end
+    end
+
+    it "denies a reviewer even on editable parent states (reviewers never draft)" do
+      lifecycle::EDITABLE_STATES.each do |state|
+        party_actions.each do |party_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[reviewer]), scope: :admin,
+                                                                         action: party_action,
+                                                                         contract: SpecContract.new(state),
+                                                                         action_subject: :party)
+
+          expect(outcome.allowed?).to be(false), "reviewer must not #{party_action} a party on #{state}"
+        end
+      end
+    end
+
+    it "answers party :read like the contract's :read: any engine role, any parent state" do
+      %i[draft published].each do |state|
+        editor = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :read,
+                                                                    contract: SpecContract.new(state),
+                                                                    action_subject: :party)
+        reviewer = action_for(SpecUser.new(engine_roles: %i[reviewer]), scope: :admin, action: :read,
+                                                                        contract: SpecContract.new(state),
+                                                                        action_subject: :party)
+
+        expect(editor.allowed?).to be(true), "editor must read parties on #{state}"
+        expect(reviewer.allowed?).to be(true), "reviewer must read parties on #{state}"
+      end
+    end
+
+    it "denies party :read for a roleless user" do
+      outcome = action_for(SpecUser.new(engine_roles: []), scope: :admin, action: :read,
+                                                           contract: SpecContract.new(:draft),
+                                                           action_subject: :party)
+
+      expect(outcome.allowed?).to be(false)
+    end
+
+    it "disallows (not unset) party writes when no contract state is reachable — fail-closed" do
+      party_actions.each do |party_action|
+        outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                     action: party_action,
+                                                                     action_subject: :party)
+
+        expect(outcome.allowed?).to be(false)
+        expect(unset?(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: party_action,
+                                                              action_subject: :party)).to be(false)
+      end
+    end
+
+    it "treats String states (Rails enum getters) identically to Symbols" do
+      lifecycle::STATES.each do |state|
+        expected = lifecycle::EDITABLE_STATES.include?(state)
+
+        outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :update,
+                                                                     contract: SpecContract.new(state.to_s),
+                                                                     action_subject: :party)
+
+        expect(outcome.allowed?).to eq(expected), "String state diverged for party :update on #{state}"
+      end
+    end
+  end
+
   describe "org admin with accepted terms (default resolver)" do
     it "may trigger every edge in the transition table" do
       lifecycle::TRANSITIONS.each do |from, edges|
@@ -283,9 +387,14 @@ RSpec.describe Decidim::ContractsSk::Permissions do
   end
 
   describe "fail-closed semantics" do
-    it "leaves non-:contract subjects unset" do
+    it "leaves subjects the engine does not own unset" do
       expect(unset?(org_admin, scope: :admin, action: :read, state: :draft, action_subject: :component)).to be(true)
       expect(unset?(org_admin, scope: :public, action: :read, state: :published, action_subject: :proposal)).to be(true)
+    end
+
+    it "leaves public-scope party actions unset (the catalogue does not render parties)" do
+      expect(unset?(org_admin, scope: :public, action: :read, state: :published, action_subject: :party)).to be(true)
+      expect(unset?(org_admin, scope: :public, action: :destroy, state: :draft, action_subject: :party)).to be(true)
     end
 
     it "leaves unknown events unset" do

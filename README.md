@@ -17,9 +17,10 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 - `Contract` model and migration — lifecycle-validated `state` enum, per-organization `reference` uniqueness, and manual CRZ-handoff provenance columns (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md));
 - `Party` and `Document` models and migrations — contract-scoped parties with an `object`/`contractor` role enum and documents with a `contract`/`crz_export`/`annex`/`other` kind enum, real FK constraints onto the contracts table, and nullable file-metadata columns (validated upload deferred to M02-05-A);
 - `Amendment` and `AuditEvent` models and migrations — per-contract numbered amendments (unique `(contract, version)`; immutability deferred to M02-05-B) and an append-only audit trail with explicit organization/actor tenancy and a polymorphic target that outlives the contract (rationale in [`docs/contracts-domain-notes.md`](docs/contracts-domain-notes.md));
-- Admin contracts CRUD — `index`/`new`/`create`/`edit`/`update` behind the engine permissions (`editor` role; `update` additionally gated on lifecycle editability), with a deliberately narrow title/reference form — lifecycle state, provenance, organization and author are never form-writable (civora-org/civora-platform#58).
+- Admin contracts CRUD — `index`/`new`/`create`/`edit`/`update` behind the engine permissions (`editor` role; `update` additionally gated on lifecycle editability), with a deliberately narrow title/reference form — lifecycle state, provenance, organization and author are never form-writable (civora-org/civora-platform#58);
+- Admin party management — nested add/edit/remove pages under each contract (`admin/contracts/:contract_id/parties`), gated like `update` (`editor` role on an editable-state contract); multiple parties with the same role are legal (civora-org/civora-platform#76).
 
-Admin record views are upcoming — see [Milestone 02 execution order](docs/m02-execution-order.md).
+Admin contract record views are upcoming — see [Milestone 02 execution order](docs/m02-execution-order.md).
 
 ## Requirements
 
@@ -53,7 +54,7 @@ mount Decidim::ContractsSk::Engine, at: "/zmluvy"
 With the engine mounted at `/zmluvy`:
 
 - **Public catalogue** — `GET /zmluvy/contracts` (list) and `GET /zmluvy/contracts/:id` (detail). No authentication required.
-- **Admin** — `/zmluvy/admin/contracts` (list, create and edit contract records and drive lifecycle transitions — one POST action per event; sign-in plus an engine role required, each transition gated to the role that owns its edge in the [lifecycle table](docs/contract-lifecycle.md): `editor` for submit/publish/archive, `reviewer` for return/approve/reject; `update` only while the record's lifecycle state is editable).
+- **Admin** — `/zmluvy/admin/contracts` (list, create and edit contract records and drive lifecycle transitions — one POST action per event; sign-in plus an engine role required, each transition gated to the role that owns its edge in the [lifecycle table](docs/contract-lifecycle.md): `editor` for submit/publish/archive, `reviewer` for return/approve/reject; `update` only while the record's lifecycle state is editable). Each contract also has a nested party manager at `/zmluvy/admin/contracts/:contract_id/parties` — add/edit/remove the object/contractor parties, `editor`-gated and available only while the record's lifecycle state is editable.
 - **Roles and permissions** — the engine-logical `editor`/`reviewer` roles map onto Decidim permissions via a config-time resolver; see [docs/roles-and-permissions.md](docs/roles-and-permissions.md).
 
 Locales: English and Slovak.

@@ -37,3 +37,30 @@ sk:
             signed_on: "Dátum podpisu"
             effective_from: "Dátum účinnosti"
             crz_url: "Odkaz na CRZ"
+        parties:
+          index:
+            title: "Zmluvné strany"
+          new:
+            title: "Nová zmluvná strana"
+          edit:
+            title: "Upraviť zmluvnú stranu"
+          back_to_contract: "Späť na zmluvu"
+          create:
+            success: "Zmluvná strana bola úspešne pridaná."
+            error: "Zmluvnú stranu sa nepodarilo pridať."
+          update:
+            success: "Zmluvná strana bola úspešne upravená."
+            error: "Zmluvnú stranu sa nepodarilo upraviť."
+          destroy:
+            link: "Odstrániť"
+            confirm: "Odstrániť túto zmluvnú stranu?"
+            success: "Zmluvná strana bola úspešne odstránená."
+            error: "Zmluvnú stranu sa nepodarilo odstrániť."
+          roles:
+            object: "Objednávateľ"
+            contractor: "Dodávateľ"
+          form:
+            role: "Rola"
+            name: "Názov"
+            ico: "IČO"
+            address: "Adresa"

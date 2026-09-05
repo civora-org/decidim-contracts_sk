@@ -37,3 +37,30 @@ en:
             signed_on: "Signed on"
             effective_from: "Effective from"
             crz_url: "CRZ URL"
+        parties:
+          index:
+            title: "Parties"
+          new:
+            title: "New party"
+          edit:
+            title: "Edit party"
+          back_to_contract: "Back to contract"
+          create:
+            success: "Party added successfully."
+            error: "Party could not be added."
+          update:
+            success: "Party updated successfully."
+            error: "Party could not be updated."
+          destroy:
+            link: "Remove"
+            confirm: "Remove this party?"
+            success: "Party removed successfully."
+            error: "Party could not be removed."
+          roles:
+            object: "Object party"
+            contractor: "Contractor"
+          form:
+            role: "Role"
+            name: "Name"
+            ico: "Company ID (IČO)"
+            address: "Address"

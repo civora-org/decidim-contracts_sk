@@ -1,0 +1,42 @@
+<%# url:, method: and submit_label: come from the caller (new / edit); only
+    the party's content fields are rendered — the parent contract is never
+    form-writable (civora-org/civora-platform#76). The role options are
+    derived from the model's frozen ROLES vocabulary, never hand-enumerated,
+    with localized labels. %>
+<%= form_with url: url, method: method do |form| %>
+  <% if @form.errors.any? %>
+    <ul>
+      <% @form.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% role_options = Decidim::ContractsSk::Party::ROLES.map do |role|
+       [t("decidim.contracts_sk.admin.parties.roles.#{role}"), role]
+     end %>
+
+  <div>
+    <%= form.label :role, t("decidim.contracts_sk.admin.parties.form.role"), for: "party_role" %>
+    <%= form.select :role, role_options, { selected: @form.role }, id: "party_role", name: "party[role]" %>
+  </div>
+
+  <div>
+    <%= form.label :name, t("decidim.contracts_sk.admin.parties.form.name"), for: "party_name" %>
+    <%= form.text_field :name, id: "party_name", name: "party[name]", value: @form.name %>
+  </div>
+
+  <div>
+    <%= form.label :ico, t("decidim.contracts_sk.admin.parties.form.ico"), for: "party_ico" %>
+    <%= form.text_field :ico, id: "party_ico", name: "party[ico]", value: @form.ico %>
+  </div>
+
+  <div>
+    <%= form.label :address, t("decidim.contracts_sk.admin.parties.form.address"), for: "party_address" %>
+    <%= form.text_field :address, id: "party_address", name: "party[address]", value: @form.address %>
+  </div>
+
+  <div>
+    <%= form.submit submit_label %>
+  </div>
+<% end %>
