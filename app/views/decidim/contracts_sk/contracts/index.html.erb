@@ -1,0 +1,26 @@
+<h1><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
+
+<% if @contracts.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th><%= t("decidim.contracts_sk.contract.title") %></th>
+        <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
+        <th><%= t("decidim.contracts_sk.contract.published_on") %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @contracts.each do |contract| %>
+        <tr>
+          <td><%= link_to contract.title, contract_path(contract) %></td>
+          <td><%= contract.reference %></td>
+          <%# Deterministic ISO rendering on purpose: the engine ships no
+              locale date formats, so I18n.l would depend on host-app data. %>
+          <td><%= contract.published_at&.to_date&.to_fs(:db) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p><%= t("decidim.contracts_sk.contracts.index.empty") %></p>
+<% end %>

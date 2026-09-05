@@ -81,8 +81,11 @@ module Decidim
         ContractLifecycle.editable?(state&.to_sym)
       end
 
-      # True when the record may appear in the public catalogue
-      # (published, archived).
+      # True when the lifecycle marks the record publicly visible
+      # (published, archived — lifecycle decision D4). Broader than the
+      # catalogue itself: the public catalogue renders lifecycle-published
+      # records only (Gate-1 decision), so this predicate is a visibility
+      # signal, not the catalogue's query.
       def publicly_visible?
         ContractLifecycle.publicly_visible?(state&.to_sym)
       end

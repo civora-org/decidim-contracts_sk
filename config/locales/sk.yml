@@ -6,11 +6,23 @@ sk:
         reference_number: "Číslo zmluvy"
         amount: "Suma"
         status: "Stav"
+        subject_matter: "Predmet zmluvy"
+        currency: "Mena"
+        signed_on: "Dátum podpisu"
+        effective_from: "Dátum účinnosti"
+        crz_url: "Odkaz na CRZ"
+        published_on: "Dátum zverejnenia"
+        party:
+          object: "Objednávateľ"
+          contractor: "Dodávateľ"
       contracts:
         index:
           title: "Zmluvy"
+          empty: "Zatiaľ nie je zverejnená žiadna zmluva."
         show:
           title: "Detail zmluvy"
+          parties: "Zmluvné strany"
+          parties_empty: "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."
       admin:
         contracts:
           index:

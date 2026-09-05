@@ -2,17 +2,48 @@
 
 module Decidim
   module ContractsSk
-    # Public catalogue scaffold controller (civora-org/civora-platform#46).
+    # Public contracts catalogue (civora-org/civora-platform#62, #63).
     #
-    # Renders localized placeholder responses until the Contract domain
-    # model and real views land (M01-02). No model dependency by design.
+    # Read-only and authentication-free: the public base carries no sign-in
+    # floor and neither action consults the permission layer. Both actions
+    # read exclusively through #published_contracts, so a record in any other
+    # lifecycle state and a nonexistent id are indistinguishable — the scoped
+    # find raises ActiveRecord::RecordNotFound for both (the host app's
+    # standard handling renders it as 404; nothing about the response may
+    # hint at hidden records).
+    #
+    # Tenancy: the catalogue is scoped to the current organization (Gate-1
+    # fold-in, mirroring the admin side's contracts_scope). A published
+    # record of ANOTHER organization is as invisible as an unpublished one:
+    # the tenant-scoped find raises the same ActiveRecord::RecordNotFound,
+    # indistinguishable from a nonexistent id. current_organization comes
+    # from the host's Decidim::ApplicationController
+    # (Decidim::NeedsOrganization) — the same seam the admin base relies on.
+    #
+    # Only :id is ever read from the request. Documents and amendments are
+    # deliberately not rendered yet (M02-05), and the index is not paginated
+    # (no new dependencies by design; the catalogue is small at this stage).
     class ContractsController < Decidim::ContractsSk::ApplicationController
       def index
-        render plain: t("decidim.contracts_sk.contracts.index.title")
+        @contracts = published_contracts
       end
 
       def show
-        render plain: t("decidim.contracts_sk.contracts.show.title")
+        @contract = published_contracts.find(params[:id])
+      end
+
+      private
+
+      # The catalogue's entire public read surface: the current
+      # organization's lifecycle-published records only, newest publication
+      # first. The Gate-1 scope for #62/#63 pins `state == "published"`
+      # (archived visibility is a separate, later decision), so the plain
+      # enum scope is used instead of the broader
+      # ContractState#publicly_visible?; the organization filter is the
+      # tenant boundary, same rule as the admin side.
+      def published_contracts
+        Contract.where(organization: current_organization)
+                .published.order(published_at: :desc)
       end
     end
   end

@@ -6,11 +6,23 @@ en:
         reference_number: "Reference number"
         amount: "Amount"
         status: "Status"
+        subject_matter: "Subject matter"
+        currency: "Currency"
+        signed_on: "Signed on"
+        effective_from: "Effective from"
+        crz_url: "CRZ URL"
+        published_on: "Published on"
+        party:
+          object: "Object party"
+          contractor: "Contractor"
       contracts:
         index:
           title: "Contracts"
+          empty: "No published contracts yet."
         show:
           title: "Contract details"
+          parties: "Parties"
+          parties_empty: "No parties have been recorded for this contract."
       admin:
         contracts:
           index:
