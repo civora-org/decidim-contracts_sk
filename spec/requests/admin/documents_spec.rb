@@ -227,6 +227,9 @@ RSpec.describe "admin document management", type: :request do
         expect(response.body).to include("Contract document")
         expect(response.body).to include(%(action="/admin/contracts/#{contract.id}/documents"))
         expect(response.body).to include("multipart")
+        # The generated handoff artifact's kind is never offered
+        # (civora-org/civora-platform#74).
+        expect(response.body).not_to include("CRZ export")
       end
     end
 
@@ -343,6 +346,41 @@ RSpec.describe "admin document management", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(Decidim::ContractsSk::Document.count).to eq(0)
+    end
+
+    it "answers 422 and persists nothing when the kind is the generated artifact's (civora-org/civora-platform#74)" do
+      # crz_export stays in the MODEL's vocabulary (generated artifacts land
+      # there legitimately) but the upload form rejects it, so a hand-crafted
+      # request cannot collide with the generated handoff document.
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      post "/admin/contracts/#{contract.id}/documents", params: {
+        document: { title: "Impostor export", kind: "crz_export", file: upload("sample.pdf", "application/pdf") }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(Decidim::ContractsSk::Document.count).to eq(0)
+    end
+
+    it "answers 422 and changes nothing when the replace path targets the generated artifact's kind" do
+      # Consequence of the form-level guard: a replace pre-fills the
+      # persisted kind, so a crz_export document fails the form's narrower
+      # vocabulary — the artifact is regenerated through the handoff action,
+      # never file-swapped here.
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+      document = contract.documents.create!(title: "CRZ handoff export", kind: "crz_export")
+      document.attach_file!(upload("sample.pdf", "application/pdf"))
+
+      patch "/admin/contracts/#{contract.id}/documents/#{document.id}", params: {
+        document: { file: upload("sample-notes.txt", "text/plain") }
+      }
+
+      document.reload
+      aggregate_failures do
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(document.file_name).to eq("sample.pdf")
+        expect(document.content_type).to eq("application/pdf")
+      end
     end
 
     it "denies a reviewer-only user on create" do

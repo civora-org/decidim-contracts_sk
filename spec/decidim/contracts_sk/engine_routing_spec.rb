@@ -25,6 +25,9 @@ module EngineRoutingContract
   # is derived from the ContractLifecycle transition table in routes.rb —
   # see the derivation guard below): no :show (admin records are edited, not
   # displayed) and no :destroy (deletion is not part of the workflow yet).
+  # The CRZ-handoff pair (M02-05-C, civora-org/civora-platform#74) shares
+  # one member path with two verbs and two explicit actions — declared
+  # outside the lifecycle derivation (it is not a lifecycle event).
   # Parties (civora-org/civora-platform#76) hang off their contract through
   # the nested resource: an index plus the full add/edit/remove surface
   # (update maps to BOTH a PATCH and a PUT route entry, so the party block
@@ -44,6 +47,8 @@ module EngineRoutingContract
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
     ["POST", "/admin/contracts/:id/approve(.:format)", "#{ADMIN_CONTROLLER}#approve"],
     ["POST", "/admin/contracts/:id/archive(.:format)", "#{ADMIN_CONTROLLER}#archive"],
+    ["GET", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#download_crz_handoff"],
+    ["POST", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#generate_crz_handoff"],
     ["GET", "/admin/contracts/:id/edit(.:format)", "#{ADMIN_CONTROLLER}#edit"],
     ["POST", "/admin/contracts/:id/publish(.:format)", "#{ADMIN_CONTROLLER}#publish"],
     ["POST", "/admin/contracts/:id/reject(.:format)", "#{ADMIN_CONTROLLER}#reject"],
@@ -179,10 +184,13 @@ RSpec.describe Decidim::ContractsSk::Engine do
       )
     end
 
-    it "exposes only the CRUD and lifecycle-transition actions on the admin controller (no show, no destroy)" do
+    it "exposes exactly the CRUD + transition + CRZ-handoff actions (no show, no destroy)" do
       actions = admin_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
 
-      expect(actions).to eq(%w[approve archive create edit index new publish reject return submit update])
+      expect(actions).to eq(%w[
+                              approve archive create download_crz_handoff edit generate_crz_handoff
+                              index new publish reject return submit update
+                            ])
     end
   end
 
@@ -210,10 +218,13 @@ RSpec.describe Decidim::ContractsSk::Engine do
     end
 
     # The member POSTs under /admin/contracts/:id, read back from the drawn
-    # route table.
+    # route table. The CRZ-handoff POST shares the member path shape but is
+    # declared explicitly (not a lifecycle event), so it is excluded here —
+    # the derivation equality guards the lifecycle-derived set only.
     def route_transition_events
       admin_routes
         .select { |verb, path, _| verb == "POST" && path.start_with?("/admin/contracts/:id/") }
+        .reject { |_, _, endpoint| endpoint == "#{EngineRoutingContract::ADMIN_CONTROLLER}#generate_crz_handoff" }
         .map { |_, _, endpoint| endpoint.split("#", 2).last.to_sym }
         .sort
     end
@@ -223,6 +234,41 @@ RSpec.describe Decidim::ContractsSk::Engine do
       Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values
                                                           .flat_map(&:keys)
                                                           .uniq.sort
+    end
+  end
+
+  describe "CRZ-handoff member routes (M02-05-C, civora-org/civora-platform#74)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    # The full-table equality example and the helper-name example carry
+    # several related expectations per design; the dense-assertion budget
+    # doesn't fit a route-table contract pinned pair-by-pair.
+    # rubocop:disable RSpec/ExampleLength
+    it "shares one member path between the download (GET) and generate (POST) actions" do
+      aggregate_failures do
+        expect(admin_routes).to include(
+          ["GET", "/admin/contracts/:id/crz_handoff(.:format)",
+           "#{EngineRoutingContract::ADMIN_CONTROLLER}#download_crz_handoff"],
+          ["POST", "/admin/contracts/:id/crz_handoff(.:format)",
+           "#{EngineRoutingContract::ADMIN_CONTROLLER}#generate_crz_handoff"]
+        )
+      end
+    end
+
+    it "names the helpers download_crz_handoff_admin_contract_path and generate_crz_handoff_admin_contract_path" do
+      aggregate_failures do
+        expect(url_helpers.download_crz_handoff_admin_contract_path(7)).to eq("/admin/contracts/7/crz_handoff")
+        expect(url_helpers.generate_crz_handoff_admin_contract_path(7)).to eq("/admin/contracts/7/crz_handoff")
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+
+    it "keeps the handoff routes outside the lifecycle transition derivation" do
+      expect(Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values
+                                                                  .flat_map(&:keys)
+                                                                  .uniq).not_to include(:crz_handoff)
     end
   end
 

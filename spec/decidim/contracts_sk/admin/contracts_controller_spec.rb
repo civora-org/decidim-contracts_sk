@@ -6,7 +6,8 @@
 # (denied paths, allowed paths, validation failures, transitions) lives in
 # spec/requests/admin/; this file pins only the class-level contract: the
 # admin/public separation and the exact action surface (the five CRUD actions
-# plus the six lifecycle-transition actions — no show, no destroy).
+# plus the six lifecycle-transition actions and the CRZ-handoff pair — no
+# show, no destroy).
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
@@ -18,9 +19,12 @@ module Decidim
         expect(described_class.superclass).to eq(Admin::ApplicationController)
       end
 
-      it "implements exactly the five CRUD actions plus the six transition actions (no show, no destroy)" do
+      it "implements exactly the CRUD + transition + CRZ-handoff actions (no show, no destroy)" do
         expect(described_class.public_instance_methods(false).map(&:to_s).sort)
-          .to eq(%w[approve archive create edit index new publish reject return submit update])
+          .to eq(%w[
+                   approve archive create download_crz_handoff edit generate_crz_handoff
+                   index new publish reject return submit update
+                 ])
       end
 
       it "does not sit on the engine's public base controller chain" do

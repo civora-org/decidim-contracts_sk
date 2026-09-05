@@ -3,7 +3,7 @@
     the replace page renders the file input only — its form's title/kind
     mirror the persisted record (a replace swaps the file,
     civora-org/civora-platform#73). The kind options are derived from the
-    model's frozen KINDS vocabulary, never hand-enumerated, with localized
+    form's EDITOR_KINDS vocabulary, never hand-enumerated, with localized
     labels. The form is multipart: the file travels with the request. %>
 <%= form_with url: url, method: method, html: { multipart: true } do |form| %>
   <% if @form.errors.any? %>
@@ -20,7 +20,11 @@
       <%= form.text_field :title, id: "document_title", name: "document[title]", value: @form.title %>
     </div>
 
-    <% kind_options = Decidim::ContractsSk::Document::KINDS.map do |kind|
+    <%# The options come from the form's EDITOR_KINDS vocabulary (the
+        model's KINDS minus the generated handoff artifact's kind,
+        civora-org/civora-platform#74), never hand-enumerated, with
+        localized labels. %>
+    <% kind_options = Decidim::ContractsSk::Admin::DocumentForm::EDITOR_KINDS.map do |kind|
          [t("decidim.contracts_sk.admin.documents.kinds.#{kind}"), kind]
        end %>
 

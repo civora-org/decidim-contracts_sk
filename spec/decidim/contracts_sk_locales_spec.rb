@@ -62,6 +62,50 @@ module LocaleContract
     sk: { contract: "Zmluvný dokument", crz_export: "Export z CRZ", annex: "Príloha", other: "Iný dokument" }
   }.freeze
 
+  # The lifecycle state labels per locale, in the contract_states.*
+  # namespace reserved for them by docs/contract-lifecycle.md (first
+  # consumed by the CRZ-handoff PDF, M02-05-C,
+  # civora-org/civora-platform#74).
+  CONTRACT_STATE_LABELS = {
+    en: { draft: "Draft", in_review: "In review", returned: "Returned for changes",
+          approved: "Approved", rejected: "Rejected", published: "Published",
+          archived: "Archived" },
+    sk: { draft: "Koncept", in_review: "V recenzii", returned: "Vrátená na doplnenie",
+          approved: "Schválená", rejected: "Zamietnutá", published: "Zverejnená",
+          archived: "Archivovaná" }
+  }.freeze
+
+  # The CRZ-handoff PDF's own labels per locale (M02-05-C,
+  # civora-org/civora-platform#74). The PDF renders Slovak only; the en
+  # values exist for key parity and documentation.
+  CRZ_HANDOFF_PDF_LABELS = {
+    en: { heading: "CRZ handoff aid",
+          disclaimer: "This document is a handoff aid for the CRZ record — not a legal publication.",
+          generated_on: "Generated on" },
+    sk: { heading: "Pomôcka na odovzdanie do CRZ",
+          disclaimer: "Tento dokument je pomôcka na odovzdanie do CRZ — nie právna publikácia.",
+          generated_on: "Vygenerované" }
+  }.freeze
+
+  # The admin CRZ-handoff UI labels per locale (M02-05-C,
+  # civora-org/civora-platform#74).
+  CRZ_HANDOFF_ADMIN_LABELS = {
+    en: { title: "CRZ handoff",
+          disclaimer: "The generated PDF is a handoff aid for the CRZ record — not a legal publication.",
+          document_title: "CRZ handoff export",
+          download: "Download handoff PDF",
+          generate: "Generate handoff PDF",
+          replace: "Regenerate handoff PDF",
+          download_missing: "The CRZ handoff PDF has not been generated yet." },
+    sk: { title: "Odovzdanie do CRZ",
+          disclaimer: "Vygenerovaný PDF je pomôcka na odovzdanie do CRZ — nie právna publikácia.",
+          document_title: "Pomôcka na odovzdanie do CRZ",
+          download: "Stiahnuť pomôcku (PDF)",
+          generate: "Vygenerovať pomôcku (PDF)",
+          replace: "Vygenerovať pomôcku znova (PDF)",
+          download_missing: "Pomôcka na odovzdanie do CRZ ešte nebola vygenerovaná." }
+  }.freeze
+
   # The public detail page's document section labels per locale
   # (civora-org/civora-platform#73).
   DOCUMENT_VIEW_LABELS = {
@@ -80,8 +124,9 @@ module LocaleContract
   # (civora-org/civora-platform#58), the admin content-field form keys
   # (civora-org/civora-platform#75), the admin party keys
   # (civora-org/civora-platform#76), the public catalogue view keys
-  # (civora-org/civora-platform#62, #63) and the admin/public document keys
-  # (civora-org/civora-platform#73). Sorted alphabetically.
+  # (civora-org/civora-platform#62, #63), the admin/public document keys
+  # (civora-org/civora-platform#73) and the CRZ-handoff keys (M02-05-C,
+  # civora-org/civora-platform#74). Sorted alphabetically.
   EXPECTED_KEYS = [
     "admin.contracts.create.error",
     "admin.contracts.create.success",
@@ -100,6 +145,15 @@ module LocaleContract
     "admin.contracts.transition.success",
     "admin.contracts.update.error",
     "admin.contracts.update.success",
+    "admin.crz_handoff.create.error",
+    "admin.crz_handoff.create.success",
+    "admin.crz_handoff.disclaimer",
+    "admin.crz_handoff.document_title",
+    "admin.crz_handoff.download",
+    "admin.crz_handoff.download_missing",
+    "admin.crz_handoff.generate",
+    "admin.crz_handoff.replace",
+    "admin.crz_handoff.title",
     "admin.documents.back_to_contract",
     "admin.documents.create.error",
     "admin.documents.create.success",
@@ -154,13 +208,23 @@ module LocaleContract
     "contract.status",
     "contract.subject_matter",
     "contract.title",
+    "contract_states.approved",
+    "contract_states.archived",
+    "contract_states.draft",
+    "contract_states.in_review",
+    "contract_states.published",
+    "contract_states.rejected",
+    "contract_states.returned",
     "contracts.index.empty",
     "contracts.index.title",
     "contracts.show.documents",
     "contracts.show.documents_empty",
     "contracts.show.parties",
     "contracts.show.parties_empty",
-    "contracts.show.title"
+    "contracts.show.title",
+    "crz_handoff_pdf.disclaimer",
+    "crz_handoff_pdf.generated_on",
+    "crz_handoff_pdf.heading"
   ].freeze
 
   def locale_file(locale)
@@ -323,6 +387,30 @@ RSpec.describe Decidim::ContractsSk do
       LocaleContract::DOCUMENT_VIEW_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the lifecycle state labels in both locales (contract_states.*, M02-05-C)" do
+      LocaleContract::CONTRACT_STATE_LABELS.each do |locale, labels|
+        labels.each do |state, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.contract_states.#{state}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the CRZ-handoff PDF labels in both locales (M02-05-C)" do
+      LocaleContract::CRZ_HANDOFF_PDF_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.crz_handoff_pdf.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin CRZ-handoff UI labels in both locales (M02-05-C)" do
+      LocaleContract::CRZ_HANDOFF_ADMIN_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.admin.crz_handoff.#{key}")).to eq(value)
         end
       end
     end
