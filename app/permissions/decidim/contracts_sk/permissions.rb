@@ -40,6 +40,27 @@ module Decidim
     #   the contract's :read (the admin surfaces never grew a document index,
     #   but the rule is declared for symmetry with :party).
     #
+    # Admin scope, subject :amendment (M02-05-B, civora-org/civora-platform
+    # #65): amendments are the contract's version history, which exists only
+    # from publication onwards (ADR-006), so the rules read BOTH the parent
+    # contract's state (context[:contract], as above) and the amendment's
+    # own amendment state (context[:amendment], with context[:amendment_state]
+    # as the duck-typed fallback — the same two-sources doctrine as the
+    # contract's state):
+    # - :create is allowed when the user's engine roles include :editor AND
+    #   the parent contract's state is published — drafts are seeded onto
+    #   published records only.
+    # - :update and :destroy are allowed when the user's engine roles
+    #   include :editor AND the amendment is a draft — published amendments
+    #   are immutable forever (ADR-006), regardless of the contract's own
+    #   state.
+    # - :publish is allowed when the user's engine roles include :editor AND
+    #   the parent contract's state is published AND the amendment is a
+    #   draft — one explicit POST per publish event, gated like the
+    #   lifecycle transitions are.
+    # - :read is allowed when the user holds any engine role, same rule as
+    #   :party/:document (the admin index shows drafts and published alike).
+    #
     # Public scope, subject :contract:
     # - :read is allowed exactly when the record's state is publicly visible
     #   (ContractLifecycle::PUBLIC_STATES). No authentication required.
@@ -55,7 +76,9 @@ module Decidim
     # The record's state is read duck-typed from context[:contract]&.state
     # or context[:state]; callers pass at least one. For the child-record
     # subjects (:party, :document) the parent contract (context[:contract])
-    # is the natural state source.
+    # is the natural state source; the :amendment subject reads the
+    # amendment's own state from context[:amendment]&.state or
+    # context[:amendment_state] the same way.
     # Load-time note: TRANSITION_EVENTS below evaluates ContractLifecycle
     # at class-body load; this file is only ever loaded through the gem's
     # lib require chain (which defines ContractLifecycle first), never
@@ -66,7 +89,7 @@ module Decidim
                                                         .uniq.sort.freeze
 
       def permissions
-        return permission_action unless %i[contract party document].include? subject
+        return permission_action unless %i[contract party document amendment].include? subject
 
         case permission_action.scope
         when :admin
@@ -86,6 +109,8 @@ module Decidim
           contract_action
         when :party, :document
           child_record_action
+        when :amendment
+          amendment_action
         end
       end
 
@@ -118,6 +143,52 @@ module Decidim
         end
       end
 
+      # The amendment rule (M02-05-B, civora-org/civora-platform#65): the
+      # version history exists only from publication onwards (ADR-006), so
+      # every gate combines the parent contract's published state with the
+      # amendment's own draft state. Update/destroy deliberately consult
+      # only the amendment's draft state — published amendments are
+      # immutable regardless of what the contract does next. The case stays
+      # flat on purpose; the role/state combinators live in the named
+      # predicates below it.
+      def amendment_action
+        case action
+        when :create
+          toggle_allow(amendment_create_allowed?)
+        when :update, :destroy
+          toggle_allow(amendment_edit_allowed?)
+        when :publish
+          toggle_allow(amendment_publish_allowed?)
+        when :read
+          toggle_allow(roles_for_user.any?)
+        end
+      end
+
+      def amendment_create_allowed?
+        editor? && contract_published?
+      end
+
+      def amendment_edit_allowed?
+        editor? && amendment_draft?
+      end
+
+      def amendment_publish_allowed?
+        editor? && contract_published? && amendment_draft?
+      end
+
+      def editor?
+        roles_for_user.include?(:editor)
+      end
+
+      # The parent contract's lifecycle state, as the amendment gates see it.
+      def contract_published?
+        state == :published
+      end
+
+      def amendment_draft?
+        amendment_state == :draft
+      end
+
       def public_action
         return unless subject == :contract
 
@@ -133,6 +204,12 @@ module Decidim
       # state sources behave identically.
       def state
         (context[:contract]&.state || context[:state])&.to_sym
+      end
+
+      # The amendment's own state, normalized at the same boundary (see the
+      # class comment): the amendment object or a bare state fallback.
+      def amendment_state
+        (context[:amendment]&.state || context[:amendment_state])&.to_sym
       end
 
       def roles_for_user

@@ -46,9 +46,9 @@ table is empty. `checksum` is deferred to the actual import milestone
 
 Deferred (additive migrations later, per downstream issues): real functional
 fields — subject matter text, amounts/currency, signature/effectivity dates,
-  amendments/versions (#57 landed the skeleton; immutability and the public
-  version history arrive with #65); safe document content validation has
-  since landed in #64 (see below).
+  amendments/versions (#57 landed the skeleton; the lifecycle, immutability
+  and the public version history landed with #65 — see below); safe document
+  content validation has since landed in #64 (see below).
 
 ## Schema consequences landed in #56 (M02-02-B)
 
@@ -139,8 +139,8 @@ keep the "minimal constraints" stance:
   gapless per contract at the command layer, and the composite unique index
   doubles as the plain `contract_id` lookup index (the references line
   suppresses the redundant single-column index). Immutability and the
-  version-sequence behaviour are deliberately **deferred to M02-05-B (#65)**
-  — M02-02-C ships the validated, mutable skeleton only.
+  version-sequence behaviour **landed with M02-05-B (#65)** — see below —
+  M02-02-C shipped the validated, mutable skeleton only.
 - **Audit events** — append-only by construction: `AuditEvent#readonly?`
   returns `persisted?`, so every write path through the model
   (save/update/update!/touch/update_columns/destroy) raises
@@ -164,6 +164,51 @@ keep the "minimal constraints" stance:
   migration (**D4**): `action` is `"contract.<event>"`, the polymorphic
   target is the contract, organization and actor are stored explicitly,
   timestamps only — no JSON payload, no from/to columns.
+
+## Amendment lifecycle landed in #65 (M02-05-B)
+
+The amendments table grew its lifecycle (ADR-006, Option A — immutable
+content-snapshot rows on the SAME contract; the record's live fields stay
+the current version):
+
+- **Lifecycle columns** — `state` (`draft` -> `published` only; NOT NULL
+  with a `"draft"` default, which backfills pre-#65 rows correctly: nothing
+  was ever published before #65, so no row can already be immutable),
+  `published_at` (a system field, stamped by the publish command, never
+  form-writable — the contract's own `published_at` doctrine, #75), and
+  `content_snapshot`.
+- **`content_snapshot` decision** — a single JSON column holding the frozen
+  contract content-field hash taken at publish time (keys =
+  `Amendment::SNAPSHOT_FIELDS`, the data-dictionary content set minus
+  `published_at`). Values are stored as display-ready scalars — dates as
+  ISO `:db` strings, the amount as a plain decimal string — so the frozen
+  value JSON-serializes identically on every adapter and reads back exactly
+  as written. No separate version table: the amendment row IS the
+  historical version.
+- **`:json`, not `:jsonb`** — on purpose. `:jsonb` is PostgreSQL-only,
+  while this engine's `:db` spec harness (and some hosts) run SQLite;
+  `:json` serializes identically everywhere, and nothing in v0.1 needs to
+  index into the snapshot in SQL.
+- **Immutability doctrine** — published amendments are immutable at the
+  model layer (`Amendment#readonly?` returns true when the PERSISTED
+  in-database state is `published` — deliberately not the dirty attribute,
+  so the publish write itself can flip a draft row) and at the command
+  layer, which is the primary guard: every write command re-checks the
+  draft/published gates INSIDE `with_lock` (the TransitionContract TOCTOU
+  doctrine — the permission layer's admission decision is request-start
+  state). Locks nest in one fixed order (contract, then amendment; the
+  amendment-only commands take no contract lock, so no cycle), and
+  `PublishAmendment` serializes its snapshot read on the contract's row
+  lock, freezing the content as it stands under the lock. Accepted gaps
+  (the AuditEvent precedent): `#delete`, `.delete_all`/`.update_all` and
+  raw SQL bypass the model surface — DB triggers were rejected because they
+  break migration reversibility and the SQLite `:db` harness.
+- **Nullable tenancy columns** — `decidim_organization_id` /
+  `decidim_author_id` carry real FKs but are added NULLABLE: a NOT NULL
+  `add_column` cannot serve pre-migration rows without fabricating FK
+  values (copying the parent contract's author would invent provenance).
+  The model requires both through `belongs_to ... optional: false`, so
+  every engine write path still carries them.
 
 ## Known gaps / drift (flagged, unowned)
 

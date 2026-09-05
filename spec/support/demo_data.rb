@@ -90,9 +90,16 @@ module ContractsSkDemoData
     end
   end
 
+  # Drafts only: publication (and with it the content snapshot) is the
+  # command layer's job (M02-05-B, civora-org/civora-platform#65), so the
+  # demo builder never fabricates published versions. Tenancy/attribution
+  # are explicit (the model requires them), derived from the demo tenant.
   def demo_amendments!
     contract = demo_contract
-    [1, 2].map { |v| contract.amendments.create!(version: v, summary: "Demo zmena č. #{v}") }
+    [1, 2].map do |v|
+      contract.amendments.create!(version: v, summary: "Demo zmena č. #{v}",
+                                  organization: organization, author: author)
+    end
   end
 
   private

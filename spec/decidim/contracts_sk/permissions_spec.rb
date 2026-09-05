@@ -40,6 +40,10 @@ end
 # holder exercised via context[:contract].
 SpecContract = Struct.new(:state)
 
+# Minimal stand-in for the Amendment model (#65): a duck-typed state
+# holder exercised via context[:amendment].
+SpecAmendment = Struct.new(:state)
+
 RSpec.describe Decidim::ContractsSk::Permissions do
   let(:lifecycle) { Decidim::ContractsSk::ContractLifecycle }
   let(:org_admin) { SpecUser.new(admin: true, admin_terms_accepted: true) }
@@ -48,13 +52,17 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
   # Runs the engine's permissions class the way Decidim's chain does and
   # returns the (mutated) permission action for #allowed? / raise assertions.
-  # The six named parameters mirror Decidim's vocabulary (user, scope,
-  # action, subject, state sources) and keep every call site self-describing.
+  # The named parameters mirror Decidim's vocabulary (user, scope, action,
+  # subject, state sources — the amendment's own state sources included,
+  # #65) and keep every call site self-describing.
   # rubocop:disable Metrics/ParameterLists
-  def action_for(user, scope:, action:, state: nil, contract: nil, action_subject: :contract)
+  def action_for(user, scope:, action:, state: nil, contract: nil, amendment: nil, amendment_state: nil,
+                 action_subject: :contract)
     context = {}
     context[:state] = state if state
     context[:contract] = contract if contract
+    context[:amendment] = amendment if amendment
+    context[:amendment_state] = amendment_state if amendment_state
     permission_action = Decidim::PermissionAction.new(scope: scope, action: action, subject: action_subject)
     described_class.new(user, permission_action, context).permissions
   end
@@ -491,6 +499,156 @@ RSpec.describe Decidim::ContractsSk::Permissions do
                                                                      action_subject: :document)
 
         expect(outcome.allowed?).to eq(expected), "String state diverged for document :update on #{state}"
+      end
+    end
+  end
+
+  describe "admin scope — amendment (M02-05-B, civora-org/civora-platform#65)" do
+    # Amendment decisions read BOTH state sources: the parent contract's
+    # lifecycle state (context[:contract]) and the amendment's own draft
+    # state (context[:amendment]); the same engine_roles-driven resolver
+    # swap as the sibling groups applies (restored after each example).
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "allows an editor to create exactly on a published parent contract" do
+      lifecycle::STATES.each do |state|
+        outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :create,
+                                                                     contract: SpecContract.new(state),
+                                                                     amendment_state: :draft,
+                                                                     action_subject: :amendment)
+
+        expect(outcome.allowed?).to eq(state == :published), "editor create on #{state} must be #{state == :published}"
+      end
+    end
+
+    it "allows an editor to update and destroy exactly while the amendment is a draft" do
+      %i[update destroy].each do |amendment_action|
+        lifecycle::STATES.each do |state|
+          draft = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: amendment_action,
+                                                                     contract: SpecContract.new(state),
+                                                                     amendment_state: :draft,
+                                                                     action_subject: :amendment)
+
+          # Draft-only, regardless of the contract's own state (ADR-006):
+          # a published amendment stays immutable whatever the record does.
+          expect(draft.allowed?).to be(true), "editor must #{amendment_action} a draft on #{state}"
+        end
+
+        published = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                       action: amendment_action,
+                                                                       contract: SpecContract.new(:published),
+                                                                       amendment_state: :published,
+                                                                       action_subject: :amendment)
+
+        expect(published.allowed?).to be(false), "editor must not #{amendment_action} a published amendment"
+      end
+    end
+
+    it "allows an editor to publish exactly a draft on a published contract" do
+      lifecycle::STATES.each do |state|
+        %i[draft published].each do |amendment_state|
+          expected = state == :published && amendment_state == :draft
+          outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :publish,
+                                                                       contract: SpecContract.new(state),
+                                                                       amendment_state: amendment_state,
+                                                                       action_subject: :amendment)
+
+          expect(outcome.allowed?).to eq(expected),
+                                      "publish #{amendment_state} on #{state} must be #{expected}"
+        end
+      end
+    end
+
+    it "denies a reviewer on every amendment writing action (read is role-any)" do
+      %i[create update destroy publish].each do |amendment_action|
+        outcome = action_for(SpecUser.new(engine_roles: %i[reviewer]), scope: :admin,
+                                                                       action: amendment_action,
+                                                                       contract: SpecContract.new(:published),
+                                                                       amendment_state: :draft,
+                                                                       action_subject: :amendment)
+
+        expect(outcome.allowed?).to be(false), "reviewer must not #{amendment_action} an amendment"
+      end
+    end
+
+    it "answers amendment :read like the contract's :read: any engine role, any state pair" do
+      %i[draft published].each do |state|
+        %i[draft published].each do |amendment_state|
+          editor = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :read,
+                                                                      contract: SpecContract.new(state),
+                                                                      amendment_state: amendment_state,
+                                                                      action_subject: :amendment)
+          reviewer = action_for(SpecUser.new(engine_roles: %i[reviewer]), scope: :admin, action: :read,
+                                                                          contract: SpecContract.new(state),
+                                                                          amendment_state: amendment_state,
+                                                                          action_subject: :amendment)
+
+          expect(editor.allowed?).to be(true), "editor must read amendments on #{state}/#{amendment_state}"
+          expect(reviewer.allowed?).to be(true), "reviewer must read amendments on #{state}/#{amendment_state}"
+        end
+      end
+    end
+
+    it "denies amendment :read for a roleless user" do
+      outcome = action_for(SpecUser.new(engine_roles: []), scope: :admin, action: :read,
+                                                           contract: SpecContract.new(:published),
+                                                           amendment_state: :draft,
+                                                           action_subject: :amendment)
+
+      expect(outcome.allowed?).to be(false)
+    end
+
+    it "fails closed when a needed state source is missing (disallowed, not unset)" do
+      editor = SpecUser.new(engine_roles: %i[editor])
+
+      # :create needs the CONTRACT's state (published gate); :update,
+      # :destroy and :publish additionally need the amendment's own state.
+      # Each gate must DENY when its source is missing, never crash unset.
+      no_contract = action_for(editor, scope: :admin, action: :create, action_subject: :amendment)
+
+      expect(no_contract.allowed?).to be(false), "create must fail closed without the contract state"
+      expect(unset?(editor, scope: :admin, action: :create, action_subject: :amendment)).to be(false)
+
+      aggregate_failures do
+        %i[update destroy publish].each do |amendment_action|
+          outcome = action_for(editor, scope: :admin, action: amendment_action,
+                                       contract: SpecContract.new(:published),
+                                       action_subject: :amendment)
+
+          expect(outcome.allowed?).to be(false), "#{amendment_action} must fail closed without the amendment state"
+          expect(unset?(editor, scope: :admin, action: amendment_action,
+                                contract: SpecContract.new(:published),
+                                action_subject: :amendment)).to be(false)
+        end
+      end
+    end
+
+    it "treats String states (Rails enum getters) identically to Symbols" do
+      editor = SpecUser.new(engine_roles: %i[editor])
+
+      lifecycle::STATES.each do |state|
+        create_outcome = action_for(editor, scope: :admin, action: :create,
+                                            contract: SpecContract.new(state.to_s),
+                                            amendment_state: "draft",
+                                            action_subject: :amendment)
+
+        expect(create_outcome.allowed?).to eq(state == :published), "String state diverged for create on #{state}"
+      end
+
+      aggregate_failures do
+        %i[update destroy publish].each do |amendment_action|
+          string_outcome = action_for(editor, scope: :admin, action: amendment_action,
+                                              contract: SpecContract.new("published"),
+                                              amendment_state: "draft",
+                                              action_subject: :amendment)
+
+          expect(string_outcome.allowed?).to be(true), "String amendment state diverged for #{amendment_action}"
+        end
       end
     end
   end

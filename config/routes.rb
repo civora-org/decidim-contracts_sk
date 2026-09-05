@@ -45,6 +45,17 @@ Decidim::ContractsSk::Engine.routes.draw do
       # public catalogue lists documents for published records. Same tenancy
       # and permission mechanics as the parties.
       resources :documents, only: %i[new create edit update destroy]
+
+      # Per-contract amendment management (M02-05-B,
+      # civora-org/civora-platform#65): nested like the parties, with the
+      # full version-history surface (index/new/edit + update/destroy) plus
+      # one explicit member POST for the publish event — the same
+      # one-POST-per-event convention as the lifecycle transitions above.
+      # Draft amendments are edited here; published ones are immutable
+      # (ADR-006) and render in the public catalogue's version history.
+      resources :amendments, only: %i[index new create edit update destroy] do
+        member { post :publish }
+      end
     end
   end
 

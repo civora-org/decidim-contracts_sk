@@ -106,6 +106,10 @@ RSpec.describe "public contracts catalogue", type: :request do
   describe "contract detail (civora-org/civora-platform#63)" do
     let(:parties) { [] }
     let(:documents) { [] }
+    # The controller loads the public version history through the
+    # amendment association (published scope + newest-version-first
+    # order); the offline double mirrors that chain (#65).
+    let(:amendments) { [] }
     let(:contract) do
       double(
         title: "Road reconstruction",
@@ -118,7 +122,8 @@ RSpec.describe "public contracts catalogue", type: :request do
         effective_from: Date.new(2026, 8, 15),
         crz_url: "https://crz.gov.sk/record/123",
         parties: parties,
-        documents: documents
+        documents: documents,
+        amendments: double(published: double(order: amendments))
       )
     end
 
@@ -161,6 +166,34 @@ RSpec.describe "public contracts catalogue", type: :request do
       aggregate_failures do
         expect(response.body).to include("Documents")
         expect(response.body).to include("No documents have been attached to this contract.")
+      end
+    end
+
+    it "renders the published amendments as a labelled version history (M02-05-B, civora-org/civora-platform#65)" do
+      amendments << double(version: 2,
+                           summary: "Extended delivery deadline",
+                           published_at: Time.new(2026, 9, 2, 12, 0, 0),
+                           content_snapshot: {
+                             "subject_matter" => "Supply and installation of road signage",
+                             "amount" => "1000.0",
+                             "currency" => "EUR"
+                           })
+      stub_published_contracts(double(find: contract))
+
+      get "/7"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Version history")
+        # The current/historical distinction is labelled (ADR-006).
+        expect(response.body).to include("Current version")
+        expect(response.body).to include("Version 2")
+        expect(response.body).to include("Extended delivery deadline")
+        expect(response.body).to include("2026-09-02")
+        # The frozen snapshot fields render under the record's own
+        # content-field vocabulary.
+        expect(response.body).to include("Subject matter")
+        expect(response.body).to include("1000.0")
       end
     end
 
@@ -343,6 +376,80 @@ RSpec.describe "public contracts catalogue", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("No documents have been attached to this contract.")
+    end
+
+    it "renders the published amendments newest-first as a labelled version history (#65)" do
+      # M02-05-B (civora-org/civora-platform#65): published amendments are
+      # the frozen historical versions; created directly here with a
+      # pinned snapshot shape (the publish command's own spec pins how the
+      # snapshot is taken).
+      contract = create_contract!
+      contract.amendments.create!(
+        version: 1, summary: "Original scope",
+        state: "published", published_at: Time.utc(2026, 9, 1, 12, 0, 0),
+        content_snapshot: { "subject_matter" => "Original signage scope", "amount" => "1000.0", "currency" => "EUR" },
+        organization: organization, author: author
+      )
+      contract.amendments.create!(
+        version: 2, summary: "Extended delivery deadline",
+        state: "published", published_at: Time.utc(2026, 9, 2, 12, 0, 0),
+        content_snapshot: { "subject_matter" => "Extended signage scope", "amount" => "1500.0",
+                            "currency" => "EUR" },
+        organization: organization, author: author
+      )
+
+      get "/#{contract.id}"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Version history")
+        expect(response.body).to include("Current version")
+        expect(response.body).to include("Version 1")
+        expect(response.body).to include("Original scope")
+        expect(response.body).to include("Original signage scope")
+        expect(response.body).to include("Version 2")
+        expect(response.body).to include("Extended delivery deadline")
+        expect(response.body).to include("2026-09-02")
+        # Newest version first (ADR-006 presentation order).
+        expect(response.body.index("Version 2")).to be < response.body.index("Version 1")
+        # The live fields above stay the current version — the record's own
+        # amount is unchanged by the published versions.
+        expect(response.body).to include("1250.5")
+      end
+    end
+
+    it "never renders draft amendments publicly (#65, ADR-006)" do
+      contract = create_contract!
+      contract.amendments.create!(
+        version: 1, summary: "Secret upcoming change",
+        organization: organization, author: author
+      )
+      contract.amendments.create!(
+        version: 2, summary: "Public change",
+        state: "published", published_at: Time.utc(2026, 9, 2, 12, 0, 0),
+        content_snapshot: { "subject_matter" => "Public scope", "currency" => "EUR" },
+        organization: organization, author: author
+      )
+
+      get "/#{contract.id}"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        # The published version renders; the draft is indistinguishable
+        # from an absent one.
+        expect(response.body).to include("Public change")
+        expect(response.body).not_to include("Secret upcoming change")
+        expect(response.body).not_to include("Version 1")
+      end
+    end
+
+    it "renders the empty-versions state for a record without amendments (#65)" do
+      contract = create_contract!
+
+      get "/#{contract.id}"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No amendments have been published for this contract.")
     end
 
     it "hides an unpublished record's documents behind the same not-found path (civora-org/civora-platform#73)" do

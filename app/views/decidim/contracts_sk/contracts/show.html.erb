@@ -70,3 +70,44 @@
   <p><%= t("decidim.contracts_sk.contracts.show.documents_empty") %></p>
 <% end %>
 
+<h2><%= t("decidim.contracts_sk.contracts.show.versions") %></h2>
+<%# Public version history (M02-05-B, civora-org/civora-platform#65,
+    ADR-006): the record's live fields above ARE the current version; the
+    published amendments below are the frozen historical ones, newest
+    version first. Drafts are never publicly visible — the controller
+    scopes them out (the published scope IS the gate, mirroring the
+    record's own published-only read). The snapshot fields are labelled
+    with the record's own content-field vocabulary, and the publish-time
+    value may be nil (a blank field was legal at publish), so absent
+    values are skipped rather than rendered empty. The CRZ entry stays
+    guarded like the current version's (no blank href). to_h normalizes
+    whatever the :json column hands back before iterating — the render
+    must never depend on the deserialized value's runtime class. %>
+<% if @amendments.any? %>
+  <p><strong><%= t("decidim.contracts_sk.contracts.show.current_version") %></strong></p>
+  <% @amendments.each do |amendment| %>
+    <h3><%= t("decidim.contracts_sk.contracts.show.version_label", version: amendment.version) %></h3>
+    <dl>
+      <dt><%= t("decidim.contracts_sk.contract.summary") %></dt>
+      <dd><%= amendment.summary %></dd>
+
+      <dt><%= t("decidim.contracts_sk.contract.published_on") %></dt>
+      <dd><%= amendment.published_at&.to_date&.to_fs(:db) %></dd>
+
+      <% amendment.content_snapshot.to_h.each do |field, value| %>
+        <% next if value.blank? %>
+        <% if field == "crz_url" %>
+          <dt><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
+          <dd><%= link_to value, value %></dd>
+        <% else %>
+          <dt><%= t("decidim.contracts_sk.contract.#{field}") %></dt>
+          <dd><%= value %></dd>
+        <% end %>
+      <% end %>
+    </dl>
+  <% end %>
+<% else %>
+  <p><%= t("decidim.contracts_sk.contracts.show.versions_empty") %></p>
+<% end %>
+
+

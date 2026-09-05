@@ -12,6 +12,7 @@ en:
         effective_from: "Effective from"
         crz_url: "CRZ URL"
         published_on: "Published on"
+        summary: "Summary"
         party:
           object: "Object party"
           contractor: "Contractor"
@@ -42,6 +43,10 @@ en:
           parties_empty: "No parties have been recorded for this contract."
           documents: "Documents"
           documents_empty: "No documents have been attached to this contract."
+          versions: "Version history"
+          current_version: "Current version"
+          version_label: "Version %{version}"
+          versions_empty: "No amendments have been published for this contract."
       admin:
         contracts:
           index:
@@ -68,6 +73,37 @@ en:
             signed_on: "Signed on"
             effective_from: "Effective from"
             crz_url: "CRZ URL"
+        amendments:
+          index:
+            title: "Amendments"
+          new:
+            title: "New amendment"
+          edit:
+            title: "Edit amendment"
+          back_to_contract: "Back to contract"
+          create:
+            success: "Amendment added successfully."
+            error: "Amendment could not be added."
+          update:
+            success: "Amendment updated successfully."
+            error: "Amendment could not be updated."
+          publish:
+            link: "Publish"
+            confirm: "Publish this amendment? A published amendment can no longer be changed."
+            success: "Amendment published successfully."
+            error: "Amendment could not be published."
+          destroy:
+            link: "Remove"
+            confirm: "Remove this amendment?"
+            success: "Amendment removed successfully."
+            error: "Amendment could not be removed."
+          states:
+            draft: "Draft"
+            published: "Published"
+          form:
+            version: "Version"
+            summary: "Summary"
+            state: "State"
         parties:
           index:
             title: "Parties"

@@ -24,7 +24,7 @@ Dependency-driven order for the M02 tasks tracked in [`civora-org/civora-platfor
 | 10b | 🔜 [#74](https://github.com/civora-org/civora-platform/issues/74) M02-05-C: CRZ handoff export — generated prepared PDF for the manual CRZ handoff (ADR-002 "metadata export"); stored as `Document` kind `crz_export` — **in PR (M02-05-C)** | #73, #75 |
 | 11 | [#60](https://github.com/civora-org/civora-platform/issues/60) M02-03-C: seeded end-to-end admin scenario | #59, #62 |
 | 12 | [#64](https://github.com/civora-org/civora-platform/issues/64) M02-05-A: document attachment safe validation | #56, #73 |
-| 13 | [#65](https://github.com/civora-org/civora-platform/issues/65) M02-05-B: amendments + public version history (scope clarified 2026-09-04: admin creation of amendments lives here) | #57, #63, #64 |
+| 13 | 🔜 [#65](https://github.com/civora-org/civora-platform/issues/65) M02-05-B: amendments + public version history (scope clarified 2026-09-04: admin creation of amendments lives here) — **in PR (M02-05-B)** | #57, #63, #64 |
 | 14 | [#66](https://github.com/civora-org/civora-platform/issues/66) M02-06-A: Slovak localization completeness | after feature freeze of #58–#65 and #73–#76 |
 | 15 | [#67](https://github.com/civora-org/civora-platform/issues/67) M02-06-B: a11y/UX review + QA checklist | #66 |
 | 16 | [#68](https://github.com/civora-org/civora-platform/issues/68) M02-07-A: demo seeds + walkthrough | #60, #63, #74 |
