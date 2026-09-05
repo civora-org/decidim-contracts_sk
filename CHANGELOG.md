@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [0.16.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.15.0...v0.16.0) (2026-09-05)
+
+
+### Features
+
+* **catalogue:** add public contract detail page with parties and not-found handling (M02-04-C) ([bc3696c](https://github.com/civora-org/decidim-contracts_sk/commit/bc3696c810dbbe594f396a128be138ad50a3ecd4))
+* **catalogue:** add public contracts index with published-only scope and empty state (M02-04-B) ([aa1234d](https://github.com/civora-org/decidim-contracts_sk/commit/aa1234de9b7e502bb0c430271d018dd680bf3cb8))
+* **documents:** add document upload and storage wiring (M02-05-A0) ([e2b8535](https://github.com/civora-org/decidim-contracts_sk/commit/e2b8535d1cc866fe5978719e23abe496b279e20a))
+
+
+### Bug Fixes
+
+* **ci:** ignore upstream-blocked rubyzip advisory CVE-2026-85396 ([2dddd4b](https://github.com/civora-org/decidim-contracts_sk/commit/2dddd4b0385ac5711314ed3005fc24cb7507508e))
+* **ci:** ignore upstream-blocked rubyzip advisory CVE-2026-85396 ([228bd31](https://github.com/civora-org/decidim-contracts_sk/commit/228bd31017f530be45b1f9c40814180d63b6290f))
+
 ## [0.15.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.14.0...v0.15.0) (2026-09-05)
 
 
