@@ -26,6 +26,14 @@ Decidim::ContractsSk::Engine.routes.draw do
       # controllers load both records from tenant-scoped associations before
       # the permission check.
       resources :parties, only: %i[index new create edit update destroy]
+
+      # Per-contract document management (M02-05-A0,
+      # civora-org/civora-platform#73): nested like the parties, but with no
+      # :index — a document's replace (edit + PATCH/PUT :update) and remove
+      # (:destroy) controls live on the contract's own edit page, and the
+      # public catalogue lists documents for published records. Same tenancy
+      # and permission mechanics as the parties.
+      resources :documents, only: %i[new create edit update destroy]
     end
   end
 

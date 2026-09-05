@@ -48,6 +48,26 @@ RSpec.describe Decidim::ContractsSk::Document do
       expect(reflection.foreign_key).to eq("contract_id")
       expect(reflection.klass).to eq(Decidim::ContractsSk::Contract)
     end
+
+    it "carries the engine-side ActiveStorage attachment (civora-org/civora-platform#73)" do
+      reflection = described_class.reflect_on_attachment(:file)
+
+      aggregate_failures do
+        # `has_one_attached :file` builds this attachment reflection and the
+        # has_one :file_attachment association behind it; Option A keeps the
+        # storage on the engine model, not on Decidim::Attachment.
+        expect(reflection).not_to be_nil
+        expect(reflection.macro).to eq(:has_one_attached)
+        expect(reflection.options[:dependent]).to eq(:purge_later)
+        attachment = described_class.reflect_on_association(:file_attachment)
+
+        expect(attachment.macro).to eq(:has_one)
+        expect(attachment.options[:class_name]).to eq("ActiveStorage::Attachment")
+        # Destroying the document destroys the attachment row with it (the
+        # blob purge itself goes through the host's queuing backend).
+        expect(attachment.options[:dependent]).to eq(:destroy)
+      end
+    end
   end
 
   describe "kind vocabulary" do
@@ -106,7 +126,12 @@ RSpec.describe Decidim::ContractsSk::Document do
   end
 
   describe "database behaviour", :db do
-    before { migrate_engine_schema! }
+    before do
+      migrate_engine_schema!
+      # Since M02-05-A0 (#73) a document destroy cascades into its
+      # ActiveStorage attachment (contract destroy included), so this group
+      # needs the host-owned storage tables too.
+    end
 
     let(:contract) do
       Decidim::ContractsSk::Contract.create!(contract_attributes)
@@ -178,6 +203,110 @@ RSpec.describe Decidim::ContractsSk::Document do
       expect(document.reload.kind).to be_nil
       expect(document).not_to be_valid
       expect(document.errors[:kind]).to be_present
+    end
+  end
+
+  # Blob-backed behaviour (civora-org/civora-platform#73): real uploads
+  # against the ActiveStorage tables a host app owns, built here from the
+  # pinned gem's own migration; the Disk service root is wiped per example.
+  # Synthetic PDF-shaped bytes only — no real content, no PII.
+  describe "file attachment behaviour (civora-org/civora-platform#73)", :db do
+    before do
+      migrate_engine_schema!
+      FileUtils.rm_rf(active_storage_root)
+    end
+
+    let(:contract) { Decidim::ContractsSk::Contract.create!(contract_attributes) }
+
+    def document_attributes(overrides = {})
+      {
+        contract: contract,
+        title: "Signed contract scan"
+      }.merge(overrides)
+    end
+
+    def sample_fixture(name)
+      File.join(engine_root, "spec", "fixtures", "files", name)
+    end
+
+    def upload(name, content_type)
+      Rack::Test::UploadedFile.new(sample_fixture(name), content_type)
+    end
+
+    it "attaches a file and syncs the metadata columns from the blob" do
+      document = described_class.create!(document_attributes(kind: "contract"))
+
+      document.attach_file!(upload("sample.pdf", "application/pdf"))
+
+      blob = document.file.reload.blob
+      aggregate_failures do
+        expect(document.file).to be_attached
+        expect(document.reload.file_name).to eq("sample.pdf")
+        expect(document.reload.content_type).to eq("application/pdf")
+        expect(document.reload.file_size).to eq(File.size(sample_fixture("sample.pdf")))
+        expect(document.reload.file_size).to eq(blob.byte_size)
+      end
+    end
+
+    it "sniffs the content type from the bytes when the client sends a generic type" do
+      document = described_class.create!(document_attributes)
+
+      document.attach_file!(upload("sample.pdf", "application/octet-stream"))
+
+      expect(document.reload.content_type).to eq("application/pdf")
+    end
+
+    it "replaces the file and re-syncs the metadata columns from the new blob" do
+      document = described_class.create!(document_attributes)
+      document.attach_file!(upload("sample.pdf", "application/pdf"))
+
+      document.attach_file!(upload("sample-notes.txt", "text/plain"))
+
+      aggregate_failures do
+        expect(document.reload.file_name).to eq("sample-notes.txt")
+        expect(document.reload.content_type).to eq("text/plain")
+        expect(document.reload.file_size).to eq(File.size(sample_fixture("sample-notes.txt")))
+        # Exactly one attachment survives the replace, pointing at the new
+        # blob — the old attachment row is destroyed with the swap.
+        attachments = ActiveStorage::Attachment.where(record: document, name: "file")
+
+        expect(attachments.count).to eq(1)
+        expect(attachments.sole.blob_id).to eq(document.file.reload.blob.id)
+      end
+    end
+
+    it "refuses to attach a blank file" do
+      document = described_class.create!(document_attributes)
+
+      expect { document.attach_file!(nil) }.to raise_error(ArgumentError)
+
+      expect(document.reload.file).not_to be_attached
+      expect(document.reload.file_name).to be_nil
+    end
+
+    it "destroys the attachment row with the document" do
+      document = described_class.create!(document_attributes)
+      document.attach_file!(upload("sample.pdf", "application/pdf"))
+      attachment_id = document.file_attachment.id
+
+      document.destroy!
+
+      aggregate_failures do
+        expect(ActiveStorage::Attachment.exists?(attachment_id)).to be(false)
+        expect(described_class.exists?(document.id)).to be(false)
+      end
+    end
+
+    it "destroys documents (and their attachments) with the contract" do
+      document = described_class.create!(document_attributes)
+      document.attach_file!(upload("sample.pdf", "application/pdf"))
+
+      contract.destroy!
+
+      aggregate_failures do
+        expect(described_class.exists?(document.id)).to be(false)
+        expect(ActiveStorage::Attachment.exists?(document.file_attachment.id)).to be(false)
+      end
     end
   end
 end

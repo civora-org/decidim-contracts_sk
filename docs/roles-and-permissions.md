@@ -28,7 +28,7 @@ the engine's two-role vocabulary stays unchanged for MVP.
 ## Vocabulary: scope / subject / action
 
 The permissions class speaks Decidim's `PermissionAction` vocabulary and
-answers for subjects `:contract` and `:party`:
+answers for subjects `:contract`, `:party` and `:document`:
 
 | Scope | Subject | Action | Allowed when |
 |---|---|---|---|
@@ -38,8 +38,10 @@ answers for subjects `:contract` and `:party`:
 | `admin` | `contract` | `read` | user holds **any** engine role (admin index) |
 | `admin` | `party` | `create`, `update`, `destroy` | user's engine roles include `editor` **and** the parent contract's state is lifecycle-editable (`ContractLifecycle.editable?`) — the same rule as `contract`/`update`, applied to party management (civora-org/civora-platform#76) |
 | `admin` | `party` | `read` | user holds **any** engine role (party index) |
+| `admin` | `document` | `create`, `update` (replace), `destroy` | user's engine roles include `editor` **and** the parent contract's state is lifecycle-editable (`ContractLifecycle.editable?`) — the same rule as `party` management (civora-org/civora-platform#73) |
+| `admin` | `document` | `read` | user holds **any** engine role (documents section of the contract edit page) |
 | `public` | `contract` | `read` | `ContractLifecycle.publicly_visible?(state)` — i.e. state in `PUBLIC_STATES` (`published`, `archived`) |
-| anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) — including every `public`-scope `party` action, so parties are never publicly addressable as a subject |
+| anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) — including every `public`-scope `party` and `document` action, so parties and documents are never publicly addressable as subjects (public document links render as part of the published `contract`/`read` page) |
 
 The transition-event list is **derived** from
 `ContractLifecycle::TRANSITIONS` (`Permissions::TRANSITION_EVENTS`), never

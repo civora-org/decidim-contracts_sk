@@ -21,15 +21,18 @@ module Decidim
     #   derived from ContractLifecycle::TRANSITIONS, never hand-enumerated.
     # - :read is allowed when the user holds any engine role (admin index).
     #
-    # Admin scope, subject :party (civora-org/civora-platform#76): parties
-    # are contract-scoped child records, so their decisions hang off the
-    # parent contract passed in context[:contract] and follow the same
-    # editorial rule as :update:
+    # Admin scope, subject :party (civora-org/civora-platform#76) and
+    # subject :document (M02-05-A0, civora-org/civora-platform#73): both are
+    # contract-scoped child records, so their decisions hang off the parent
+    # contract passed in context[:contract] and follow the same editorial
+    # rule (the replace route maps onto the :update action):
     # - :create, :update and :destroy are allowed exactly when the user's
     #   engine roles include :editor AND the parent contract's state is
-    #   editable — party composition is part of editing the record.
-    # - :read is allowed when the user holds any engine role (party index),
-    #   same rule as the contract's :read.
+    #   editable — party composition and document files are part of editing
+    #   the record.
+    # - :read is allowed when the user holds any engine role, same rule as
+    #   the contract's :read (the admin surfaces never grew a document index,
+    #   but the rule is declared for symmetry with :party).
     #
     # Public scope, subject :contract:
     # - :read is allowed exactly when the record's state is publicly visible
@@ -37,13 +40,16 @@ module Decidim
     #
     # Every other scope/subject/action combination is left unset, which
     # Decidim's permission machinery treats as denied (PermissionNotSetError
-    # rescued to false — fail-closed). In particular public-scope party
-    # actions are unset: the catalogue does not render parties yet, and the
-    # admin surface is the only consumer.
+    # rescued to false — fail-closed). Public-scope party/document actions
+    # are unset on purpose: the catalogue renders a published contract's
+    # parties and documents as part of the record's own public :read (the
+    # published-only scope IS the gate), never through per-record permission
+    # decisions of its own.
     #
     # The record's state is read duck-typed from context[:contract]&.state
-    # or context[:state]; callers pass at least one. For subject :party the
-    # parent contract (context[:contract]) is the natural state source.
+    # or context[:state]; callers pass at least one. For the child-record
+    # subjects (:party, :document) the parent contract (context[:contract])
+    # is the natural state source.
     # Load-time note: TRANSITION_EVENTS below evaluates ContractLifecycle
     # at class-body load; this file is only ever loaded through the gem's
     # lib require chain (which defines ContractLifecycle first), never
@@ -54,7 +60,7 @@ module Decidim
                                                         .uniq.sort.freeze
 
       def permissions
-        return permission_action unless %i[contract party].include? subject
+        return permission_action unless %i[contract party document].include? subject
 
         case permission_action.scope
         when :admin
@@ -72,8 +78,8 @@ module Decidim
         case subject
         when :contract
           contract_action
-        when :party
-          party_action
+        when :party, :document
+          child_record_action
         end
       end
 
@@ -90,7 +96,11 @@ module Decidim
         end
       end
 
-      def party_action
+      # The shared rule for the contract-scoped child-record subjects
+      # (:party, civora-org/civora-platform#76; :document,
+      # civora-org/civora-platform#73): writing is editorial work, so the
+      # editor-role-plus-editable-state rule is identical for both.
+      def child_record_action
         case action
         when :create, :update, :destroy
           toggle_allow(roles_for_user.include?(:editor) && ContractLifecycle.editable?(state))

@@ -45,3 +45,28 @@
 <% else %>
   <p><%= t("decidim.contracts_sk.contracts.show.parties_empty") %></p>
 <% end %>
+
+<h2><%= t("decidim.contracts_sk.contracts.show.documents") %></h2>
+<%# Only attached documents render: a metadata-only row has neither a file
+    to link nor a size to show, so it is skipped rather than rendered as a
+    dead entry. Materialized once: the presence check and the iteration
+    share a single loaded collection. The download link goes through
+    main_app — ActiveStorage's `direct :rails_blob` helper lives on the
+    host application's route set, not on the isolated engine's, and the
+    request-bound main_app proxy supplies the URL context (safe for any
+    mount point). The size comes from the synced metadata columns, never
+    from the blob service (civora-org/civora-platform#73). %>
+<% documents = @contract.documents.select { |document| document.file.attached? } %>
+<% if documents.any? %>
+  <ul>
+    <% documents.each do |document| %>
+      <li>
+        <%= link_to document.title, main_app.rails_blob_path(document.file, disposition: :attachment) %>
+        (<%= t("decidim.contracts_sk.contract.document.#{document.kind}") %>, <%= number_to_human_size(document.file_size) %>)
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p><%= t("decidim.contracts_sk.contracts.show.documents_empty") %></p>
+<% end %>
+

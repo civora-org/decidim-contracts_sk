@@ -41,6 +41,13 @@ require "logger"
 
 require "rails"
 require "action_controller/railtie"
+# ActiveStorage rides along since M02-05-A0 (civora-org/civora-platform#73):
+# the engine's Document model declares `has_one_attached :file` unguarded —
+# decidim-core parity, since every Decidim app runs ActiveStorage — so the
+# harness boots the real ActiveStorage engine for the model to load at all.
+# ActiveRecord is loadable in this harness either way (the shared :db support
+# requires it in every run); the dummy stays DB-free because nothing queries.
+require "active_storage/engine"
 require "i18n"
 require "wisper"
 
@@ -152,8 +159,31 @@ class DummyApp < Rails::Application
   config.secret_key_base = "0" * 128
   config.logger = Logger.new(IO::NULL)
   config.hosts.clear
-  config.action_dispatch.show_exceptions = :rescuable
+  # :none on purpose (M02-05-A0, #73): the harness must RE-RAISE exceptions
+  # out of the request, never render error pages — the suite's not-found
+  # specs pin the ActiveRecord::RecordNotFound raise itself. Under the
+  # previous :rescuable setting that held only while active_record/railtie
+  # was absent (RecordNotFound was not a registered rescue response); with
+  # ActiveStorage pulling the AR railtie in, :rescuable started RENDERING
+  # it as a 404 page. Rails 7.2 note: `false` would NOT restore the raise —
+  # ExceptionWrapper#show? treats false as "unset" (renders all); only
+  # :none re-raises everything.
+  config.action_dispatch.show_exceptions = :none
   config.cache_store = :null_store
+
+  # ActiveStorage service wiring (M02-05-A0, #73): configured inline so no
+  # storage.yml file is introduced — the `active_storage.services`
+  # initializer reads `service_configurations` before falling back to the
+  # file. The Disk root lives under the git-ignored dummy tmp dir; the
+  # blob-backed :db groups wipe it per example for hermeticity. The queue
+  # adapter is pinned to :test so attachment/blob purge cascades
+  # (`purge_later`) are captured, never executed on background threads —
+  # background threads would race the per-example DB disconnect.
+  config.active_job.queue_adapter = :test
+  config.active_storage.service = :test
+  config.active_storage.service_configurations = {
+    test: { service: "Disk", root: File.expand_path("../tmp/storage", __dir__) }
+  }.freeze
 end
 
 DummyApp.initialize!
@@ -168,7 +198,15 @@ I18n.backend.store_translations(
   decidim: { core: { actions: { unauthorized: "You are not authorized to perform this action." } } }
 )
 
-# Post-initialize draw of the dummy routes (mounts the engine at "/").
-# RouteSet#draw clears the table first, so this stays idempotent even though
-# the routes reloader has already evaluated this file during initialize!.
-require_relative "routes"
+# Route loading happens post-initialize, deliberately (M02-05-A0, #73): a
+# bare `initialize!` on this minimal app does not execute the routes
+# reloader, so nothing is drawn until it runs. `execute` loads every
+# registered route file into its own target set — the dummy mount (its own
+# file draws into DummyApp.routes), the engine's routes (drawn into the
+# isolated engine set) and ActiveStorage's /rails/active_storage endpoints
+# plus the `direct :rails_blob` URL helpers, which the gem's routes file
+# draws into the APPLICATION route set (the engine's public view needs the
+# latter for its download links). Replacing this with a plain
+# `DummyApp.routes.draw { mount ... }` would clear the app set and wipe the
+# ActiveStorage registrations.
+Rails.application.routes_reloader.execute

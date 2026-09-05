@@ -1,0 +1,19 @@
+<h1><%= t("decidim.contracts_sk.admin.documents.edit.title") %></h1>
+
+<p><%= link_to t("decidim.contracts_sk.admin.documents.back_to_contract"), edit_admin_contract_path(@contract) %></p>
+
+<%# The record's content fields are context, not inputs: a replace swaps
+    the file only (civora-org/civora-platform#73), so title/kind and the
+    current file render read-only. %>
+<dl>
+  <dt><%= t("decidim.contracts_sk.admin.documents.form.title") %></dt>
+  <dd><%= @document.title %></dd>
+
+  <dt><%= t("decidim.contracts_sk.admin.documents.form.kind") %></dt>
+  <dd><%= t("decidim.contracts_sk.admin.documents.kinds.#{@document.kind}") %></dd>
+
+  <dt><%= t("decidim.contracts_sk.admin.documents.form.current_file") %></dt>
+  <dd><%= @document.file_name %></dd>
+</dl>
+
+<%= render "form", url: admin_contract_document_path(@contract, @document), method: :patch, submit_label: t("decidim.contracts_sk.admin.documents.edit.title") %>

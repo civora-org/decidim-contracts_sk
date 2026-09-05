@@ -3,3 +3,48 @@
 <p><%= link_to t("decidim.contracts_sk.admin.parties.index.title"), admin_contract_parties_path(@contract) %></p>
 
 <%= render "form", url: admin_contract_path(@contract), method: :patch, submit_label: t("decidim.contracts_sk.admin.contracts.edit.title") %>
+
+<%# Per-contract document management (civora-org/civora-platform#73): the
+    route set has no document index, so the contract's edit page is the
+    hub — it lists the documents and carries the attach/replace/remove
+    controls, permission-gated exactly like the pages themselves. %>
+<h2><%= t("decidim.contracts_sk.admin.documents.index.title") %></h2>
+
+<% if allowed_to?(:create, :document, contract: @contract) %>
+  <p><%= link_to t("decidim.contracts_sk.admin.documents.new.title"), new_admin_contract_document_path(@contract) %></p>
+<% end %>
+
+<% if @contract.documents.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th><%= t("decidim.contracts_sk.admin.documents.form.title") %></th>
+        <th><%= t("decidim.contracts_sk.admin.documents.form.kind") %></th>
+        <th><%= t("decidim.contracts_sk.admin.documents.form.current_file") %></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @contract.documents.order(:id).each do |document| %>
+        <tr>
+          <td><%= document.title %></td>
+          <td><%= t("decidim.contracts_sk.admin.documents.kinds.#{document.kind}") %></td>
+          <td><%= document.file_name %></td>
+          <td>
+            <% if allowed_to?(:update, :document, contract: @contract) %>
+              <%= link_to t("decidim.contracts_sk.admin.documents.edit.title"),
+                          edit_admin_contract_document_path(@contract, document) %>
+            <% end %>
+            <% if allowed_to?(:destroy, :document, contract: @contract) %>
+              <%= button_to t("decidim.contracts_sk.admin.documents.destroy.link"),
+                            admin_contract_document_path(@contract, document),
+                            method: :delete,
+                            data: { confirm: t("decidim.contracts_sk.admin.documents.destroy.confirm") } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
