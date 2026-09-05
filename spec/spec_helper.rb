@@ -5,8 +5,14 @@
 # mounts the engine at "/" and provides the engine's real classes (plus the
 # stand-in Decidim application controllers it needs) — so no spec file loads
 # the engine or its classes by hand anymore.
+#
+# Route note (M02-05-A0, #73): the dummy's routes — including the engine
+# mount AND ActiveStorage's application-level routes/URL helpers — are drawn
+# by the routes reloader execute at the end of spec/dummy/config/application.rb.
+# Deliberately NO `require_relative "dummy/config/routes"` here anymore: a
+# second `DummyApp.routes.draw` would CLEAR the route table and wipe the
+# ActiveStorage registrations.
 require_relative "dummy/config/application"
-require_relative "dummy/config/routes"
 
 require "rspec/rails"
 

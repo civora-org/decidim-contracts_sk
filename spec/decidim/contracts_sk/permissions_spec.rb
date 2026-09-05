@@ -341,6 +341,111 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — document (contract-scoped child records, civora-org/civora-platform#73)" do
+    # The document actions the writing gate covers: create (attach), update
+    # (replace — the PATCH/PUT route maps onto :update) and destroy. A plain
+    # method, not a block-level constant — the constants this file owns live
+    # at the top level.
+    def document_actions
+      %i[create update destroy]
+    end
+
+    # Document decisions hang off the PARENT contract passed in
+    # context[:contract]; the same engine_roles-driven resolver swap as the
+    # sibling groups applies (restored after each example).
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "allows an editor exactly on the editable parent states, for every writing action" do
+      lifecycle::EDITABLE_STATES.each do |state|
+        document_actions.each do |document_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                       action: document_action,
+                                                                       contract: SpecContract.new(state),
+                                                                       action_subject: :document)
+
+          expect(outcome.allowed?).to be(true), "editor must #{document_action} a document on #{state}"
+        end
+      end
+    end
+
+    it "denies an editor on every non-editable parent state" do
+      (lifecycle::STATES - lifecycle::EDITABLE_STATES).each do |state|
+        document_actions.each do |document_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                       action: document_action,
+                                                                       contract: SpecContract.new(state),
+                                                                       action_subject: :document)
+
+          expect(outcome.allowed?).to be(false), "editor must not #{document_action} a document on #{state}"
+        end
+      end
+    end
+
+    it "denies a reviewer even on editable parent states (reviewers never draft)" do
+      lifecycle::EDITABLE_STATES.each do |state|
+        document_actions.each do |document_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[reviewer]), scope: :admin,
+                                                                         action: document_action,
+                                                                         contract: SpecContract.new(state),
+                                                                         action_subject: :document)
+
+          expect(outcome.allowed?).to be(false), "reviewer must not #{document_action} a document on #{state}"
+        end
+      end
+    end
+
+    it "answers document :read like the contract's :read: any engine role, any parent state" do
+      %i[draft published].each do |state|
+        editor = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :read,
+                                                                    contract: SpecContract.new(state),
+                                                                    action_subject: :document)
+        reviewer = action_for(SpecUser.new(engine_roles: %i[reviewer]), scope: :admin, action: :read,
+                                                                        contract: SpecContract.new(state),
+                                                                        action_subject: :document)
+
+        expect(editor.allowed?).to be(true), "editor must read documents on #{state}"
+        expect(reviewer.allowed?).to be(true), "reviewer must read documents on #{state}"
+      end
+    end
+
+    it "denies document :read for a roleless user" do
+      outcome = action_for(SpecUser.new(engine_roles: []), scope: :admin, action: :read,
+                                                           contract: SpecContract.new(:draft),
+                                                           action_subject: :document)
+
+      expect(outcome.allowed?).to be(false)
+    end
+
+    it "disallows (not unset) document writes when no contract state is reachable — fail-closed" do
+      document_actions.each do |document_action|
+        outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                     action: document_action,
+                                                                     action_subject: :document)
+
+        expect(outcome.allowed?).to be(false)
+        expect(unset?(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: document_action,
+                                                              action_subject: :document)).to be(false)
+      end
+    end
+
+    it "treats String states (Rails enum getters) identically to Symbols" do
+      lifecycle::STATES.each do |state|
+        expected = lifecycle::EDITABLE_STATES.include?(state)
+
+        outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :update,
+                                                                     contract: SpecContract.new(state.to_s),
+                                                                     action_subject: :document)
+
+        expect(outcome.allowed?).to eq(expected), "String state diverged for document :update on #{state}"
+      end
+    end
+  end
+
   describe "org admin with accepted terms (default resolver)" do
     it "may trigger every edge in the transition table" do
       lifecycle::TRANSITIONS.each do |from, edges|

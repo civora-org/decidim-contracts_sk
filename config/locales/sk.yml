@@ -15,6 +15,11 @@ sk:
         party:
           object: "Objednávateľ"
           contractor: "Dodávateľ"
+        document:
+          contract: "Zmluvný dokument"
+          crz_export: "Export z CRZ"
+          annex: "Príloha"
+          other: "Iný dokument"
       contracts:
         index:
           title: "Zmluvy"
@@ -23,6 +28,8 @@ sk:
           title: "Detail zmluvy"
           parties: "Zmluvné strany"
           parties_empty: "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."
+          documents: "Dokumenty"
+          documents_empty: "K tejto zmluve nie sú pripojené žiadne dokumenty."
       admin:
         contracts:
           index:
@@ -76,3 +83,32 @@ sk:
             name: "Názov"
             ico: "IČO"
             address: "Adresa"
+        documents:
+          index:
+            title: "Dokumenty"
+          new:
+            title: "Nový dokument"
+          edit:
+            title: "Nahradiť súbor dokumentu"
+          back_to_contract: "Späť na zmluvu"
+          create:
+            success: "Dokument bol úspešne pridaný."
+            error: "Dokument sa nepodarilo pridať."
+          update:
+            success: "Súbor dokumentu bol úspešne nahradený."
+            error: "Súbor dokumentu sa nepodarilo nahradiť."
+          destroy:
+            link: "Odstrániť"
+            confirm: "Odstrániť tento dokument?"
+            success: "Dokument bol úspešne odstránený."
+            error: "Dokument sa nepodarilo odstrániť."
+          kinds:
+            contract: "Zmluvný dokument"
+            crz_export: "Export z CRZ"
+            annex: "Príloha"
+            other: "Iný dokument"
+          form:
+            title: "Názov"
+            kind: "Typ"
+            file: "Súbor"
+            current_file: "Aktuálny súbor"

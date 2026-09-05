@@ -20,9 +20,12 @@ module Decidim
     # from the host's Decidim::ApplicationController
     # (Decidim::NeedsOrganization) — the same seam the admin base relies on.
     #
-    # Only :id is ever read from the request. Documents and amendments are
-    # deliberately not rendered yet (M02-05), and the index is not paginated
-    # (no new dependencies by design; the catalogue is small at this stage).
+    # Only :id is ever read from the request. The show view renders the
+    # record's parties and documents (the latter as download links through
+    # the host's ActiveStorage route, M02-05-A0
+    # civora-org/civora-platform#73); amendments are deliberately not
+    # rendered yet (M02-05-B), and the index is not paginated (no new
+    # dependencies by design; the catalogue is small at this stage).
     class ContractsController < Decidim::ContractsSk::ApplicationController
       def index
         @contracts = published_contracts

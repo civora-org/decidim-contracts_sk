@@ -1,0 +1,41 @@
+<%# url:, method:, submit_label: and details: come from the caller (new /
+    edit). The details flag shows the title/kind inputs on the attach page;
+    the replace page renders the file input only — its form's title/kind
+    mirror the persisted record (a replace swaps the file,
+    civora-org/civora-platform#73). The kind options are derived from the
+    model's frozen KINDS vocabulary, never hand-enumerated, with localized
+    labels. The form is multipart: the file travels with the request. %>
+<%= form_with url: url, method: method, html: { multipart: true } do |form| %>
+  <% if @form.errors.any? %>
+    <ul>
+      <% @form.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% if defined?(details) && details %>
+    <div>
+      <%= form.label :title, t("decidim.contracts_sk.admin.documents.form.title"), for: "document_title" %>
+      <%= form.text_field :title, id: "document_title", name: "document[title]", value: @form.title %>
+    </div>
+
+    <% kind_options = Decidim::ContractsSk::Document::KINDS.map do |kind|
+         [t("decidim.contracts_sk.admin.documents.kinds.#{kind}"), kind]
+       end %>
+
+    <div>
+      <%= form.label :kind, t("decidim.contracts_sk.admin.documents.form.kind"), for: "document_kind" %>
+      <%= form.select :kind, kind_options, { selected: @form.kind }, id: "document_kind", name: "document[kind]" %>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :file, t("decidim.contracts_sk.admin.documents.form.file"), for: "document_file" %>
+    <%= form.file_field :file, id: "document_file", name: "document[file]" %>
+  </div>
+
+  <div>
+    <%= form.submit submit_label %>
+  </div>
+<% end %>

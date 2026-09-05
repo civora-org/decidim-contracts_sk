@@ -21,6 +21,7 @@
 # ---------------------------------------------------------------------------
 
 require "logger"
+require "fileutils"
 
 require "active_record"
 require "active_support/concern"
@@ -82,6 +83,27 @@ RSpec.shared_context "contracts_sk db support" do
       reference: "ZP-2026-001"
     }.merge(overrides)
   end
+
+  # Creates the ActiveStorage tables (M02-05-A0, civora-org/civora-platform
+  # #73). The engine attaches files through ActiveStorage but deliberately
+  # ships NO storage-table migration — the host app owns that schema
+  # (docs/contracts-domain-notes.md) — so the harness builds the tables from
+  # the pinned activestorage gem's own migration, the same file a host app's
+  # schema carries. Built for EVERY :db example: a contract destroy now
+  # cascades into documents' attachments, so any group that destroys a
+  # contract (not only the blob-backed ones) needs the tables present.
+  def migrate_active_storage_schema!
+    gem_path = Gem::Specification.find_by_name("activestorage").full_gem_path
+    require File.join(gem_path, "db", "migrate", "20170806125915_create_active_storage_tables.rb")
+    CreateActiveStorageTables.migrate(:up)
+  end
+
+  # The dummy app's ActiveStorage Disk service root (set inline in
+  # spec/dummy/config/application.rb, git-ignored). Blob-backed :db groups
+  # wipe it per example so runs stay hermetic.
+  def active_storage_root
+    File.join(engine_root, "spec", "dummy", "tmp", "storage")
+  end
 end
 
 RSpec.configure do |config|
@@ -105,6 +127,12 @@ RSpec.configure do |config|
     # foreign keys: the real tables live in a full Decidim app.
     ActiveRecord::Base.connection.create_table(:decidim_organizations, &:timestamps)
     ActiveRecord::Base.connection.create_table(:decidim_users, &:timestamps)
+
+    # The ActiveStorage tables a host app owns (see the helper's comment):
+    # built fresh per example so every :db group can cascade a contract
+    # destroy through the attachments, and the blob-backed groups can attach
+    # for real.
+    migrate_active_storage_schema!
   end
 
   config.after(:each, :db) do

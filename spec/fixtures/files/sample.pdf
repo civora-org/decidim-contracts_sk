@@ -1,0 +1,9 @@
+%PDF-1.4
+% Synthetic fixture: PDF-shaped bytes only, no real content (AGENTS.md
+% fixture policy). Marcel sniffs the %PDF- magic to application/pdf.
+1 0 obj
+<</Type/Catalog>>
+endobj
+trailer
+<</Root 1 0 R>>
+%%EOF

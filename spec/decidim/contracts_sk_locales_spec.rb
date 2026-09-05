@@ -22,7 +22,11 @@ require "yaml"
 
 # Shared vocabulary and introspection for the example groups below. Kept in a
 # plain module (not inside a describe block) so that its constants stay
-# lint-clean, mirroring the engine_routing_spec pattern.
+# lint-clean and its helpers can be included where needed. Cop note: the
+# module IS the pinned key/label vocabulary — its length grows with the
+# engine's locale surface, not with logic, so the module budget is disabled
+# rather than splitting the contract tables apart.
+# rubocop:disable Metrics/ModuleLength
 module LocaleContract
   # Repo-root-relative locale dir: this spec lives at spec/decidim/, so two
   # levels up is the engine root (config/locales sits beneath it).
@@ -49,12 +53,35 @@ module LocaleContract
     sk: { object: "Objednávateľ", contractor: "Dodávateľ" }
   }.freeze
 
+  # The document kind labels per locale, per the approved translations
+  # (civora-org/civora-platform#73). The admin (admin.documents.kinds.*)
+  # and public (contract.document.*) vocabularies deliberately share the
+  # same terminology.
+  DOCUMENT_KIND_LABELS = {
+    en: { contract: "Contract document", crz_export: "CRZ export", annex: "Annex", other: "Other document" },
+    sk: { contract: "Zmluvný dokument", crz_export: "Export z CRZ", annex: "Príloha", other: "Iný dokument" }
+  }.freeze
+
+  # The public detail page's document section labels per locale
+  # (civora-org/civora-platform#73).
+  DOCUMENT_VIEW_LABELS = {
+    en: {
+      "contracts.show.documents" => "Documents",
+      "contracts.show.documents_empty" => "No documents have been attached to this contract."
+    },
+    sk: {
+      "contracts.show.documents" => "Dokumenty",
+      "contracts.show.documents_empty" => "K tejto zmluve nie sú pripojené žiadne dokumenty."
+    }
+  }.freeze
+
   # The exact expected leaf-key surface under decidim.contracts_sk, including
   # the public catalogue keys (plan Option B of #39), the admin CRUD keys
   # (civora-org/civora-platform#58), the admin content-field form keys
   # (civora-org/civora-platform#75), the admin party keys
-  # (civora-org/civora-platform#76) and the public catalogue view keys
-  # (civora-org/civora-platform#62, #63). Sorted alphabetically.
+  # (civora-org/civora-platform#76), the public catalogue view keys
+  # (civora-org/civora-platform#62, #63) and the admin/public document keys
+  # (civora-org/civora-platform#73). Sorted alphabetically.
   EXPECTED_KEYS = [
     "admin.contracts.create.error",
     "admin.contracts.create.success",
@@ -73,6 +100,26 @@ module LocaleContract
     "admin.contracts.transition.success",
     "admin.contracts.update.error",
     "admin.contracts.update.success",
+    "admin.documents.back_to_contract",
+    "admin.documents.create.error",
+    "admin.documents.create.success",
+    "admin.documents.destroy.confirm",
+    "admin.documents.destroy.error",
+    "admin.documents.destroy.link",
+    "admin.documents.destroy.success",
+    "admin.documents.edit.title",
+    "admin.documents.form.current_file",
+    "admin.documents.form.file",
+    "admin.documents.form.kind",
+    "admin.documents.form.title",
+    "admin.documents.index.title",
+    "admin.documents.kinds.annex",
+    "admin.documents.kinds.contract",
+    "admin.documents.kinds.crz_export",
+    "admin.documents.kinds.other",
+    "admin.documents.new.title",
+    "admin.documents.update.error",
+    "admin.documents.update.success",
     "admin.parties.back_to_contract",
     "admin.parties.create.error",
     "admin.parties.create.success",
@@ -94,6 +141,10 @@ module LocaleContract
     "contract.amount",
     "contract.crz_url",
     "contract.currency",
+    "contract.document.annex",
+    "contract.document.contract",
+    "contract.document.crz_export",
+    "contract.document.other",
     "contract.effective_from",
     "contract.party.contractor",
     "contract.party.object",
@@ -105,6 +156,8 @@ module LocaleContract
     "contract.title",
     "contracts.index.empty",
     "contracts.index.title",
+    "contracts.show.documents",
+    "contracts.show.documents_empty",
     "contracts.show.parties",
     "contracts.show.parties_empty",
     "contracts.show.title"
@@ -154,6 +207,7 @@ module LocaleContract
     backend
   end
 end
+# rubocop:enable Metrics/ModuleLength
 
 # The public catalogue's own vocabulary (civora-org/civora-platform#62, #63),
 # kept in its own module so that LocaleContract stays within its length
@@ -245,6 +299,30 @@ RSpec.describe Decidim::ContractsSk do
       LocaleContract::PARTY_ROLE_LABELS.each do |locale, labels|
         labels.each do |role, value|
           expect(backend.translate(locale, "decidim.contracts_sk.admin.parties.roles.#{role}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin document kind labels in both locales (civora-org/civora-platform#73)" do
+      LocaleContract::DOCUMENT_KIND_LABELS.each do |locale, labels|
+        labels.each do |kind, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.admin.documents.kinds.#{kind}")).to eq(value)
+        end
+      end
+    end
+
+    it "keeps the public document kind vocabulary identical to the admin one (civora-org/civora-platform#73)" do
+      LocaleContract::DOCUMENT_KIND_LABELS.each do |locale, labels|
+        labels.each do |kind, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.contract.document.#{kind}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the public detail page's document section labels in both locales (civora-org/civora-platform#73)" do
+      LocaleContract::DOCUMENT_VIEW_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end
       end
     end

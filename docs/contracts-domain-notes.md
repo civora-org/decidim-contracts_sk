@@ -47,9 +47,8 @@ table is empty. `checksum` is deferred to the actual import milestone
 Deferred (additive migrations later, per downstream issues): real functional
 fields — subject matter text, amounts/currency, signature/effectivity dates,
 amendments/versions (#57 landed the skeleton; immutability and the public
-version history arrive with #65); document file upload + safe validation
-(#64, M02-05-A — the #56 documents table carries nullable metadata columns
-only, see below).
+version history arrive with #65); safe document content validation (#64 —
+the upload/storage wiring itself has landed, see #73 below).
 
 ## Schema consequences landed in #56 (M02-02-B)
 
@@ -68,8 +67,40 @@ the #55 skeleton, keeping its "minimal constraints" stance:
   FK to `decidim_contracts_sk_contracts`; `Contract` declares
   `dependent: :destroy` for both.
 - **File metadata only**: `file_name` / `content_type` / `file_size` are
-  nullable descriptive columns. File upload and safe validation are deferred
-  to **M02-05-A (#64)**; no behaviour attaches to these columns until then.
+  nullable descriptive columns. They carried no behaviour until the upload
+  arc landed (see #73 below).
+
+## Storage wiring landed in #73 (M02-05-A0)
+
+Document upload and storage are wired, **Option A — engine-side
+ActiveStorage directly on `Document`**:
+
+- **`has_one_attached :file`** on `Decidim::ContractsSk::Document`, no
+  `Decidim::Attachment` (the engine stays self-contained; documents are
+  contract-scoped engine records, not attachable component resources). The
+  macro is declared unguarded, mirroring decidim-core: core declares
+  `has_one_attached` on its own models unguarded and declares no
+  activestorage gem dependency either — every Decidim application runs
+  ActiveStorage, and this engine's runtime floor is decidim-core.
+- **Metadata columns are the display source of truth.**
+  `Document#attach_file!` attaches (or replaces) the file and syncs
+  `file_name` / `content_type` / `file_size` from the blob, so the public
+  catalogue renders size/type without touching the blob service.
+- **No engine migration for the storage tables — on purpose.** The
+  engine's own migration set stays untouched by this arc (the #56 documents
+  table already carried the metadata columns). The ActiveStorage schema
+  (`active_storage_blobs` / `active_storage_attachments` /
+  `active_storage_variant_records`) is **owned by the host application** —
+  a Decidim app has it by construction — so the engine must not create or
+  migrate it. The blob-backed spec groups build those tables from the pinned
+  activestorage gem's own migration for testing only. Storage-service
+  configuration (Disk/S3/…) is likewise a host-app concern.
+- **Removal cascades**: destroying a document destroys its attachment row
+  with it (the `has_one_attached` wiring); the blob purge itself goes
+  through the host's queuing backend (`purge_later`).
+- **Deferred from this arc**: document content validation (allowed kinds,
+  size caps, content-type checks) remains
+  **civora-org/civora-platform#64**; CRZ integration remains #74.
 
 ## Schema consequences landed in #57 (M02-02-C)
 

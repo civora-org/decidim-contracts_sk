@@ -1,0 +1,12 @@
+# Declarative only: the ActiveStorage engine pulls in active_record/railtie
+# (M02-05-A0, #73), whose boot initializer reads this file for Rails.env.
+# The harness never opens this connection — the dummy stays DB-free, and the
+# opt-in :db groups establish their own fresh in-memory SQLite connection
+# per example (see spec/support/contracts_sk_db_helpers.rb).
+development:
+  adapter: sqlite3
+  database: ":memory:"
+
+test:
+  adapter: sqlite3
+  database: ":memory:"

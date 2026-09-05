@@ -9,20 +9,28 @@
 #   not-found path. The controller's #published_contracts is the record
 #   seam: an AR scope execution would need a connection, so request specs
 #   stub it per-example with allow_any_instance_of (the approved harness
-#   seam — see spec/requests/admin/contracts_spec.rb).
+#   seam — see spec/requests/admin/contracts_spec.rb). Documents are part
+#   of the show render since M02-05-A0 (#73): the offline doubles carry
+#   plain arrays of document doubles — a blob-backed link needs a real
+#   blob row, so the offline group covers only the not-attached/empty
+#   shapes, while the real download links run in the :db group.
 #
 # * The :db group (CONTRACTS_SK_DB=1) pins the published-only scoping, the
-#   organization tenancy and the end-to-end rendering against the real
-#   migrations on an in-memory SQLite adapter.
+#   organization tenancy, the document links against the real ActiveStorage
+#   tables (built from the pinned activestorage gem's own migration; the
+#   engine ships none — the host app owns that schema) and the end-to-end
+#   rendering on an in-memory SQLite adapter.
 #
 # Not-found semantics: both actions read exclusively through the published
 # scope, so an unpublished record, another organization's record and a
 # nonexistent id take the SAME code path and raise the SAME exception
-# (ActiveRecord::RecordNotFound — a real deployment renders it as 404; the
-# dummy is deliberately AR-railtie-free and does not rescue it, so the raise
-# itself is the asserted behavior, exactly as in the admin specs).
+# (ActiveRecord::RecordNotFound). The harness re-raises exceptions out of
+# the request (show_exceptions :none — see spec/dummy/config/application.rb),
+# so the raise itself is the asserted behavior, exactly as in the admin
+# specs.
 #
-# Synthetic data only, no real PII.
+# Synthetic data only, no real PII (the uploaded fixtures are synthetic
+# PDF-shaped/text bytes, no real content).
 #
 # Cop note: allow_any_instance_of is the approved seam for this harness (the
 # record scope lives on the controller; request specs cannot inject records
@@ -97,6 +105,7 @@ RSpec.describe "public contracts catalogue", type: :request do
 
   describe "contract detail (civora-org/civora-platform#63)" do
     let(:parties) { [] }
+    let(:documents) { [] }
     let(:contract) do
       double(
         title: "Road reconstruction",
@@ -108,7 +117,8 @@ RSpec.describe "public contracts catalogue", type: :request do
         signed_on: Date.new(2026, 9, 1),
         effective_from: Date.new(2026, 8, 15),
         crz_url: "https://crz.gov.sk/record/123",
-        parties: parties
+        parties: parties,
+        documents: documents
       )
     end
 
@@ -142,6 +152,30 @@ RSpec.describe "public contracts catalogue", type: :request do
       expect(response.body).to include("No parties have been recorded for this contract.")
     end
 
+    it "renders the empty-document state gracefully (civora-org/civora-platform#73)" do
+      stub_published_contracts(double(find: contract))
+
+      get "/7"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Documents")
+        expect(response.body).to include("No documents have been attached to this contract.")
+      end
+    end
+
+    it "skips metadata-only documents that carry no attached file (civora-org/civora-platform#73)" do
+      documents << double(file: double(attached?: false))
+      stub_published_contracts(double(find: contract))
+
+      get "/7"
+
+      expect(response).to have_http_status(:ok)
+      # A document without a file has neither a link nor a size to show —
+      # it is skipped, and the section falls back to the empty state.
+      expect(response.body).to include("No documents have been attached to this contract.")
+    end
+
     it "raises the not-found exception for a nonexistent id through the published scope" do
       # Offline the raise is all that can be asserted (see the header); the
       # :db group proves below that an unpublished record takes exactly the
@@ -157,10 +191,13 @@ RSpec.describe "public contracts catalogue", type: :request do
   # Real end-to-end group: the published-only scope, the organization
   # tenancy, the rendering and the not-found indistinguishability against
   # the REAL migrations (in-memory SQLite; fresh database per example via
-  # the shared :db support).
+  # the shared :db support). Document examples additionally build the
+  # ActiveStorage tables (host-app-owned schema, test-built from the pinned
+  # gem's migration) and wipe the Disk service root for hermeticity.
   describe "published-only scoping and real rendering (civora-org/civora-platform#62, #63)", :db do
     before do
       migrate_engine_schema!
+      FileUtils.rm_rf(active_storage_root)
 
       # Tenancy seam (Gate-1 fold-in): the catalogue reads
       # current_organization, exactly like the admin side; the :db group
@@ -176,6 +213,18 @@ RSpec.describe "public contracts catalogue", type: :request do
       Decidim::ContractsSk::Contract.create!(
         contract_attributes(PublishedContractFixture::DEFAULTS.merge(overrides))
       )
+    end
+
+    # Path to a synthetic fixture (PDF-shaped/text bytes, no real content).
+    def sample_fixture(name)
+      File.join(engine_root, "spec", "fixtures", "files", name)
+    end
+
+    # Creates a document on the contract and attaches a real fixture file.
+    def attach!(contract, title:, kind:, fixture:, type:)
+      document = contract.documents.create!(title: title, kind: kind)
+      document.attach_file!(Rack::Test::UploadedFile.new(sample_fixture(fixture), type))
+      document
     end
 
     it "lists only published contracts, newest publication first, linked to their detail pages" do
@@ -257,6 +306,56 @@ RSpec.describe "public contracts catalogue", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("No parties have been recorded for this contract.")
+    end
+
+    it "lists a published record's documents as download links with kind and size (civora-org/civora-platform#73)" do
+      contract = create_contract!
+      attach!(contract, title: "Signed contract scan", kind: "contract",
+                        fixture: "sample.pdf", type: "application/pdf")
+      attach!(contract, title: "Annex notes", kind: "annex",
+                        fixture: "sample-notes.txt", type: "text/plain")
+
+      get "/#{contract.id}"
+
+      expect(response).to have_http_status(:ok)
+      scan = contract.documents.reload.first
+      expected_link = "/rails/active_storage/blobs/redirect/#{scan.file.blob.signed_id}/sample.pdf"
+      # A sub-1024-byte fixture humanizes as "<n> Bytes" under the en locale.
+      annex_size = "#{File.size(sample_fixture("sample-notes.txt"))} Bytes"
+      aggregate_failures do
+        # Download links through the host's ActiveStorage route, forced
+        # attachment disposition, one per document.
+        expect(response.body).to include("Signed contract scan")
+        expect(response.body).to include(%(href="#{expected_link}?disposition=attachment))
+        expect(response.body).to include("Annex notes")
+        expect(response.body).to include("Contract document")
+        expect(response.body).to include("(Annex, #{annex_size})")
+      end
+    end
+
+    it "renders the empty-document state for a published record without attachments (#73)" do
+      contract = create_contract!
+      # A metadata-only row without an attachment is legal (the #56 shape):
+      # it renders nothing rather than a dead entry.
+      contract.documents.create!(title: "Placeholder", kind: "other")
+
+      get "/#{contract.id}"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No documents have been attached to this contract.")
+    end
+
+    it "hides an unpublished record's documents behind the same not-found path (civora-org/civora-platform#73)" do
+      draft = create_contract!(
+        title: "Draft road with documents", reference: "ZP-2026-008",
+        state: "draft", published_at: nil
+      )
+      draft.documents.create!(title: "Hidden scan", kind: "contract")
+           .attach_file!(Rack::Test::UploadedFile.new(sample_fixture("sample.pdf"), "application/pdf"))
+
+      # The published-only scope is the entire public gate: a draft record's
+      # documents cannot leak through the detail page.
+      expect { get "/#{draft.id}" }.to raise_error(ActiveRecord::RecordNotFound)
     end
 
     it "hides an unpublished record and a nonexistent id behind the same not-found path" do

@@ -15,6 +15,11 @@ en:
         party:
           object: "Object party"
           contractor: "Contractor"
+        document:
+          contract: "Contract document"
+          crz_export: "CRZ export"
+          annex: "Annex"
+          other: "Other document"
       contracts:
         index:
           title: "Contracts"
@@ -23,6 +28,8 @@ en:
           title: "Contract details"
           parties: "Parties"
           parties_empty: "No parties have been recorded for this contract."
+          documents: "Documents"
+          documents_empty: "No documents have been attached to this contract."
       admin:
         contracts:
           index:
@@ -76,3 +83,32 @@ en:
             name: "Name"
             ico: "Company ID (IČO)"
             address: "Address"
+        documents:
+          index:
+            title: "Documents"
+          new:
+            title: "New document"
+          edit:
+            title: "Replace document file"
+          back_to_contract: "Back to contract"
+          create:
+            success: "Document attached successfully."
+            error: "Document could not be attached."
+          update:
+            success: "Document file replaced successfully."
+            error: "Document file could not be replaced."
+          destroy:
+            link: "Remove"
+            confirm: "Remove this document?"
+            success: "Document removed successfully."
+            error: "Document could not be removed."
+          kinds:
+            contract: "Contract document"
+            crz_export: "CRZ export"
+            annex: "Annex"
+            other: "Other document"
+          form:
+            title: "Title"
+            kind: "Kind"
+            file: "File"
+            current_file: "Current file"
