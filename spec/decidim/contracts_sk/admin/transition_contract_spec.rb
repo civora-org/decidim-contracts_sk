@@ -189,5 +189,29 @@ RSpec.describe Decidim::ContractsSk::Admin::TransitionContract, :db do
       expect(Decidim::ContractsSk::AuditEvent.count).to eq(0)
     end
   end
+
+  describe "stale-object race (deterministic — no threads)" do
+    it "refuses a copy loaded before the record left its state, writing no state and no audit row" do
+      # The stale copy models a request that loaded the record while the
+      # submit edge still existed (draft); the row was then moved directly,
+      # bypassing the command. The in-lock re-validation (transition_state!
+      # against the reloaded row) must fail the edge — the pre-lock role
+      # resolution alone must never admit the write.
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+      stale = Decidim::ContractsSk::Contract.find(contract.id)
+
+      contract.update!(state: "in_review")
+
+      expect do
+        events = described_class.call(stale, event: :submit, user: author)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      contract.reload
+      expect(contract.state).to eq("in_review")
+    end
+  end
 end
 # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength

@@ -17,7 +17,7 @@
 
 require "spec_helper"
 
-# rubocop:disable RSpec/MultipleExpectations
+# rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
 RSpec.describe Decidim::ContractsSk::Admin::DestroyParty, :db do
   before { migrate_engine_schema! }
 
@@ -40,5 +40,29 @@ RSpec.describe Decidim::ContractsSk::Admin::DestroyParty, :db do
     expect(events).not_to have_key(:ok)
     expect(Decidim::ContractsSk::Party.exists?(party.id)).to be(true)
   end
+
+  describe "stale-object race (deterministic — no threads)" do
+    it "refuses a party copy loaded before its contract left the editable states, removing nothing" do
+      # The stale party models a controller that loaded the child through
+      # the request-start contract copy (association + inverse_of), so the
+      # child's `contract` is the stale in-memory row, still editable. The
+      # in-lock re-check must read the contract's reloaded, in-database
+      # state — not the request-start attributes.
+      parent = Decidim::ContractsSk::Contract.find(contract.id)
+      stale = parent.parties.find(party.id)
+
+      contract.update!(state: "in_review")
+
+      expect do
+        events = described_class.call(stale)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::Party, :count)
+
+      expect(Decidim::ContractsSk::Party.exists?(party.id)).to be(true)
+      expect(contract.reload.state).to eq("in_review")
+    end
+  end
 end
-# rubocop:enable RSpec/MultipleExpectations
+# rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength

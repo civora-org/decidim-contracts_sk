@@ -11,13 +11,16 @@ module Decidim
       # controller's tenant-scoped lookup is the permission boundary; this
       # is defense-in-depth, not a permission decision of its own.
       #
-      # Editability is re-checked at execution time, fail-closed: the
-      # permission layer is checked when the request is admitted, but the
-      # parent contract's state is re-verified here so a stale permission
-      # decision can never write into a record that has left the editable
-      # states in the meantime. The form is validated at this boundary
-      # (before any persistence), so a rejection populates the form's
-      # errors for the controller's re-render.
+      # Editability is re-checked at execution time, fail-closed, INSIDE the
+      # contract's row lock — the TOCTOU doctrine of TransitionContract: the
+      # permission layer is checked when the request is admitted, but a stale
+      # permission decision or a stale in-memory copy can never write into a
+      # record that has left the editable states in the meantime. The lock is
+      # the parent contract's row — the same row the lifecycle commands lock,
+      # so a concurrent state change serializes against this write — and
+      # with_lock reloads it first, so the guard reads the in-database state.
+      # The form is validated before the lock (pure, no DB access), so a
+      # rejection populates the form's errors for the controller's re-render.
       class CreateParty < Decidim::Command
         def initialize(form, contract)
           super()
@@ -26,10 +29,14 @@ module Decidim
         end
 
         def call
-          return broadcast(:invalid) unless contract.editable?
           return broadcast(:invalid) unless form.valid?
 
-          party = contract.parties.create!(party_attributes)
+          party = nil
+          contract.with_lock do
+            return broadcast(:invalid) unless contract.editable?
+
+            party = contract.parties.create!(party_attributes)
+          end
 
           broadcast(:ok, party)
         rescue ActiveRecord::RecordInvalid

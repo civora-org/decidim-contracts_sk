@@ -65,6 +65,14 @@ RSpec.describe Decidim::ContractsSk::Admin::AttachDocument, :db do
     end.not_to change(Decidim::ContractsSk::Document, :count)
   end
 
+  it "writes no audit row on success (the audit trail tracks lifecycle transitions only)" do
+    expect do
+      events = described_class.call(form_with, contract)
+
+      expect(events).to have_key(:ok)
+    end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+  end
+
   it "refuses a parent contract that has left the editable states, writing nothing (fail-closed re-check)" do
     contract.update!(state: "in_review")
 
@@ -74,6 +82,28 @@ RSpec.describe Decidim::ContractsSk::Admin::AttachDocument, :db do
       expect(events).to have_key(:invalid)
       expect(events).not_to have_key(:ok)
     end.not_to change(Decidim::ContractsSk::Document, :count)
+  end
+
+  describe "stale-object race (deterministic — no threads)" do
+    it "refuses a copy of the contract loaded before it left the editable states, writing nothing" do
+      # The stale copy models a request that loaded the parent contract
+      # while it was still editable; the in-lock re-check must read the
+      # reloaded, in-database state — not the request-start attributes.
+      stale = Decidim::ContractsSk::Contract.find(contract.id)
+
+      contract.update!(state: "in_review")
+
+      expect do
+        events = described_class.call(form_with, stale)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::Document, :count)
+
+      contract.reload
+      expect(contract.state).to eq("in_review")
+      expect(contract.documents).to be_empty
+    end
   end
 end
 # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
