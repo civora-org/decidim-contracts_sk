@@ -41,7 +41,7 @@ catalogue index is the mount root; detail is `/:id`.
 
 | # | Request | Expected |
 |---|---------|----------|
-| P1 | `GET /zmluvy/` | index lists only DEMO-2026-006; localized empty state if no published rows |
+| P1 | `GET /zmluvy/` | index lists the published records (DEMO-2026-006, plus anything you published in section 3); localized empty state if no published rows |
 | P2 | `GET /zmluvy/` as JSON-less browser without JS | same, server-rendered |
 | P3 | detail for DEMO-2026-006 | content fields, parties, downloadable documents render |
 | P4 | detail for DEMO-2026-007 | **404** — the catalogue scope pins `published` only; archived visibility is a deferred decision (`app/controllers/decidim/contracts_sk/contracts_controller.rb`) |
@@ -63,7 +63,7 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 | # | Action | Expected |
 |---|--------|----------|
 | A1 | `GET /zmluvy/admin/contracts` unauthenticated | redirect to sign-in |
-| A2 | index as admin | all 7 org contracts, states shown |
+| A2 | index as admin | all org contracts, states shown (7 seeded + any created in A3) |
 | A3 | create (POST `new`) with title+reference | lands in `draft` |
 | A4 | edit DEMO-2026-001 (draft) | editable; state/author/organization not form-writable |
 | A5 | edit DEMO-2026-006 (published) | update refused — not editable |

@@ -6,7 +6,7 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 
 ## Status
 
-**Early development** (Milestone 02 in progress). Currently in place:
+**v1.0.0** — first stable release (Milestone 02 complete). In place:
 
 - Engine registration — isolated `Decidim::ContractsSk` namespace, `en`/`sk` locales;
 - Routes — public contracts catalogue (`index`/`show`) and an admin CRUD namespace;
@@ -22,13 +22,13 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 - Admin contracts CRUD — `index`/`new`/`create`/`edit`/`update` behind the engine permissions (`editor` role; `update` additionally gated on lifecycle editability), with a deliberately narrow title/reference form — lifecycle state, provenance, organization and author are never form-writable (civora-org/civora-platform#58);
 - Admin party management — nested add/edit/remove pages under each contract (`admin/contracts/:contract_id/parties`), gated like `update` (`editor` role on an editable-state contract); multiple parties with the same role are legal (civora-org/civora-platform#76);
 - Amendment manager and public version history — per-contract admin CRUD for draft amendments with an explicit publish step (`admin/contracts/:contract_id/amendments`, `editor`-gated: create on published contracts, update/destroy/publish on drafts; published amendments are immutable forever, ADR-006), and a public version-history section on the detail page — the record's live fields are the current version, above the frozen, published-only historical snapshots, newest first (civora-org/civora-platform#65);
-- Public contracts catalogue — first real views: a published-only index with a localized empty state and a public detail page with content fields and parties; unpublished, archived, other-organization and nonexistent ids are indistinguishable 404s (civora-org/civora-platform#62, #63).
-
-Admin contract record views are upcoming — see [Milestone 02 execution order](docs/m02-execution-order.md).
+- Public contracts catalogue — published-only index with a localized empty state and a public detail page with content fields, parties, document downloads and the version history; unpublished, archived, other-organization and nonexistent ids are indistinguishable 404s (civora-org/civora-platform#62, #63).
+- Demo data and walkthrough — an idempotent seed task covering every lifecycle state for manual testing, with click-through scenarios documented in [`docs/manual-test-scenarios.md`](docs/manual-test-scenarios.md) (civora-org/civora-platform#68); the demo seed run was verified end-to-end live on a host stack.
+- Concurrency doctrine — every admin command that writes a contract takes the contract row's lock and re-checks its lifecycle guard inside the lock, so a stale request can never write onto a record that left the editable states mid-flight (civora-org/civora-platform#69).
 
 ## Requirements
 
-- Decidim `0.31.x` (`decidim-core`, `decidim-admin`)
+- Decidim `0.31.x` (`decidim-core`, `decidim-admin`, floor `~> 0.31.5`)
 - Ruby `>= 3.2`
 
 ## Installation
