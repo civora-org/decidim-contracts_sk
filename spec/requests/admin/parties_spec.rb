@@ -226,6 +226,15 @@ RSpec.describe "admin party management", type: :request do
       end
     end
 
+    it "renders the party index with the localized empty state when the contract has no parties" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      get "/admin/contracts/#{contract.id}/parties"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No parties have been added to this contract yet.")
+    end
+
     it "links the party index from the contract edit page" do
       contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
 

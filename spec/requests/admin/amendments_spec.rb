@@ -242,6 +242,15 @@ RSpec.describe "admin amendment management", type: :request do
       end
     end
 
+    it "renders the amendment index with the localized empty state when the contract has no amendments" do
+      contract = create_contract!
+
+      get "/admin/contracts/#{contract.id}/amendments"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No amendments have been added to this contract yet.")
+    end
+
     it "links the amendment index from the contract edit page" do
       # The edit page serves editable records (the :update gate), so a
       # plain draft record is the right fixture here.

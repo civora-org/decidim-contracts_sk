@@ -129,11 +129,11 @@ Current lessons:
 
 - **Uncommitted partial implementations can appear mid-arc.** A cancelled/interrupted delegated run may leave approved-scope app code in the tree. Don't rewrite it blind — diff it against the approved design, keep what matches, fix the rest, and say so in the implementation report (proven in the #58 arc: a cancelled `rails` run left a matching app layer; verification + targeted fixes salvaged it).
 
-- **Stacked PRs: rebase onto `origin/main` before creating the PR.** When the base PR merges mid-arc, `gh pr create --base <feature-branch>` fails ("No commits between"); check the base PR's merge state first, `git rebase origin/main`, and target `main` directly (proven in the #59 arc).
-
 - **Cross-repo closing keywords DO work when the PR author has push access to both repos (same org).** `Closes civora-org/civora-platform#n` in a merged PR body auto-closed the platform issue within seconds (proven in the #36/#58 arc). Keep the belt-and-braces explicit `gh issue close` — but check state first; do not state the convention note above still holds for other org setups.
 
 - **The `with_lock` + in-lock re-check discipline applies to every command that writes state another request can change — not just lifecycle transitions.** Any guard (`draft?`, `published?`, `editable?`) evaluated on a request-loaded object is TOCTOU-bypassable: two concurrent publishes both pass the stale re-check and double-write. Wrap the write in `with_lock` (which reloads under lock) and re-check inside; read attributes the write depends on (snapshots, sequence numbers) from the post-lock instance. Test it deterministically with a stale pre-loaded object, no threads (proven in the #65 arc: reviewer H-1 on the amendment commands; `TransitionContract` was already the precedent).
+
+- **Engine branch switches break the host's running stack.** The host app mounts the engine checkout via a local Gemfile override pinned to a branch (`feat/demo-test-data` at `/opt/decidim-contracts_sk`): switching the engine repo to a feature branch makes every `docker compose exec app bin/rails …` fail with `Bundler::GitError`. Before running the host stack mid-engine-arc, check the host Gemfile's pinned branch and restore it afterwards; use `docker compose exec db psql` for read-only DB checks that must not depend on the Rails boot (proven in the M02-06-A arc, 2026-09-05).
 
 *Archived lessons (tracker & issue hygiene; engine mount-design; tooling & verification hygiene; host-app & ops; engine implementation mechanics clusters) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
 

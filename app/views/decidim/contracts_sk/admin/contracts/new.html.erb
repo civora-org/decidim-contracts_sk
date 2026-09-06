@@ -1,3 +1,5 @@
 <h1><%= t("decidim.contracts_sk.admin.contracts.new.title") %></h1>
 
+<p><%= link_to t("decidim.contracts_sk.admin.contracts.back_to_index"), admin_contracts_path %></p>
+
 <%= render "form", url: admin_contracts_path, method: :post, submit_label: t("decidim.contracts_sk.admin.contracts.new.title") %>

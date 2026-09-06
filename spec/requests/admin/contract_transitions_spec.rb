@@ -289,6 +289,18 @@ RSpec.describe "admin contract transitions", type: :request do
       end
     end
 
+    it "renders the transition buttons with the per-event confirmation prompt" do
+      Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      get "/admin/contracts"
+
+      expect(response.body).to include("data-confirm")
+      # The draft/editor row carries exactly one event (submit), so the
+      # message on the page is that event's confirm string.
+      expect(response.body)
+        .to include(I18n.t("decidim.contracts_sk.admin.contracts.transition.confirm.submit"))
+    end
+
     it "renders no transition buttons for a role that owns no edge of the record's state" do
       contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
 

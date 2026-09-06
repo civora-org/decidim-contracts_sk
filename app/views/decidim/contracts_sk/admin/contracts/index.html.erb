@@ -4,32 +4,37 @@
   <p><%= link_to t("decidim.contracts_sk.admin.contracts.new.title"), new_admin_contract_path %></p>
 <% end %>
 
-<table>
-  <thead>
-    <tr>
-      <th><%= t("decidim.contracts_sk.contract.title") %></th>
-      <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
-      <th><%= t("decidim.contracts_sk.contract.status") %></th>
-      <th><%= t("decidim.contracts_sk.admin.contracts.edit.title") %></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @contracts.each do |contract| %>
+<% if @contracts.any? %>
+  <table>
+    <thead>
       <tr>
-        <td><%= contract.title %></td>
-        <td><%= contract.reference %></td>
-        <td><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
-        <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
-        <td>
-          <%# Derived, never hand-enumerated: only the events the acting role may fire. %>
-          <% transition_events_for(contract).each do |event| %>
-            <%= button_to t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
-                          public_send(:"#{event}_admin_contract_path", contract),
-                          method: :post %>
-          <% end %>
-        </td>
+        <th><%= t("decidim.contracts_sk.contract.title") %></th>
+        <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
+        <th><%= t("decidim.contracts_sk.contract.status") %></th>
+        <th><%= t("decidim.contracts_sk.admin.contracts.edit.title") %></th>
+        <th></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% @contracts.each do |contract| %>
+        <tr>
+          <td><%= contract.title %></td>
+          <td><%= contract.reference %></td>
+          <td><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
+          <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
+          <td>
+            <%# Derived, never hand-enumerated: only the events the acting role may fire. %>
+            <% transition_events_for(contract).each do |event| %>
+              <%= button_to t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
+                            public_send(:"#{event}_admin_contract_path", contract),
+                            method: :post,
+                            data: { confirm: t("decidim.contracts_sk.admin.contracts.transition.confirm.#{event}") } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p><%= t("decidim.contracts_sk.admin.contracts.index.empty") %></p>
+<% end %>

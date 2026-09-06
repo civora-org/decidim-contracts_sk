@@ -2,6 +2,11 @@
 
 Durable lessons migrated from the *Process Lessons* section of `AGENTS.md` (per its growth/migration policy). Dated, per-arc. These remain true — they just graduated out of the active set.
 
+## PR & closing hygiene (proven #59/#36–#58 arcs; migrated 2026-09-05 from the M02-06-A arc retro)
+
+- **Stacked PRs: rebase onto `origin/main` before creating the PR.** When the base PR merges mid-arc, `gh pr create --base <feature-branch>` fails ("No commits between"); check the base PR's merge state first, `git rebase origin/main`, and target `main` directly (proven in the #59 arc).
+- **Cross-repo closing keywords DO work when the PR author has push access to both repos (same org).** `Closes civora-org/civora-platform#n` in a merged PR body auto-closed the platform issue within seconds (proven in the #36/#58 arc). Keep the belt-and-braces explicit `gh issue close` — but check state first; do not assume the convention note above still holds for other org setups.
+
 ## Tracker & issue hygiene (proven 2026-08-31 – 2026-09-01 arcs; migrated 2026-09-01 from the #47 arc retro)
 
 - **One consolidated follow-up issue.** Collect reviewer findings into a single prioritized issue in `civora-org/civora-platform` instead of scattering them across chat.
