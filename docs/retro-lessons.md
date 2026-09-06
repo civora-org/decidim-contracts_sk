@@ -58,3 +58,25 @@ Durable lessons migrated from the *Process Lessons* section of `AGENTS.md` (per 
 
 - **Respect require-time constant order in entry files.** `lib/decidim/contracts_sk.rb` defines `Error` at the top because `contract_lifecycle.rb` subclasses it at require time — when adding a `require_relative`, check it doesn't reference constants defined *below* the require line; the suite catches it only as a full-suite NameError.
 - **Deep-freeze means every level.** A frozen outer hash leaves nested hashes/arrays mutable; freeze role arrays → edge hashes → per-state maps → table, and spec-guard each level (`be_frozen` down the nesting), or the "immutable constants" guarantee is illusory.
+
+## Host-app & ops (proven #68/#69 arc; migrated 2026-09-06)
+
+- **Curl-driven walkthroughs must scrape the per-form CSRF token from the matching form.** Rails per-form tokens reject tokens taken from other forms on the same page (`Can't verify CSRF token authenticity` → 422): fetch the page, pick the form whose `action` equals the exact POST URL, unescape HTML entities in the token value. Generic page-level tokens fail even with a valid session cookie (proven in the #68 arc).
+
+- **Docker Desktop file bind-mounts die with the host file's inode.** Editing a host-mounted file with `sed -i` (or any atomic-replace editor) leaves the container's view of it gone (`ls` shows it, `cat` ENOENT) until `docker compose up -d --force-recreate`. Recreate after host-side file edits, don't debug the mount (proven in the #68 arc).
+
+- **Engine branch switches break the host's running stack.** The host app mounts the engine checkout via a local Gemfile override; switching the engine repo to a feature branch makes every `docker compose exec app bin/rails …` fail with `Bundler::GitError`. Check the host Gemfile's pinned branch before running the stack mid-arc and restore it afterwards (proven in the M02-06-A arc).
+
+## Release tooling & git hygiene (migrated 2026-09-06)
+
+- **Release-please: `release-as` in config targets a version; the manifest records what shipped.** Bumping `.release-please-manifest.json` to an unreleased version makes release-please treat it as released (manifest 1.0.0 ⇒ next PR was 1.1.0). To force the next version, set `"release-as"` in `release-please-config.json`, keep the manifest at the true last release, and drop `release-as` after the tag (proven in the #69 arc).
+
+- **Cross-repo closing keywords DO work when the PR author has push access to both repos (same org).** `Closes civora-org/civora-platform#n` in a merged PR body auto-closed the platform issue within seconds (proven in the #36/#58 arc). Keep the explicit `gh issue close` as belt-and-braces — but check state first.
+
+- **Uncommitted partial implementations can appear mid-arc.** A cancelled/interrupted delegated run may leave approved-scope app code in the tree. Diff it against the approved design, keep what matches, fix the rest, and say so in the implementation report (proven in the #58 arc).
+
+- **Anchor shared URL regexps — Rails `format:` matches unanchored.** `URI::DEFAULT_PARSER.make_regexp` returns an *unanchored* pattern and Rails' `format:` validator uses plain `=~`, so `"javascript:alert(https://evil)"` passes an http(s) allowlist. Wrap as `\A(?:…)\z` preserving the source's flags, and pin adversarial smuggle cases in specs (reviewer H-1, proven in the #75 arc).
+
+## Planning & issue hygiene (migrated 2026-09-06)
+
+- **Diff the plan against its own authority docs, not just the tree.** Authoritative docs that delegate to "downstream issues" while no such issue exists mean the plan silently dangles. Before accepting a milestone as complete, walk every "deferred/owned elsewhere" pointer and confirm the target issue is real (the v1.0.0 review found 4 unowned layers this way in one pass, #73–#76 arc).
