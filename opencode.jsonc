@@ -38,6 +38,14 @@
       "reset": "deny"
     }
   },
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": true,
+      "environment": {}
+    }
+  },
   "agents": {
     "contracts": {
       "model": "zai-coding-plan/glm-5.3",

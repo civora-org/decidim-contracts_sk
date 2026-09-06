@@ -1,3 +1,11 @@
-<h1><%= t("decidim.contracts_sk.admin.amendments.new.title") %></h1>
+<div class="item_show__header">
+  <h1 class="item_show__header-title">
+    <%= t("decidim.contracts_sk.admin.amendments.new.title") %>
+  </h1>
+</div>
 
-<%= render "form", url: admin_contract_amendments_path(@contract), method: :post, submit_label: t("decidim.contracts_sk.admin.amendments.new.title") %>
+<div class="item__edit item__edit-1col">
+  <div class="item__edit-form">
+    <%= render "form", url: admin_contract_amendments_path(@contract), method: :post, submit_label: t("decidim.contracts_sk.admin.amendments.new.title") %>
+  </div>
+</div>

@@ -3,56 +3,58 @@
     (civora-org/civora-platform#75) are rendered — the lifecycle state and
     the system-stamped published_at are intentionally absent from every
     admin form. %>
-<%= form_with url: url, method: method do |form| %>
-  <% if @form.errors.any? %>
-    <ul>
-      <% @form.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
+<%= form_with url: url, method: method, html: { class: "form form-defaults" } do |form| %>
+  <div class="card">
+    <div class="card-section">
+      <div class="form__wrapper">
+        <% if @form.errors.any? %>
+          <div class="flash alert">
+            <ul>
+              <% @form.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
 
-  <div>
-    <%= form.label :title, t("decidim.contracts_sk.admin.contracts.form.title"), for: "contract_title" %>
-    <%= form.text_field :title, id: "contract_title", name: "contract[title]", value: @form.title %>
+        <div class="row column">
+          <%= form.text_field :title, label: t("decidim.contracts_sk.admin.contracts.form.title"), label_options: { for: "contract_title" }, id: "contract_title", name: "contract[title]", value: @form.title %>
+        </div>
+
+        <div class="row column">
+          <%= form.text_field :reference, label: t("decidim.contracts_sk.admin.contracts.form.reference"), label_options: { for: "contract_reference" }, id: "contract_reference", name: "contract[reference]", value: @form.reference %>
+        </div>
+
+        <div class="row column">
+          <%= form.text_area :subject_matter, label: t("decidim.contracts_sk.admin.contracts.form.subject_matter"), label_options: { for: "contract_subject_matter" }, id: "contract_subject_matter", name: "contract[subject_matter]", value: @form.subject_matter %>
+        </div>
+
+        <div class="row column">
+          <%= form.text_field :amount, label: t("decidim.contracts_sk.admin.contracts.form.amount"), label_options: { for: "contract_amount" }, id: "contract_amount", name: "contract[amount]", value: @form.amount %>
+        </div>
+
+        <div class="row column">
+          <%= form.text_field :currency, label: t("decidim.contracts_sk.admin.contracts.form.currency"), label_options: { for: "contract_currency" }, id: "contract_currency", name: "contract[currency]", value: @form.currency %>
+        </div>
+
+        <div class="row column">
+          <%= form.date_field :signed_on, label: t("decidim.contracts_sk.admin.contracts.form.signed_on"), label_options: { for: "contract_signed_on" }, id: "contract_signed_on", name: "contract[signed_on]", value: @form.signed_on %>
+        </div>
+
+        <div class="row column">
+          <%= form.date_field :effective_from, label: t("decidim.contracts_sk.admin.contracts.form.effective_from"), label_options: { for: "contract_effective_from" }, id: "contract_effective_from", name: "contract[effective_from]", value: @form.effective_from %>
+        </div>
+
+        <div class="row column">
+          <%= form.text_field :crz_url, label: t("decidim.contracts_sk.admin.contracts.form.crz_url"), label_options: { for: "contract_crz_url" }, id: "contract_crz_url", name: "contract[crz_url]", value: @form.crz_url %>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :reference, t("decidim.contracts_sk.admin.contracts.form.reference"), for: "contract_reference" %>
-    <%= form.text_field :reference, id: "contract_reference", name: "contract[reference]", value: @form.reference %>
-  </div>
-
-  <div>
-    <%= form.label :subject_matter, t("decidim.contracts_sk.admin.contracts.form.subject_matter"), for: "contract_subject_matter" %>
-    <%= form.text_area :subject_matter, id: "contract_subject_matter", name: "contract[subject_matter]", value: @form.subject_matter %>
-  </div>
-
-  <div>
-    <%= form.label :amount, t("decidim.contracts_sk.admin.contracts.form.amount"), for: "contract_amount" %>
-    <%= form.text_field :amount, id: "contract_amount", name: "contract[amount]", value: @form.amount %>
-  </div>
-
-  <div>
-    <%= form.label :currency, t("decidim.contracts_sk.admin.contracts.form.currency"), for: "contract_currency" %>
-    <%= form.text_field :currency, id: "contract_currency", name: "contract[currency]", value: @form.currency %>
-  </div>
-
-  <div>
-    <%= form.label :signed_on, t("decidim.contracts_sk.admin.contracts.form.signed_on"), for: "contract_signed_on" %>
-    <%= form.date_field :signed_on, id: "contract_signed_on", name: "contract[signed_on]", value: @form.signed_on %>
-  </div>
-
-  <div>
-    <%= form.label :effective_from, t("decidim.contracts_sk.admin.contracts.form.effective_from"), for: "contract_effective_from" %>
-    <%= form.date_field :effective_from, id: "contract_effective_from", name: "contract[effective_from]", value: @form.effective_from %>
-  </div>
-
-  <div>
-    <%= form.label :crz_url, t("decidim.contracts_sk.admin.contracts.form.crz_url"), for: "contract_crz_url" %>
-    <%= form.text_field :crz_url, id: "contract_crz_url", name: "contract[crz_url]", value: @form.crz_url %>
-  </div>
-
-  <div>
-    <%= form.submit submit_label %>
+  <div class="item__edit-sticky">
+    <div class="item__edit-sticky-container">
+      <%= form.submit submit_label, class: "button button__sm button__secondary" %>
+    </div>
   </div>
 <% end %>

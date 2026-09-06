@@ -70,6 +70,26 @@ require File.join(decidim_core, "app/controllers/concerns/decidim/needs_permissi
 require File.join(decidim_core, "lib/decidim/command.rb")
 require File.join(decidim_core, "lib/decidim/event_recorder.rb")
 
+# The Decidim form builder (host-form parity for the admin form renders).
+# A real Decidim host points ActionView::Base.default_form_builder at
+# Decidim::FormBuilder through decidim-core's `decidim_core.default_form_builder`
+# initializer — which never runs here, because this harness requires
+# pin-point files instead of the decidim-core engine. Without it, form_with
+# yields the plain Rails builder, so the engine views render differently
+# than in any host (the Decidim builder consumes the `label:`/`label_options:`
+# field options; the Rails builder would leak them onto the input). The
+# requires below are the builder's dependency chain, in order; the assignment
+# mirrors the host initializer (decidim-core engine.rb).
+require File.join(decidim_core, "lib/decidim/map")
+require File.join(decidim_core, "lib/decidim/map/utility")
+require File.join(decidim_core, "lib/decidim/map/frontend")
+require File.join(decidim_core, "lib/decidim/map/autocomplete")
+require File.join(decidim_core, "lib/decidim/legacy_form_builder")
+require File.join(decidim_core, "lib/decidim/translatable_attributes")
+require File.join(decidim_core, "app/validators/translatable_presence_validator")
+require File.join(decidim_core, "lib/decidim/tooltip_helper")
+require File.join(decidim_core, "lib/decidim/form_builder")
+
 # Inert chain members: DefaultPermissions' base target_scope ("") matches no
 # real scope (:admin / :public), so #permissions returns the action untouched
 # — exactly what a chain member that decides nothing must do.
@@ -170,6 +190,11 @@ class DummyApp < Rails::Application
   # :none re-raises everything.
   config.action_dispatch.show_exceptions = :none
   config.cache_store = :null_store
+
+  # Host-form parity (see the builder requires above): same default builder
+  # as any Decidim host, so request specs exercise the forms exactly as they
+  # render in production.
+  config.action_view.default_form_builder = "Decidim::FormBuilder"
 
   # ActiveStorage service wiring (M02-05-A0, #73): configured inline so no
   # storage.yml file is introduced — the `active_storage.services`
