@@ -157,13 +157,28 @@ keep the "minimal constraints" stance:
    also carry real FK constraints — a deliberate second deviation from
    Decidim's `decidim_action_logs`, which has none (RESTRICT on org/user
    deletion; consistent with this engine's parties/documents FK policy).
-- **Audit writes are live since M02-03-B (#59)** — each successful admin
-  lifecycle transition appends one audit event atomically with its state
-  change (single `with_lock` transaction in `Admin::TransitionContract`;
-  failed transitions write nothing). The row shape is fixed by the #57
-  migration (**D4**): `action` is `"contract.<event>"`, the polymorphic
-  target is the contract, organization and actor are stored explicitly,
-  timestamps only — no JSON payload, no from/to columns.
+ - **Audit writes are live since M02-03-B (#59)** — each successful admin
+   lifecycle transition appends one audit event atomically with its state
+   change (single `with_lock` transaction in `Admin::TransitionContract`;
+   failed transitions write nothing). The row shape is fixed by the #57
+   migration (**D4**): `action` is `"contract.<event>"`, the polymorphic
+   target is the contract, organization and actor are stored explicitly,
+   timestamps only — no JSON payload, no from/to columns.
+
+## The lock discipline is engine-wide since M02-07-B (#69)
+
+What began as the lifecycle/amendment commands' TOCTOU guard is now the
+doctrine for every admin command that writes contract state: take the
+contract row's `with_lock` (which reloads under the lock), re-check the
+lifecycle guard INSIDE the lock, and read anything the write depends on
+(snapshots, artifact rendering) from the post-lock instance. As of #69
+this covers `UpdateContract`, the party commands, the document commands
+and `GenerateCrzHandoff` — a stale request can no longer write content,
+parties or documents onto a record that left the editable states
+mid-flight. The deterministic spec shape is the "request-start copy":
+the child loaded through a pre-move contract copy (association +
+`inverse_of`), then the row moved directly, then the command must
+refuse and write nothing.
 
 ## Amendment lifecycle landed in #65 (M02-05-B)
 
