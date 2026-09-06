@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.19.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.18.0...v0.19.0) (2026-09-06)
+
+
+### Features
+
+* **commands:** lock editable-state re-checks under with_lock (M02-07-B) ([0849639](https://github.com/civora-org/decidim-contracts_sk/commit/0849639bd52c1c5197891e67351a9bbcf88a9731))
+
 ## [0.18.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.17.0...v0.18.0) (2026-09-06)
 
 
