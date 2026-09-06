@@ -2,6 +2,6 @@
 
 module Decidim
   module ContractsSk
-    VERSION = "0.18.0"
+    VERSION = "1.1.0"
   end
 end
