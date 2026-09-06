@@ -20,7 +20,7 @@ What you get (idempotent — safe to re-run):
 | DEMO-2026-003    | returned    | editable again |
 | DEMO-2026-004    | approved    | publishable by editor |
 | DEMO-2026-005    | rejected    | terminal |
-| DEMO-2026-006    | published   | parties, 2 documents (PDF + TXT), amendment, CRZ URL |
+| DEMO-2026-006    | published   | parties, 2 documents (PDF + TXT), draft amendment, CRZ URL |
 | DEMO-2026-007    | archived    | publicly visible, not editable |
 | DEMO-OTHER-001   | published   | **another organization** — must be invisible |
 
@@ -77,6 +77,13 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 | A13 | documents on edit page of DEMO-2026-001 | attach/replace/remove; metadata columns sync from blob |
 | A14 | `GET .../contracts/:id/crz_handoff` (download) | editor-gated, allowed in any state; PDF labelled as a handoff aid |
 | A15 | `POST .../crz_handoff` on DEMO-2026-001 | generates/replaces the `crz_export` document |
+
+> **Amendments are seeded as drafts** by design: publication (and with it the
+> frozen content snapshot) is the publish command's job, so the seed never
+> fabricates published versions. To demo the public version history, open
+> `/zmluvy/admin/contracts/:id/amendments` on DEMO-2026-006, publish the
+> draft amendment, then re-check the detail page — the frozen snapshot
+> appears under *Versions* while the live fields stay current.
 
 ## 4. RSpec-side demo data
 
