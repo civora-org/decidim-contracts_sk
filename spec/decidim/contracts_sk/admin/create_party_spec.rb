@@ -47,6 +47,14 @@ RSpec.describe Decidim::ContractsSk::Admin::CreateParty, :db do
     expect(contract.parties.where(role: "object").count).to eq(2)
   end
 
+  it "writes no audit row on success (the audit trail tracks lifecycle transitions only)" do
+    expect do
+      events = described_class.call(form, contract)
+
+      expect(events).to have_key(:ok)
+    end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+  end
+
   it "broadcasts :invalid without persisting when the form is rejected (blank name)" do
     blank_form = Decidim::ContractsSk::Admin::PartyForm.new(role: "object", name: "")
 
@@ -67,6 +75,28 @@ RSpec.describe Decidim::ContractsSk::Admin::CreateParty, :db do
       expect(events).to have_key(:invalid)
       expect(events).not_to have_key(:ok)
     end.not_to change(Decidim::ContractsSk::Party, :count)
+  end
+
+  describe "stale-object race (deterministic — no threads)" do
+    it "refuses a copy of the contract loaded before it left the editable states, writing nothing" do
+      # The stale copy models a request that loaded the parent contract
+      # while it was still editable; the in-lock re-check must read the
+      # reloaded, in-database state — not the request-start attributes.
+      stale = Decidim::ContractsSk::Contract.find(contract.id)
+
+      contract.update!(state: "in_review")
+
+      expect do
+        events = described_class.call(form, stale)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::Party, :count)
+
+      contract.reload
+      expect(contract.state).to eq("in_review")
+      expect(contract.parties).to be_empty
+    end
   end
 end
 # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength

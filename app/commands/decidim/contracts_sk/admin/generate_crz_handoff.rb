@@ -20,11 +20,14 @@ module Decidim
       # content) and are handed to ActiveStorage as an in-memory IO — no
       # disk temp files.
       #
-      # Editability is re-checked at execution time, fail-closed: the
-      # permission layer is checked when the request is admitted, but the
-      # contract's state is re-verified here so a stale permission decision
-      # can never write into a record that has left the editable states in
-      # the meantime (same doctrine as the other document commands).
+      # Editability is re-checked at execution time, fail-closed, INSIDE the
+      # contract's row lock — the TOCTOU doctrine of TransitionContract: the
+      # permission layer is checked when the request is admitted, but a stale
+      # permission decision or a stale in-memory copy can never write into a
+      # record that has left the editable states in the meantime. with_lock
+      # reloads the row first, so both the guard and the PDF's content read
+      # the in-database state — the artifact is serialized from the row as it
+      # stands under the lock, never from the request-start copy.
       #
       # No AuditEvent is written: the audit trail is scoped to lifecycle
       # transitions ("exactly one row per successful transition", #57/#59),
@@ -46,11 +49,14 @@ module Decidim
         end
 
         def call
-          return broadcast(:invalid) unless contract.editable?
+          document = nil
+          contract.with_lock do
+            return broadcast(:invalid) unless contract.editable?
 
-          document = existing_document || contract.documents.build(kind: "crz_export")
-          document.title = document_title
-          document.attach_file!(pdf_attachable)
+            document = existing_document || contract.documents.build(kind: "crz_export")
+            document.title = document_title
+            document.attach_file!(pdf_attachable)
+          end
 
           broadcast(:ok, document)
         rescue ActiveRecord::RecordInvalid

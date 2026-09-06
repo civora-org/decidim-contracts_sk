@@ -81,5 +81,35 @@ RSpec.describe Decidim::ContractsSk::Admin::ReplaceDocument, :db do
       expect(document.reload.file_name).to be_nil
     end
   end
+
+  describe "stale-object race (deterministic — no threads)" do
+    it "refuses a document copy loaded before its contract left the editable states, changing nothing" do
+      # The stale document models a controller that loaded the child
+      # through the request-start contract copy (association + inverse_of),
+      # so the document's `contract` is the stale in-memory row, still
+      # editable. The in-lock re-check must read the contract's reloaded,
+      # in-database state — not the request-start attributes.
+      document.attach_file!(Rack::Test::UploadedFile.new(sample_fixture("sample.pdf"), "application/pdf"))
+      parent = Decidim::ContractsSk::Contract.find(contract.id)
+      stale = parent.documents.find(document.id)
+      old_blob_id = document.file.blob.id
+
+      contract.update!(state: "in_review")
+
+      expect do
+        events = described_class.call(form_with, stale)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      document.reload
+      aggregate_failures do
+        expect(document.file_name).to eq("sample.pdf")
+        expect(document.file.blob.id).to eq(old_blob_id)
+        expect(contract.reload.state).to eq("in_review")
+      end
+    end
+  end
 end
 # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength

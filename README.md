@@ -63,6 +63,24 @@ With the engine mounted at `/zmluvy`:
 
 Locales: English and Slovak.
 
+## Configuration
+
+The engine maps Decidim users onto its `editor`/`reviewer` roles through a single config-time seam: `Decidim::ContractsSk.role_resolver`, a callable receiving `(user, context)` and returning an array of engine-role symbols. The default grants every engine role to organization admins who have accepted the admin terms, and none to anyone else — there is no per-user role UI. Override it in an initializer:
+
+```ruby
+# config/initializers/contracts_sk.rb
+Decidim::ContractsSk.role_resolver = ->(user, _context) { user&.admin? ? %i[editor reviewer] : [] }
+```
+
+Results are always intersected with the engine's role vocabulary, and the resolver is config-time only — never mutate it at request time. See [docs/roles-and-permissions.md](docs/roles-and-permissions.md).
+
+## Known limitations and non-goals
+
+- **No external CRZ/registry integrations.** The engine is a workflow layer over the manual process: the CRZ handoff is a generated clerical aid, and the provenance columns (`source`, `source_id`, `imported_at`, `import_status`) are filled by hand. Importing from, or publishing to, CRZ or any external registry is out of scope.
+- **Per-editor ownership is not enforced.** Any user holding an engine role in the organization may act on any of the organization's records — there is no "my records" restriction (an explicit deferral; see [docs/contract-lifecycle.md](docs/contract-lifecycle.md)).
+- **No ActiveStorage schema shipped.** The engine attaches files to documents but ships no storage-table migration — the host app owns the ActiveStorage schema.
+- **Roles resolve at config time only.** Role assignment happens wherever the host decides, through the resolver seam above — the engine provides no per-user role management UI.
+
 ## Development
 
 ```bash
@@ -72,7 +90,7 @@ bundle exec rubocop    # lint
 bin/console            # experiment with the gem
 ```
 
-The test suite boots a minimal, ActiveRecord-free Rails dummy app (`spec/dummy`) that mounts the engine at `/` and drives it with request specs — it still runs without a database or network. Opt-in DB-backed specs: `CONTRACTS_SK_DB=1 bundle exec rspec` additionally runs the `:db` groups against an in-memory SQLite adapter (needs the `sqlite3` dev gem); those groups are excluded from the default run.
+The test suite boots a minimal, ActiveRecord-free Rails dummy app (`spec/dummy`) that mounts the engine at `/` and drives it with request specs — it still runs without a database or network. Opt-in DB-backed specs: `CONTRACTS_SK_DB=1 bundle exec rspec` additionally runs the `:db` groups against an in-memory SQLite adapter (needs the `sqlite3` dev gem); those groups are excluded from the default run. Lifecycle coverage is documented as sufficient for 1.0.0 — the state machine is pinned at the lifecycle-table, permissions, command and request layers, and the `:db` groups run in CI.
 
 ## Contributing
 

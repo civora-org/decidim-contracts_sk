@@ -90,6 +90,30 @@ RSpec.describe Decidim::ContractsSk::Admin::UpdateContract, :db do
     contract.reload
     expect(contract.title).to eq("Road reconstruction")
   end
+
+  describe "stale-object race (deterministic — no threads)" do
+    it "refuses a copy loaded before the record left the editable states, writing nothing" do
+      # The stale copy models a request that loaded the record while it was
+      # still editable; the in-lock re-check must read the reloaded,
+      # in-database state — not the request-start attributes.
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+      stale = Decidim::ContractsSk::Contract.find(contract.id)
+
+      contract.update!(state: "in_review")
+
+      expect do
+        events = described_class.call(form, stale)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      contract.reload
+      expect(contract.state).to eq("in_review")
+      expect(contract.title).to eq("Road reconstruction")
+      expect(contract.reference).to eq("ZP-2026-001")
+    end
+  end
 end
 
 # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength

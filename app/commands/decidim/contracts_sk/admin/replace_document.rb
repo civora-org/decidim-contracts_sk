@@ -9,9 +9,12 @@ module Decidim
       # The document is updated in place — the controller loads it from the
       # parent contract's documents association (the tenant scope), so the
       # record is contract-scoped by construction. Editability is re-checked
-      # at execution time, fail-closed, through the document's contract: a
-      # stale permission decision can never write into a contract that has
-      # left the editable states in the meantime.
+      # at execution time, fail-closed, INSIDE the parent contract's row lock
+      # — the TOCTOU doctrine of TransitionContract: the lock is the same row
+      # the lifecycle commands lock, so a concurrent state change serializes
+      # against this write, and with_lock reloads the contract first, so the
+      # guard reads the in-database state rather than a possibly stale
+      # in-memory copy.
       #
       # A replace swaps the FILE only: the controller builds the form with
       # the persisted record's title/kind, so the request cannot retouch
@@ -26,10 +29,13 @@ module Decidim
         end
 
         def call
-          return broadcast(:invalid) unless document.contract.editable?
           return broadcast(:invalid) unless form.valid?
 
-          document.attach_file!(form.file)
+          contract.with_lock do
+            return broadcast(:invalid) unless contract.editable?
+
+            document.attach_file!(form.file)
+          end
 
           broadcast(:ok, document)
         rescue ActiveRecord::RecordInvalid
@@ -39,6 +45,13 @@ module Decidim
         private
 
         attr_reader :form, :document
+
+        # The locked parent, loaded through the document's association (see
+        # the class comment): with_lock's reload reads the in-database row
+        # under the lock, so the guard decides on live state.
+        def contract
+          document.contract
+        end
       end
     end
   end
