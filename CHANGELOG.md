@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [0.18.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.17.0...v0.18.0) (2026-09-06)
+
+
+### Features
+
+* **admin:** add transition confirms, admin empty states and QA checklist (M02-06-B) ([d574557](https://github.com/civora-org/decidim-contracts_sk/commit/d574557b058b1cc09901f7ab0e460f676241546a))
+* **i18n:** localize transition events and admin state labels (M02-06-A) ([56b18d4](https://github.com/civora-org/decidim-contracts_sk/commit/56b18d46ba574449be83978b1c2352eedbf493b0))
+
 ## [0.17.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.16.0...v0.17.0) (2026-09-05)
 
 
