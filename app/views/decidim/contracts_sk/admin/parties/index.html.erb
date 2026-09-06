@@ -1,45 +1,59 @@
-<h1><%= t("decidim.contracts_sk.admin.parties.index.title") %></h1>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t("decidim.contracts_sk.admin.parties.index.title") %>
+    </h1>
+  </div>
 
-<p><%= link_to t("decidim.contracts_sk.admin.parties.back_to_contract"), edit_admin_contract_path(@contract) %></p>
+  <div class="card-section">
+    <p><%= link_to t("decidim.contracts_sk.admin.parties.back_to_contract"), edit_admin_contract_path(@contract) %></p>
 
-<% if allowed_to?(:create, :party, contract: @contract) %>
-  <p><%= link_to t("decidim.contracts_sk.admin.parties.new.title"), new_admin_contract_party_path(@contract) %></p>
-<% end %>
+    <% if allowed_to?(:create, :party, contract: @contract) %>
+      <p><%= link_to t("decidim.contracts_sk.admin.parties.new.title"), new_admin_contract_party_path(@contract), class: "button button__sm button__secondary" %></p>
+    <% end %>
+  </div>
 
-<% if @parties.any? %>
-  <table>
-    <thead>
-      <tr>
-        <th><%= t("decidim.contracts_sk.admin.parties.form.role") %></th>
-        <th><%= t("decidim.contracts_sk.admin.parties.form.name") %></th>
-        <th><%= t("decidim.contracts_sk.admin.parties.form.ico") %></th>
-        <th><%= t("decidim.contracts_sk.admin.parties.form.address") %></th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @parties.each do |party| %>
-        <tr>
-          <td><%= t("decidim.contracts_sk.admin.parties.roles.#{party.role}") %></td>
-          <td><%= party.name %></td>
-          <td><%= party.ico %></td>
-          <td><%= party.address %></td>
-          <td>
-            <% if allowed_to?(:update, :party, contract: @contract) %>
-              <%= link_to t("decidim.contracts_sk.admin.parties.edit.title"),
-                          edit_admin_contract_party_path(@contract, party) %>
-            <% end %>
-            <% if allowed_to?(:destroy, :party, contract: @contract) %>
-              <%= button_to t("decidim.contracts_sk.admin.parties.destroy.link"),
-                            admin_contract_party_path(@contract, party),
-                            method: :delete,
-                            data: { confirm: t("decidim.contracts_sk.admin.parties.destroy.confirm") } %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p><%= t("decidim.contracts_sk.admin.parties.index.empty") %></p>
-<% end %>
+  <% if @parties.any? %>
+    <div class="table-scroll">
+      <table class="table-list">
+        <thead>
+          <tr>
+            <th><%= t("decidim.contracts_sk.admin.parties.form.role") %></th>
+            <th><%= t("decidim.contracts_sk.admin.parties.form.name") %></th>
+            <th><%= t("decidim.contracts_sk.admin.parties.form.ico") %></th>
+            <th><%= t("decidim.contracts_sk.admin.parties.form.address") %></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @parties.each do |party| %>
+            <tr>
+              <td><%= t("decidim.contracts_sk.admin.parties.roles.#{party.role}") %></td>
+              <td><%= party.name %></td>
+              <td><%= party.ico %></td>
+              <td><%= party.address %></td>
+              <td class="table-list__actions">
+                <% if allowed_to?(:update, :party, contract: @contract) %>
+                  <%= link_to t("decidim.contracts_sk.admin.parties.edit.title"),
+                              edit_admin_contract_party_path(@contract, party),
+                              class: "button button__sm button__secondary" %>
+                <% end %>
+                <% if allowed_to?(:destroy, :party, contract: @contract) %>
+                  <%= button_to t("decidim.contracts_sk.admin.parties.destroy.link"),
+                                admin_contract_party_path(@contract, party),
+                                method: :delete,
+                                class: "button button__sm button__secondary alert",
+                                data: { confirm: t("decidim.contracts_sk.admin.parties.destroy.confirm") } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card-section">
+      <p><%= t("decidim.contracts_sk.admin.parties.index.empty") %></p>
+    </div>
+  <% end %>
+</div>

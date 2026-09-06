@@ -1,5 +1,13 @@
-<h1><%= t("decidim.contracts_sk.admin.contracts.new.title") %></h1>
+<div class="item_show__header">
+  <h1 class="item_show__header-title">
+    <%= t("decidim.contracts_sk.admin.contracts.new.title") %>
+  </h1>
+</div>
 
 <p><%= link_to t("decidim.contracts_sk.admin.contracts.back_to_index"), admin_contracts_path %></p>
 
-<%= render "form", url: admin_contracts_path, method: :post, submit_label: t("decidim.contracts_sk.admin.contracts.new.title") %>
+<div class="item__edit item__edit-1col">
+  <div class="item__edit-form">
+    <%= render "form", url: admin_contracts_path, method: :post, submit_label: t("decidim.contracts_sk.admin.contracts.new.title") %>
+  </div>
+</div>

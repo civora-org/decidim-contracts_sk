@@ -1,52 +1,67 @@
-<h1><%= t("decidim.contracts_sk.admin.amendments.index.title") %></h1>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t("decidim.contracts_sk.admin.amendments.index.title") %>
+    </h1>
+  </div>
 
-<p><%= link_to t("decidim.contracts_sk.admin.amendments.back_to_contract"), edit_admin_contract_path(@contract) %></p>
+  <div class="card-section">
+    <p><%= link_to t("decidim.contracts_sk.admin.amendments.back_to_contract"), edit_admin_contract_path(@contract) %></p>
 
-<% if allowed_to?(:create, :amendment, contract: @contract) %>
-  <p><%= link_to t("decidim.contracts_sk.admin.amendments.new.title"), new_admin_contract_amendment_path(@contract) %></p>
-<% end %>
+    <% if allowed_to?(:create, :amendment, contract: @contract) %>
+      <p><%= link_to t("decidim.contracts_sk.admin.amendments.new.title"), new_admin_contract_amendment_path(@contract), class: "button button__sm button__secondary" %></p>
+    <% end %>
+  </div>
 
-<%# The full version history: drafts and published alike, newest version
-    first. Draft rows carry the edit/publish/remove controls; published
-    rows are immutable (ADR-006) and render bare. %>
-<% if @amendments.any? %>
-  <table>
-    <thead>
-      <tr>
-        <th><%= t("decidim.contracts_sk.admin.amendments.form.version") %></th>
-        <th><%= t("decidim.contracts_sk.admin.amendments.form.summary") %></th>
-        <th><%= t("decidim.contracts_sk.admin.amendments.form.state") %></th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @amendments.each do |amendment| %>
-        <tr>
-          <td><%= amendment.version %></td>
-          <td><%= amendment.summary %></td>
-          <td><%= t("decidim.contracts_sk.admin.amendments.states.#{amendment.state}") %></td>
-          <td>
-            <% if allowed_to?(:update, :amendment, contract: @contract, amendment: amendment) %>
-              <%= link_to t("decidim.contracts_sk.admin.amendments.edit.title"),
-                          edit_admin_contract_amendment_path(@contract, amendment) %>
-            <% end %>
-            <% if allowed_to?(:publish, :amendment, contract: @contract, amendment: amendment) %>
-              <%= button_to t("decidim.contracts_sk.admin.amendments.publish.link"),
-                            publish_admin_contract_amendment_path(@contract, amendment),
-                            method: :post,
-                            data: { confirm: t("decidim.contracts_sk.admin.amendments.publish.confirm") } %>
-            <% end %>
-            <% if allowed_to?(:destroy, :amendment, contract: @contract, amendment: amendment) %>
-              <%= button_to t("decidim.contracts_sk.admin.amendments.destroy.link"),
-                            admin_contract_amendment_path(@contract, amendment),
-                            method: :delete,
-                            data: { confirm: t("decidim.contracts_sk.admin.amendments.destroy.confirm") } %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p><%= t("decidim.contracts_sk.admin.amendments.index.empty") %></p>
-<% end %>
+  <%# The full version history: drafts and published alike, newest version
+      first. Draft rows carry the edit/publish/remove controls; published
+      rows are immutable (ADR-006) and render bare. %>
+  <% if @amendments.any? %>
+    <div class="table-scroll">
+      <table class="table-list">
+        <thead>
+          <tr>
+            <th><%= t("decidim.contracts_sk.admin.amendments.form.version") %></th>
+            <th><%= t("decidim.contracts_sk.admin.amendments.form.summary") %></th>
+            <th><%= t("decidim.contracts_sk.admin.amendments.form.state") %></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @amendments.each do |amendment| %>
+            <tr>
+              <td><%= amendment.version %></td>
+              <td><%= amendment.summary %></td>
+              <td><%= t("decidim.contracts_sk.admin.amendments.states.#{amendment.state}") %></td>
+              <td class="table-list__actions">
+                <% if allowed_to?(:update, :amendment, contract: @contract, amendment: amendment) %>
+                  <%= link_to t("decidim.contracts_sk.admin.amendments.edit.title"),
+                              edit_admin_contract_amendment_path(@contract, amendment),
+                              class: "button button__sm button__secondary" %>
+                <% end %>
+                <% if allowed_to?(:publish, :amendment, contract: @contract, amendment: amendment) %>
+                  <%= button_to t("decidim.contracts_sk.admin.amendments.publish.link"),
+                                publish_admin_contract_amendment_path(@contract, amendment),
+                                method: :post,
+                                class: "button button__sm button__secondary",
+                                data: { confirm: t("decidim.contracts_sk.admin.amendments.publish.confirm") } %>
+                <% end %>
+                <% if allowed_to?(:destroy, :amendment, contract: @contract, amendment: amendment) %>
+                  <%= button_to t("decidim.contracts_sk.admin.amendments.destroy.link"),
+                                admin_contract_amendment_path(@contract, amendment),
+                                method: :delete,
+                                class: "button button__sm button__secondary alert",
+                                data: { confirm: t("decidim.contracts_sk.admin.amendments.destroy.confirm") } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card-section">
+      <p><%= t("decidim.contracts_sk.admin.amendments.index.empty") %></p>
+    </div>
+  <% end %>
+</div>

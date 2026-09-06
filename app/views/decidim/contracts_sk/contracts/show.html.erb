@@ -1,113 +1,171 @@
-<h1><%= @contract.title %></h1>
+<%# The centered single-column container the host layout partial
+    (layouts/decidim/shared/layout_center, columns: 8) would emit: the
+    compiled classes are used directly so the engine keeps no view-path
+    dependency on the host's layout partials. %>
+<main class="layout-1col cols-8">
+  <section>
+    <h1 class="title-decorator"><%= @contract.title %></h1>
+    <%# Quick-scan metadata line under the title: the record's identity
+        (reference), its publication date and the headline amount. Uses the
+        existing contract vocabulary — no new keys. %>
+    <div class="text-sm text-gray-2 flex gap-x-4">
+      <span><%= t("decidim.contracts_sk.contract.reference_number") %>: <%= @contract.reference %></span>
+      <span><%= t("decidim.contracts_sk.contract.published_on") %>: <%= @contract.published_at&.to_date&.to_fs(:db) %></span>
+      <span><%= t("decidim.contracts_sk.contract.amount") %>: <%= @contract.amount %> <%= @contract.currency %></span>
+    </div>
+  </section>
 
-<dl>
-  <dt><%= t("decidim.contracts_sk.contract.reference_number") %></dt>
-  <dd><%= @contract.reference %></dd>
+  <section class="mt-8">
+    <%# Key/value data uses Tailwind utilities directly — Decidim core 0.31
+        ships no styled dl component (the in-gem idiom is classes on the
+        dl structure, cf. admin newsletters/show.html.erb). Label|value pairs
+        flow as adjacent grid cells: one pair per row on md+, stacked below.
+        Long-text fields span the full row width. %>
+    <dl class="grid grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-2">
+      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.reference_number") %></dt>
+      <dd class="text-md text-black mt-0"><%= @contract.reference %></dd>
 
-  <dt><%= t("decidim.contracts_sk.contract.published_on") %></dt>
-  <%# Deterministic ISO rendering on purpose: the engine ships no locale
-      date formats, so I18n.l would depend on host-app data. %>
-  <dd><%= @contract.published_at&.to_date&.to_fs(:db) %></dd>
+      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.published_on") %></dt>
+      <%# Deterministic ISO rendering on purpose: the engine ships no locale
+          date formats, so I18n.l would depend on host-app data. %>
+      <dd class="text-md text-black mt-0"><%= @contract.published_at&.to_date&.to_fs(:db) %></dd>
 
-  <dt><%= t("decidim.contracts_sk.contract.subject_matter") %></dt>
-  <dd><%= @contract.subject_matter %></dd>
+      <dt class="text-sm text-gray-2 md:col-span-2"><%= t("decidim.contracts_sk.contract.subject_matter") %></dt>
+      <dd class="text-md text-black mt-0 md:col-span-2"><%= @contract.subject_matter %></dd>
 
-  <dt><%= t("decidim.contracts_sk.contract.amount") %></dt>
-  <dd><%= @contract.amount %> <%= @contract.currency %></dd>
+      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.amount") %></dt>
+      <dd class="text-md text-black mt-0"><%= @contract.amount %> <%= @contract.currency %></dd>
 
-  <dt><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
-  <dd><%= @contract.signed_on&.to_fs(:db) %></dd>
+      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
+      <dd class="text-md text-black mt-0"><%= @contract.signed_on&.to_fs(:db) %></dd>
 
-  <dt><%= t("decidim.contracts_sk.contract.effective_from") %></dt>
-  <dd><%= @contract.effective_from&.to_fs(:db) %></dd>
+      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.effective_from") %></dt>
+      <dd class="text-md text-black mt-0"><%= @contract.effective_from&.to_fs(:db) %></dd>
 
-  <%# The only guarded field: a link to a blank URL would render href="". %>
-  <% if @contract.crz_url.present? %>
-    <dt><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
-    <dd><%= link_to @contract.crz_url, @contract.crz_url %></dd>
-  <% end %>
-</dl>
-
-<h2><%= t("decidim.contracts_sk.contracts.show.parties") %></h2>
-<%# Materialized once: the presence check and the iteration share a single
-    loaded collection instead of issuing two identical queries. %>
-<% parties = @contract.parties.to_a %>
-<% if parties.any? %>
-  <ul>
-    <% parties.each do |party| %>
-      <li>
-        <%= t("decidim.contracts_sk.contract.party.#{party.role}") %>: <%= party.name %>
-        <% if party.ico.present? %>(<%= party.ico %>)<% end %>
-        <% if party.address.present? %> — <%= party.address %><% end %>
-      </li>
-    <% end %>
-  </ul>
-<% else %>
-  <p><%= t("decidim.contracts_sk.contracts.show.parties_empty") %></p>
-<% end %>
-
-<h2><%= t("decidim.contracts_sk.contracts.show.documents") %></h2>
-<%# Only attached documents render: a metadata-only row has neither a file
-    to link nor a size to show, so it is skipped rather than rendered as a
-    dead entry. Materialized once: the presence check and the iteration
-    share a single loaded collection. The download link goes through
-    main_app — ActiveStorage's `direct :rails_blob` helper lives on the
-    host application's route set, not on the isolated engine's, and the
-    request-bound main_app proxy supplies the URL context (safe for any
-    mount point). The size comes from the synced metadata columns, never
-    from the blob service (civora-org/civora-platform#73). %>
-<% documents = @contract.documents.select { |document| document.file.attached? } %>
-<% if documents.any? %>
-  <ul>
-    <% documents.each do |document| %>
-      <li>
-        <%= link_to document.title, main_app.rails_blob_path(document.file, disposition: :attachment) %>
-        (<%= t("decidim.contracts_sk.contract.document.#{document.kind}") %>, <%= number_to_human_size(document.file_size) %>)
-      </li>
-    <% end %>
-  </ul>
-<% else %>
-  <p><%= t("decidim.contracts_sk.contracts.show.documents_empty") %></p>
-<% end %>
-
-<h2><%= t("decidim.contracts_sk.contracts.show.versions") %></h2>
-<%# Public version history (M02-05-B, civora-org/civora-platform#65,
-    ADR-006): the record's live fields above ARE the current version; the
-    published amendments below are the frozen historical ones, newest
-    version first. Drafts are never publicly visible — the controller
-    scopes them out (the published scope IS the gate, mirroring the
-    record's own published-only read). The snapshot fields are labelled
-    with the record's own content-field vocabulary, and the publish-time
-    value may be nil (a blank field was legal at publish), so absent
-    values are skipped rather than rendered empty. The CRZ entry stays
-    guarded like the current version's (no blank href). to_h normalizes
-    whatever the :json column hands back before iterating — the render
-    must never depend on the deserialized value's runtime class. %>
-<% if @amendments.any? %>
-  <p><strong><%= t("decidim.contracts_sk.contracts.show.current_version") %></strong></p>
-  <% @amendments.each do |amendment| %>
-    <h3><%= t("decidim.contracts_sk.contracts.show.version_label", version: amendment.version) %></h3>
-    <dl>
-      <dt><%= t("decidim.contracts_sk.contract.summary") %></dt>
-      <dd><%= amendment.summary %></dd>
-
-      <dt><%= t("decidim.contracts_sk.contract.published_on") %></dt>
-      <dd><%= amendment.published_at&.to_date&.to_fs(:db) %></dd>
-
-      <% amendment.content_snapshot.to_h.each do |field, value| %>
-        <% next if value.blank? %>
-        <% if field == "crz_url" %>
-          <dt><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
-          <dd><%= link_to value, value %></dd>
-        <% else %>
-          <dt><%= t("decidim.contracts_sk.contract.#{field}") %></dt>
-          <dd><%= value %></dd>
-        <% end %>
+      <%# The only guarded field: a link to a blank URL would render href="". %>
+      <% if @contract.crz_url.present? %>
+        <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
+        <dd class="text-md text-black mt-0"><%= link_to @contract.crz_url, @contract.crz_url %></dd>
       <% end %>
     </dl>
-  <% end %>
-<% else %>
-  <p><%= t("decidim.contracts_sk.contracts.show.versions_empty") %></p>
-<% end %>
+  </section>
 
+  <section class="mt-8">
+    <h2 class="h2 decorator"><%= t("decidim.contracts_sk.contracts.show.parties") %></h2>
+    <%# Materialized once: the presence check and the iteration share a single
+        loaded collection instead of issuing two identical queries. Rendered
+        as a real bordered table; the column headers reuse the parties form
+        vocabulary (no separate public keys exist for name/role/ICO/address). %>
+    <% parties = @contract.parties.to_a %>
+    <% if parties.any? %>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr>
+            <th class="text-sm text-gray-2 border-b border-gray-3 py-2 pr-4"><%= t("decidim.contracts_sk.admin.parties.form.name") %></th>
+            <th class="text-sm text-gray-2 border-b border-gray-3 py-2 pr-4"><%= t("decidim.contracts_sk.admin.parties.form.role") %></th>
+            <th class="text-sm text-gray-2 border-b border-gray-3 py-2 pr-4"><%= t("decidim.contracts_sk.admin.parties.form.ico") %></th>
+            <th class="text-sm text-gray-2 border-b border-gray-3 py-2 pr-4"><%= t("decidim.contracts_sk.admin.parties.form.address") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% parties.each do |party| %>
+            <tr>
+              <td class="border-b border-gray-3 py-2 pr-4"><%= party.name %></td>
+              <td class="border-b border-gray-3 py-2 pr-4"><%= t("decidim.contracts_sk.contract.party.#{party.role}") %></td>
+              <td class="border-b border-gray-3 py-2 pr-4"><%= party.ico %></td>
+              <td class="border-b border-gray-3 py-2 pr-4"><%= party.address %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-lg text-gray-2"><%= t("decidim.contracts_sk.contracts.show.parties_empty") %></p>
+    <% end %>
+  </section>
 
+  <section class="mt-8">
+    <h2 class="h2 decorator"><%= t("decidim.contracts_sk.contracts.show.documents") %></h2>
+    <%# Only attached documents render: a metadata-only row has neither a file
+        to link nor a size to show, so it is skipped rather than rendered as a
+        dead entry. Materialized once: the presence check and the iteration
+        share a single loaded collection. The download link goes through
+        main_app — ActiveStorage's `direct :rails_blob` helper lives on the
+        host application's route set, not on the isolated engine's, and the
+        request-bound main_app proxy supplies the URL context (safe for any
+        mount point). The size comes from the synced metadata columns, never
+        from the blob service (civora-org/civora-platform#73). %>
+    <% documents = @contract.documents.select { |document| document.file.attached? } %>
+    <% if documents.any? %>
+      <ul class="card__list-list">
+        <% documents.each do |document| %>
+          <li class="card__list">
+            <div class="card__list-content">
+              <span class="card__list-title">
+                <%= link_to document.title, main_app.rails_blob_path(document.file, disposition: :attachment) %>
+              </span>
+              <div class="card__list-text">
+                (<%= t("decidim.contracts_sk.contract.document.#{document.kind}") %>, <%= number_to_human_size(document.file_size) %>)
+              </div>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-lg text-gray-2"><%= t("decidim.contracts_sk.contracts.show.documents_empty") %></p>
+    <% end %>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="h2 decorator"><%= t("decidim.contracts_sk.contracts.show.versions") %></h2>
+    <%# Public version history (M02-05-B, civora-org/civora-platform#65,
+        ADR-006): the record's live fields above ARE the current version; the
+        published amendments below are the frozen historical ones, newest
+        version first. Drafts are never publicly visible — the controller
+        scopes them out (the published scope IS the gate, mirroring the
+        record's own published-only read). The snapshot fields are labelled
+        with the record's own content-field vocabulary, and the publish-time
+        value may be nil (a blank field was legal at publish), so absent
+        values are skipped rather than rendered empty. The CRZ entry stays
+        guarded like the current version's (no blank href). to_h normalizes
+        whatever the :json column hands back before iterating — the render
+        must never depend on the deserialized value's runtime class. %>
+    <% if @amendments.any? %>
+      <p class="font-semibold"><%= t("decidim.contracts_sk.contracts.show.current_version") %></p>
+      <% @amendments.each do |amendment| %>
+        <%# Each historical version is its own bordered block: a header row
+            (version number and publish date) above the frozen snapshot grid,
+            separated from the previous block by a top rule. %>
+        <div class="border-t border-gray-3 pt-4 mt-4">
+          <div class="font-semibold">
+            <%= t("decidim.contracts_sk.contracts.show.version_label", version: amendment.version) %>
+            <% if amendment.published_at.present? %>
+              · <%= amendment.published_at.to_date.to_fs(:db) %>
+            <% end %>
+          </div>
+          <%# Same dl treatment as the current version's fields above — one
+              consistent key/value grid for both snapshot and live data. %>
+          <dl class="grid grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-2">
+            <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.summary") %></dt>
+            <dd class="text-md text-black mt-0"><%= amendment.summary %></dd>
+
+            <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.published_on") %></dt>
+            <dd class="text-md text-black mt-0"><%= amendment.published_at&.to_date&.to_fs(:db) %></dd>
+
+            <% amendment.content_snapshot.to_h.each do |field, value| %>
+              <% next if value.blank? %>
+              <% if field == "crz_url" %>
+                <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
+                <dd class="text-md text-black mt-0"><%= link_to value, value %></dd>
+              <% else %>
+                <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.#{field}") %></dt>
+                <dd class="text-md text-black mt-0"><%= value %></dd>
+              <% end %>
+            <% end %>
+          </dl>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="text-lg text-gray-2"><%= t("decidim.contracts_sk.contracts.show.versions_empty") %></p>
+    <% end %>
+  </section>
+</main>

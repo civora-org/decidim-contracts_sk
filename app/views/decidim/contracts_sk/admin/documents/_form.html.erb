@@ -5,41 +5,48 @@
     civora-org/civora-platform#73). The kind options are derived from the
     form's EDITOR_KINDS vocabulary, never hand-enumerated, with localized
     labels. The form is multipart: the file travels with the request. %>
-<%= form_with url: url, method: method, html: { multipart: true } do |form| %>
-  <% if @form.errors.any? %>
-    <ul>
-      <% @form.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
+<%= form_with url: url, method: method, html: { multipart: true, class: "form form-defaults" } do |form| %>
+  <div class="card">
+    <div class="card-section">
+      <div class="form__wrapper">
+        <% if @form.errors.any? %>
+          <div class="flash alert">
+            <ul>
+              <% @form.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
 
-  <% if defined?(details) && details %>
-    <div>
-      <%= form.label :title, t("decidim.contracts_sk.admin.documents.form.title"), for: "document_title" %>
-      <%= form.text_field :title, id: "document_title", name: "document[title]", value: @form.title %>
+        <% if defined?(details) && details %>
+          <div class="row column">
+            <%= form.text_field :title, label: t("decidim.contracts_sk.admin.documents.form.title"), label_options: { for: "document_title" }, id: "document_title", name: "document[title]", value: @form.title %>
+          </div>
+
+          <%# The options come from the form's EDITOR_KINDS vocabulary (the
+              model's KINDS minus the generated handoff artifact's kind,
+              civora-org/civora-platform#74), never hand-enumerated, with
+              localized labels. %>
+          <% kind_options = Decidim::ContractsSk::Admin::DocumentForm::EDITOR_KINDS.map do |kind|
+               [t("decidim.contracts_sk.admin.documents.kinds.#{kind}"), kind]
+             end %>
+
+          <div class="row column">
+            <%= form.select :kind, kind_options, { selected: @form.kind, label: t("decidim.contracts_sk.admin.documents.form.kind"), label_options: { for: "document_kind" } }, id: "document_kind", name: "document[kind]" %>
+          </div>
+        <% end %>
+
+        <div class="row column">
+          <%= form.file_field :file, label: t("decidim.contracts_sk.admin.documents.form.file"), label_options: { for: "document_file" }, id: "document_file", name: "document[file]" %>
+        </div>
+      </div>
     </div>
-
-    <%# The options come from the form's EDITOR_KINDS vocabulary (the
-        model's KINDS minus the generated handoff artifact's kind,
-        civora-org/civora-platform#74), never hand-enumerated, with
-        localized labels. %>
-    <% kind_options = Decidim::ContractsSk::Admin::DocumentForm::EDITOR_KINDS.map do |kind|
-         [t("decidim.contracts_sk.admin.documents.kinds.#{kind}"), kind]
-       end %>
-
-    <div>
-      <%= form.label :kind, t("decidim.contracts_sk.admin.documents.form.kind"), for: "document_kind" %>
-      <%= form.select :kind, kind_options, { selected: @form.kind }, id: "document_kind", name: "document[kind]" %>
-    </div>
-  <% end %>
-
-  <div>
-    <%= form.label :file, t("decidim.contracts_sk.admin.documents.form.file"), for: "document_file" %>
-    <%= form.file_field :file, id: "document_file", name: "document[file]" %>
   </div>
 
-  <div>
-    <%= form.submit submit_label %>
+  <div class="item__edit-sticky">
+    <div class="item__edit-sticky-container">
+      <%= form.submit submit_label, class: "button button__sm button__secondary" %>
+    </div>
   </div>
 <% end %>
