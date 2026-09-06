@@ -431,6 +431,13 @@ RSpec.describe "admin contracts CRUD", type: :request do
       expect(foreign.reference).to eq("ZP-2026-001")
       expect(foreign.state).to eq("draft")
     end
+
+    it "renders the index with the localized empty state when the organization has no contracts yet" do
+      get "/admin/contracts"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No contracts have been created yet.")
+    end
   end
 end
 # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/AnyInstance

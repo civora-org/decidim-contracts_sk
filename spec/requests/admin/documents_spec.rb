@@ -306,6 +306,23 @@ RSpec.describe "admin document management", type: :request do
       end
     end
 
+    it "renders the documents section's localized empty state on the contract edit page" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      # The edit page is served by the contracts controller, so its Devise-ish
+      # seam needs the same per-example stubbing (this file's `before` only
+      # covers the documents controller).
+      edit_controller = Decidim::ContractsSk::Admin::ContractsController
+      allow_any_instance_of(edit_controller).to receive(:current_user).and_return(author)
+      allow_any_instance_of(edit_controller).to receive(:user_signed_in?).and_return(true)
+      allow_any_instance_of(edit_controller).to receive(:current_organization).and_return(organization)
+
+      get "/admin/contracts/#{contract.id}/edit"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No documents have been attached to this contract yet.")
+    end
+
     it "removes a document for an editor and destroys the attachment row with it" do
       contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
       document = contract.documents.create!(title: "Signed contract scan", kind: "contract")

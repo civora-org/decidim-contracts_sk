@@ -205,6 +205,7 @@ module LocaleContract
     "admin.amendments.form.state",
     "admin.amendments.form.summary",
     "admin.amendments.form.version",
+    "admin.amendments.index.empty",
     "admin.amendments.index.title",
     "admin.amendments.new.title",
     "admin.amendments.publish.confirm",
@@ -215,6 +216,7 @@ module LocaleContract
     "admin.amendments.states.published",
     "admin.amendments.update.error",
     "admin.amendments.update.success",
+    "admin.contracts.back_to_index",
     "admin.contracts.create.error",
     "admin.contracts.create.success",
     "admin.contracts.edit.title",
@@ -226,10 +228,17 @@ module LocaleContract
     "admin.contracts.form.signed_on",
     "admin.contracts.form.subject_matter",
     "admin.contracts.form.title",
+    "admin.contracts.index.empty",
     "admin.contracts.index.title",
     "admin.contracts.new.title",
     "admin.contracts.transition.approve",
     "admin.contracts.transition.archive",
+    "admin.contracts.transition.confirm.approve",
+    "admin.contracts.transition.confirm.archive",
+    "admin.contracts.transition.confirm.publish",
+    "admin.contracts.transition.confirm.reject",
+    "admin.contracts.transition.confirm.return",
+    "admin.contracts.transition.confirm.submit",
     "admin.contracts.transition.invalid",
     "admin.contracts.transition.publish",
     "admin.contracts.transition.reject",
@@ -259,6 +268,7 @@ module LocaleContract
     "admin.documents.form.file",
     "admin.documents.form.kind",
     "admin.documents.form.title",
+    "admin.documents.index.empty",
     "admin.documents.index.title",
     "admin.documents.kinds.annex",
     "admin.documents.kinds.contract",
@@ -279,6 +289,7 @@ module LocaleContract
     "admin.parties.form.ico",
     "admin.parties.form.name",
     "admin.parties.form.role",
+    "admin.parties.index.empty",
     "admin.parties.index.title",
     "admin.parties.new.title",
     "admin.parties.roles.contractor",
@@ -316,7 +327,6 @@ module LocaleContract
     "contracts.show.documents_empty",
     "contracts.show.parties",
     "contracts.show.parties_empty",
-    "contracts.show.title",
     "contracts.show.version_label",
     "contracts.show.versions",
     "contracts.show.versions_empty",
@@ -476,7 +486,7 @@ RSpec.describe Decidim::ContractsSk do
     it "translates the public catalogue titles in both locales" do
       aggregate_failures do
         expect(backend.translate(:en, "decidim.contracts_sk.contracts.index.title")).to eq("Contracts")
-        expect(backend.translate(:sk, "decidim.contracts_sk.contracts.show.title")).to eq("Detail zmluvy")
+        expect(backend.translate(:sk, "decidim.contracts_sk.contracts.index.title")).to eq("Zmluvy")
       end
     end
 
