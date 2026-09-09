@@ -16,8 +16,10 @@ module Decidim
     # publish event — it is never form-writable.
     #
     # The source/source_id/imported_at/import_status columns are manual
-    # CRZ-handoff provenance metadata (docs/contracts-domain-notes.md); no
-    # behaviour attaches to them until the V0.2 import arc.
+    # CRZ-handoff provenance metadata (docs/contracts-domain-notes.md);
+    # checksum carries the source-payload digest and import_status is
+    # validated against IMPORT_STATUSES — all filled by hand until the
+    # V0.2 import arc consumes them.
     class Contract < ApplicationRecord
       include Decidim::ContractsSk::ContractState
 
@@ -56,6 +58,13 @@ module Decidim
       # purpose — a Float literal of the same value is inexact and would
       # make the boundary comparison itself unreliable.
       MAX_AMOUNT = BigDecimal("9999999999.99").freeze
+
+      # Approved import-status vocabulary for the manual CRZ-handoff
+      # provenance column (#85): the import arc stamps it once it lands.
+      # Frozen so a captured validator reference cannot mutate the
+      # vocabulary; nil stays legal — editorial records carry no import
+      # lifecycle.
+      IMPORT_STATUSES = %w[pending succeeded failed stale].freeze
 
       belongs_to :organization,
                  foreign_key: "decidim_organization_id",
@@ -96,6 +105,10 @@ module Decidim
                 allow_nil: true
       validates :currency, inclusion: { in: SUPPORTED_CURRENCIES }
       validates :crz_url, format: { with: CRZ_URL_FORMAT }, allow_blank: true
+
+      # Import provenance (#85): hand-filled until the import arc lands;
+      # nil stays legal (see IMPORT_STATUSES above).
+      validates :import_status, inclusion: { in: IMPORT_STATUSES }, allow_nil: true
 
       # No signed_on/effective_from cross-validation on purpose (D2 of #75):
       # retroactive effectivity is legal — a contract may take effect before

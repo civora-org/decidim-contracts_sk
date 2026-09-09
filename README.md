@@ -76,7 +76,7 @@ Results are always intersected with the engine's role vocabulary, and the resolv
 
 ## Known limitations and non-goals
 
-- **No external CRZ/registry integrations.** The engine is a workflow layer over the manual process: the CRZ handoff is a generated clerical aid, and the provenance columns (`source`, `source_id`, `imported_at`, `import_status`) are filled by hand. Importing from, or publishing to, CRZ or any external registry is out of scope.
+- **No external CRZ/registry integrations.** The engine is a workflow layer over the manual process: the CRZ handoff is a generated clerical aid, and the provenance columns (`source`, `source_id`, `imported_at`, `import_status`, `checksum`) are filled by hand. Importing from, or publishing to, CRZ or any external registry is out of scope.
 - **Per-editor ownership is not enforced.** Any user holding an engine role in the organization may act on any of the organization's records — there is no "my records" restriction (an explicit deferral; see [docs/contract-lifecycle.md](docs/contract-lifecycle.md)).
 - **No ActiveStorage schema shipped.** The engine attaches files to documents but ships no storage-table migration — the host app owns the ActiveStorage schema.
 - **Roles resolve at config time only.** Role assignment happens wherever the host decides, through the resolver seam above — the engine provides no per-user role management UI.
