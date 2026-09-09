@@ -33,6 +33,11 @@ en:
         heading: "CRZ handoff aid"
         disclaimer: "This document is a handoff aid for the CRZ record — not a legal publication."
         generated_on: "Generated on"
+      pagination:
+        prev: "Previous"
+        next: "Next"
+        page_count: "Page %{current} of %{total}"
+        aria_label: "Pagination"
       contracts:
         index:
           title: "Contracts"
@@ -52,6 +57,18 @@ en:
           index:
             title: "Contracts"
             empty: "No contracts have been created yet."
+            filters:
+              state: "State"
+              source: "Source"
+              q: "Search"
+              submit: "Filter"
+              clear: "Clear filters"
+              states:
+                any: "Any state"
+              sources:
+                all: "All sources"
+                crz: "CRZ import"
+                editorial: "Editorial"
           new:
             title: "New contract"
           edit:

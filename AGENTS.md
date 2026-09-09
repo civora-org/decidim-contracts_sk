@@ -142,6 +142,8 @@ Current lessons:
 
 - **Spike/research arcs: recon-then-delegate, and draft the deliverable in the same subagent session that captured the evidence.** Issues and planning docs can name dead infrastructure (#83's `opendata.crz.gov.sk` was NXDOMAIN while the issue and the data dictionary both cited it) — a three-command reachability recon before delegating deep probing turns ghost hosts into headline findings instead of wasted agent effort. Then resume the probing agent's session (`task_id`) to write the doc: the evidence stays in its context, so no field name or captured value gets re-invented (proven in the #83 arc; the reviewer found zero invented-fact issues).
 
+- **Live source latency beats offline timeout guesses — and the timeout is config, not fate.** The #86 live run measured ~50 s server-side TTFB on ekosystem under throttling (curl: fast DNS/TLS, huge TTFB — always break the timing down before blaming the client); the offline-designed 5 s read timeout never stood a chance, so the transport now ships 5 s open / 60 s read with the retry budget carrying failure discipline. Re-proven: offline specs cannot size real-world timeouts.
+
 *Archived lessons (tracker & issue hygiene; engine mount-design; tooling & verification hygiene; host-app & ops; engine implementation mechanics clusters) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
 
 ## Testing Expectations

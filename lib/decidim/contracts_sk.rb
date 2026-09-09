@@ -5,6 +5,11 @@ require_relative "contracts_sk/version"
 module Decidim
   module ContractsSk
     class Error < StandardError; end
+
+    # Fixed page size for the paginated listings (admin index and public
+    # catalogue). A constant, not config: the listings render the same
+    # pagination surface everywhere, so there is nothing to tune yet.
+    CONTRACTS_PER_PAGE = 25
   end
 end
 

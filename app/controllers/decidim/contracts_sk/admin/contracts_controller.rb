@@ -19,6 +19,11 @@ module Decidim
       # explicit action per transition event, each a thin shell over the
       # private #transition (civora-org/civora-platform#59).
       #
+      # The index additionally paginates (CONTRACTS_PER_PAGE, Kaminari —
+      # shipped with decidim-core) over a filtered scope: state, source and
+      # free-text q are GET params validated against the real vocabularies,
+      # and an unknown value falls back to the default instead of erroring.
+      #
       # Cop note: the class stays deliberately cohesive — the six transition
       # shells exist so the derived routes map onto readable actions, and
       # splitting them off would obscure the one-transition-per-action rule
@@ -27,13 +32,35 @@ module Decidim
       class ContractsController < Admin::ApplicationController
         # Exposes the per-record allowed events to the index view; derived
         # from the lifecycle table and the user's engine roles, never
-        # hand-enumerated.
-        helper_method :transition_events_for
+        # hand-enumerated. The index filter option lists and the normalized
+        # filter state back the filter form the same way.
+        helper_method :transition_events_for, :index_filters,
+                      :index_state_options, :index_source_options
+
+        # Case-insensitive free-text match for the index :q filter over the
+        # two editorial identity fields; :pattern is always pre-escaped with
+        # sanitize_sql_like, so user-supplied % and _ stay literal.
+        SEARCH_CONDITION = "LOWER(title) LIKE :pattern OR LOWER(reference) LIKE :pattern"
+
+        # Deterministic index ordering: newest records first, with the id as
+        # the tiebreaker — a total order, so a page can never repeat or drop
+        # a row across page boundaries on PostgreSQL (where an unordered
+        # query's row order is undefined).
+        INDEX_ORDER = { created_at: :desc, id: :desc }.freeze
+
+        # Normalized index filter state (civora-org/civora-platform#86b):
+        # state is a lifecycle state symbol or nil ("any state"), source is
+        # :crz / :editorial or nil ("all sources"), q is the stripped search
+        # term. Carries request-derived values only — never persisted.
+        IndexFilters = Struct.new(:state, :source, :q, keyword_init: true)
 
         def index
           enforce_permission_to :read, :contract
 
-          @contracts = contracts_scope
+          # The page param reaches Kaminari only as a string: an array
+          # (page[]=2) would raise inside Kaminari's Integer coercion.
+          @contracts = filtered_contracts.page(params[:page].to_s)
+                                         .per(Decidim::ContractsSk::CONTRACTS_PER_PAGE)
         end
 
         def new
@@ -285,6 +312,83 @@ module Decidim
         # permission-denied.
         def contracts_scope
           Contract.where(organization: current_organization)
+        end
+
+        # The index read surface: the tenant scope under its deterministic
+        # order (INDEX_ORDER), with the normalized GET filters applied on top
+        # (never around it, so organization scoping survives every filter
+        # combination), then paginated by the caller. Each filter is
+        # conditional — an absent or unknown value contributes no WHERE
+        # clause, so a hand-crafted param degrades to the default view,
+        # never to a 500.
+        def filtered_contracts
+          scope = contracts_scope.order(INDEX_ORDER)
+          apply_q_filter(apply_source_filter(apply_state_filter(scope)))
+        end
+
+        def apply_state_filter(scope)
+          index_filters.state ? scope.where(state: index_filters.state) : scope
+        end
+
+        def apply_source_filter(scope)
+          case index_filters.source
+          when :crz then scope.where(source: CrzImport::Mapper::SOURCE)
+          when :editorial then scope.where.not(source: CrzImport::Mapper::SOURCE)
+          else scope
+          end
+        end
+
+        def apply_q_filter(scope)
+          pattern = index_search_pattern
+          pattern ? scope.where(SEARCH_CONDITION, pattern: pattern) : scope
+        end
+
+        # The normalized filter state, shared by the query builder and the
+        # filter form (prefill). Vocabulary membership is validated against
+        # the real sources of truth — ContractLifecycle::STATES via
+        # ContractLifecycle.state? and the CrzImport source constant — so the
+        # form and the scope can never drift apart.
+        def index_filters
+          IndexFilters.new(
+            state: index_state_param,
+            source: index_source_param,
+            q: params[:q].to_s.strip
+          )
+        end
+
+        def index_state_param
+          candidate = params[:state].to_s.presence&.to_sym
+          candidate if candidate && ContractLifecycle.state?(candidate)
+        end
+
+        def index_source_param
+          candidate = params[:source].to_s.presence&.to_sym
+          candidate if %i[crz editorial].include?(candidate)
+        end
+
+        # The escaped LIKE pattern for the :q filter; nil when the term is
+        # blank, so an empty search box contributes no WHERE clause.
+        def index_search_pattern
+          term = index_filters.q
+          "%#{ActiveRecord::Base.sanitize_sql_like(term)}%" if term.present?
+        end
+
+        # Filter-form option lists: the "any" default first, then the real
+        # vocabulary with its established labels (contract_states.* for the
+        # states — the table labels and the filter options are one
+        # vocabulary, never a second one).
+        def index_state_options
+          [[t("decidim.contracts_sk.admin.contracts.index.filters.states.any"), ""]] +
+            ContractLifecycle::STATES.map do |state|
+              [t(state, scope: "decidim.contracts_sk.contract_states"), state]
+            end
+        end
+
+        def index_source_options
+          [[t("decidim.contracts_sk.admin.contracts.index.filters.sources.all"), ""]] +
+            %i[crz editorial].map do |source|
+              [t("decidim.contracts_sk.admin.contracts.index.filters.sources.#{source}"), source]
+            end
         end
 
         # Only the editorial identity and content fields are updatable

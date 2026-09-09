@@ -20,16 +20,27 @@ module Decidim
     # from the host's Decidim::ApplicationController
     # (Decidim::NeedsOrganization) — the same seam the admin base relies on.
     #
-    # Only :id is ever read from the request. The show view renders the
-    # record's parties, documents (the latter as download links through
-    # the host's ActiveStorage route, M02-05-A0
+    # Only :id is ever read from the request on the detail page. The show
+    # view renders the record's parties, documents (the latter as download
+    # links through the host's ActiveStorage route, M02-05-A0
     # civora-org/civora-platform#73) and its public version history
     # (M02-05-B, civora-org/civora-platform#65 — published amendments
-    # only); the index is not paginated (no new dependencies by design;
-    # the catalogue is small at this stage).
+    # only). The index is paginated at the engine-wide fixed page size
+    # (CONTRACTS_PER_PAGE, civora-org/civora-platform#86b) with no filters —
+    # the catalogue is a public reading surface, the admin index is the
+    # filtering one.
     class ContractsController < Decidim::ContractsSk::ApplicationController
+      # Deterministic catalogue order (civora-org/civora-platform#86b):
+      # newest publication first, the id as the tiebreaker — a total order,
+      # so pagination stays stable when two records share a publication
+      # timestamp (PostgreSQL leaves unordered row order undefined).
+      CATALOGUE_ORDER = { published_at: :desc, id: :desc }.freeze
+
       def index
-        @contracts = published_contracts
+        # The page param reaches Kaminari only as a string: an array
+        # (page[]=2) would raise inside Kaminari's Integer coercion.
+        @contracts = published_contracts.page(params[:page].to_s)
+                                        .per(Decidim::ContractsSk::CONTRACTS_PER_PAGE)
       end
 
       def show
@@ -54,7 +65,7 @@ module Decidim
       # tenant boundary, same rule as the admin side.
       def published_contracts
         Contract.where(organization: current_organization)
-                .published.order(published_at: :desc)
+                .published.order(CATALOGUE_ORDER)
       end
     end
   end

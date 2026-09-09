@@ -204,6 +204,53 @@ module LocaleContract
                                 "import ho ponechal nedotknutý. Kolíziu je potrebné vyriešiť ručne."
     }
   }.freeze
+
+  # The admin index filter labels per locale (civora-org/civora-platform
+  # #86b). The seven lifecycle states are NOT repeated here — the filter
+  # options reuse the contract_states.* vocabulary verbatim (pinned by the
+  # CONTRACT_STATE_LABELS table above); only the "any state" default option
+  # carries its own key.
+  ADMIN_INDEX_FILTER_LABELS = {
+    en: {
+      "admin.contracts.index.filters.state" => "State",
+      "admin.contracts.index.filters.source" => "Source",
+      "admin.contracts.index.filters.q" => "Search",
+      "admin.contracts.index.filters.submit" => "Filter",
+      "admin.contracts.index.filters.clear" => "Clear filters",
+      "admin.contracts.index.filters.states.any" => "Any state",
+      "admin.contracts.index.filters.sources.all" => "All sources",
+      "admin.contracts.index.filters.sources.crz" => "CRZ import",
+      "admin.contracts.index.filters.sources.editorial" => "Editorial"
+    },
+    sk: {
+      "admin.contracts.index.filters.state" => "Stav",
+      "admin.contracts.index.filters.source" => "Zdroj",
+      "admin.contracts.index.filters.q" => "Hľadať",
+      "admin.contracts.index.filters.submit" => "Filtrovať",
+      "admin.contracts.index.filters.clear" => "Zrušiť filtre",
+      "admin.contracts.index.filters.states.any" => "Ľubovolný stav",
+      "admin.contracts.index.filters.sources.all" => "Všetky zdroje",
+      "admin.contracts.index.filters.sources.crz" => "Import z CRZ",
+      "admin.contracts.index.filters.sources.editorial" => "Redakčná"
+    }
+  }.freeze
+
+  # The shared pagination labels per locale (civora-org/civora-platform
+  # #86b) — one surface for the admin index and the public catalogue.
+  PAGINATION_LABELS = {
+    en: {
+      "pagination.prev" => "Previous",
+      "pagination.next" => "Next",
+      "pagination.page_count" => "Page %{current} of %{total}",
+      "pagination.aria_label" => "Pagination"
+    },
+    sk: {
+      "pagination.prev" => "Predchádzajúca",
+      "pagination.next" => "Ďalšia",
+      "pagination.page_count" => "Strana %{current} z %{total}",
+      "pagination.aria_label" => "Stránkovanie"
+    }
+  }.freeze
   # rubocop:enable Style/FormatStringToken
 
   # The exact expected leaf-key surface under decidim.contracts_sk, including
@@ -268,7 +315,17 @@ module LocaleContract
     "admin.contracts.import_crz.title",
     "admin.contracts.import_crz.unchanged",
     "admin.contracts.import_crz.updated",
-    "admin.contracts.index.empty", "admin.contracts.index.title",
+    "admin.contracts.index.empty",
+    "admin.contracts.index.filters.clear",
+    "admin.contracts.index.filters.q",
+    "admin.contracts.index.filters.source",
+    "admin.contracts.index.filters.sources.all",
+    "admin.contracts.index.filters.sources.crz",
+    "admin.contracts.index.filters.sources.editorial",
+    "admin.contracts.index.filters.state",
+    "admin.contracts.index.filters.states.any",
+    "admin.contracts.index.filters.submit",
+    "admin.contracts.index.title",
     "admin.contracts.new.title",
     "admin.contracts.transition.approve",
     "admin.contracts.transition.archive",
@@ -371,7 +428,11 @@ module LocaleContract
     "contracts.show.versions_empty",
     "crz_handoff_pdf.disclaimer",
     "crz_handoff_pdf.generated_on",
-    "crz_handoff_pdf.heading"
+    "crz_handoff_pdf.heading",
+    "pagination.aria_label",
+    "pagination.next",
+    "pagination.page_count",
+    "pagination.prev"
   ].freeze
 
   def locale_file(locale)
@@ -605,6 +666,22 @@ RSpec.describe Decidim::ContractsSk do
       LocaleContract::CRZ_IMPORT_ADMIN_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.admin.contracts.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin index filter labels in both locales (civora-org/civora-platform#86b)" do
+      LocaleContract::ADMIN_INDEX_FILTER_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the pagination labels in both locales (civora-org/civora-platform#86b)" do
+      LocaleContract::PAGINATION_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end
       end
     end
