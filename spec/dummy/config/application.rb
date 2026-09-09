@@ -90,6 +90,34 @@ require File.join(decidim_core, "app/validators/translatable_presence_validator"
 require File.join(decidim_core, "lib/decidim/tooltip_helper")
 require File.join(decidim_core, "lib/decidim/form_builder")
 
+# The Decidim menu registry (civora-org/civora-platform#86c): the engine's
+# navigation initializer calls Decidim.menu at boot, so the harness must
+# provide the menu machinery before the engine is required. The three
+# classes are pure Ruby with zero dependencies — required here by absolute
+# path from the pinned gem, like every Decidim class above:
+#
+#   * Decidim::MenuRegistry (menu_registry.rb) — the global named registry
+#   * Decidim::MenuItem      (menu_item.rb)      — the item value object
+#   * Decidim::Menu          (menu.rb)           — the per-render DSL
+#
+# Decidim.menu itself (the module method delegating to MenuRegistry) is
+# defined inside lib/decidim/core.rb — a file whose first line requires the
+# full decidim-core engine, so it cannot be required pin-point. The mirror
+# below is verbatim the pinned gem's method body (decidim-core 0.31.7,
+# lib/decidim/core.rb:984-986); every class under it stays real.
+require File.join(decidim_core, "lib/decidim/menu_registry")
+require File.join(decidim_core, "lib/decidim/menu_item")
+require File.join(decidim_core, "lib/decidim/menu")
+
+module Decidim
+  class << self
+    # Verbatim mirror of decidim-core 0.31.7 lib/decidim/core.rb:984-986.
+    def menu(name, &)
+      MenuRegistry.register(name.to_sym, &)
+    end
+  end
+end
+
 # Pagination parity for the paginated index listings (#86b): a real Decidim
 # host loads Kaminari through decidim-core's gem dependency (a normal app's
 # Bundler.require picks up the railties), which teaches ActiveRecord

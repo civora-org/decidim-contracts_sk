@@ -33,6 +33,9 @@ en:
         heading: "CRZ handoff aid"
         disclaimer: "This document is a handoff aid for the CRZ record — not a legal publication."
         generated_on: "Generated on"
+      menu:
+        contracts: "Contracts"
+        admin_contracts: "Contracts"
       pagination:
         prev: "Previous"
         next: "Next"

@@ -25,6 +25,23 @@ module Decidim
           config.root.join("config", "locales", "*.yml").to_s
         ]
       end
+
+      # Navigation integration (civora-org/civora-platform#86c): the public
+      # catalogue into Decidim's main menu (and its mobile registry twin),
+      # mirroring how Decidim's own modules hook their menus (see
+      # decidim-core engine.rb, initializer "decidim_core.menu"). The
+      # registration blocks are only evaluated at render time, so nothing
+      # here needs the routes or a database at boot.
+      initializer "decidim_contracts_sk.menu" do
+        Decidim::ContractsSk::Menu.register_menu!
+      end
+
+      # The admin sidebar entry (the :admin_menu_modules registry shared by
+      # every Decidim content module), visibility-gated to engine role
+      # holders through the config-time role resolver seam.
+      initializer "decidim_contracts_sk.admin_menu" do
+        Decidim::ContractsSk::Menu.register_admin_menu_modules!
+      end
     end
   end
 end

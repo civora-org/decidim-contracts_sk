@@ -205,6 +205,14 @@ module LocaleContract
     }
   }.freeze
 
+  # The navigation menu labels per locale (civora-org/civora-platform#86c):
+  # the public catalogue entry (main + mobile menu) and the admin sidebar
+  # entry carry separate keys so the host-facing vocabularies can diverge.
+  MENU_LABELS = {
+    en: { "menu.contracts" => "Contracts", "menu.admin_contracts" => "Contracts" },
+    sk: { "menu.contracts" => "Zmluvy", "menu.admin_contracts" => "Zmluvy" }
+  }.freeze
+
   # The admin index filter labels per locale (civora-org/civora-platform
   # #86b). The seven lifecycle states are NOT repeated here — the filter
   # options reuse the contract_states.* vocabulary verbatim (pinned by the
@@ -429,6 +437,8 @@ module LocaleContract
     "crz_handoff_pdf.disclaimer",
     "crz_handoff_pdf.generated_on",
     "crz_handoff_pdf.heading",
+    "menu.admin_contracts",
+    "menu.contracts",
     "pagination.aria_label",
     "pagination.next",
     "pagination.page_count",
@@ -672,6 +682,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the admin index filter labels in both locales (civora-org/civora-platform#86b)" do
       LocaleContract::ADMIN_INDEX_FILTER_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the navigation menu labels in both locales (civora-org/civora-platform#86c)" do
+      LocaleContract::MENU_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end
