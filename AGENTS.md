@@ -138,6 +138,10 @@ Current lessons:
 
 - **Release-please: `release-as` in config targets a version; the manifest records what shipped.** Bumping `.release-please-manifest.json` to an unreleased version makes release-please treat it as released (manifest 1.0.0 ⇒ next PR was 1.1.0). To force the next version, set `"release-as"` in `release-please-config.json`, keep the manifest at the true last release, and drop `release-as` after the tag (proven in the #69 arc).
 
+- **M-codes map onto the platform repo's GitHub milestones — the registry is ground truth, not issue titles.** `gh api repos/civora-org/civora-platform/milestones` shows the real track (e.g. "03 Civic workflows & admin" = epic #13's track, where `M03` codes belong). Titles can falsely claim codes (#82 titled itself "M03: Branding" while belonging to no milestone — retitled to a plain `Branding:` prefix in the #13 arc). Before assigning `Mnn-xx-x` codes, check the milestone registry first and scan titles for squatters; when a code is ambiguous or claimed outside its milestone, follow the #71-children precedent — plain `Engine:`/`Admin:` prefixes with ordering carried by the epic checklist and dependency notes.
+
+- **Spike/research arcs: recon-then-delegate, and draft the deliverable in the same subagent session that captured the evidence.** Issues and planning docs can name dead infrastructure (#83's `opendata.crz.gov.sk` was NXDOMAIN while the issue and the data dictionary both cited it) — a three-command reachability recon before delegating deep probing turns ghost hosts into headline findings instead of wasted agent effort. Then resume the probing agent's session (`task_id`) to write the doc: the evidence stays in its context, so no field name or captured value gets re-invented (proven in the #83 arc; the reviewer found zero invented-fact issues).
+
 *Archived lessons (tracker & issue hygiene; engine mount-design; tooling & verification hygiene; host-app & ops; engine implementation mechanics clusters) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
 
 ## Testing Expectations
