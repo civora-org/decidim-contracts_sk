@@ -8,6 +8,12 @@ Decidim::ContractsSk::Engine.routes.draw do
   # resource below, which carries the full add/edit/remove surface.
   namespace :admin do
     resources :contracts, only: %i[index new create edit update] do
+      # CRZ single-record import (ADR-008, civora-org/civora-platform#86):
+      # one collection POST taking a :source_id (CRZ numeric id) param —
+      # not tied to an existing record, so deliberately a collection route
+      # and outside the lifecycle derivation below.
+      collection { post :import_crz }
+
       # Lifecycle-transition member routes (civora-org/civora-platform#59),
       # derived from the lifecycle table — the single source of truth — never
       # hand-enumerated, so table additions are picked up verbatim. The

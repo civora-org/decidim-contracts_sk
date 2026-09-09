@@ -43,9 +43,11 @@ contracts already published via CRZ", "metadata export"), not scope creep:
 No behavior attached to these in #55 — they shipped as data insurance while
 the table was empty. #85 hardened them additively (see below): `checksum`
 is no longer deferred — it exists as a nullable column (the source-payload
-digest, ADR-008), and `import_status` carries a validated vocabulary. Both
-remain meaningful only once the actual import milestone consumes them; all
-five columns stay hand-filled until then.
+digest, ADR-008), and `import_status` carries a validated vocabulary. The
+import arc has since landed (#86, ADR-008 — see
+[`docs/crz-import.md`](crz-import.md)) and consumes all five columns;
+editorial records keep them hand-free (`source` stays `"editorial"`,
+import lifecycle fields stay nil).
 
 Deferred (additive migrations later, per downstream issues): real functional
 fields — subject matter text, amounts/currency, signature/effectivity dates,
@@ -55,8 +57,9 @@ fields — subject matter text, amounts/currency, signature/effectivity dates,
 
 ## Provenance hardening landed in #85
 
-The provenance columns above gained additive schema + model guarding — all
-still hand-filled, consumed by the future import arc:
+The provenance columns above gained additive schema + model guarding —
+consumed by the import arc since #86 (ADR-008,
+[`docs/crz-import.md`](crz-import.md)):
 
 - **`checksum`** — nullable string column on the contracts table: the
   source-payload digest (ADR-008). No default, no backfill, no behaviour
@@ -251,9 +254,9 @@ the current version):
 - ~~The data dictionary does not exist anywhere yet~~ — **resolved 2026-09-03
   (#70):** it now lives in civora-platform at
   `docs/01-discovery/CONTRACTS-DATA-DICTIONARY.md`. #56/#58/#62/#63 should
-  diff their field sets against it. CRZ correspondences there remain
-  indicative until the #71 import arc verifies them against the live CRZ
-  open-data schema.
+  diff their field sets against it. CRZ correspondences there were
+  field-by-field verified against the live sources by the #83 spike
+  (2026-09-09) and are consumed verbatim by the #86 import mapper.
 - The stakeholder requirement (CRZ pull / component / project links) is not
   captured in any civora-platform issue — candidate V0.2 epic.
 
@@ -266,9 +269,16 @@ the current version):
   a command-layer duty: enforce `author.organization == contract.organization`
   before persisting (the model has no cross-tenant guard — author and
   organization are independent `belongs_to` associations).
-- **Import arc (V0.2):** follow the AGENTS.md import policy — provenance,
-  freshness, idempotency, malformed-source handling, no-PII fixtures; reuse
-  the provenance columns above instead of migrating them in.
+- **Import arc — landed (#86, ADR-008):** the idempotent CRZ import ETL
+  consumes the provenance columns above exactly as shaped — the only
+  schema addition is the unique `(organization, source_id)` index
+  (`idx_contracts_sk_contracts_on_org_and_source_id_unique`, the
+  create-race backstop; NULL `source_id` exempt). Write semantics,
+  triggers, failure modes and the concurrency layers live in
+  [`docs/crz-import.md`](crz-import.md). Editorial collision protection
+  keys on `(organization, source_id)` with `source != "crz"` — the
+  upsert lookup deliberately ignores `source` so a manual record holding
+  a CRZ id is found and protected.
 - **Component registration:** a Decidim component registration is a separate
   integration surface from the mounted engine; do not conflate the catalogue
   milestone (#62/#63) with component work.

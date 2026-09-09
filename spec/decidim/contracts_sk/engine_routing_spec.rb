@@ -28,7 +28,10 @@ module EngineRoutingContract
   # displayed) and no :destroy (deletion is not part of the workflow yet).
   # The CRZ-handoff pair (M02-05-C, civora-org/civora-platform#74) shares
   # one member path with two verbs and two explicit actions — declared
-  # outside the lifecycle derivation (it is not a lifecycle event).
+  # outside the lifecycle derivation (it is not a lifecycle event). The
+  # CRZ single-record import (ADR-008, civora-org/civora-platform#86) is a
+  # collection POST (import by CRZ id, not tied to an existing record) —
+  # also outside the lifecycle derivation.
   # Parties (civora-org/civora-platform#76) hang off their contract through
   # the nested resource: an index plus the full add/edit/remove surface
   # (update maps to BOTH a PATCH and a PUT route entry, so the party block
@@ -49,6 +52,7 @@ module EngineRoutingContract
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
+    ["POST", "/admin/contracts/import_crz(.:format)", "#{ADMIN_CONTROLLER}#import_crz"],
     ["POST", "/admin/contracts/:id/approve(.:format)", "#{ADMIN_CONTROLLER}#approve"],
     ["POST", "/admin/contracts/:id/archive(.:format)", "#{ADMIN_CONTROLLER}#archive"],
     ["GET", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#download_crz_handoff"],
@@ -214,12 +218,12 @@ RSpec.describe Decidim::ContractsSk::Engine do
       )
     end
 
-    it "exposes exactly the CRUD + transition + CRZ-handoff actions (no show, no destroy)" do
+    it "exposes exactly the CRUD + transition + CRZ-handoff + import actions (no show, no destroy)" do
       actions = admin_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
 
       expect(actions).to eq(%w[
                               approve archive create download_crz_handoff edit generate_crz_handoff
-                              index new publish reject return submit update
+                              import_crz index new publish reject return submit update
                             ])
     end
   end
@@ -299,6 +303,33 @@ RSpec.describe Decidim::ContractsSk::Engine do
       expect(Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values
                                                                   .flat_map(&:keys)
                                                                   .uniq).not_to include(:crz_handoff)
+    end
+  end
+
+  describe "CRZ single-record import collection route (ADR-008, civora-org/civora-platform#86)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    # The helper-name example carries two related expectations per design;
+    # the dense-assertion budget doesn't fit a route contract pinned
+    # pair-by-pair.
+    # rubocop:disable RSpec/ExampleLength
+    it "maps a collection POST to the import action and names its helper" do
+      aggregate_failures do
+        expect(admin_routes).to include(
+          ["POST", "/admin/contracts/import_crz(.:format)",
+           "#{EngineRoutingContract::ADMIN_CONTROLLER}#import_crz"]
+        )
+        expect(url_helpers.import_crz_admin_contracts_path).to eq("/admin/contracts/import_crz")
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+
+    it "keeps the import route outside the lifecycle transition derivation" do
+      expect(Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values
+                                                                  .flat_map(&:keys)
+                                                                  .uniq).not_to include(:import_crz)
     end
   end
 

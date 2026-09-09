@@ -182,6 +182,30 @@ module LocaleContract
     }
   }.freeze
 
+  # The admin CRZ single-record import labels per locale (ADR-008,
+  # civora-org/civora-platform#86). The outcome vocabulary mirrors the
+  # CrzImport::Sync outcomes 1:1.
+  # rubocop:disable Style/FormatStringToken
+  CRZ_IMPORT_ADMIN_LABELS = {
+    en: {
+      "import_crz.label" => "CRZ contract id",
+      "import_crz.submit" => "Import contract",
+      "import_crz.submitting" => "Importing… the source is rate-limited; this can take up to a minute.",
+      "import_crz.created" => "Contract %{source_id} imported and published.",
+      "import_crz.collision" => "A manually created record already holds CRZ id %{source_id} — " \
+                                "the import did not touch it. Resolve the collision manually."
+    },
+    sk: {
+      "import_crz.label" => "ID zmluvy v CRZ",
+      "import_crz.submit" => "Importovať zmluvu",
+      "import_crz.submitting" => "Importujem… zdroj obmedzuje frekvenciu; môže to trvať až minútu.",
+      "import_crz.created" => "Zmluva %{source_id} bola importovaná a zverejnená.",
+      "import_crz.collision" => "Ručne vytvorený záznam už obsahuje ID z CRZ %{source_id} — " \
+                                "import ho ponechal nedotknutý. Kolíziu je potrebné vyriešiť ručne."
+    }
+  }.freeze
+  # rubocop:enable Style/FormatStringToken
+
   # The exact expected leaf-key surface under decidim.contracts_sk, including
   # the public catalogue keys (plan Option B of #39), the admin CRUD keys
   # (civora-org/civora-platform#58), the admin content-field form keys
@@ -228,8 +252,23 @@ module LocaleContract
     "admin.contracts.form.signed_on",
     "admin.contracts.form.subject_matter",
     "admin.contracts.form.title",
-    "admin.contracts.index.empty",
-    "admin.contracts.index.title",
+    "admin.contracts.import_crz.blank_id",
+    "admin.contracts.import_crz.collision",
+    "admin.contracts.import_crz.created",
+    "admin.contracts.import_crz.description",
+    "admin.contracts.import_crz.failed",
+    "admin.contracts.import_crz.hint",
+    "admin.contracts.import_crz.label",
+    "admin.contracts.import_crz.lifecycle_guard",
+    "admin.contracts.import_crz.not_found",
+    "admin.contracts.import_crz.quarantined",
+    "admin.contracts.import_crz.record_invalid",
+    "admin.contracts.import_crz.submit",
+    "admin.contracts.import_crz.submitting",
+    "admin.contracts.import_crz.title",
+    "admin.contracts.import_crz.unchanged",
+    "admin.contracts.import_crz.updated",
+    "admin.contracts.index.empty", "admin.contracts.index.title",
     "admin.contracts.new.title",
     "admin.contracts.transition.approve",
     "admin.contracts.transition.archive",
@@ -558,6 +597,14 @@ RSpec.describe Decidim::ContractsSk do
       LocaleContract::CRZ_HANDOFF_ADMIN_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.admin.crz_handoff.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin CRZ import labels in both locales (ADR-008, civora-org/civora-platform#86)" do
+      LocaleContract::CRZ_IMPORT_ADMIN_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.admin.contracts.#{key}")).to eq(value)
         end
       end
     end

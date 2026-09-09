@@ -87,6 +87,23 @@ sk:
             signed_on: "Dátum podpisu"
             effective_from: "Dátum účinnosti"
             crz_url: "Odkaz na CRZ"
+          import_crz:
+            title: "Import z CRZ"
+            description: "Import jednej zmluvy zo Slovenského centrálneho registra zmlúv (CRZ) podľa jej číselného ID. Zrkadlový záznam sa zverejní s metadátami zdroja; ručne vytvorené záznamy s rovnakým ID zostanú nedotknuté."
+            label: "ID zmluvy v CRZ"
+            submit: "Importovať zmluvu"
+            submitting: "Importujem… zdroj obmedzuje frekvenciu; môže to trvať až minútu."
+            hint: "Import sa sťahuje naživo z otvoreného API verejného registra a môže trvať až minútu. Pre hromadnú synchronizáciu použite plánovanú rake úlohu (docs/crz-import.md) — tá nie je viazaná na časový limit požiadavku."
+            blank_id: "Zadajte číselné ID zmluvy z CRZ."
+            created: "Zmluva %{source_id} bola importovaná a zverejnená."
+            updated: "Zmluva %{source_id} bola aktualizovaná podľa údajov z CRZ."
+            unchanged: "Zmluva %{source_id} je už aktuálna."
+            collision: "Ručne vytvorený záznam už obsahuje ID z CRZ %{source_id} — import ho ponechal nedotknutý. Kolíziu je potrebné vyriešiť ručne."
+            lifecycle_guard: "Zmluva %{source_id} už nie je zverejnená; import ju neaktualizoval."
+            record_invalid: "Zmluvu %{source_id} sa nepodarilo importovať (neplatné údaje). Existujúci záznam nebol zmenený."
+            not_found: "Zmluva s ID %{source_id} nebola v CRZ nájdená."
+            failed: "Import zmluvy %{source_id} sa nepodaril (zdroj nie je dostupný). Existujúci záznam nebol zmenený."
+            quarantined: "Zmluvu %{source_id} sa nepodarilo načítať zo zdroja; bola preskočená."
         amendments:
           index:
             title: "Dodatky"

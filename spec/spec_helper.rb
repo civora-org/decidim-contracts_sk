@@ -23,6 +23,7 @@ require "rspec/rails"
 # decidim-core and cannot be required outside a full Decidim app).
 require_relative "support/contracts_sk_db_helpers"
 require_relative "support/demo_data"
+require_relative "support/crz_import_payloads"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

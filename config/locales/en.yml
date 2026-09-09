@@ -87,6 +87,23 @@ en:
             signed_on: "Signed on"
             effective_from: "Effective from"
             crz_url: "CRZ URL"
+          import_crz:
+            title: "Import from CRZ"
+            description: "Import one contract record from the Slovak central register (CRZ) by its numeric id. The mirror lands published with its source metadata; editorial records holding the same id are never touched."
+            label: "CRZ contract id"
+            submit: "Import contract"
+            submitting: "Importing… the source is rate-limited; this can take up to a minute."
+            hint: "The import fetches live from the public register's open API and can take up to a minute. For batch syncs use the scheduled rake task (docs/crz-import.md) — it is not subject to request timeouts."
+            blank_id: "Enter the numeric CRZ contract id to import."
+            created: "Contract %{source_id} imported and published."
+            updated: "Contract %{source_id} updated from the CRZ payload."
+            unchanged: "Contract %{source_id} is already up to date."
+            collision: "A manually created record already holds CRZ id %{source_id} — the import did not touch it. Resolve the collision manually."
+            lifecycle_guard: "Contract %{source_id} is no longer published; the import did not update it."
+            record_invalid: "Contract %{source_id} could not be imported (invalid data). No existing record was changed."
+            not_found: "No CRZ contract with id %{source_id} was found."
+            failed: "Import of contract %{source_id} failed (source unavailable). No existing record was changed."
+            quarantined: "Contract %{source_id} could not be read from the source; it was skipped."
         amendments:
           index:
             title: "Amendments"
