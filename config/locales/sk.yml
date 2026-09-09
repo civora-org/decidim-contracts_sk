@@ -33,6 +33,9 @@ sk:
         heading: "Pomôcka na odovzdanie do CRZ"
         disclaimer: "Tento dokument je pomôcka na odovzdanie do CRZ — nie právna publikácia."
         generated_on: "Vygenerované"
+      menu:
+        contracts: "Zmluvy"
+        admin_contracts: "Zmluvy"
       pagination:
         prev: "Predchádzajúca"
         next: "Ďalšia"
