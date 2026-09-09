@@ -63,12 +63,22 @@ RSpec.shared_context "contracts_sk db support" do
 
   # Migrates the engine schema all the way up, in filename (= timestamp)
   # order: child tables carry real FK constraints, so parents must come
-  # first.
+  # first. After migrating, the engine models' memoized column metadata is
+  # reset: migrations clear the connection's schema cache but NOT the
+  # class-level attribute sets, so a partial-schema model access anywhere
+  # earlier in the process (e.g. a single-migration spec touching the
+  # model before the later migrations exist) would otherwise poison every
+  # later :db example with a stale column set.
   def migrate_engine_schema!
     Dir.glob(File.join(engine_root, "db", "migrate", "*.rb")).sort.each do |path|
       require path
       snake_name = File.basename(path, ".rb").split("_", 2).last
       Object.const_get(snake_name.camelize).migrate(:up)
+    end
+
+    %w[Contract Party Document Amendment AuditEvent].each do |model_name|
+      klass = Decidim::ContractsSk.const_get(model_name)
+      klass&.reset_column_information
     end
   end
 

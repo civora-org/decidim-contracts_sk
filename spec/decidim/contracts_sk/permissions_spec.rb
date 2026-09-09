@@ -282,6 +282,55 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — import_crz (ADR-008, civora-org/civora-platform#86: editor-only, any state)" do
+    # Plain-method helper (not a let) so the group stays within the
+    # memoized-helpers budget while every example names its user explicitly.
+    def import_user_with_roles(*roles)
+      SpecUser.new(engine_roles: roles)
+    end
+
+    # The group's users carry engine_roles, so swap in the engine_roles-driven
+    # resolver for the duration of each example (restored afterwards).
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "is allowed for an editor on every lifecycle state (the gate is role-only)" do
+      lifecycle::STATES.each do |state|
+        via_state = action_for(import_user_with_roles(:editor), scope: :admin, action: :import_crz,
+                                                                state: state)
+        via_contract = action_for(import_user_with_roles(:editor), scope: :admin, action: :import_crz,
+                                                                   contract: SpecContract.new(state))
+
+        expect(via_state.allowed?).to be(true), "editor must import on #{state}"
+        expect(via_contract.allowed?).to be(true), "editor must import on #{state} via context[:contract]"
+      end
+    end
+
+    it "is allowed for an editor even with no state reachable (the gate is role-only)" do
+      expect(action_for(import_user_with_roles(:editor), scope: :admin, action: :import_crz).allowed?).to be(true)
+    end
+
+    it "is denied for a reviewer on every state (non-editors never hold the gate)" do
+      lifecycle::STATES.each do |state|
+        outcome = action_for(import_user_with_roles(:reviewer), scope: :admin, action: :import_crz,
+                                                                contract: SpecContract.new(state))
+
+        expect(outcome.allowed?).to be(false), "reviewer must not import on #{state}"
+      end
+    end
+
+    it "is denied for a roleless user and disallowed (not unset) — fail-closed" do
+      outcome = action_for(import_user_with_roles, scope: :admin, action: :import_crz, state: :draft)
+
+      expect(outcome.allowed?).to be(false)
+      expect(unset?(import_user_with_roles, scope: :admin, action: :import_crz, state: :draft)).to be(false)
+    end
+  end
+
   describe "admin scope — read (admin index)" do
     it "is allowed when the user holds any engine role" do
       swap_resolver(%i[reviewer]) do
@@ -672,7 +721,7 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
   describe "org admin without accepted terms (default resolver)" do
     it "holds no roles: every admin action is denied" do
-      actions = %i[create read update download_crz_handoff] + described_class::TRANSITION_EVENTS
+      actions = %i[create read update download_crz_handoff import_crz] + described_class::TRANSITION_EVENTS
 
       lifecycle::STATES.each do |state|
         actions.each do |action|
@@ -685,7 +734,7 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
   describe "nil user" do
     it "is denied every admin action on a known state" do
-      actions = %i[create read update download_crz_handoff] + described_class::TRANSITION_EVENTS
+      actions = %i[create read update download_crz_handoff import_crz] + described_class::TRANSITION_EVENTS
 
       actions.each do |action|
         expect(action_for(nil, scope: :admin, action: action, state: :draft).allowed?)

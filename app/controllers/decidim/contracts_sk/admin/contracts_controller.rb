@@ -4,8 +4,10 @@ module Decidim
   module ContractsSk
     module Admin
       # Admin CRUD and lifecycle transitions for contract records
-      # (civora-org/civora-platform#58, #59), plus the manual CRZ-handoff
-      # download/generate pair (M02-05-C, civora-org/civora-platform#74).
+      # (civora-org/civora-platform#58, #59), the manual CRZ-handoff
+      # download/generate pair (M02-05-C, civora-org/civora-platform#74)
+      # and the single-record CRZ import (ADR-008,
+      # civora-org/civora-platform#86).
       #
       # index/new/create open with enforce_permission_to before anything
       # else; edit/update and the transition actions load the record first,
@@ -110,6 +112,28 @@ module Decidim
           end
         end
 
+        # Single-record CRZ import (ADR-008, civora-org/civora-platform#86):
+        # pulls ONE contract from ekosystem.slovensko.digital by its CRZ
+        # numeric id and upserts it through the same command the scheduled
+        # batch sync uses. Editor-gated (:import_crz, role-only); every
+        # outcome is a PRG redirect to the index with a localized flash —
+        # the ADR-008 outcome vocabulary (collision, lifecycle guard,
+        # source unavailable, ...) maps 1:1 onto flash keys. Network and
+        # record-locking concerns live in the CrzImport layers.
+        def import_crz
+          enforce_permission_to :import_crz, :contract
+
+          source_id = params[:source_id].to_s.strip
+          return import_blank_id unless source_id.match?(/\A\d+\z/)
+
+          outcome = CrzImport::Sync.import_one(source_id: source_id,
+                                               organization: current_organization,
+                                               actor: current_user)
+
+          add_import_flash(outcome, source_id)
+          redirect_to admin_contracts_path
+        end
+
         # One explicit action per lifecycle transition event. The route set
         # is derived from ContractLifecycle::TRANSITIONS in config/routes.rb;
         # these named shells exist so the derived routes map onto readable
@@ -138,7 +162,24 @@ module Decidim
           transition(:archive)
         end
 
+        # The import outcome vocabulary mirrors CrzImport outcomes 1:1;
+        # the successful trio flashes :notice, everything else :alert.
+        IMPORT_NOTICE_OUTCOMES = %i[created updated unchanged].freeze
+
         private
+
+        def add_import_flash(outcome, source_id)
+          key = "decidim.contracts_sk.admin.contracts.import_crz.#{outcome}"
+          level = IMPORT_NOTICE_OUTCOMES.include?(outcome) ? :notice : :alert
+          flash[level] = t(key, source_id: source_id)
+        end
+
+        # A blank or non-numeric id never reaches the network — the CRZ id
+        # is numeric by definition (ADR-008 decision 1).
+        def import_blank_id
+          flash[:alert] = t("decidim.contracts_sk.admin.contracts.import_crz.blank_id")
+          redirect_to admin_contracts_path
+        end
 
         # PRG on success: notice + back to the admin index.
         def create_succeeded

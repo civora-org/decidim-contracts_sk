@@ -15,11 +15,12 @@ module Decidim
     # `published_at` is a system field: TransitionContract stamps it on the
     # publish event — it is never form-writable.
     #
-    # The source/source_id/imported_at/import_status columns are manual
-    # CRZ-handoff provenance metadata (docs/contracts-domain-notes.md);
+    # The source/source_id/imported_at/import_status columns are
+    # CRZ-mirror provenance metadata (docs/contracts-domain-notes.md);
     # checksum carries the source-payload digest and import_status is
-    # validated against IMPORT_STATUSES — all filled by hand until the
-    # V0.2 import arc consumes them.
+    # validated against IMPORT_STATUSES — written by the CRZ import ETL
+    # (ADR-008, docs/crz-import.md); editorial records keep them
+    # untouched (source stays "editorial", import lifecycle fields nil).
     class Contract < ApplicationRecord
       include Decidim::ContractsSk::ContractState
 

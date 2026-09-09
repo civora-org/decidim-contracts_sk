@@ -34,6 +34,9 @@ answers for subjects `:contract`, `:party` and `:document`:
 |---|---|---|---|
 | `admin` | `contract` | `create` | user's engine roles include `editor` (transition-table row 1 analog) |
 | `admin` | `contract` | `update` | user's engine roles include `editor` **and** `ContractLifecycle.editable?(state)` (`draft`, `returned`) — the editorial twin of the lifecycle's editability rule (civora-org/civora-platform#58) |
+| `admin` | `contract` | `download_crz_handoff` | user's engine roles include `editor`, **no lifecycle condition** — fetching the generated handoff aid is role-gated only, any state (M02-05-C, civora-org/civora-platform#74) |
+| `admin` | `contract` | `generate_crz_handoff` | user's engine roles include `editor` **and** the record's state is lifecycle-editable — identical to the `update` rule (generating the aid is editorial work on an editable record, ADR-002) (civora-org/civora-platform#74) |
+| `admin` | `contract` | `import_crz` | user's engine roles include `editor`, **no lifecycle condition** — importing one CRZ record is a record-management act on the catalogue, not an edit of an existing record (ADR-008, civora-org/civora-platform#86) |
 | `admin` | `contract` | `submit`, `return`, `approve`, `reject`, `publish`, `archive` | `ContractLifecycle.allowed_roles(from: state, event: action)` intersects the user's engine roles |
 | `admin` | `contract` | `read` | user holds **any** engine role (admin index) |
 | `admin` | `party` | `create`, `update`, `destroy` | user's engine roles include `editor` **and** the parent contract's state is lifecycle-editable (`ContractLifecycle.editable?`) — the same rule as `contract`/`update`, applied to party management (civora-org/civora-platform#76) |

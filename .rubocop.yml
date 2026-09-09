@@ -18,6 +18,7 @@ Metrics/MethodLength:
     - "db/migrate/**/*.rb"
     - "lib/tasks/**/*.rake"
     - "spec/support/demo_data.rb"
+    - "spec/support/crz_import_payloads.rb"
 
 # Demo-data seeders are declarative fixture lists; complexity metrics don't
 # apply.
@@ -25,6 +26,7 @@ Metrics/AbcSize:
   Exclude:
     - "spec/support/demo_data.rb"
     - "lib/tasks/**/*.rake"
+    - "spec/support/crz_import_payloads.rb"
 
 # Spec example-group blocks and Rake task bodies are naturally long; exclude
 # them from the limit.
