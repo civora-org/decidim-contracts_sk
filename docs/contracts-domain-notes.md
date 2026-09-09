@@ -38,17 +38,38 @@ contracts already published via CRZ", "metadata export"), not scope creep:
 | `source` string, null: false, default `"editorial"` | Distinguish editor-created vs CRZ-origin records; automated import arrives later and MUST NOT change this shape |
 | `source_id` string, nullable | CRZ contract identifier for handoff/matching |
 | `imported_at` datetime, nullable | Freshness metadata (AGENTS.md data/import policy) |
-| `import_status` string, nullable | Import lifecycle placeholder; unused until the integration arc |
+| `import_status` string, nullable | Import lifecycle placeholder; validated against `Contract::IMPORT_STATUSES` (`pending`/`succeeded`/`failed`/`stale`, #85), still filled by hand until the integration arc consumes it |
 
-No behavior attaches to these in #55 — they are data insurance while the
-table is empty. `checksum` is deferred to the actual import milestone
-(meaningful only with real sync).
+No behavior attached to these in #55 — they shipped as data insurance while
+the table was empty. #85 hardened them additively (see below): `checksum`
+is no longer deferred — it exists as a nullable column (the source-payload
+digest, ADR-008), and `import_status` carries a validated vocabulary. Both
+remain meaningful only once the actual import milestone consumes them; all
+five columns stay hand-filled until then.
 
 Deferred (additive migrations later, per downstream issues): real functional
 fields — subject matter text, amounts/currency, signature/effectivity dates,
   amendments/versions (#57 landed the skeleton; the lifecycle, immutability
   and the public version history landed with #65 — see below); safe document
   content validation has since landed in #64 (see below).
+
+## Provenance hardening landed in #85
+
+The provenance columns above gained additive schema + model guarding — all
+still hand-filled, consumed by the future import arc:
+
+- **`checksum`** — nullable string column on the contracts table: the
+  source-payload digest (ADR-008). No default, no backfill, no behaviour
+  yet.
+- **Composite index on `(organization, source, source_id)`** — the
+  idempotent upsert lookup the import arc will key on. Explicit name
+  `idx_contracts_sk_contracts_on_organization_id_and_source_id` (59 bytes;
+  the fully spelled convention name exceeds PostgreSQL's 63-byte identifier
+  limit).
+- **`import_status` vocabulary** — `Contract::IMPORT_STATUSES` =
+  `pending`/`succeeded`/`failed`/`stale`, validated with `allow_nil: true`
+  (editorial records carry no import lifecycle). The import arc stamps it;
+  until then it is filled by hand.
 
 ## Schema consequences landed in #56 (M02-02-B)
 

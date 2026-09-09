@@ -198,6 +198,24 @@ RSpec.describe Decidim::ContractsSk::Contract do
     end
   end
 
+  describe "import provenance (civora-org/civora-platform#85)" do
+    it "keeps the import-status vocabulary frozen and pinned to the approved set" do
+      expect(described_class::IMPORT_STATUSES).to eq(%w[pending succeeded failed stale])
+      expect(described_class::IMPORT_STATUSES).to be_frozen
+    end
+
+    it "validates import_status inclusion against the vocabulary, nil allowed" do
+      inclusion = described_class.validators_on(:import_status).find do |validator|
+        validator.is_a?(ActiveModel::Validations::InclusionValidator)
+      end
+
+      expect(inclusion.options[:in]).to eq(described_class::IMPORT_STATUSES)
+      expect(inclusion.options[:in]).to all(be_a(String))
+      expect(inclusion.options[:in]).to be_frozen # a mutable vocabulary could be corrupted through the validator
+      expect(inclusion.options[:allow_nil]).to be(true)
+    end
+  end
+
   describe "state enum" do
     it "derives STATE_VALUES from the lifecycle, never hand-enumerated" do
       expect(described_class::STATE_VALUES)
@@ -400,6 +418,25 @@ RSpec.describe Decidim::ContractsSk::Contract do
         contract = described_class.new(attributes)
 
         expect(contract).to be_valid
+      end
+    end
+
+    describe "import provenance (civora-org/civora-platform#85)" do
+      it "accepts nil and each approved import status" do
+        expect(described_class.new(contract_attributes(import_status: nil))).to be_valid
+
+        described_class::IMPORT_STATUSES.each do |status|
+          contract = described_class.new(contract_attributes(import_status: status))
+
+          expect(contract).to be_valid
+        end
+      end
+
+      it "rejects an import status outside the approved vocabulary" do
+        contract = described_class.new(contract_attributes(import_status: "bogus"))
+
+        expect(contract).not_to be_valid
+        expect(contract.errors[:import_status]).to be_present
       end
     end
   end
