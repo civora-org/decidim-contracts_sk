@@ -33,6 +33,11 @@ sk:
         heading: "Pomôcka na odovzdanie do CRZ"
         disclaimer: "Tento dokument je pomôcka na odovzdanie do CRZ — nie právna publikácia."
         generated_on: "Vygenerované"
+      pagination:
+        prev: "Predchádzajúca"
+        next: "Ďalšia"
+        page_count: "Strana %{current} z %{total}"
+        aria_label: "Stránkovanie"
       contracts:
         index:
           title: "Zmluvy"
@@ -52,6 +57,18 @@ sk:
           index:
             title: "Zmluvy"
             empty: "Zatiaľ nebola vytvorená žiadna zmluva."
+            filters:
+              state: "Stav"
+              source: "Zdroj"
+              q: "Hľadať"
+              submit: "Filtrovať"
+              clear: "Zrušiť filtre"
+              states:
+                any: "Ľubovolný stav"
+              sources:
+                all: "Všetky zdroje"
+                crz: "Import z CRZ"
+                editorial: "Redakčná"
           new:
             title: "Nová zmluva"
           edit:

@@ -30,6 +30,35 @@
     </div>
   <% end %>
 
+  <%# Index filters (civora-org/civora-platform#86b): a GET form, so the
+      filter state lives in the URL and survives pagination links. Plain
+      Rails tag helpers — never a Decidim FormBuilder field next to a
+      standalone label (the builder renders its own label around each
+      field); label_tag + select_tag is the safe pairing here. %>
+  <div class="card-section">
+    <%= form_tag admin_contracts_path, method: :get do %>
+      <div class="row column">
+        <%= label_tag :state, t("decidim.contracts_sk.admin.contracts.index.filters.state") %>
+        <%= select_tag :state, options_for_select(index_state_options, selected: index_filters.state) %>
+      </div>
+      <div class="row column">
+        <%= label_tag :source, t("decidim.contracts_sk.admin.contracts.index.filters.source") %>
+        <%= select_tag :source, options_for_select(index_source_options, selected: index_filters.source) %>
+      </div>
+      <div class="row column">
+        <%= label_tag :q, t("decidim.contracts_sk.admin.contracts.index.filters.q") %>
+        <%= text_field_tag :q, index_filters.q %>
+      </div>
+      <div class="row column">
+        <%= submit_tag t("decidim.contracts_sk.admin.contracts.index.filters.submit"),
+                       class: "button button__sm button__secondary" %>
+        <%= link_to t("decidim.contracts_sk.admin.contracts.index.filters.clear"),
+                    admin_contracts_path,
+                    class: "button button__sm button__secondary clear" %>
+      </div>
+    <% end %>
+  </div>
+
   <% if @contracts.any? %>
     <div class="table-scroll">
       <table class="table-list">
@@ -64,6 +93,15 @@
         </tbody>
       </table>
     </div>
+
+    <%# Page controls render only from two pages up (civora-org/
+        civora-platform#86b); the partial carries exactly the filter keys
+        over — never raw request params. %>
+    <% if @contracts.total_pages > 1 %>
+      <%= render "decidim/contracts_sk/shared/pagination",
+                 collection: @contracts,
+                 filter_keys: %i[state source q] %>
+    <% end %>
   <% else %>
     <div class="card-section">
       <p><%= t("decidim.contracts_sk.admin.contracts.index.empty") %></p>

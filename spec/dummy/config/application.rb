@@ -90,6 +90,16 @@ require File.join(decidim_core, "app/validators/translatable_presence_validator"
 require File.join(decidim_core, "lib/decidim/tooltip_helper")
 require File.join(decidim_core, "lib/decidim/form_builder")
 
+# Pagination parity for the paginated index listings (#86b): a real Decidim
+# host loads Kaminari through decidim-core's gem dependency (a normal app's
+# Bundler.require picks up the railties), which teaches ActiveRecord
+# relations `.page`/`.per` — the engine's controllers paginate through it.
+# The require registers Kaminari's lazy AR hook (and its railtie, since
+# Rails is defined above), so the extension lands whether ActiveRecord::Base
+# is already loaded or loads later; it must run before initialize! so the
+# railtie's config initializer is seen.
+require "kaminari/activerecord"
+
 # Inert chain members: DefaultPermissions' base target_scope ("") matches no
 # real scope (:admin / :public), so #permissions returns the action untouched
 # — exactly what a chain member that decides nothing must do.

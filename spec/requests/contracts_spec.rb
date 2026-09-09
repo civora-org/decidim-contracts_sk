@@ -60,6 +60,50 @@ end
 # Status and body are asserted per example by design: every example must
 # prove what rendered and why.
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/AnyInstance
+
+# Minimal paginable wrapper for the offline group (civora-org/civora-platform
+# #86b): the controller paginates the published scope through Kaminari
+# (.page/.per), so the offline stub must answer the chain with an object
+# carrying the pagination surface the view renders. Defaults render exactly
+# one page, so the pagination partial stays hidden and the pre-pagination
+# assertions below are unchanged.
+class PaginableStub
+  include Enumerable
+
+  def initialize(records, total_pages: 1)
+    @records = records
+    @total_pages = total_pages
+  end
+
+  attr_reader :total_pages
+
+  def page(_num)
+    self
+  end
+
+  def per(_num)
+    self
+  end
+
+  def each(&block)
+    @records.each(&block)
+  end
+
+  def any?
+    @records.any?
+  end
+
+  def current_page
+    1
+  end
+
+  def prev_page; end
+
+  def next_page
+    total_pages > 1 ? 2 : nil
+  end
+end
+
 RSpec.describe "public contracts catalogue", type: :request do
   # The controller's published scope is the single offline seam (see the
   # header): both actions read every record through it.
@@ -80,7 +124,7 @@ RSpec.describe "public contracts catalogue", type: :request do
 
   describe "catalogue index (civora-org/civora-platform#62)" do
     it "lists a published contract with title, reference, publication date and a detail link" do
-      stub_published_contracts([published_contract_double])
+      stub_published_contracts(PaginableStub.new([published_contract_double]))
 
       get "/"
 
@@ -90,16 +134,55 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response.body).to include("ZP-2026-001")
         expect(response.body).to include("2026-09-01")
         expect(response.body).to include(%(href="/7"))
+        # A single page renders no page controls (civora-org/civora-platform#86b).
+        expect(response.body).not_to include("Page 1 of 1")
       end
     end
 
     it "renders the localized empty state when nothing is published" do
-      stub_published_contracts([])
+      stub_published_contracts(PaginableStub.new([]))
 
       get "/"
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("No published contracts yet.")
+    end
+
+    it "renders page controls carrying the page param when a second page exists (civora-org/civora-platform#86b)" do
+      stub_published_contracts(PaginableStub.new([published_contract_double], total_pages: 2))
+
+      get "/"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Page 1 of 2")
+        expect(response.body).to include("page=2")
+      end
+    end
+
+    it "answers 200 when the page param is an array (the controller stringifies it before Kaminari)" do
+      stub_published_contracts(PaginableStub.new([published_contract_double]))
+
+      get "/", params: { page: ["2"] }
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "builds pagination links from allowlisted params only (spoofed routing params never reach url_for)" do
+      stub_published_contracts(PaginableStub.new([published_contract_double], total_pages: 2))
+
+      get "/", params: { controller: "evil", action: "evil" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("page=2")
+      # The partial carries no query params for this filter-less listing, so
+      # a spoofed controller/action can neither break nor re-route the links.
+      expect(response.body).not_to include("evil")
+    end
+
+    it "pins the deterministic catalogue order values" do
+      expect(Decidim::ContractsSk::ContractsController::CATALOGUE_ORDER)
+        .to eq(published_at: :desc, id: :desc)
     end
   end
 
@@ -292,6 +375,55 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response.body).to include(%(href="/#{newer.id}"))
         expect(response.body).to include(%(href="/#{older.id}"))
       end
+    end
+
+    it "paginates the catalogue at 25 per page, oldest publications last (civora-org/civora-platform#86b)" do
+      30.times do |i|
+        create_contract!(
+          title: "Catalogue road #{i}",
+          reference: format("ZP-CAT-%03d", i),
+          published_at: Time.utc(2026, 9, 1, 12, 0, 0) + i * 60
+        )
+      end
+
+      get "/"
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body.scan(/ZP-CAT-\d{3}/).uniq.size).to eq(25)
+        expect(response.body).to include("Page 1 of 2")
+        expect(response.body).to include("page=2")
+      end
+
+      get "/", params: { page: 2 }
+      expect(response).to have_http_status(:ok)
+      second_page = response.body.scan(/ZP-CAT-\d{3}/).uniq
+      aggregate_failures do
+        expect(second_page.size).to eq(5)
+        expect(response.body).to include("Page 2 of 2")
+        # The catalogue orders newest-first, so the second page holds the
+        # five oldest publications.
+        expect(second_page.sort).to eq(%w[ZP-CAT-000 ZP-CAT-001 ZP-CAT-002 ZP-CAT-003 ZP-CAT-004])
+      end
+
+      # The array page param reaches Kaminari only as a string (controller
+      # coercion) and clamps back to page 1.
+      get "/", params: { page: ["2"] }
+      expect(response).to have_http_status(:ok)
+      expect(response.body.scan(/ZP-CAT-\d{3}/).uniq.size).to eq(25)
+    end
+
+    it "tie-breaks same-moment publications by id, newest id first" do
+      create_contract!(title: "Tie older", reference: "ZP-CAT-100",
+                       published_at: Time.utc(2026, 9, 2, 12, 0, 0))
+      create_contract!(title: "Tie newer", reference: "ZP-CAT-101",
+                       published_at: Time.utc(2026, 9, 2, 12, 0, 0))
+
+      get "/"
+
+      expect(response).to have_http_status(:ok)
+      # Equal published_at: the id: :desc tiebreaker decides — the later-
+      # created (higher id) record lists first, deterministically.
+      expect(response.body.index("Tie newer")).to be < response.body.index("Tie older")
     end
 
     it "shows a published contract with its content fields and both party roles" do

@@ -42,6 +42,76 @@ FakeAdminUser = Struct.new(:engine_roles, keyword_init: true)
 # design: every denial must prove which gate fired, and every success must
 # prove what reached the database.
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/AnyInstance
+
+# Records the query chain the controller builds for the admin index from the
+# GET params (offline, DB-free, civora-org/civora-platform#86b): the ordering,
+# every filter application and the pagination call land in #applied, so the
+# offline group can pin the param handling — normalization, fallbacks, filter
+# scope, order values — without a connection. `where` records positional +
+# keyword args (the q condition carries both); `where.not` flows through a
+# bare `where` call followed by #not.
+class RecordingIndexScope
+  attr_reader :applied
+
+  def initialize(page_result)
+    @page_result = page_result
+    @applied = []
+  end
+
+  def where(*args, **kwargs)
+    @applied << [:where, args, kwargs]
+    self
+  end
+
+  def not(attrs)
+    @applied << [:where_not, attrs]
+    self
+  end
+
+  def order(*args)
+    @applied << [:order, args]
+    self
+  end
+
+  def page(num)
+    @applied << [:page, num]
+    @page_result
+  end
+end
+
+# The paginated result the offline controller hands to the view: the exact
+# Kaminari surface the index renders (the page/per chain, enumeration, any?,
+# page arithmetic).
+FakeIndexPage = Struct.new(:records, :current_page, :total_pages, keyword_init: true) do
+  def per(_num)
+    self
+  end
+
+  def prev_page
+    current_page > 1 ? current_page - 1 : nil
+  end
+
+  def next_page
+    current_page < total_pages ? current_page + 1 : nil
+  end
+
+  def each(&block)
+    records.each(&block)
+  end
+
+  def any?
+    records.any?
+  end
+end
+
+# A row renderable by the index view: title/reference/state for the cells
+# and the transition-button derivation, to_param for the edit path.
+FakeIndexContract = Struct.new(:title, :reference, :state) do
+  def to_param
+    "77"
+  end
+end
+
 RSpec.describe "admin contracts CRUD", type: :request do
   let(:unauthorized) { "You are not authorized to perform this action." }
 
@@ -131,6 +201,117 @@ RSpec.describe "admin contracts CRUD", type: :request do
     def stub_record_lookup(record)
       allow_any_instance_of(Decidim::ContractsSk::Admin::ContractsController)
         .to receive(:contracts_scope).and_return(double(find: record))
+    end
+  end
+
+  describe "index pagination and filters (offline, DB-free, civora-org/civora-platform#86b)" do
+    def stub_index_scope(scope)
+      allow_any_instance_of(Decidim::ContractsSk::Admin::ContractsController)
+        .to receive(:contracts_scope).and_return(scope)
+    end
+
+    def stubbed_index(records: [], current_page: 1, total_pages: 1)
+      scope = RecordingIndexScope.new(
+        FakeIndexPage.new(records: records, current_page: current_page, total_pages: total_pages)
+      )
+      stub_index_scope(scope)
+      scope
+    end
+
+    it "answers 200 with the default (unfiltered) query when the filter params hold unknown values" do
+      scope = stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { state: "bogus", source: "bogus", q: "   ", page: ["2"] }
+
+      expect(response).to have_http_status(:ok)
+      # Unknown filter values fell back to the "any"/"all" defaults and the
+      # blank q contributed no WHERE clause; the chain is the deterministic
+      # ordering plus pagination only. The array page param reaches the
+      # chain as its string form — Kaminari never sees an Array (its
+      # Integer coercion would raise on one).
+      expect(scope.applied).to eq([
+                                    [:order, [{ created_at: :desc, id: :desc }]],
+                                    [:page, "[\"2\"]"]
+                                  ])
+    end
+
+    it "pins the deterministic index ordering on the scoped query" do
+      scope = stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts"
+
+      expect(response).to have_http_status(:ok)
+      # Newest first, id tiebreaker — without a total order PostgreSQL may
+      # hand back different row orders per query, repeating or dropping rows
+      # across page boundaries.
+      expect(scope.applied).to include([:order, [{ created_at: :desc, id: :desc }]])
+    end
+
+    it "keeps spoofed routing params out of the pagination links" do
+      record = FakeIndexContract.new("Road reconstruction", "ZP-2026-001", "published")
+      stubbed_index(records: [record], total_pages: 2)
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { controller: "evil", action: "evil" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("page=2")
+      # The partial carries only the allowlisted filter keys, so a spoofed
+      # controller/action can neither break nor re-route the page links.
+      expect(response.body).not_to include("evil")
+    end
+
+    it "applies valid state, source and q params to the tenant-scoped query" do
+      scope = stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { state: "published", source: "editorial", q: "road" }
+
+      expect(response).to have_http_status(:ok)
+      expect(scope.applied).to include([:where, [], { state: :published }])
+      # Editorial = every non-CRZ provenance (where.not), symmetric with the
+      # crz side's plain equality.
+      expect(scope.applied).to include([:where_not, { source: "crz" }])
+      q_filter = scope.applied.find { |entry| entry.first == :where && entry[2].key?(:pattern) }
+      expect(q_filter[2][:pattern]).to eq("%road%")
+    end
+
+    it "preserves the active filters and page controls in the pagination links" do
+      record = FakeIndexContract.new("Road reconstruction", "ZP-2026-001", "published")
+      stubbed_index(records: [record], total_pages: 2)
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { state: "published", source: "crz", q: "road" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Page 1 of 2")
+      # The shared pagination partial carries the current GET params over,
+      # so paging never drops the filter state (URL-level assertion).
+      aggregate_failures do
+        %w[state=published source=crz q=road page=2].each do |fragment|
+          expect(response.body).to include(fragment)
+        end
+      end
+    end
+
+    it "renders the filter form with the three inputs and a clear link" do
+      stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include(%(name="state"))
+        expect(response.body).to include(%(name="source"))
+        expect(response.body).to include(%(name="q"))
+        expect(response.body).to include("Clear filters")
+        # The state options reuse the contract_states.* vocabulary.
+        expect(response.body).to include("Any state")
+        expect(response.body).to include("Returned for changes")
+      end
     end
   end
 
@@ -437,6 +618,128 @@ RSpec.describe "admin contracts CRUD", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("No contracts have been created yet.")
+    end
+  end
+
+  describe "index filtering and pagination against the schema (civora-org/civora-platform#86b)", :db do
+    let(:resolver_roles) { %i[editor] }
+
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { resolver_roles }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    before do
+      migrate_engine_schema!
+
+      controller = Decidim::ContractsSk::Admin::ContractsController
+
+      allow_any_instance_of(controller).to receive(:current_user).and_return(author)
+      allow_any_instance_of(controller).to receive(:user_signed_in?).and_return(true)
+      allow_any_instance_of(controller).to receive(:current_organization).and_return(organization)
+    end
+
+    def create_contract!(overrides = {})
+      Decidim::ContractsSk::Contract.create!(contract_attributes(overrides))
+    end
+
+    # The rendered references of the index table; uniqueness guards against
+    # a reference leaking into some other part of the markup.
+    def references_in(body)
+      body.scan(/ZP-FILT-\d+/).uniq
+    end
+
+    it "filters by lifecycle state" do
+      draft = create_contract!(reference: "ZP-FILT-001")
+      published = create_contract!(reference: "ZP-FILT-002", state: "published")
+
+      get "/admin/contracts", params: { state: "published" }
+
+      expect(response).to have_http_status(:ok)
+      expect(references_in(response.body)).to eq([published.reference])
+      expect(response.body).not_to include(draft.reference)
+    end
+
+    it "filters by provenance source, with editorial matching every non-CRZ record" do
+      editorial = create_contract!(reference: "ZP-FILT-003")
+      imported = create_contract!(reference: "ZP-FILT-004", source: "crz")
+
+      get "/admin/contracts", params: { source: "crz" }
+      expect(response).to have_http_status(:ok)
+      expect(references_in(response.body)).to eq([imported.reference])
+
+      get "/admin/contracts", params: { source: "editorial" }
+      expect(response).to have_http_status(:ok)
+      expect(references_in(response.body)).to eq([editorial.reference])
+    end
+
+    it "matches q case-insensitively on both title and reference" do
+      road = create_contract!(title: "Road reconstruction", reference: "ZP-FILT-005")
+      bridge = create_contract!(title: "Bridge repair", reference: "ZP-FILT-006")
+
+      get "/admin/contracts", params: { q: "BRIDGE" }
+      expect(response).to have_http_status(:ok)
+      expect(references_in(response.body)).to eq([bridge.reference])
+
+      get "/admin/contracts", params: { q: "zp-filt-005" }
+      expect(response).to have_http_status(:ok)
+      expect(references_in(response.body)).to eq([road.reference])
+    end
+
+    it "paginates at 25 per page with disjoint, complete pages" do
+      30.times { |i| create_contract!(reference: format("ZP-FILT-%03d", i + 10)) }
+
+      get "/admin/contracts"
+      expect(response).to have_http_status(:ok)
+      page_one = references_in(response.body)
+      aggregate_failures do
+        expect(page_one.size).to eq(25)
+        expect(response.body).to include("Page 1 of 2")
+        expect(response.body).to include("page=2")
+      end
+
+      get "/admin/contracts", params: { page: 2 }
+      expect(response).to have_http_status(:ok)
+      page_two = references_in(response.body)
+      aggregate_failures do
+        expect(page_two.size).to eq(5)
+        expect(response.body).to include("Page 2 of 2")
+        # Together the pages cover every record exactly once — the fixed
+        # page size neither drops nor duplicates rows across pages.
+        expect(page_one & page_two).to be_empty
+        expect((page_one + page_two).size).to eq(30)
+      end
+    end
+
+    it "keeps an active filter applied across page boundaries" do
+      28.times { |i| create_contract!(reference: format("ZP-FILT-%03d", i + 50), state: "published") }
+      create_contract!(reference: "ZP-FILT-090")
+      create_contract!(reference: "ZP-FILT-091")
+
+      get "/admin/contracts", params: { state: "published", page: 2 }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(references_in(response.body).size).to eq(3)
+        expect(response.body).to include("Page 2 of 2")
+        # The page-2 link (and the next page request) carry the filter, so
+        # the drafts never leak into a later page.
+        expect(response.body).to include("state=published")
+        expect(references_in(response.body)).not_to include("ZP-FILT-090", "ZP-FILT-091")
+      end
+    end
+
+    it "answers 200 with the unfiltered default when the params hold unknown values" do
+      only = create_contract!(reference: "ZP-FILT-080")
+
+      get "/admin/contracts", params: { state: "nope", source: "elsewhere", page: ["2"] }
+
+      expect(response).to have_http_status(:ok)
+      # The array page param is stringified by the controller and clamps to
+      # page 1 inside Kaminari, so the single record renders.
+      expect(references_in(response.body)).to eq([only.reference])
     end
   end
 end

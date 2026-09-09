@@ -23,6 +23,15 @@
         </div>
       <% end %>
     </div>
+
+    <%# Catalogue pagination (civora-org/civora-platform#86b): the shared
+        engine partial, page controls only from two pages up; the catalogue
+        has no filters, so nothing is carried over. %>
+    <% if @contracts.total_pages > 1 %>
+      <%= render "decidim/contracts_sk/shared/pagination",
+                 collection: @contracts,
+                 filter_keys: [] %>
+    <% end %>
   <% else %>
     <p class="text-lg text-gray-2"><%= t("decidim.contracts_sk.contracts.index.empty") %></p>
   <% end %>

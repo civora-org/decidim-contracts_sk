@@ -1,0 +1,36 @@
+<%# Engine-shared pagination for the paginated listings (admin contracts
+    index, public catalogue). Locals:
+      collection  - a Kaminari-paginated collection
+      filter_keys - the GET param names the caller owns (admin index:
+                    [:state, :source, :q]; the public catalogue passes [],
+                    it has no filters).
+    Links carry ONLY the allowlisted keys over: raw request params never
+    reach url_for, so a spoofed controller/action (or any routing-significant
+    key) can neither break nor re-route the pagination links.
+    Rendered only when it matters: the callers skip this partial for
+    total_pages <= 1. Styling reuses the existing Decidim button classes. %>
+<% carried_params = request.query_parameters.slice(*filter_keys) %>
+<nav class="pagination" aria-label="<%= t("decidim.contracts_sk.pagination.aria_label") %>">
+  <div class="flex items-center justify-between gap-2 py-4">
+    <% if collection.prev_page %>
+      <%= link_to url_for(carried_params.merge(page: collection.prev_page)),
+                  class: "button button__sm button__secondary",
+                  rel: "prev" do %>
+        <%= t("decidim.contracts_sk.pagination.prev") %>
+      <% end %>
+    <% end %>
+
+    <span class="pagination__page-count">
+      <%= t("decidim.contracts_sk.pagination.page_count",
+            current: collection.current_page, total: collection.total_pages) %>
+    </span>
+
+    <% if collection.next_page %>
+      <%= link_to url_for(carried_params.merge(page: collection.next_page)),
+                  class: "button button__sm button__secondary",
+                  rel: "next" do %>
+        <%= t("decidim.contracts_sk.pagination.next") %>
+      <% end %>
+    <% end %>
+  </div>
+</nav>
