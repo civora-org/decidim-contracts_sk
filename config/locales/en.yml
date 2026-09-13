@@ -45,6 +45,9 @@ en:
         index:
           title: "Contracts"
           empty: "No published contracts yet."
+          search_label: "Search contracts"
+          search_submit: "Search"
+          no_search_results: "No contracts match your search."
         show:
           parties: "Parties"
           parties_empty: "No parties have been recorded for this contract."

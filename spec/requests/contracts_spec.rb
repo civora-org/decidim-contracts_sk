@@ -104,6 +104,22 @@ class PaginableStub
   end
 end
 
+# Recording twin of PaginableStub for the catalogue's :q search (mirrors the
+# admin specs' RecordingIndexScope): the controller applies its search with
+# `where(SEARCH_CONDITION, pattern: ...)` on the stubbed scope, so the where
+# args/kwargs land in #applied and the offline group can pin the condition
+# and the escaped pattern without a connection.
+class SearchablePaginableStub < PaginableStub
+  def applied
+    @applied ||= []
+  end
+
+  def where(*args, **kwargs)
+    applied << [args, kwargs]
+    self
+  end
+end
+
 RSpec.describe "public contracts catalogue", type: :request do
   # The controller's published scope is the single offline seam (see the
   # header): both actions read every record through it.
@@ -183,6 +199,110 @@ RSpec.describe "public contracts catalogue", type: :request do
     it "pins the deterministic catalogue order values" do
       expect(Decidim::ContractsSk::ContractsController::CATALOGUE_ORDER)
         .to eq(published_at: :desc, id: :desc)
+    end
+
+    it "pins the search condition identical to the admin index's" do
+      # One vocabulary, never a second one: the public search and the admin
+      # filter must stay in lockstep by construction.
+      expect(Decidim::ContractsSk::ContractsController::SEARCH_CONDITION)
+        .to eq(Decidim::ContractsSk::Admin::ContractsController::SEARCH_CONDITION)
+    end
+
+    it "renders the free-text search form above the results" do
+      stub_published_contracts(PaginableStub.new([published_contract_double]))
+
+      get "/"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Search contracts")
+        expect(response.body).to include(%(name="q"))
+        # A GET form, so the search state lives in the URL and survives the
+        # pagination links.
+        expect(response.body).to include(%(action="/"))
+        expect(response.body).to include(%(method="get"))
+      end
+    end
+
+    it "shows the active query in the search field" do
+      stub_published_contracts(SearchablePaginableStub.new([published_contract_double]))
+
+      get "/", params: { q: "road" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(%(value="road"))
+    end
+
+    it "applies the admin-mirrored LIKE condition with the stripped, escaped pattern" do
+      scope = SearchablePaginableStub.new([published_contract_double])
+      stub_published_contracts(scope)
+
+      get "/", params: { q: "  road  " }
+
+      expect(response).to have_http_status(:ok)
+      q_filter = scope.applied.find { |(_args, kwargs)| kwargs.key?(:pattern) }
+      aggregate_failures do
+        expect(q_filter[0].first).to eq(
+          "LOWER(title) LIKE :pattern OR LOWER(reference) LIKE :pattern"
+        )
+        expect(q_filter[1][:pattern]).to eq("%road%")
+      end
+    end
+
+    it "escapes the LIKE wildcards in the search term" do
+      scope = SearchablePaginableStub.new([])
+      stub_published_contracts(scope)
+
+      get "/", params: { q: "100%_deal" }
+
+      expect(response).to have_http_status(:ok)
+      q_filter = scope.applied.find { |(_args, kwargs)| kwargs.key?(:pattern) }
+      # sanitize_sql_like pre-escapes % and _, so user-supplied wildcards
+      # stay literal (the same rule the admin :q filter follows).
+      expect(q_filter[1][:pattern]).to eq("%100\\%\\_deal%")
+    end
+
+    it "applies no WHERE clause when q is blank and falls back to the plain empty state" do
+      scope = SearchablePaginableStub.new([])
+      stub_published_contracts(scope)
+
+      get "/", params: { q: "   " }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(scope.applied).to eq([])
+        expect(response.body).to include("No published contracts yet.")
+        expect(response.body).not_to include("No contracts match your search.")
+      end
+    end
+
+    it "renders the distinct no-results message when a non-blank search finds nothing" do
+      stub_published_contracts(SearchablePaginableStub.new([]))
+
+      get "/", params: { q: "zzz" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("No contracts match your search.")
+        # The search-miss state is distinct from the empty-catalogue one.
+        expect(response.body).not_to include("No published contracts yet.")
+      end
+    end
+
+    it "carries the active query over the pagination links" do
+      stub_published_contracts(SearchablePaginableStub.new([published_contract_double],
+                                                           total_pages: 2))
+
+      get "/", params: { q: "road" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Page 1 of 2")
+        # The shared pagination partial carries the catalogue's single
+        # filter key over, so paging never drops the search state.
+        expect(response.body).to include("q=road")
+        expect(response.body).to include("page=2")
+      end
     end
   end
 
@@ -647,6 +767,80 @@ RSpec.describe "public contracts catalogue", type: :request do
       # The foreign record itself is untouched — scoping hides, never harms.
       foreign.reload
       expect(foreign.state).to eq("published")
+    end
+
+    # Free-text catalogue search (the public twin of the admin index's :q
+    # filter): real end-to-end hits/misses on the two editorial identity
+    # fields, with the published-only and organization scoping still in
+    # force UNDER the search — the filter is applied on top of the scope,
+    # never around it.
+    it "searches titles and references case-insensitively" do
+      by_title = create_contract!(title: "Library construction", reference: "ZP-LIB-001")
+      by_reference = create_contract!(title: "Road reconstruction", reference: "ZP-SEW-002")
+
+      get "/", params: { q: "library" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Library construction")
+        expect(response.body).to include(%(href="/#{by_title.id}"))
+        expect(response.body).not_to include("ZP-SEW-002")
+      end
+
+      get "/", params: { q: "zp-sew" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("ZP-SEW-002")
+        expect(response.body).to include(%(href="/#{by_reference.id}"))
+        expect(response.body).not_to include("Library construction")
+      end
+    end
+
+    it "keeps the search inside the published-only scope (a draft match never surfaces)" do
+      create_contract!(title: "Water treatment plant", reference: "ZP-WTR-001")
+      create_contract!(
+        title: "Draft water plant", reference: "ZP-WTR-002",
+        state: "draft", published_at: nil
+      )
+
+      get "/", params: { q: "water" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Water treatment plant")
+        expect(response.body).not_to include("Draft water plant")
+        expect(response.body).not_to include("ZP-WTR-002")
+      end
+    end
+
+    it "keeps the search inside the organization scope" do
+      create_contract!(title: "Municipal library", reference: "ZP-LIB-001")
+      create_contract!(
+        organization: Decidim::Organization.create!,
+        title: "Foreign municipal library", reference: "ZP-FOR-001"
+      )
+
+      get "/", params: { q: "library" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Municipal library")
+        expect(response.body).not_to include("Foreign municipal library")
+        expect(response.body).not_to include("ZP-FOR-001")
+      end
+    end
+
+    it "renders the distinct no-results message on a real search miss" do
+      create_contract!(title: "Road reconstruction", reference: "ZP-2026-001")
+
+      get "/", params: { q: "nonexistent" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("No contracts match your search.")
+        expect(response.body).not_to include("No published contracts yet.")
+      end
     end
   end
 
