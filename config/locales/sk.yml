@@ -45,6 +45,9 @@ sk:
         index:
           title: "Zmluvy"
           empty: "Zatiaľ nie je zverejnená žiadna zmluva."
+          search_label: "Hľadať zmluvy"
+          search_submit: "Hľadať"
+          no_search_results: "Žiadna zmluva nezodpovedá vášmu hľadaniu."
         show:
           parties: "Zmluvné strany"
           parties_empty: "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."

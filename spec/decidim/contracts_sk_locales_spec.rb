@@ -425,6 +425,9 @@ module LocaleContract
     "contract_states.rejected",
     "contract_states.returned",
     "contracts.index.empty",
+    "contracts.index.no_search_results",
+    "contracts.index.search_label",
+    "contracts.index.search_submit",
     "contracts.index.title",
     "contracts.show.current_version",
     "contracts.show.documents",
@@ -500,12 +503,18 @@ module PublicCatalogueLabels
     en: {
       "contract.published_on" => "Published on",
       "contracts.index.empty" => "No published contracts yet.",
+      "contracts.index.no_search_results" => "No contracts match your search.",
+      "contracts.index.search_label" => "Search contracts",
+      "contracts.index.search_submit" => "Search",
       "contracts.show.parties" => "Parties",
       "contracts.show.parties_empty" => "No parties have been recorded for this contract."
     },
     sk: {
       "contract.published_on" => "Dátum zverejnenia",
       "contracts.index.empty" => "Zatiaľ nie je zverejnená žiadna zmluva.",
+      "contracts.index.no_search_results" => "Žiadna zmluva nezodpovedá vášmu hľadaniu.",
+      "contracts.index.search_label" => "Hľadať zmluvy",
+      "contracts.index.search_submit" => "Hľadať",
       "contracts.show.parties" => "Zmluvné strany",
       "contracts.show.parties_empty" => "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."
     }
