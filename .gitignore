@@ -16,3 +16,10 @@
 
 # Gems do not commit Gemfile.lock (see AGENTS.md)
 /Gemfile.lock
+
+# Agent Review plugin runtime data (config.json, change-package.json and
+# review.md stay committable — see agent-review README)
+/.agent-review/events.jsonl
+/.agent-review/session.json
+/.agent-review/checkpoints/
+/.agent-review/snapshots/

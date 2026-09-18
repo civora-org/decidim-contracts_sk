@@ -41,6 +41,11 @@ en:
         next: "Next"
         page_count: "Page %{current} of %{total}"
         aria_label: "Pagination"
+      provenance:
+        badge: "Externally confirmed"
+        imported_on: "Mirrored from the CRZ register on"
+        stale: "This mirror may be out of date — verify the canonical record at crz.gov.sk."
+        note: "These fields mirror public metadata of the Slovak Central Register of Contracts (CRZ), obtained via ekosystem.slovensko.digital. They are externally confirmed information, not a legal publication; the canonical record lives at crz.gov.sk. Source data is provided for informational purposes only."
       contracts:
         index:
           title: "Contracts"

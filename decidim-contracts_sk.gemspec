@@ -46,6 +46,16 @@ Gem::Specification.new do |spec|
   spec.add_dependency "decidim-admin", "~> 0.31.5"
   spec.add_dependency "decidim-core", "~> 0.31.5"
 
+  # json 3.0 removed the `quirks_mode` keyword that ActiveSupport 7.2 still
+  # passes to both JSON.parse and JSON.generate
+  # (activesupport-7.2.2.2 lib/active_support/json/{decoding,encoding}.rb),
+  # so a fresh resolution settling on json 3.x breaks every JSON
+  # serialization path at runtime — ActiveStorage blob metadata, json
+  # columns, cache entries (first observed as CI :db-group ArgumentErrors,
+  # "unknown keyword: quirks_mode"). Cap below 3.0 until the pinned Rails
+  # line ships json-3 compatibility; drop this constraint with it.
+  spec.add_dependency "json", ">= 2.0", "< 3.0"
+
   # Development dependencies
   spec.add_development_dependency "bundler-audit", "~> 0.9"
   spec.add_development_dependency "rspec-rails", "~> 6.0"

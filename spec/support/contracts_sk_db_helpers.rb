@@ -50,6 +50,12 @@ unless defined?(Decidim::User)
   module Decidim
     User = Class.new(ActiveRecord::Base) do
       self.table_name = "decidim_users"
+
+      # The demo-seed rake task resolves its tenants through this
+      # association (find_or_create_by!(organization: ...) → the FK), the
+      # same shape the real Decidim::User carries. Optional so the plain
+      # `Decidim::User.create!` author stand-ins keep working.
+      belongs_to :organization, foreign_key: "decidim_organization_id", optional: true
     end
   end
 end
@@ -83,7 +89,11 @@ RSpec.shared_context "contracts_sk db support" do
   end
 
   let(:organization) { Decidim::Organization.create! }
-  let(:author) { Decidim::User.create! }
+  # The author stand-in carries the shared organization: the real
+  # Decidim::User always belongs to one, and the commands' tenancy guards
+  # (CreateContract's user.organization == organization check) consult it —
+  # a bare row would silently skip the guard the specs are meant to pin.
+  let(:author) { Decidim::User.create!(organization: organization) }
 
   def contract_attributes(overrides = {})
     {
@@ -134,9 +144,33 @@ RSpec.configure do |config|
     ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 
     # Stand-in tenants/authors for the engine's prefixed organization/user
-    # foreign keys: the real tables live in a full Decidim app.
-    ActiveRecord::Base.connection.create_table(:decidim_organizations, &:timestamps)
-    ActiveRecord::Base.connection.create_table(:decidim_users, &:timestamps)
+    # foreign keys: the real tables live in a full Decidim app. Beyond the
+    # timestamps-only shape the earlier groups needed, the columns mirror
+    # what the demo-seed rake task writes (the seed-task spec runs the REAL
+    # task against the stand-ins): Decidim stores organization names and
+    # locale lists as JSON, and demo_user! fills the named user columns.
+    ActiveRecord::Base.connection.create_table :decidim_organizations do |t|
+      t.timestamps
+      t.json :name
+      t.string :host
+      t.json :available_locales
+      t.string :default_locale
+      t.string :reference_prefix
+      t.integer :tos_version
+    end
+    ActiveRecord::Base.connection.create_table :decidim_users do |t|
+      t.timestamps
+      t.bigint :decidim_organization_id
+      t.string :email
+      t.string :name
+      t.string :nickname
+      t.string :tos_agreement
+      t.integer :accepted_tos_version
+      t.string :password
+      t.boolean :admin, default: false, null: false
+      t.datetime :admin_terms_accepted_at
+      t.datetime :confirmed_at
+    end
 
     # The ActiveStorage tables a host app owns (see the helper's comment):
     # built fresh per example so every :db group can cascade a contract

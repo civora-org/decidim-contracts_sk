@@ -15,6 +15,37 @@
     </div>
   </section>
 
+  <%# CRZ-mirror provenance block (civora-org/civora-platform#88). ADR-002
+      rule 1: mirrored records are externally confirmed data, never a legal
+      publication — the canonical record lives at crz.gov.sk. ADR-008
+      decisions 4/6: the mirror's freshness is signalled (never implied to
+      be real-time) and the source attribution is preserved verbatim. The
+      block covers the whole record — the CRZ-sourced content fields above
+      render unchanged. Editorial records never render it. The stale line
+      appears only when mirror_stale? fires (failed re-import, unprovable
+      freshness or age beyond Decidim::ContractsSk.stale_after). Styling
+      stays inside the file's compiled Tailwind vocabulary (the host CSS is
+      JIT-compiled): the separated-block border idiom of the version
+      history, gray body text, emphasis via the existing
+      font-semibold/text-black utilities — no new class names. %>
+  <% if imported_contract?(@contract) %>
+    <section class="mt-8 border-t border-gray-3 pt-4">
+      <div class="font-semibold"><%= t("decidim.contracts_sk.provenance.badge") %></div>
+      <% if @contract.imported_at.present? %>
+        <%# Deterministic ISO rendering, same rule as the metadata line above. %>
+        <div class="text-sm text-gray-2">
+          <%= t("decidim.contracts_sk.provenance.imported_on") %> <%= @contract.imported_at.to_date.to_fs(:db) %>
+        </div>
+      <% end %>
+      <% if mirror_stale?(@contract) %>
+        <%# ADR-008 D4 stale signal: visually distinct within the compiled
+            vocabulary — dark emphasized text against the block's gray body. %>
+        <div class="text-md text-black font-semibold mt-4"><%= t("decidim.contracts_sk.provenance.stale") %></div>
+      <% end %>
+      <p class="text-sm text-gray-2 mt-4"><%= t("decidim.contracts_sk.provenance.note") %></p>
+    </section>
+  <% end %>
+
   <section class="mt-8">
     <%# Key/value data uses Tailwind utilities directly — Decidim core 0.31
         ships no styled dl component (the in-gem idiom is classes on the

@@ -117,7 +117,10 @@ RSpec.describe "admin CRZ import", type: :request do
   end
 
   describe "allowed paths", :db do
-    let(:author) { Decidim::User.create! }
+    # The current_user belongs to the stubbed organization, like a real
+    # signed-in editor — the import's actor/authorship checks read
+    # actor.organization (see the shared :db support's author note).
+    let(:author) { Decidim::User.create!(organization: organization) }
 
     # The :db group's current_user is a REAL persistence record (the author
     # column target), so the resolver decision is decoupled from the user:
