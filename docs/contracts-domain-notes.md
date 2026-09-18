@@ -74,6 +74,12 @@ consumed by the import arc since #86 (ADR-008,
   (editorial records carry no import lifecycle). The import arc stamps it;
   until then it is filled by hand.
 
+Since civora-org/civora-platform#88 the provenance columns are consumed by
+the public catalogue as well: `source` gates the "Externally confirmed"
+badge, and `imported_at`/`import_status` drive the detail-page stale
+indicator (threshold `Decidim::ContractsSk.stale_after`, ADR-008 decision
+4). Read-only presentation — no new writers, no schema change.
+
 ## Schema consequences landed in #56 (M02-02-B)
 
 `decidim_contracts_sk_parties` and `decidim_contracts_sk_documents` follow

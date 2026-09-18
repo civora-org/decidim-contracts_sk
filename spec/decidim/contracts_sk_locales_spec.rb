@@ -259,6 +259,33 @@ module LocaleContract
       "pagination.aria_label" => "Stránkovanie"
     }
   }.freeze
+
+  # The public provenance labels for CRZ-mirrored records per locale
+  # (civora-org/civora-platform#88, ADR-002 rule 1 + ADR-008 decisions
+  # 4/6): the externally-confirmed badge, the mirror date line, the stale
+  # notice and the preserved attribution paragraph (ekosystem terms:
+  # "informatívny charakter, nie právne záväzné" — the wording is legal
+  # surface, pinned verbatim in both locales).
+  PROVENANCE_LABELS = {
+    en: {
+      "provenance.badge" => "Externally confirmed",
+      "provenance.imported_on" => "Mirrored from the CRZ register on",
+      "provenance.stale" => "This mirror may be out of date — verify the canonical record at crz.gov.sk.",
+      "provenance.note" => "These fields mirror public metadata of the Slovak Central Register of Contracts (CRZ), " \
+                           "obtained via ekosystem.slovensko.digital. They are externally confirmed information, not " \
+                           "a legal publication; the canonical record lives at crz.gov.sk. Source data is provided " \
+                           "for informational purposes only."
+    },
+    sk: {
+      "provenance.badge" => "Externe potvrdené údaje",
+      "provenance.imported_on" => "Zrkadlené z registra CRZ dňa",
+      "provenance.stale" => "Toto zrkadlenie môže byť neaktuálne — overte pôvodný záznam na crz.gov.sk.",
+      "provenance.note" => "Tieto polia zrkadlia verejné metadáta Slovenského centra zmluv (CRZ) získané cez " \
+                           "ekosystem.slovensko.digital. Sú externe potvrdeným údajom, nie právnou publikáciou; " \
+                           "autoritatívny záznam sa nachádza na crz.gov.sk. Zdrojové údaje majú len informatívny " \
+                           "charakter."
+    }
+  }.freeze
   # rubocop:enable Style/FormatStringToken
 
   # The exact expected leaf-key surface under decidim.contracts_sk, including
@@ -445,7 +472,11 @@ module LocaleContract
     "pagination.aria_label",
     "pagination.next",
     "pagination.page_count",
-    "pagination.prev"
+    "pagination.prev",
+    "provenance.badge",
+    "provenance.imported_on",
+    "provenance.note",
+    "provenance.stale"
   ].freeze
 
   def locale_file(locale)
@@ -707,6 +738,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the pagination labels in both locales (civora-org/civora-platform#86b)" do
       LocaleContract::PAGINATION_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the provenance labels in both locales (civora-org/civora-platform#88)" do
+      LocaleContract::PROVENANCE_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

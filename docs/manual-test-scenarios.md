@@ -22,6 +22,8 @@ What you get (idempotent — safe to re-run):
 | DEMO-2026-005    | rejected    | terminal |
 | DEMO-2026-006    | published   | parties, 2 documents (PDF + TXT), draft amendment, CRZ URL |
 | DEMO-2026-007    | archived    | publicly visible, not editable |
+| DEMO-2026-008    | published   | **CRZ import** (fictional): fresh mirror — provenance badge, no stale line; 2 parties |
+| DEMO-2026-009    | published   | **CRZ import** (fictional): stale mirror — `imported_at` 60 days back, stale line expected |
 | DEMO-OTHER-001   | published   | **another organization** — must be invisible |
 
 Users: `contracts-admin@example.org`, `contracts-editor@example.org` — both
@@ -41,7 +43,7 @@ catalogue index is the mount root; detail is `/:id`.
 
 | # | Request | Expected |
 |---|---------|----------|
-| P1 | `GET /zmluvy/` | index lists the published records (DEMO-2026-006, plus anything you published in section 3); localized empty state if no published rows |
+| P1 | `GET /zmluvy/` | index lists the published records (DEMO-2026-006 plus the two imported records DEMO-2026-008/009 — three cards out of the box — and anything you publish in section 3); localized empty state if no published rows |
 | P2 | `GET /zmluvy/` as JSON-less browser without JS | same, server-rendered |
 | P3 | detail for DEMO-2026-006 | content fields, parties, downloadable documents render |
 | P4 | detail for DEMO-2026-007 | **404** — the catalogue scope pins `published` only; archived visibility is a deferred decision (`app/controllers/decidim/contracts_sk/contracts_controller.rb`) |
@@ -56,6 +58,22 @@ curl -s -o /dev/null -w "%{http_code}\n" "$BASE/"                       # P1 →
 curl -s -o /dev/null -w "%{http_code}\n" "$BASE/999999"                 # P7 → 404
 ```
 
+### 2a. Provenance and freshness walkthrough (civora-org/civora-platform#88)
+
+CRZ-mirrored demo records (all fictional — no real CRZ ids, companies or
+persons). Re-seeding never refreshes `imported_at`, so DEMO-2026-009 stays
+stale forever by design. DEMO-2026-008 stays fresh only within the default
+48 h of seeding; after that it correctly shows the stale line — destroy it
+and re-run the seed task to re-demo the fresh path.
+
+| # | Request | Expected |
+|---|---------|----------|
+| P9 | detail for DEMO-2026-008 (fresh mirror) | provenance block: "Externally confirmed" badge, "Mirrored from the CRZ register on \<seed date\>", attribution note (ekosystem.slovensko.digital, informational only, canonical record at crz.gov.sk); **no** stale line |
+| P10 | detail for DEMO-2026-009 (stale mirror) | badge + attribution + the **stale line** ("This mirror may be out of date — verify the canonical record at crz.gov.sk.") — `imported_at` is 60 days old, beyond the default 48 h threshold |
+| P11 | index cards of DEMO-2026-008/009 | "Externally confirmed" badge + mirror date on each card; **no** stale indicator on the index (detail-only) |
+| P12 | detail for DEMO-2026-006 (editorial) | **no** provenance content anywhere — badge, mirror date, attribution and stale lines all absent |
+| P13 | switch the host locale to `sk` | P9–P12 render the Slovak wording ("Externe potvrdené údaje", "Zrkadlené z registra CRZ dňa", …) |
+
 ## 3. Admin scenarios
 
 Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
@@ -63,7 +81,7 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 | # | Action | Expected |
 |---|--------|----------|
 | A1 | `GET /zmluvy/admin/contracts` unauthenticated | redirect to sign-in |
-| A2 | index as admin | all org contracts, states shown (7 seeded + any created in A3) |
+| A2 | index as admin | all org contracts, states shown (9 seeded + any created in A3) |
 | A3 | create (POST `new`) with title+reference | lands in `draft` |
 | A4 | edit DEMO-2026-001 (draft) | editable; state/author/organization not form-writable |
 | A5 | edit DEMO-2026-006 (published) | update refused — not editable |

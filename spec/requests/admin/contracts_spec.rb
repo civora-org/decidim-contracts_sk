@@ -316,7 +316,10 @@ RSpec.describe "admin contracts CRUD", type: :request do
   end
 
   describe "allowed and validation paths", :db do
-    let(:author) { Decidim::User.create! }
+    # The current_user belongs to the stubbed organization, like a real
+    # signed-in editor — CreateContract's tenancy guard reads
+    # user.organization (see the shared :db support's author note).
+    let(:author) { Decidim::User.create!(organization: organization) }
     let(:valid_params) { { contract: { title: "Road reconstruction", reference: "ZP-2026-002" } } }
 
     # Role control per group: the resolver defaults to editor, which keeps

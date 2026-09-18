@@ -41,6 +41,11 @@ sk:
         next: "Ďalšia"
         page_count: "Strana %{current} z %{total}"
         aria_label: "Stránkovanie"
+      provenance:
+        badge: "Externe potvrdené údaje"
+        imported_on: "Zrkadlené z registra CRZ dňa"
+        stale: "Toto zrkadlenie môže byť neaktuálne — overte pôvodný záznam na crz.gov.sk."
+        note: "Tieto polia zrkadlia verejné metadáta Slovenského centra zmluv (CRZ) získané cez ekosystem.slovensko.digital. Sú externe potvrdeným údajom, nie právnou publikáciou; autoritatívny záznam sa nachádza na crz.gov.sk. Zdrojové údaje majú len informatívny charakter."
       contracts:
         index:
           title: "Zmluvy"

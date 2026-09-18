@@ -139,6 +139,33 @@ engine never fabricates synthetic users.
 deletes anything. Existing records keep their last-good mirror data; only
 `import_status` may flip to `failed` as a signal.
 
+## Freshness UX (civora-org/civora-platform#88)
+
+The public catalogue surfaces the provenance and freshness metadata the
+import writes — mirrors are labelled, never implied to be real-time
+(ADR-002 rule 1, ADR-008 decisions 4/6):
+
+- **Index card:** the "Externally confirmed" badge plus the mirror date
+  (`imported_at`, rendered as an ISO date). No stale indicator — cards
+  stay lean.
+- **Detail page:** a provenance block with the badge, the mirror date and
+  the preserved attribution note (data via ekosystem.slovensko.digital;
+  informational only; the canonical record lives at crz.gov.sk). When the
+  mirror is stale, the block additionally warns readers to verify the
+  canonical record.
+- **Stale rule (ADR-008 decision 4):** a mirror is stale when its
+  `imported_at` is older than `Decidim::ContractsSk.stale_after` (default
+  172 800 seconds = 48 h, twice the recommended nightly cadence), when its
+  last import was stamped `import_status="failed"` (the stale-fallback
+  signal above — the data is intact but the last re-import could not prove
+  it current), or when it carries no import timestamp at all (freshness
+  cannot be proven). Hosts tune the threshold in an initializer; Integer
+  seconds and `ActiveSupport::Duration` both work:
+
+  ```ruby
+  Decidim::ContractsSk.stale_after = 12.hours
+  ```
+
 ## Manual resolution steps
 
 - **Editorial collisions** (a manually created record holds a CRZ id):
@@ -176,7 +203,9 @@ deletes anything. Existing records keep their last-good mirror data; only
   attribution clauses; the CRZ dataset there is under the general minimal
   terms, not a named CC license. Keep the source attribution when
   presenting imported data, and present it as externally confirmed — never
-  as a legal publication.
+  as a legal publication. The catalogue's provenance block surfaces this
+  attribution verbatim in both shipped locales (civora-org/civora-platform
+  #88).
 
 ## Non-goals (V0)
 
@@ -186,5 +215,3 @@ deletes anything. Existing records keep their last-good mirror data; only
 - No amendment linkage — EK's `kind_id`/`reference` hints are officially
   unreliable; treat any future linking as a separate, heuristic arc.
 - No engine-shipped background jobs — the host schedules the rake task.
-- No per-record freshness UI yet — `imported_at` is written and available;
-  presenting it is a catalogue-layer concern.

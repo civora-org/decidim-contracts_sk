@@ -133,6 +133,13 @@ RSpec.describe "public contracts catalogue", type: :request do
       title: "Road reconstruction",
       reference: "ZP-2026-001",
       published_at: Time.new(2026, 9, 1, 12, 0, 0),
+      # Provenance defaults of an editorial record (civora-org/civora-platform
+      # #88): every card renders through imported_contract?/the provenance
+      # line, so the double must answer the provenance surface even when the
+      # example does not care about it.
+      source: "editorial",
+      imported_at: nil,
+      import_status: nil,
       to_param: "7",
       **overrides
     )
@@ -304,6 +311,34 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response.body).to include("page=2")
       end
     end
+
+    it "labels a crz-mirrored card with the provenance badge and import date (civora-org/civora-platform#88)" do
+      stub_published_contracts(
+        PaginableStub.new([published_contract_double(source: "crz",
+                                                     imported_at: Time.new(2026, 9, 10, 8, 0, 0),
+                                                     import_status: "succeeded")])
+      )
+
+      get "/"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Externally confirmed")
+        expect(response.body).to include("2026-09-10")
+        # The stale indicator is deliberately detail-only (issue #88): cards
+        # stay lean even for stale mirrors.
+        expect(response.body).not_to include("may be out of date")
+      end
+    end
+
+    it "renders no provenance label on an editorial card (civora-org/civora-platform#88)" do
+      stub_published_contracts(PaginableStub.new([published_contract_double]))
+
+      get "/"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("Externally confirmed")
+    end
   end
 
   describe "contract detail (civora-org/civora-platform#63)" do
@@ -313,7 +348,16 @@ RSpec.describe "public contracts catalogue", type: :request do
     # amendment association (published scope + newest-version-first
     # order); the offline double mirrors that chain (#65).
     let(:amendments) { [] }
-    let(:contract) do
+    let(:contract) { detail_contract_double }
+
+    # Builds the detail double (civora-org/civora-platform#88: every render
+    # consults the provenance predicates, so the default answers the
+    # provenance surface of an editorial record). The provenance examples
+    # below override the mirror fields. Declarative fixture list, not
+    # logic — the same reason .rubocop.yml exempts demo-data builders from
+    # the length budget.
+    # rubocop:disable Metrics/MethodLength
+    def detail_contract_double(overrides = {})
       double(
         title: "Road reconstruction",
         reference: "ZP-2026-001",
@@ -324,11 +368,16 @@ RSpec.describe "public contracts catalogue", type: :request do
         signed_on: Date.new(2026, 9, 1),
         effective_from: Date.new(2026, 8, 15),
         crz_url: "https://crz.gov.sk/record/123",
+        source: "editorial",
+        imported_at: nil,
+        import_status: nil,
         parties: parties,
         documents: documents,
-        amendments: double(published: double(order: amendments))
+        amendments: double(published: double(order: amendments)),
+        **overrides
       )
     end
+    # rubocop:enable Metrics/MethodLength
 
     it "renders the published-safe content fields and the associated parties" do
       parties << double(role: "object", name: "Obec Zelen", ico: "12345678", address: nil)
@@ -410,6 +459,98 @@ RSpec.describe "public contracts catalogue", type: :request do
       # A document without a file has neither a link nor a size to show —
       # it is skipped, and the section falls back to the empty state.
       expect(response.body).to include("No documents have been attached to this contract.")
+    end
+
+    describe "CRZ-mirror provenance block (civora-org/civora-platform#88)" do
+      # The offline mirror cases drive the helper's decision surface: the
+      # helper compares against Time.current, so a fixed past relative
+      # timestamp (X.hours/days.ago) is deterministic without freezing
+      # time — fresh stays fresh and stale stays stale on every run.
+      it "renders badge, import date and attribution for a fresh crz mirror" do
+        imported_at = 1.hour.ago
+        stub_published_contracts(
+          double(find: detail_contract_double(source: "crz", imported_at: imported_at,
+                                              import_status: "succeeded"))
+        )
+
+        get "/7"
+
+        expect(response).to have_http_status(:ok)
+        aggregate_failures do
+          expect(response.body).to include("Externally confirmed")
+          expect(response.body).to include("Mirrored from the CRZ register on")
+          expect(response.body).to include(imported_at.to_date.to_fs(:db))
+          # Attribution preserved verbatim (ADR-008 decision 6 / ekosystem
+          # terms).
+          expect(response.body).to include("ekosystem.slovensko.digital")
+          expect(response.body).to include("not a legal publication")
+          # Fresh within the default 48 h stale_after: no stale notice.
+          expect(response.body).not_to include("may be out of date")
+        end
+      end
+
+      it "renders no provenance content for an editorial record" do
+        stub_published_contracts(double(find: contract))
+
+        get "/7"
+
+        expect(response).to have_http_status(:ok)
+        aggregate_failures do
+          expect(response.body).not_to include("Externally confirmed")
+          expect(response.body).not_to include("Mirrored from the CRZ register on")
+          expect(response.body).not_to include("ekosystem.slovensko.digital")
+        end
+      end
+
+      it "renders the stale line when imported_at exceeds the stale threshold (ADR-008 D4)" do
+        stub_published_contracts(
+          double(find: detail_contract_double(source: "crz", imported_at: 3.days.ago,
+                                              import_status: "succeeded"))
+        )
+
+        get "/7"
+
+        expect(response).to have_http_status(:ok)
+        aggregate_failures do
+          # 3 days > the 48 h default stale_after: the badge still renders,
+          # but with the out-of-date warning instead of silence.
+          expect(response.body).to include("Externally confirmed")
+          expect(response.body).to include("may be out of date")
+        end
+      end
+
+      it "renders the stale line when the last import failed, even with a recent timestamp" do
+        stub_published_contracts(
+          double(find: detail_contract_double(source: "crz", imported_at: 1.hour.ago,
+                                              import_status: "failed"))
+        )
+
+        get "/7"
+
+        expect(response).to have_http_status(:ok)
+        # A failed re-import cannot prove the mirror current (the
+        # stale-fallback signal, docs/crz-import.md) — recency is not enough.
+        expect(response.body).to include("may be out of date")
+      end
+
+      it "renders the stale line and no mirror date when imported_at is blank (freshness cannot be proven)" do
+        stub_published_contracts(
+          double(find: detail_contract_double(source: "crz", imported_at: nil,
+                                              import_status: "succeeded"))
+        )
+
+        get "/7"
+
+        expect(response).to have_http_status(:ok)
+        aggregate_failures do
+          # A crz record without an import timestamp counts as stale (the
+          # helper fails closed — freshness cannot be proven), and the view
+          # guards the mirror-date line on imported_at presence, so no
+          # date-less "Mirrored from..." line may render either.
+          expect(response.body).to include("may be out of date")
+          expect(response.body).not_to include("Mirrored from the CRZ register on")
+        end
+      end
     end
 
     it "raises the not-found exception for a nonexistent id through the published scope" do
@@ -567,6 +708,30 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response.body).to include("Obec Zelen")
         expect(response.body).to include("Contractor")
         expect(response.body).to include("Zeleň a.s.")
+      end
+    end
+
+    it "renders the provenance block end-to-end for a real crz-sourced record (civora-org/civora-platform#88)" do
+      imported_at = Time.current
+      contract = create_contract!(
+        title: "Imported road", reference: "ZP-IMP-001",
+        source: "crz", source_id: "900000001",
+        imported_at: imported_at, import_status: "succeeded",
+        crz_url: "https://crz.gov.sk/zmluva/900000001/"
+      )
+
+      get "/#{contract.id}"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Externally confirmed")
+        expect(response.body).to include("Mirrored from the CRZ register on")
+        expect(response.body).to include(imported_at.to_date.to_fs(:db))
+        expect(response.body).to include("ekosystem.slovensko.digital")
+        expect(response.body).to include("not a legal publication")
+        # A fresh timestamp relative to the run (the helper compares against
+        # Time.current): no stale notice.
+        expect(response.body).not_to include("may be out of date")
       end
     end
 

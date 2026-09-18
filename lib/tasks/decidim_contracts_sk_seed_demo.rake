@@ -11,6 +11,10 @@
 #     do exactly that);
 #   - contract records covering every lifecycle state, including one of
 #     another organization to prove tenant isolation;
+#   - two synthetic CRZ-imported records (civora-org/civora-platform#88) to
+#     exercise the public catalogue's provenance labelling: DEMO-2026-008
+#     (fresh mirror) and DEMO-2026-009 (deliberately stale mirror —
+#     imported_at 60 days back, beyond the default 48 h threshold);
 #   - object/contractor parties, documents (metadata + attached demo files
 #     from the engine's spec/fixtures/files), and numbered amendments.
 #
@@ -44,7 +48,7 @@ namespace :decidim_contracts_sk do
 
     contracts = {}
 
-    seed = lambda do |ref:, title:, state:, **content|
+    seed = lambda do |ref:, title:, state:, imported_at: nil, **content|
       record = Decidim::ContractsSk::Contract.find_or_initialize_by(
         organization: organization,
         reference: ref
@@ -56,6 +60,12 @@ namespace :decidim_contracts_sk do
         **content
       )
       record.published_at = Time.current if state == "published" && record.published_at.blank?
+      # Freshness metadata for the synthetic CRZ mirrors (#88) is stamped
+      # only on FIRST creation: re-seeding must never refresh a mirror's
+      # imported_at (the import ETL's checksum no-op gives real mirrors the
+      # same guarantee) — otherwise the deliberately stale DEMO-2026-009
+      # would silently heal itself on every demo re-seed.
+      record.imported_at = imported_at if imported_at && record.new_record?
       record.save!
       contracts[ref] = record
       record
@@ -116,6 +126,39 @@ namespace :decidim_contracts_sk do
       amount: BigDecimal("5000.00")
     )
 
+    # Synthetic CRZ-imported records (civora-org/civora-platform#88): a
+    # fresh mirror and a deliberately stale one, so the catalogue's
+    # provenance badge, imported date and stale indicator are demonstrable
+    # without running the real import. Provenance follows the ETL's row
+    # shape (source/source_id/import_status/checksum); source_id mirrors
+    # the CRZ numeric id (stored in the string column), and the canonical
+    # record link follows the crz.gov.sk/zmluva/<ID>/ shape. All data is
+    # fictional — no real CRZ ids, companies or persons.
+    seed.call(
+      ref: "DEMO-2026-008", title: "Modernizácia verejného osvetlenia — import z CRZ",
+      state: "published",
+      subject_matter: "Dodávka a montáž LED svietidiel v intraviláne obce",
+      amount: BigDecimal("78400.00"), signed_on: Date.new(2026, 5, 12),
+      effective_from: Date.new(2026, 6, 1),
+      crz_url: "https://crz.gov.sk/zmluva/900000001/",
+      source: "crz", source_id: 900_000_001,
+      import_status: "succeeded",
+      imported_at: Time.current,
+      checksum: Digest::SHA256.hexdigest("demo-900000001")
+    )
+
+    seed.call(
+      ref: "DEMO-2026-009", title: "Úprava kúpaliska — import z CRZ (zastarané)",
+      state: "published",
+      subject_matter: "Rekonštrukcia letného kúpaliska — výmena technológie",
+      amount: BigDecimal("31200.00"),
+      crz_url: "https://crz.gov.sk/zmluva/900000002/",
+      source: "crz", source_id: 900_000_002,
+      import_status: "succeeded",
+      imported_at: 60.days.ago, # well beyond the default 48 h stale_after
+      checksum: Digest::SHA256.hexdigest("demo-900000002")
+    )
+
     # Cross-tenant control record: must be invisible (404) from the seeded org.
     Decidim::ContractsSk::Contract.find_or_create_by!(organization: other_org, reference: "DEMO-OTHER-001") do |c|
       c.title = "Zmluva inej organizácie"
@@ -134,6 +177,13 @@ namespace :decidim_contracts_sk do
         { role: "object", name: "Mesto Demo (objekt zmluvy)", ico: "00000001", address: "Hlavná 1, 811 01 Bratislava" },
         { role: "contractor", name: "Odpadové služby Demo a.s.", ico: "00000003",
           address: "Skládková 9, 821 04 Bratislava" }
+      ],
+      # Parties for the fresh CRZ mirror: the ETL mirrors exactly the two
+      # register parties (objednávateľ -> object, dodávateľ -> contractor).
+      "DEMO-2026-008" => [
+        { role: "object", name: "Obec Ukážková", ico: "00000004", address: "Ukážková 1, 900 00 Ukážkovo" },
+        { role: "contractor", name: "Svetlá Demo, s.r.o.", ico: "00000005",
+          address: "Priemyselná 12, 831 02 Bratislava" }
       ]
     }
     demo_parties.each do |ref, parties|
@@ -183,6 +233,8 @@ namespace :decidim_contracts_sk do
 
     puts "Seeded demo data for organization ##{organization.id}:"
     contracts.each_value { |c| puts "  [#{c.state}] #{c.reference} — #{c.title}" }
+    puts "  imported (CRZ mirrors, provenance-labelled in the catalogue): " \
+         "DEMO-2026-008 (fresh), DEMO-2026-009 (stale — imported 60 days ago)"
     puts "  users: #{admin.email} (admin), #{editor.email} (editor persona)"
     puts "Public catalogue: /<mount>/ — published-only; DEMO-OTHER-001 must 404."
   end
