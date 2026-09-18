@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [1.1.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.0.0...v1.1.0) (2026-09-18)
+
+
+### Features
+
+* **admin:** paginate and filter contracts indexes (civora-org/civora-platform[#86](https://github.com/civora-org/decidim-contracts_sk/issues/86)b) ([#72](https://github.com/civora-org/decidim-contracts_sk/issues/72)) ([57b59a6](https://github.com/civora-org/decidim-contracts_sk/commit/57b59a6d11099e826ef19b07d1592b94638caeb0))
+* **catalogue:** add free-text search to the public contracts index ([#74](https://github.com/civora-org/decidim-contracts_sk/issues/74)) ([0515307](https://github.com/civora-org/decidim-contracts_sk/commit/0515307fd81e45efabd1d6a70e78044025650c18))
+* **crz-import:** add idempotent CRZ import ETL (civora-org/civora-platform[#86](https://github.com/civora-org/decidim-contracts_sk/issues/86)) ([#71](https://github.com/civora-org/decidim-contracts_sk/issues/71)) ([6a84345](https://github.com/civora-org/decidim-contracts_sk/commit/6a843454aefc81d73b487c7e0f2f568480594b1e))
+* **menu:** register public and admin menu entries (civora-org/civora-platform[#86](https://github.com/civora-org/decidim-contracts_sk/issues/86)c) ([#73](https://github.com/civora-org/decidim-contracts_sk/issues/73)) ([8da0eef](https://github.com/civora-org/decidim-contracts_sk/commit/8da0eef121425d1ebc75d78a13e62a8f59000950))
+* **views:** apply Decidim class pass, fix double form labels, redesign public detail (M03) ([4a6ea79](https://github.com/civora-org/decidim-contracts_sk/commit/4a6ea794960ac8c3e30da7d5f8867f2a15011715))
+
 ## [1.0.0](https://github.com/civora-org/decidim-contracts_sk/compare/v0.18.0...v1.0.0) (2026-09-06)
 
 
