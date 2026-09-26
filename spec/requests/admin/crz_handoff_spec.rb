@@ -272,6 +272,21 @@ RSpec.describe "admin CRZ handoff", type: :request do
       end
     end
 
+    it "keeps the handoff section on a failed update's re-render (civora-org/civora-platform#77)" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+      post "/admin/contracts/#{contract.id}/crz_handoff"
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+
+      patch "/admin/contracts/#{contract.id}",
+            params: { contract: { title: "Road reconstruction", reference: "ZP-2026-001", amount: "abc" } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      aggregate_failures do
+        expect(response.body).to include(%(href="/admin/contracts/#{contract.id}/crz_handoff"))
+        expect(response.body).to include(%(action="/admin/contracts/#{contract.id}/crz_handoff"))
+      end
+    end
+
     it "denies an editor's generate on a non-editable contract, persisting nothing" do
       contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review"))
 
