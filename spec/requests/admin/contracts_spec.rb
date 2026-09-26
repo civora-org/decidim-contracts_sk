@@ -49,13 +49,17 @@ FakeAdminUser = Struct.new(:engine_roles, keyword_init: true)
 # offline group can pin the param handling — normalization, fallbacks, filter
 # scope, order values — without a connection. `where` records positional +
 # keyword args (the q condition carries both); `where.not` flows through a
-# bare `where` call followed by #not.
+# bare `where` call followed by #not. The #93 counters add one grouped-count
+# call on the same scope (view-render time): `group` records its argument and
+# `count` answers the grouped result — empty by default, the offline group
+# pins the CALL SHAPE, not the numbers.
 class RecordingIndexScope
   attr_reader :applied
 
   def initialize(page_result)
     @page_result = page_result
     @applied = []
+    @grouped_counts = {}
   end
 
   def where(*args, **kwargs)
@@ -71,6 +75,15 @@ class RecordingIndexScope
   def order(*args)
     @applied << [:order, args]
     self
+  end
+
+  def group(*args)
+    @applied << [:group, args]
+    self
+  end
+
+  def count
+    @grouped_counts
   end
 
   def page(num)
@@ -229,12 +242,14 @@ RSpec.describe "admin contracts CRUD", type: :request do
       expect(response).to have_http_status(:ok)
       # Unknown filter values fell back to the "any"/"all" defaults and the
       # blank q contributed no WHERE clause; the chain is the deterministic
-      # ordering plus pagination only. The array page param reaches the
-      # chain as its string form — Kaminari never sees an Array (its
-      # Integer coercion would raise on one).
+      # ordering plus pagination only, and the #93 counters add exactly one
+      # grouped-count call (view-render time, memoized across the chips).
+      # The array page param reaches the chain as its string form — Kaminari
+      # never sees an Array (its Integer coercion would raise on one).
       expect(scope.applied).to eq([
                                     [:order, [{ created_at: :desc, id: :desc }]],
-                                    [:page, "[\"2\"]"]
+                                    [:page, "[\"2\"]"],
+                                    [:group, [:state]]
                                   ])
     end
 
@@ -313,6 +328,83 @@ RSpec.describe "admin contracts CRUD", type: :request do
         # The state options reuse the contract_states.* vocabulary.
         expect(response.body).to include("Any state")
         expect(response.body).to include("Returned for changes")
+      end
+    end
+
+    it "renders a counter chip for every lifecycle state, zeros included (#93)" do
+      stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        # The grouped result is empty offline, so every chip — the full
+        # STATES-derived vocabulary, zeros rendered — shows 0, plus All.
+        expect(response.body).to include("All (0)")
+        expect(response.body).to include("Draft (0)")
+        expect(response.body).to include("In review (0)")
+        expect(response.body).to include("Returned for changes (0)")
+        expect(response.body).to include("Approved (0)")
+        expect(response.body).to include("Rejected (0)")
+        expect(response.body).to include("Published (0)")
+        expect(response.body).to include("Archived (0)")
+        # Every state chip is a state= link; the All chip is the bare path.
+        %w[draft in_review returned approved rejected published archived].each do |state|
+          expect(response.body).to include(%(href="/admin/contracts?state=#{state}"))
+        end
+        # No lifecycle filter is active, so the All chip is the one active
+        # marker in the row.
+        expect(response.body.scan("contracts-sk__counter--active").size).to eq(1)
+      end
+    end
+
+    it "renders state chips carrying the active source/q filters, active state marked (#93)" do
+      stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { state: "published", source: "crz", q: "road" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        # Clicking any state keeps the other active filters (URL fragments,
+        # same discipline as the pagination pin; url_for sorts the query).
+        %w[draft in_review returned approved rejected published archived].each do |state|
+          expect(response.body).to include(%(href="/admin/contracts?q=road&amp;source=crz&amp;state=#{state}"))
+        end
+        # The All chip drops state= but keeps the other filters.
+        expect(response.body).to include(%(href="/admin/contracts?q=road&amp;source=crz"))
+        # Exactly one chip — the filtered state's — is marked active.
+        expect(response.body.scan("contracts-sk__counter--active").size).to eq(1)
+      end
+    end
+
+    it "marks the All chip active when a garbage state param normalizes away (civora-org/civora-platform#93)" do
+      stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { state: "bogus" }
+
+      expect(response).to have_http_status(:ok)
+      # The garbage state fell back to the default view, so the All chip —
+      # not any lifecycle chip — is the active one, and no garbage value
+      # leaks into a chip href.
+      aggregate_failures do
+        expect(response.body.scan("contracts-sk__counter--active").size).to eq(1)
+        expect(response.body).not_to include("state=bogus")
+      end
+    end
+
+    it "renders the true-empty wording, never the no-matches one, unfiltered (#93)" do
+      stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("No contracts have been created yet.")
+        expect(response.body).not_to include("No contracts match the current filters.")
       end
     end
   end
@@ -745,6 +837,128 @@ RSpec.describe "admin contracts CRUD", type: :request do
       # The array page param is stringified by the controller and clamps to
       # page 1 inside Kaminari, so the single record renders.
       expect(references_in(response.body)).to eq([only.reference])
+      # The garbage params normalized away to the default (non-empty) view,
+      # so the no-matches gate (#93) stays closed — the row renders, not the
+      # filtered empty state.
+      expect(response.body).not_to include("No contracts match the current filters.")
+    end
+  end
+
+  describe "index counters and the filtered no-matches state (civora-org/civora-platform#93)", :db do
+    let(:resolver_roles) { %i[editor] }
+
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { resolver_roles }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    before do
+      migrate_engine_schema!
+
+      controller = Decidim::ContractsSk::Admin::ContractsController
+
+      allow_any_instance_of(controller).to receive(:current_user).and_return(author)
+      allow_any_instance_of(controller).to receive(:user_signed_in?).and_return(true)
+      allow_any_instance_of(controller).to receive(:current_organization).and_return(organization)
+    end
+
+    def create_contract!(overrides = {})
+      Decidim::ContractsSk::Contract.create!(contract_attributes(overrides))
+    end
+
+    # The rendered references of the index table; uniqueness guards against
+    # a reference leaking into some other part of the markup.
+    def references_in(body)
+      body.scan(/ZP-FILT-\d+/).uniq
+    end
+
+    it "renders a counter chip for every lifecycle state with the honest total" do
+      create_contract!(reference: "ZP-FILT-101")
+      create_contract!(reference: "ZP-FILT-102")
+      create_contract!(reference: "ZP-FILT-103", state: "in_review")
+      create_contract!(reference: "ZP-FILT-104", state: "approved")
+      3.times { |i| create_contract!(reference: format("ZP-FILT-%03d", i + 105), state: "published") }
+
+      get "/admin/contracts"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        # Every lifecycle state renders, zeros included (returned, rejected
+        # and archived hold no records here).
+        expect(response.body).to include("Draft (2)")
+        expect(response.body).to include("In review (1)")
+        expect(response.body).to include("Returned for changes (0)")
+        expect(response.body).to include("Approved (1)")
+        expect(response.body).to include("Rejected (0)")
+        expect(response.body).to include("Published (3)")
+        expect(response.body).to include("Archived (0)")
+        # The All chip is the sum of the per-state counts.
+        expect(response.body).to include("All (7)")
+      end
+    end
+
+    it "keeps the counters on the unfiltered totals while a filter is active" do
+      2.times { |i| create_contract!(reference: format("ZP-FILT-%03d", i + 120)) }
+      3.times { |i| create_contract!(reference: format("ZP-FILT-%03d", i + 130), state: "published") }
+
+      get "/admin/contracts", params: { state: "published" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        # The table shows only the filtered rows...
+        expect(references_in(response.body).size).to eq(3)
+        # ...but the counters stay the honest, unfiltered totals: they are
+        # navigation, not a readout of the active view.
+        expect(response.body).to include("Draft (2)")
+        expect(response.body).to include("Published (3)")
+        expect(response.body).to include("All (5)")
+        # Exactly one chip — the active state's — carries the marker.
+        expect(response.body.scan("contracts-sk__counter--active").size).to eq(1)
+      end
+    end
+
+    it "carries the active source/q filters on the state chips and the All chip" do
+      create_contract!(reference: "ZP-FILT-140")
+
+      get "/admin/contracts", params: { source: "editorial", q: "road" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        # Clicking a state keeps the active source/q filters (URL
+        # fragments; url_for sorts the query keys)...
+        expect(response.body).to include(%(href="/admin/contracts?q=road&amp;source=editorial&amp;state=draft"))
+        expect(response.body).to include(%(href="/admin/contracts?q=road&amp;source=editorial&amp;state=published"))
+        # ...and the All chip keeps them while dropping state=.
+        expect(response.body).to include(%(href="/admin/contracts?q=road&amp;source=editorial"))
+      end
+    end
+
+    it "renders the no-matches state with the clear link when active filters produce zero rows" do
+      create_contract!(reference: "ZP-FILT-150")
+
+      get "/admin/contracts", params: { state: "published", q: "nonexistent" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("No contracts match the current filters.")
+        expect(response.body).to include("Clear filters and show all contracts")
+        expect(response.body).not_to include("No contracts have been created yet.")
+        # The clear link points at the bare index path — filters dropped.
+        expect(response.body).to include(%(href="/admin/contracts"))
+      end
+    end
+
+    it "renders the true-empty state when no filter is active and the page is empty" do
+      get "/admin/contracts"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("No contracts have been created yet.")
+        expect(response.body).not_to include("No contracts match the current filters.")
+        expect(response.body).not_to include("Clear filters and show all contracts")
+      end
     end
   end
 end

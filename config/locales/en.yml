@@ -69,6 +69,8 @@ en:
           index:
             title: "Contracts"
             empty: "No contracts have been created yet."
+            counters:
+              all: "All"
             filters:
               state: "State"
               source: "Source"
@@ -81,6 +83,10 @@ en:
                 all: "All sources"
                 crz: "CRZ import"
                 editorial: "Editorial"
+            no_matches:
+              heading: "No contracts match the current filters."
+              body: "Adjust or clear the filters and try again."
+              clear: "Clear filters and show all contracts"
           new:
             title: "New contract"
           edit:

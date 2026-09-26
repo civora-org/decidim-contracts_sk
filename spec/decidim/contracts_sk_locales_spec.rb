@@ -316,6 +316,26 @@ module LocaleContract
     }
   }.freeze
 
+  # The admin index per-state counters and the filtered no-matches labels
+  # per locale (civora-org/civora-platform#93). The per-state chip labels
+  # reuse the contract_states.* vocabulary verbatim (pinned by the
+  # CONTRACT_STATE_LABELS table); only the "All" chip and the no-matches
+  # block carry their own keys.
+  ADMIN_INDEX_COUNTER_LABELS = {
+    en: {
+      "admin.contracts.index.counters.all" => "All",
+      "admin.contracts.index.no_matches.heading" => "No contracts match the current filters.",
+      "admin.contracts.index.no_matches.body" => "Adjust or clear the filters and try again.",
+      "admin.contracts.index.no_matches.clear" => "Clear filters and show all contracts"
+    },
+    sk: {
+      "admin.contracts.index.counters.all" => "Všetky",
+      "admin.contracts.index.no_matches.heading" => "Žiadna zmluva nezodpovedá aktuálnym filtrom.",
+      "admin.contracts.index.no_matches.body" => "Upravte alebo zrušte filtre a skúste to znova.",
+      "admin.contracts.index.no_matches.clear" => "Zrušiť filtre a zobraziť všetky zmluvy"
+    }
+  }.freeze
+
   # The shared pagination labels per locale (civora-org/civora-platform
   # #86b) — one surface for the admin index and the public catalogue.
   PAGINATION_LABELS = {
@@ -458,6 +478,7 @@ module LocaleContract
     "admin.contracts.import_crz.title",
     "admin.contracts.import_crz.unchanged",
     "admin.contracts.import_crz.updated",
+    "admin.contracts.index.counters.all",
     "admin.contracts.index.empty",
     "admin.contracts.index.filters.clear",
     "admin.contracts.index.filters.q",
@@ -468,6 +489,9 @@ module LocaleContract
     "admin.contracts.index.filters.state",
     "admin.contracts.index.filters.states.any",
     "admin.contracts.index.filters.submit",
+    "admin.contracts.index.no_matches.body",
+    "admin.contracts.index.no_matches.clear",
+    "admin.contracts.index.no_matches.heading",
     "admin.contracts.index.title",
     "admin.contracts.new.title",
     "admin.contracts.review_decision.decided_on",
@@ -866,6 +890,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the admin index filter labels in both locales (civora-org/civora-platform#86b)" do
       LocaleContract::ADMIN_INDEX_FILTER_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin index counter and no-matches labels in both locales (civora-org/civora-platform#93)" do
+      LocaleContract::ADMIN_INDEX_COUNTER_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

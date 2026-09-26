@@ -5,6 +5,21 @@
     </h1>
   </div>
 
+  <%# Per-state lifecycle counters (civora-org/civora-platform#93): ONE
+      grouped query over the UNFILTERED tenant scope — the chips are the
+      honest "3 awaiting review" navigation and deliberately ignore the
+      active filter. States derive from ContractLifecycle::STATES, never
+      hand-enumerated; zero counts render too (the filter form likewise
+      always lists the full vocabulary). Each chip is a GET link setting
+      state= while preserving the active source/q filters; the active
+      state's chip carries the --active marker class. %>
+  <div class="card-section">
+    <%= link_to index_counter_label(nil), index_counter_path(nil), class: index_counter_classes(nil) %>
+    <% Decidim::ContractsSk::ContractLifecycle::STATES.each do |state| %>
+      <%= link_to index_counter_label(state), index_counter_path(state), class: index_counter_classes(state) %>
+    <% end %>
+  </div>
+
   <% if allowed_to?(:create, :contract) %>
     <div class="card-section">
       <p><%= link_to t("decidim.contracts_sk.admin.contracts.new.title"), new_admin_contract_path, class: "button button__sm button__secondary" %></p>
@@ -135,7 +150,20 @@
     <% end %>
   <% else %>
     <div class="card-section">
-      <p><%= t("decidim.contracts_sk.admin.contracts.index.empty") %></p>
+      <% if index_filters_active? %>
+        <%# Filtered no-matches (civora-org/civora-platform#93): distinct
+            from the true-empty state below, gated on the NORMALIZED
+            filters — a garbage param falls back to the default view and
+            gets the true-empty wording. The clear link points at the bare
+            index path. %>
+        <h2><%= t("decidim.contracts_sk.admin.contracts.index.no_matches.heading") %></h2>
+        <p><%= t("decidim.contracts_sk.admin.contracts.index.no_matches.body") %></p>
+        <p><%= link_to t("decidim.contracts_sk.admin.contracts.index.no_matches.clear"),
+                       admin_contracts_path,
+                       class: "button button__sm button__secondary clear" %></p>
+      <% else %>
+        <p><%= t("decidim.contracts_sk.admin.contracts.index.empty") %></p>
+      <% end %>
     </div>
   <% end %>
 </div>
