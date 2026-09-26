@@ -344,6 +344,7 @@ RSpec.describe "public contracts catalogue", type: :request do
   describe "contract detail (civora-org/civora-platform#63)" do
     let(:parties) { [] }
     let(:documents) { [] }
+    let(:links) { [] }
     # The controller loads the public version history through the
     # amendment association (published scope + newest-version-first
     # order); the offline double mirrors that chain (#65).
@@ -374,6 +375,7 @@ RSpec.describe "public contracts catalogue", type: :request do
         parties: parties,
         documents: documents,
         amendments: double(published: double(order: amendments)),
+        links: links,
         **overrides
       )
     end
@@ -459,6 +461,70 @@ RSpec.describe "public contracts catalogue", type: :request do
       # A document without a file has neither a link nor a size to show —
       # it is skipped, and the section falls back to the empty state.
       expect(response.body).to include("No documents have been attached to this contract.")
+    end
+
+    describe "related links section (civora-org/civora-platform#87)" do
+      # Swaps both link-seam settings for the duration of an example and
+      # restores them afterwards (config-time only — no override may leak).
+      def with_link_seam(types, resolver)
+        original_types = Decidim::ContractsSk.supported_link_target_types
+        original_resolver = Decidim::ContractsSk.link_target_resolver
+        Decidim::ContractsSk.supported_link_target_types = types
+        Decidim::ContractsSk.link_target_resolver = resolver
+        yield
+      ensure
+        Decidim::ContractsSk.supported_link_target_types = original_types
+        Decidim::ContractsSk.link_target_resolver = original_resolver
+      end
+
+      def link_double(overrides = {})
+        double(target_type: "Decidim::Accountability::Result", target: Object.new, **overrides)
+      end
+
+      it "renders resolvable links with their seam-provided label and URL" do
+        links << link_double
+        stub_published_contracts(double(find: contract))
+        with_link_seam(["Decidim::Accountability::Result"],
+                       ->(_link) { { label: "Result 12", url: "https://host/results/12" } }) do
+          get "/7"
+        end
+
+        expect(response).to have_http_status(:ok)
+        aggregate_failures do
+          expect(response.body).to include(">Links</h2>")
+          expect(response.body).to include(%(href="https://host/results/12"))
+          expect(response.body).to include("Result 12")
+        end
+      end
+
+      it "renders a label without a URL as plain text" do
+        links << link_double
+        stub_published_contracts(double(find: contract))
+        with_link_seam(["Decidim::Accountability::Result"], ->(_link) { { label: "Result 12", url: nil } }) do
+          get "/7"
+        end
+
+        expect(response).to have_http_status(:ok)
+        aggregate_failures do
+          expect(response.body).to include(">Links</h2>")
+          expect(response.body).to include("Result 12")
+          expect(response.body).not_to include("https://host/results/12")
+        end
+      end
+
+      it "hides dangling targets and hides the section entirely when nothing remains" do
+        # A dangling link (target row gone) and an unresolvable one are both
+        # hidden — the default seam resolves nothing, so even the heading
+        # disappears (no empty state on the public page).
+        links << link_double(target: nil)
+        links << link_double(target_type: "Decidim::User")
+        stub_published_contracts(double(find: contract))
+
+        get "/7"
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include(">Links</h2>")
+      end
     end
 
     describe "CRZ-mirror provenance block (civora-org/civora-platform#88)" do
@@ -793,6 +859,60 @@ RSpec.describe "public contracts catalogue", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("No documents have been attached to this contract.")
+    end
+
+    # Swaps both link-seam settings for the duration of the block (the
+    # config-time seam — restored even when an assertion fails).
+    def with_link_seam(types, resolver)
+      original_types = Decidim::ContractsSk.supported_link_target_types
+      original_resolver = Decidim::ContractsSk.link_target_resolver
+      Decidim::ContractsSk.supported_link_target_types = types
+      Decidim::ContractsSk.link_target_resolver = resolver
+      yield
+    ensure
+      Decidim::ContractsSk.supported_link_target_types = original_types
+      Decidim::ContractsSk.link_target_resolver = original_resolver
+    end
+
+    it "renders a resolvable link end-to-end for a published record (civora-org/civora-platform#87)" do
+      contract = create_contract!
+      # A REAL polymorphic target: the harness stand-in organization row.
+      contract.links.create!(target_type: "Decidim::Organization", target_id: organization.id)
+
+      with_link_seam(["Decidim::Organization"],
+                     ->(link) { { label: "Partner municipality", url: "https://host/orgs/#{link.target_id}" } }) do
+        get "/#{contract.id}"
+      end
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include(">Links</h2>")
+        expect(response.body).to include(%(href="https://host/orgs/#{organization.id}"))
+        expect(response.body).to include("Partner municipality")
+      end
+    end
+
+    it "hides a dangling link publicly even with a configured seam, and hides the section under the default seam" do
+      contract = create_contract!
+      contract.links.create!(target_type: "Decidim::Organization", target_id: 4_242_424)
+
+      with_link_seam(["Decidim::Organization"],
+                     ->(link) { { label: "Partner municipality", url: "https://host/orgs/#{link.target_id}" } }) do
+        get "/#{contract.id}"
+      end
+
+      # The target row does not exist — the polymorphic load fails, the
+      # resolution fails closed, the section stays hidden entirely.
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(">Links</h2>")
+      expect(response.body).not_to include("Partner municipality")
+
+      # And the standalone default (no host configuration at all) hides a
+      # persisted link all the same — the engine links nothing by default.
+      get "/#{contract.id}"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(">Links</h2>")
     end
 
     it "renders the published amendments newest-first as a labelled version history (#65)" do

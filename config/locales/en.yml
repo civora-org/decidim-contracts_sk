@@ -58,6 +58,7 @@ en:
           parties_empty: "No parties have been recorded for this contract."
           documents: "Documents"
           documents_empty: "No documents have been attached to this contract."
+          links: "Links"
           versions: "Version history"
           current_version: "Current version"
           version_label: "Version %{version}"
@@ -222,6 +223,23 @@ en:
             kind: "Kind"
             file: "File"
             current_file: "Current file"
+        links:
+          index:
+            title: "Links"
+            empty: "No links have been added to this contract yet."
+            dangling: "Target no longer available — remove this link or fix the target id."
+          create:
+            success: "Link added successfully."
+            error: "Link could not be added."
+          destroy:
+            link: "Remove"
+            confirm: "Remove this link?"
+            success: "Link removed successfully."
+            error: "Link could not be removed."
+          form:
+            target_type: "Target type"
+            target_id: "Target id"
+            submit: "Add link"
         crz_handoff:
           title: "CRZ handoff"
           disclaimer: "The generated PDF is a handoff aid for the CRZ record — not a legal publication."

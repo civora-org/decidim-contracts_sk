@@ -552,6 +552,117 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — link (contract-scoped child records, civora-org/civora-platform#87)" do
+    # The link actions the writing gate covers: create and destroy — links
+    # have no editable content, so the routes expose no update. :read stays
+    # declared on the shared rule for symmetry. A plain method, not a
+    # block-level constant — the constants this file owns live at the top
+    # level.
+    def link_actions
+      %i[create destroy]
+    end
+
+    # Link decisions hang off the PARENT contract passed in
+    # context[:contract]; the same engine_roles-driven resolver swap as the
+    # sibling groups applies (restored after each example).
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "allows an editor exactly on the editable parent states, for every writing action" do
+      lifecycle::EDITABLE_STATES.each do |state|
+        link_actions.each do |link_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                       action: link_action,
+                                                                       contract: SpecContract.new(state),
+                                                                       action_subject: :link)
+
+          expect(outcome.allowed?).to be(true), "editor must #{link_action} a link on #{state}"
+        end
+      end
+    end
+
+    it "denies an editor on every non-editable parent state" do
+      (lifecycle::STATES - lifecycle::EDITABLE_STATES).each do |state|
+        link_actions.each do |link_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                       action: link_action,
+                                                                       contract: SpecContract.new(state),
+                                                                       action_subject: :link)
+
+          expect(outcome.allowed?).to be(false), "editor must not #{link_action} a link on #{state}"
+        end
+      end
+    end
+
+    it "denies a reviewer even on editable parent states (reviewers never draft)" do
+      lifecycle::EDITABLE_STATES.each do |state|
+        link_actions.each do |link_action|
+          outcome = action_for(SpecUser.new(engine_roles: %i[reviewer]), scope: :admin,
+                                                                         action: link_action,
+                                                                         contract: SpecContract.new(state),
+                                                                         action_subject: :link)
+
+          expect(outcome.allowed?).to be(false), "reviewer must not #{link_action} a link on #{state}"
+        end
+      end
+    end
+
+    it "answers link :read like the contract's :read: any engine role, any parent state" do
+      %i[draft published].each do |state|
+        editor = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :read,
+                                                                    contract: SpecContract.new(state),
+                                                                    action_subject: :link)
+        reviewer = action_for(SpecUser.new(engine_roles: %i[reviewer]), scope: :admin, action: :read,
+                                                                        contract: SpecContract.new(state),
+                                                                        action_subject: :link)
+
+        expect(editor.allowed?).to be(true), "editor must read links on #{state}"
+        expect(reviewer.allowed?).to be(true), "reviewer must read links on #{state}"
+      end
+    end
+
+    it "denies link :read for a roleless user" do
+      outcome = action_for(SpecUser.new(engine_roles: []), scope: :admin, action: :read,
+                                                           contract: SpecContract.new(:draft),
+                                                           action_subject: :link)
+
+      expect(outcome.allowed?).to be(false)
+    end
+
+    it "disallows (not unset) link writes when no contract state is reachable — fail-closed" do
+      link_actions.each do |link_action|
+        outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin,
+                                                                     action: link_action,
+                                                                     action_subject: :link)
+
+        expect(outcome.allowed?).to be(false)
+        expect(unset?(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: link_action,
+                                                              action_subject: :link)).to be(false)
+      end
+    end
+
+    it "treats String states (Rails enum getters) identically to Symbols" do
+      lifecycle::STATES.each do |state|
+        expected = lifecycle::EDITABLE_STATES.include?(state)
+
+        outcome = action_for(SpecUser.new(engine_roles: %i[editor]), scope: :admin, action: :create,
+                                                                     contract: SpecContract.new(state.to_s),
+                                                                     action_subject: :link)
+
+        expect(outcome.allowed?).to eq(expected), "String state diverged for link :create on #{state}"
+      end
+    end
+
+    it "leaves public-scope link actions unset (the catalogue has no per-link permission)" do
+      expect(unset?(nil, scope: :public, action: :read, state: :published, action_subject: :link)).to be(true)
+      expect(unset?(org_admin, scope: :public, action: :destroy, state: :draft, action_subject: :link)).to be(true)
+    end
+  end
+
   describe "admin scope — amendment (M02-05-B, civora-org/civora-platform#65)" do
     # Amendment decisions read BOTH state sources: the parent contract's
     # lifecycle state (context[:contract]) and the amendment's own draft

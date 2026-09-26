@@ -21,8 +21,14 @@
   - pull contract data from ekosystem.slovensko.digital / CRZ;
   - render contracts as a registered Decidim *component* (today the catalogue
     is a mounted engine at `/zmluvy`, not a component — both may coexist);
-  - link contracts to projects/results (platform-level concern; join table
-    design TBD).
+  - link contracts to projects/results — the engine-side half **landed**
+    (civora-org/civora-platform#87): an engine-owned polymorphic join table
+    (`decidim_contracts_sk_contract_links`; real FK on the contract, NO FK on
+    the polymorphic target — the AuditEvent precedent — unique
+    `(contract, target)` under
+    `idx_contracts_sk_contract_links_on_contract_and_target`) plus the
+    config-time `supported_link_target_types` / `link_target_resolver` seams;
+    the platform-level entity registry itself stays a platform concern.
   - The `integration` subagent in `.opencode/` is pre-positioned for this;
     no issue tracks it yet.
 

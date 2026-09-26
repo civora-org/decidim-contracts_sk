@@ -62,6 +62,15 @@ Decidim::ContractsSk::Engine.routes.draw do
       resources :amendments, only: %i[index new create edit update destroy] do
         member { post :publish }
       end
+
+      # Per-contract project/result link management (M01-87,
+      # civora-org/civora-platform#87): nested like the siblings, but with
+      # only the create/destroy surface — links carry no editable content,
+      # so there is no index/new/edit/update page (the contract's edit page
+      # lists the links and hosts the add form, document-style). Tenancy is
+      # derived through the parent contract; the controller loads both
+      # records from tenant-scoped associations before the permission check.
+      resources :links, only: %i[create destroy]
     end
   end
 

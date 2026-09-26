@@ -58,6 +58,7 @@ sk:
           parties_empty: "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."
           documents: "Dokumenty"
           documents_empty: "K tejto zmluve nie sú pripojené žiadne dokumenty."
+          links: "Odkazy"
           versions: "História verzií"
           current_version: "Aktuálna verzia"
           version_label: "Verzia %{version}"
@@ -222,6 +223,23 @@ sk:
             kind: "Typ"
             file: "Súbor"
             current_file: "Aktuálny súbor"
+        links:
+          index:
+            title: "Odkazy"
+            empty: "K tejto zmluve neboli pridané žiadne odkazy."
+            dangling: "Cieľ už nie je dostupný — odstráňte tento odkaz alebo opravte ID cieľa."
+          create:
+            success: "Odkaz bol úspešne pridaný."
+            error: "Odkaz sa nepodarilo pridať."
+          destroy:
+            link: "Odstrániť"
+            confirm: "Odstrániť tento odkaz?"
+            success: "Odkaz bol úspešne odstránený."
+            error: "Odkaz sa nepodarilo odstrániť."
+          form:
+            target_type: "Typ cieľa"
+            target_id: "ID cieľa"
+            submit: "Pridať odkaz"
         crz_handoff:
           title: "Odovzdanie do CRZ"
           disclaimer: "Vygenerovaný PDF je pomôcka na odovzdanie do CRZ — nie právna publikácia."

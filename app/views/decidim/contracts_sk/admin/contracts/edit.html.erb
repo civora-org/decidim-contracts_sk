@@ -74,6 +74,99 @@
   <% end %>
 </div>
 
+<%# Per-contract project/result link management (M01-87,
+    civora-org/civora-platform#87): the route set has no link index, so the
+    contract's edit page is the hub — it lists the links and carries the
+    remove controls, permission-gated exactly like the pages themselves.
+    A link whose target no longer resolves (dangling polymorphic row or an
+    unresolvable type) renders the localized dangling flag so editors can
+    clean it up. The add form is plain (no JS picker): a target-type select
+    built from the config-time whitelist and a target-id text field. When
+    the host has not configured a supported-type vocabulary, the form stays
+    hidden — a standalone engine cannot link anything, by design. %>
+<div class="card">
+  <div class="card-divider">
+    <h2 class="card-title">
+      <%= t("decidim.contracts_sk.admin.links.index.title") %>
+    </h2>
+  </div>
+
+  <% if allowed_to?(:create, :link, contract: @contract) && Decidim::ContractsSk.supported_link_target_types.any? %>
+    <div class="card-section">
+      <%= form_with url: admin_contract_links_path(@contract), method: :post, html: { class: "form form-defaults" } do |form| %>
+        <div class="form__wrapper">
+          <% type_options = Decidim::ContractsSk.supported_link_target_types.map { |type| [type, type] } %>
+          <div class="row column">
+            <%= form.select :target_type, type_options,
+                            { label: t("decidim.contracts_sk.admin.links.form.target_type"),
+                              prompt: true },
+                            id: "link_target_type", name: "link[target_type]" %>
+          </div>
+          <div class="row column">
+            <%= form.text_field :target_id,
+                                label: t("decidim.contracts_sk.admin.links.form.target_id"),
+                                label_options: { for: "link_target_id" },
+                                id: "link_target_id", name: "link[target_id]" %>
+          </div>
+          <%= form.submit t("decidim.contracts_sk.admin.links.form.submit"),
+                          class: "button button__sm button__secondary" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Single scoped relation for both the presence check and the table —
+      one assignment, one ordering, no divergent re-loads. %>
+  <% links = @contract.links.order(:id) %>
+  <% if links.any? %>
+    <div class="table-scroll">
+      <table class="table-list">
+        <thead>
+          <tr>
+            <th><%= t("decidim.contracts_sk.admin.links.form.target_type") %></th>
+            <th><%= t("decidim.contracts_sk.admin.links.form.target_id") %></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% links.each do |link| %>
+            <% resolved = Decidim::ContractsSk.resolve_link_target(link) %>
+            <tr>
+              <td><%= link.target_type %></td>
+              <td>
+                <% if resolved %>
+                  <% if resolved[:url].present? %>
+                    <%= link_to resolved[:label], resolved[:url] %>
+                  <% else %>
+                    <%= resolved[:label] %>
+                  <% end %>
+                <% else %>
+                  <%# Dangling or unresolvable target: flagged for cleanup,
+                      never silently rendered as a working link. %>
+                  <span class="text-warning"><%= t("decidim.contracts_sk.admin.links.index.dangling") %></span>
+                <% end %>
+              </td>
+              <td class="table-list__actions">
+                <% if allowed_to?(:destroy, :link, contract: @contract) %>
+                  <%= button_to t("decidim.contracts_sk.admin.links.destroy.link"),
+                                admin_contract_link_path(@contract, link),
+                                method: :delete,
+                                class: "button button__sm button__secondary alert",
+                                data: { confirm: t("decidim.contracts_sk.admin.links.destroy.confirm") } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card-section">
+      <p><%= t("decidim.contracts_sk.admin.links.index.empty") %></p>
+    </div>
+  <% end %>
+</div>
+
 <%# Manual CRZ-handoff export (M02-05-C, civora-org/civora-platform#74):
     a generated, always-regenerable handoff aid for the clerical CRZ
     record (ADR-002) — labelled on the page as an aid, never a legal
