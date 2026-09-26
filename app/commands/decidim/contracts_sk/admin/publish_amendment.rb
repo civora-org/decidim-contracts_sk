@@ -23,6 +23,24 @@ module Decidim
       # copy. The model's readonly? guard backs this up — a published
       # amendment is immutable at the model layer too.
       #
+      # A third, fail-closed invariant rides the same re-check (ADR-007,
+      # civora-org/civora-platform#91): the parent contract must carry the
+      # privacy-redaction confirmation stamp (redaction_confirmed_at). The
+      # snapshot freezes the contract's CURRENT content — already-confirmed
+      # content by construction — so no separate amendment checkbox exists
+      # (Gate-1 decision); the stamp gate backstops a record that lost the
+      # invariant through a direct write, refusing amendment publication
+      # exactly like the contract's own publish edge does.
+      #
+      # The stamp invariant is scoped to EDITORIAL parents only (#91 review
+      # round): a `crz` mirror's content is already-public upstream register
+      # data (ADR-008) — the importing editor could never have personally
+      # affirmed a redaction checklist over it, so mirrors land published
+      # unstamped and their amendments must stay publishable. Fail-closed by
+      # construction: the exemption matches ONLY a real CRZ mirror
+      # (CrzImport::Mapper::SOURCE); any other or nil source value still
+      # requires the stamp, same as editorial.
+      #
       # Everything commits atomically inside the one transaction the two
       # locks share: version, snapshot, state flip, published_at stamp and
       # the audit row — a failure at any step rolls the amendment back to
@@ -50,9 +68,7 @@ module Decidim
         def call
           contract.with_lock do
             amendment.with_lock do
-              # Both fail-closed gates, read off the reloaded in-database
-              # rows (see the class comment).
-              return broadcast(:invalid) unless contract.published? && amendment.draft?
+              return broadcast(:invalid) unless publishable?
 
               publish!
             end
@@ -70,6 +86,23 @@ module Decidim
 
         def contract
           amendment.contract
+        end
+
+        # All fail-closed gates, read off the reloaded in-database rows (see
+        # the class comment): published contract, draft amendment, and the
+        # ADR-007 redaction-confirmation stamp on the parent — scoped to
+        # editorial parents only (see #redaction_stamp_ok?).
+        def publishable?
+          contract.published? && amendment.draft? && redaction_stamp_ok?
+        end
+
+        # The ADR-007 stamp backstop (#91), scoped by provenance: required
+        # of every parent EXCEPT a real CRZ mirror — a mirror's content is
+        # already-public upstream data (ADR-008), so the editor could never
+        # have affirmed the redaction checklist over it. Any other or nil
+        # source value fails closed into the stamp requirement.
+        def redaction_stamp_ok?
+          contract.source == CrzImport::Mapper::SOURCE || contract.redaction_confirmed_at.present?
         end
 
         # The transaction's whole write: version (only when a draft carries

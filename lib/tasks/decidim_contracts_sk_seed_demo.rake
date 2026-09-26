@@ -16,7 +16,11 @@
 #     (fresh mirror) and DEMO-2026-009 (deliberately stale mirror —
 #     imported_at 60 days back, beyond the default 48 h threshold);
 #   - object/contractor parties, documents (metadata + attached demo files
-#     from the engine's spec/fixtures/files), and numbered amendments.
+#     from the engine's spec/fixtures/files), and numbered amendments;
+#   - ADR-007 redaction stamps (#91) on every editorial record that is or
+#     was published (DEMO-2026-004/006/007) — DEMO-2026-001 stays unstamped
+#     as the single record demonstrating the publish gate, and the CRZ
+#     mirrors stay unstamped by design (ADR-008 exemption).
 #
 # Idempotent per (organization, reference): re-running upserts on the
 # composite unique index instead of duplicating. A second organization is
@@ -48,7 +52,7 @@ namespace :decidim_contracts_sk do
 
     contracts = {}
 
-    seed = lambda do |ref:, title:, state:, imported_at: nil, **content|
+    seed = lambda do |ref:, title:, state:, imported_at: nil, redaction_confirmed: false, **content|
       record = Decidim::ContractsSk::Contract.find_or_initialize_by(
         organization: organization,
         reference: ref
@@ -60,6 +64,17 @@ namespace :decidim_contracts_sk do
         **content
       )
       record.published_at = Time.current if state == "published" && record.published_at.blank?
+      # ADR-007 redaction stamp (#91): editorial records that end published
+      # — or sit one approve→publish walkthrough away — carry the
+      # confirmation, written in the SAME save as the state (the seed
+      # bypasses the command layer, so the stamp lands before the state
+      # flip, mirroring the real editorial order). Stamped once, never
+      # refreshed on re-seed (same idempotency doctrine as published_at).
+      # Deliberately unstamped: DEMO-2026-001 is the single record
+      # demonstrating the publish gate, and the CRZ mirrors carry no stamp
+      # by design (their content is already-public upstream data, ADR-008
+      # — the amendment publish exemption).
+      record.redaction_confirmed_at = Time.current if redaction_confirmed && record.redaction_confirmed_at.blank?
       # Freshness metadata for the synthetic CRZ mirrors (#88) is stamped
       # only on FIRST creation: re-seeding must never refresh a mirror's
       # imported_at (the import ETL's checksum no-op gives real mirrors the
@@ -97,7 +112,7 @@ namespace :decidim_contracts_sk do
 
     seed.call(
       ref: "DEMO-2026-004", title: "Prevádzka mestského informačného strediska",
-      state: "approved",
+      state: "approved", redaction_confirmed: true,
       subject_matter: "Prevádzkovanie informačného strediska pre turistov",
       amount: BigDecimal("54000.00"), signed_on: Date.new(2026, 1, 20),
       effective_from: Date.new(2026, 2, 1)
@@ -112,7 +127,7 @@ namespace :decidim_contracts_sk do
 
     seed.call(
       ref: "DEMO-2026-006", title: "Zber a Transport odpadu v meste",
-      state: "published",
+      state: "published", redaction_confirmed: true,
       subject_matter: "Zber a odvoz komunálneho odpadu na území mesta",
       amount: BigDecimal("96800.00"), signed_on: Date.new(2025, 12, 15),
       effective_from: Date.new(2026, 1, 1),
@@ -121,7 +136,7 @@ namespace :decidim_contracts_sk do
 
     seed.call(
       ref: "DEMO-2026-007", title: "Archivovaná zmluva — holičske služby 2024",
-      state: "archived",
+      state: "archived", redaction_confirmed: true,
       subject_matter: "Príklad archivovaného záznamu",
       amount: BigDecimal("5000.00")
     )
@@ -165,6 +180,7 @@ namespace :decidim_contracts_sk do
       c.state = "published"
       c.author = author
       c.published_at = Time.current
+      c.redaction_confirmed_at = Time.current # editorial + published ⇒ stamped (ADR-007)
     end
 
     demo_parties = {

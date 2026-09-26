@@ -248,6 +248,36 @@ module LocaleContract
     }
   }.freeze
 
+  # The admin privacy-redaction confirmation labels per locale (ADR-007,
+  # civora-org/civora-platform#91). The checklist items and the checkbox
+  # affirmation are pinned verbatim — the confirmation's wording is the
+  # gate's legal surface in both locales.
+  ADMIN_REDACTION_LABELS = {
+    en: {
+      "admin.contracts.confirm_redaction.title" => "Privacy redaction",
+      "admin.contracts.confirm_redaction.checklist.names_addresses" =>
+        "personal names and addresses of natural persons",
+      "admin.contracts.confirm_redaction.checklist.bank_details" => "bank and account details",
+      "admin.contracts.confirm_redaction.checklist.amounts" =>
+        "amounts tying the contract to identifiable persons",
+      "admin.contracts.confirm_redaction.checklist.document_content" =>
+        "sensitive content inside attached documents",
+      "admin.contracts.confirm_redaction.checkbox_label" =>
+        "I confirm that the required redactions have been made."
+    },
+    sk: {
+      "admin.contracts.confirm_redaction.title" => "Skrytie osobných údajov",
+      "admin.contracts.confirm_redaction.checklist.names_addresses" => "mená a adresy fyzických osôb",
+      "admin.contracts.confirm_redaction.checklist.bank_details" => "bankové a účtové údaje",
+      "admin.contracts.confirm_redaction.checklist.amounts" =>
+        "sumy spájajúce zmluvu s identifikovateľnými osobami",
+      "admin.contracts.confirm_redaction.checklist.document_content" =>
+        "citlivý obsah v pripojených dokumentoch",
+      "admin.contracts.confirm_redaction.checkbox_label" =>
+        "Potvrdzujem, že požadované skrytie údajov bolo vykonané."
+    }
+  }.freeze
+
   # The navigation menu labels per locale (civora-org/civora-platform#86c):
   # the public catalogue entry (main + mobile menu) and the admin sidebar
   # entry carry separate keys so the host-facing vocabularies can diverge.
@@ -367,6 +397,17 @@ module LocaleContract
     "admin.amendments.update.error",
     "admin.amendments.update.success",
     "admin.contracts.back_to_index",
+    "admin.contracts.confirm_redaction.checkbox_label",
+    "admin.contracts.confirm_redaction.checklist.amounts",
+    "admin.contracts.confirm_redaction.checklist.bank_details",
+    "admin.contracts.confirm_redaction.checklist.document_content",
+    "admin.contracts.confirm_redaction.checklist.names_addresses",
+    "admin.contracts.confirm_redaction.confirmed_on",
+    "admin.contracts.confirm_redaction.description",
+    "admin.contracts.confirm_redaction.invalid",
+    "admin.contracts.confirm_redaction.submit",
+    "admin.contracts.confirm_redaction.success",
+    "admin.contracts.confirm_redaction.title",
     "admin.contracts.create.error",
     "admin.contracts.create.success",
     "admin.contracts.edit.title",
@@ -416,6 +457,7 @@ module LocaleContract
     "admin.contracts.transition.confirm.submit",
     "admin.contracts.transition.invalid",
     "admin.contracts.transition.publish",
+    "admin.contracts.transition.redaction_required",
     "admin.contracts.transition.reject",
     "admin.contracts.transition.return",
     "admin.contracts.transition.submit",
@@ -795,6 +837,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the admin index filter labels in both locales (civora-org/civora-platform#86b)" do
       LocaleContract::ADMIN_INDEX_FILTER_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin privacy-redaction labels in both locales (ADR-007, civora-org/civora-platform#91)" do
+      LocaleContract::ADMIN_REDACTION_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

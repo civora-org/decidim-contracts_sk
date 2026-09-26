@@ -88,6 +88,19 @@ en:
           create:
             success: "Contract created successfully."
             error: "Contract could not be created."
+          confirm_redaction:
+            checkbox_label: "I confirm that the required redactions have been made."
+            checklist:
+              names_addresses: "personal names and addresses of natural persons"
+              bank_details: "bank and account details"
+              amounts: "amounts tying the contract to identifiable persons"
+              document_content: "sensitive content inside attached documents"
+            confirmed_on: "Redaction confirmed on %{confirmed_at}."
+            description: "Before this contract can be published, confirm that personal data has been redacted from the record and its attached documents (ADR-007):"
+            invalid: "Redaction confirmation could not be recorded."
+            submit: "Confirm redaction"
+            success: "Redaction confirmation recorded."
+            title: "Privacy redaction"
           update:
             success: "Contract updated successfully."
             error: "Contract could not be updated."
@@ -100,6 +113,7 @@ en:
             archive: "Archive"
             success: "Contract transition performed successfully."
             invalid: "Contract transition could not be performed."
+            redaction_required: "Publishing requires the privacy-redaction confirmation first — confirm it from the contract's edit page."
             confirm:
               submit: "Submit this contract for review?"
               return: "Return this contract for changes?"

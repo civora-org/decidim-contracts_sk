@@ -81,6 +81,14 @@ module Decidim
         ContractLifecycle.editable?(state&.to_sym)
       end
 
+      # True while the ADR-007 privacy-redaction confirmation may still be
+      # stamped (draft, returned, approved — CONFIRMABLE_STATES). Deliberately
+      # wider than #editable?: approval locks the content, but the
+      # confirmation must stay admittable right up to the publish edge.
+      def confirmable?
+        ContractLifecycle.confirmable?(state&.to_sym)
+      end
+
       # True when the lifecycle marks the record publicly visible
       # (published, archived — lifecycle decision D4). Broader than the
       # catalogue itself: the public catalogue renders lifecycle-published

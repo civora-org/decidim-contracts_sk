@@ -37,6 +37,13 @@ Decidim::ContractsSk::Engine.routes.draw do
         post :crz_handoff, action: :generate_crz_handoff, as: :generate_crz_handoff
       end
 
+      # ADR-007 privacy-redaction confirmation (civora-org/civora-platform
+      # #91): one member POST stamping the confirmation that personal data
+      # was redacted — the hard precondition of the publish transition.
+      # Declared explicitly — NOT a lifecycle event, so deliberately outside
+      # the derivation above (same reasoning as the CRZ-handoff pair).
+      member { post :confirm_redaction }
+
       # Per-contract party management (civora-org/civora-platform#76):
       # dedicated nested pages (index/new/edit + destroy), deliberately no
       # nested-form JS. Tenancy is derived through the parent contract; the

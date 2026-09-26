@@ -64,7 +64,13 @@ RSpec.describe Decidim::ContractsSk::Admin::TransitionContract, :db do
   end
 
   describe "publish stamp (civora-org/civora-platform#75)" do
-    let(:contract) { Decidim::ContractsSk::Contract.create!(contract_attributes(state: "approved")) }
+    # The ADR-007 gate (#91) makes the redaction stamp a precondition of
+    # the publish edge, so this group's contracts carry it — the gate
+    # itself is pinned in the dedicated group below.
+    let(:contract) do
+      Decidim::ContractsSk::Contract
+        .create!(contract_attributes(state: "approved", redaction_confirmed_at: Time.current))
+    end
 
     it "stamps published_at on publish, persisted with the state change" do
       before = Time.current
@@ -124,6 +130,95 @@ RSpec.describe Decidim::ContractsSk::Admin::TransitionContract, :db do
       expect(contract.state).to eq("approved")
       expect(contract.published_at).to be_nil
       expect(Decidim::ContractsSk::AuditEvent.count).to eq(0)
+    end
+  end
+
+  describe "redaction confirmation gate (ADR-007, civora-org/civora-platform#91)" do
+    let(:contract) { Decidim::ContractsSk::Contract.create!(contract_attributes(state: "approved")) }
+
+    it "refuses publish without the stamp, writing no state, no publication stamp and no audit row" do
+      expect do
+        events = described_class.call(contract, event: :publish, user: author)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("approved")
+        expect(contract.published_at).to be_nil
+        expect(contract.redaction_confirmed_at).to be_nil
+      end
+    end
+
+    it "rides a :redaction_gate payload on the refusal, absent from every other :invalid" do
+      # The UI's dedicated-flash channel (#91 review round): the EventRecorder
+      # stores broadcast args, so the gate refusal carries :redaction_gate
+      # while ordinary :invalid broadcasts (bad role, invalid edge) carry
+      # none — no new outcome symbol, no reason leaked beyond the
+      # already-public gate.
+      gate_refusal = described_class.call(contract, event: :publish, user: author)
+      expect(gate_refusal[:invalid]).to eq(:redaction_gate)
+
+      unstamped_draft = Decidim::ContractsSk::Contract.create!(contract_attributes(reference: "ZP-2026-002"))
+      plain_refusal = described_class.call(unstamped_draft, event: :archive, user: author)
+      expect(plain_refusal).to have_key(:invalid)
+      # The recorder keeps argless broadcasts as [] — the point is that no
+      # :redaction_gate payload rides a plain refusal.
+      expect(plain_refusal[:invalid]).not_to eq(:redaction_gate)
+    end
+
+    it "publishes the same record once the stamp is present" do
+      contract.update!(redaction_confirmed_at: Time.current)
+
+      events = described_class.call(contract, event: :publish, user: author)
+
+      expect(events).to have_key(:ok)
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("published")
+        expect(contract.published_at).to be_present
+      end
+    end
+
+    it "lets non-publish events through unstamped records (the gate is publish-only)" do
+      draft = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      events = described_class.call(draft, event: :submit, user: author)
+
+      expect(events).to have_key(:ok)
+
+      draft.reload
+      expect(draft.state).to eq("in_review")
+    end
+
+    it "refuses a copy loaded before the stamp was cleared, writing nothing (in-lock re-check, no threads)" do
+      # The stale copy models a request that loaded the record WITH the
+      # stamp; the stamp was then cleared by a direct write, bypassing the
+      # command layer. The in-lock reload must re-read the in-database
+      # stamp — the request-start copy's attribute must never satisfy the
+      # gate.
+      contract = Decidim::ContractsSk::Contract
+                 .create!(contract_attributes(state: "approved", redaction_confirmed_at: Time.current))
+      stale = Decidim::ContractsSk::Contract.find(contract.id)
+      expect(stale.redaction_confirmed_at).to be_present
+
+      contract.update!(redaction_confirmed_at: nil)
+
+      expect do
+        events = described_class.call(stale, event: :publish, user: author)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("approved")
+        expect(contract.published_at).to be_nil
+      end
     end
   end
 

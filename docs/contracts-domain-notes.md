@@ -216,6 +216,45 @@ the child loaded through a pre-move contract copy (association +
 `inverse_of`), then the row moved directly, then the command must
 refuse and write nothing.
 
+## Redaction confirmation gate landed in #91 (ADR-007)
+
+Publication now carries a privacy precondition (ADR-007,
+civora-org/civora-platform#91): the nullable `redaction_confirmed_at`
+datetime on the contracts table records when an editor last confirmed —
+on the contract's edit page, through one required-checkbox POST whose
+affirmation value is consumed SERVER-SIDE (a POST without a truthy
+checkbox value refuses with the localized alert; the HTML `required`
+attribute is a UX aid, never the gate) — that personal data was redacted
+from the record and its attached documents (checklist: personal
+names/addresses of natural persons, bank/account details, amounts tying
+the contract to identifiable persons, sensitive content inside attached
+documents).
+
+- **Gate placement** — `TransitionContract` refuses the publish edge
+  inside the row lock while the stamp is blank (the in-lock re-check
+  doctrine above; the refusal carries a `:redaction_gate` payload so the
+  admin UI can flash a dedicated, actionable message), and
+  `PublishAmendment` backstops on the same stamp for EDITORIAL parents
+  only: a `crz` mirror's content is already-public upstream register data
+  (ADR-008), the importing editor could never have affirmed a redaction
+  checklist over it, so mirrors land published unstamped and their
+  amendments stay publishable. The amendment snapshot freezes the
+  contract's current — already confirmed — content, so there is
+  deliberately no separate amendment checkbox (Gate-1 decision).
+- **Confirmable window** — the confirmation may be stamped while the
+  record is in `CONFIRMABLE_STATES` (`editable` states + `approved`):
+  a reviewer sign-off can arrive unstamped, and the editor must still be
+  able to confirm right before publishing. `editable?` itself is NOT
+  widened — approval still locks the content fields.
+- **System field** — written only by `Admin::ConfirmRedaction` (stamp +
+  `contract.redaction_confirmed` audit row, one transaction), never
+  form-writable, never cleared by the command. Additive migration, no
+  backfill: pre-#91 records simply cannot publish until an editor
+  confirms.
+- **Idempotency** — a record that already carries the stamp refuses
+  (the UI hides the control once stamped; re-stamping would move the
+  confirmation date without a fresh affirmation behind it).
+
 ## Amendment lifecycle landed in #65 (M02-05-B)
 
 The amendments table grew its lifecycle (ADR-006, Option A — immutable

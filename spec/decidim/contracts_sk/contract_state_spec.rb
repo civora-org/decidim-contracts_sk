@@ -209,6 +209,7 @@ RSpec.describe Decidim::ContractsSk::ContractState do
 
         expect(record.terminal?).to eq(lifecycle::TERMINAL_STATES.include?(state))
         expect(record.editable?).to eq(lifecycle::EDITABLE_STATES.include?(state))
+        expect(record.confirmable?).to eq(lifecycle::CONFIRMABLE_STATES.include?(state))
         expect(record.publicly_visible?).to eq(lifecycle::PUBLIC_STATES.include?(state))
       end
     end
@@ -219,12 +220,14 @@ RSpec.describe Decidim::ContractsSk::ContractState do
 
         expect(record.terminal?).to be(false)
         expect(record.editable?).to be(false)
+        expect(record.confirmable?).to be(false)
         expect(record.publicly_visible?).to be(false)
       end
     end
 
     it "accept String states via to_sym coercion" do
       expect(model_class.new(state: "draft").editable?).to be(true)
+      expect(model_class.new(state: "approved").confirmable?).to be(true)
       expect(model_class.new(state: "published").publicly_visible?).to be(true)
     end
   end

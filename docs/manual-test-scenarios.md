@@ -15,15 +15,15 @@ What you get (idempotent — safe to re-run):
 
 | Reference        | State       | Notes |
 |------------------|-------------|-------|
-| DEMO-2026-001    | draft       | parties + 1 amendment; editable |
+| DEMO-2026-001    | draft       | parties + 1 amendment; editable; **unstamped — the publish-gate demo record** |
 | DEMO-2026-002    | in_review   | reviewer actions expected |
 | DEMO-2026-003    | returned    | editable again |
-| DEMO-2026-004    | approved    | publishable by editor |
+| DEMO-2026-004    | approved    | redaction-stamped — publishable by editor (A8) |
 | DEMO-2026-005    | rejected    | terminal |
-| DEMO-2026-006    | published   | parties, 2 documents (PDF + TXT), draft amendment, CRZ URL |
-| DEMO-2026-007    | archived    | publicly visible, not editable |
-| DEMO-2026-008    | published   | **CRZ import** (fictional): fresh mirror — provenance badge, no stale line; 2 parties |
-| DEMO-2026-009    | published   | **CRZ import** (fictional): stale mirror — `imported_at` 60 days back, stale line expected |
+| DEMO-2026-006    | published   | redaction-stamped; parties, 2 documents (PDF + TXT), draft amendment, CRZ URL |
+| DEMO-2026-007    | archived    | redaction-stamped (was published); publicly visible, not editable |
+| DEMO-2026-008    | published   | **CRZ import** (fictional): fresh mirror — provenance badge, no stale line; unstamped by design (ADR-008); 2 parties |
+| DEMO-2026-009    | published   | **CRZ import** (fictional): stale mirror — `imported_at` 60 days back, stale line expected; unstamped by design (ADR-008) |
 | DEMO-OTHER-001   | published   | **another organization** — must be invisible |
 
 Users: `contracts-admin@example.org`, `contracts-editor@example.org` — both
@@ -87,7 +87,7 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 | A5 | edit DEMO-2026-006 (published) | update refused — not editable |
 | A6 | `POST .../contracts/:id/submit` on DEMO-2026-001 | → `in_review`, audit event written |
 | A7 | `POST .../return`, `/approve`, `/reject` on DEMO-2026-002 | each → next state; try the same on a draft — refused |
-| A8 | `POST .../publish` on DEMO-2026-004 | → `published`, `published_at` stamped; now visible in P1 |
+| A8 | `POST .../publish` on DEMO-2026-004 (seeded stamped) | → `published`, `published_at` stamped; now visible in P1 |
 | A9 | `POST .../archive` on DEMO-2026-006 | → `archived`; still publicly visible |
 | A10 | repeat any transition POST twice | second one refused (state moved on) |
 | A11 | parties pages on DEMO-2026-001 | add/edit/remove object + contractor parties; two same-role parties allowed |
@@ -96,12 +96,33 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 | A14 | `GET .../contracts/:id/crz_handoff` (download) | editor-gated, allowed in any state; PDF labelled as a handoff aid |
 | A15 | `POST .../crz_handoff` on DEMO-2026-001 | generates/replaces the `crz_export` document |
 
+> **Privacy-redaction gate walkthrough (ADR-007, on a fresh seed):** DEMO-2026-001
+> is the one record demonstrating the gate. (1) `POST .../submit`, then
+> `POST .../approve` (reviewer role) — the record is now approved but
+> unstamped. (2) `POST .../publish` → **refused** with the dedicated
+> redaction-gate flash pointing at the edit page. (3) On the edit page the
+> "Privacy redaction" card offers the checklist + required checkbox — the
+> same confirmation is also offered collapsed in the record's row on the
+> admin contracts index (open it right next to the Publish button);
+> POSTing **without** the checkbox value (e.g. via curl) is refused
+> server-side with the localized alert and writes nothing. (4) Confirm with
+> the checkbox — the card flips to the confirmation stamp line (and the
+> index row card disappears) — and `POST .../publish` now succeeds. The
+> confirmation is also admittable
+> directly on an approved record (that is exactly step 3–4 above); on a
+> seeded record that already carries the stamp (DEMO-2026-004/006/007) the
+> card shows the stamp line and a repeat POST refuses.
+
 > **Amendments are seeded as drafts** by design: publication (and with it the
 > frozen content snapshot) is the publish command's job, so the seed never
 > fabricates published versions. To demo the public version history, open
 > `/zmluvy/admin/contracts/:id/amendments` on DEMO-2026-006, publish the
 > draft amendment, then re-check the detail page — the frozen snapshot
-> appears under *Versions* while the live fields stay current.
+> appears under *Versions* while the live fields stay current. The
+> amendment publish backstops on the parent's redaction stamp for
+> editorial records (DEMO-2026-006 carries the seed stamp, so it works);
+> CRZ mirrors are exempt (their content is already-public upstream data,
+> ADR-008) and publish amendments unstamped.
 
 ## 4. RSpec-side demo data
 

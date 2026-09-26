@@ -29,7 +29,28 @@ module Decidim
       # never cleared. The audit payload shape is fixed by the #57 migration
       # (D4): action "contract.<event>", polymorphic target, explicit
       # organization/actor, timestamps — no JSON payload, no from/to.
+      #
+      # The publish edge additionally carries the ADR-007 privacy-redaction
+      # gate (civora-org/civora-platform#91): a record whose
+      # redaction_confirmed_at is blank cannot publish. The guard runs
+      # INSIDE the lock against the reloaded row — the same in-lock re-check
+      # doctrine as the state guard — so a request admitted before the stamp
+      # existed (or racing it) refuses fail-closed, and the check reads the
+      # in-database stamp, never the request-start copy. ConfirmRedaction is
+      # the only writer of the stamp.
+      #
+      # Refusal reason channel (#91 review round): the :invalid broadcasts
+      # stay :invalid — the caller contract is unchanged — but the
+      # redaction-gate refusal rides a payload (:redaction_gate) that the
+      # existing on(:invalid) handler may read (Wisper passes broadcast
+      # args through). This lets the UI flash a dedicated, actionable
+      # message for THIS refusal without a new outcome symbol and without
+      # exposing anything beyond the already-public gate.
       class TransitionContract < Decidim::Command
+        # The payload the redaction-gate refusal adds to its :invalid
+        # broadcast (see the class comment).
+        REDACTION_GATE_REASON = :redaction_gate
+
         def initialize(contract, event:, user:)
           super()
           @contract = contract
@@ -41,6 +62,8 @@ module Decidim
           return broadcast(:invalid) unless role
 
           contract.with_lock do
+            return broadcast(:invalid, REDACTION_GATE_REASON) unless redaction_gate_open?
+
             stamp_published_at!
             contract.transition_state!(event: event, role: role)
             record_audit!
@@ -54,6 +77,15 @@ module Decidim
         private
 
         attr_reader :contract, :event, :user
+
+        # The publish edge's ADR-007 precondition (civora-org/civora-platform
+        # #91), evaluated INSIDE the lock on the reloaded row: publishing is
+        # refused while the privacy-redaction confirmation stamp is missing.
+        # Every other event passes unchecked (the event is normalized with
+        # #to_s at this boundary — same doctrine as stamp_published_at!).
+        def redaction_gate_open?
+          event.to_s != "publish" || contract.redaction_confirmed_at.present?
+        end
 
         # The publish stamp: assigned before transition_state! so the
         # state's update! persists both attributes atomically (this runs

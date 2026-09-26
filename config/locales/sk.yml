@@ -88,6 +88,19 @@ sk:
           create:
             success: "Zmluva bola úspešne vytvorená."
             error: "Zmluvu sa nepodarilo vytvoriť."
+          confirm_redaction:
+            checkbox_label: "Potvrdzujem, že požadované skrytie údajov bolo vykonané."
+            checklist:
+              names_addresses: "mená a adresy fyzických osôb"
+              bank_details: "bankové a účtové údaje"
+              amounts: "sumy spájajúce zmluvu s identifikovateľnými osobami"
+              document_content: "citlivý obsah v pripojených dokumentoch"
+            confirmed_on: "Skrytie údajov bolo potvrdené dňa %{confirmed_at}."
+            description: "Pred zverejnením tejto zmluvy potvrďte, že zo záznamu a pripojených dokumentov boli skryté osobné údaje (ADR-007):"
+            invalid: "Potvrdenie skrytia údajov sa nepodarilo zaznamenať."
+            submit: "Potvrdiť skrytie údajov"
+            success: "Potvrdenie skrytia údajov bolo zaznamenané."
+            title: "Skrytie osobných údajov"
           update:
             success: "Zmluva bola úspešne upravená."
             error: "Zmluvu sa nepodarilo upraviť."
@@ -100,6 +113,7 @@ sk:
             archive: "Archivovať"
             success: "Prechod stavu zmluvy bol úspešne vykonaný."
             invalid: "Prechod stavu zmluvy sa nepodarilo vykonať."
+            redaction_required: "Zverejnenie najprv vyžaduje potvrdenie skrytia osobných údajov — potvrďte ho na stránke úprav zmluvy."
             confirm:
               submit: "Odoslať túto zmluvu do recenzie?"
               return: "Vrátiť túto zmluvu na doplnenie?"

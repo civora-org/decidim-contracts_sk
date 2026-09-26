@@ -233,6 +233,89 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — confirm_redaction (ADR-007, civora-org/civora-platform#91: :update's twin)" do
+    # Plain-method helper (not a let) so the group stays within the
+    # memoized-helpers budget while every example names its user explicitly.
+    def redaction_user_with_roles(*roles)
+      SpecUser.new(engine_roles: roles)
+    end
+
+    # The group's users carry engine_roles, so swap in the engine_roles-driven
+    # resolver for the duration of each example (restored afterwards).
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "is allowed for an editor exactly on the confirmable states, on both state sources" do
+      # ADR-007 review round (#91 H-1): the window is CONFIRMABLE_STATES —
+      # the editable states plus approved — not editability itself.
+      lifecycle::CONFIRMABLE_STATES.each do |state|
+        via_state = action_for(redaction_user_with_roles(:editor), scope: :admin, action: :confirm_redaction,
+                                                                   state: state)
+        via_contract = action_for(redaction_user_with_roles(:editor), scope: :admin, action: :confirm_redaction,
+                                                                      contract: SpecContract.new(state))
+
+        expect(via_state.allowed?).to be(true), "editor must confirm redaction on #{state}"
+        expect(via_contract.allowed?).to be(true), "editor must confirm redaction on #{state} via context[:contract]"
+      end
+    end
+
+    it "is denied for an editor on every non-confirmable state" do
+      (lifecycle::STATES - lifecycle::CONFIRMABLE_STATES).each do |state|
+        via_state = action_for(redaction_user_with_roles(:editor), scope: :admin, action: :confirm_redaction,
+                                                                   state: state)
+        via_contract = action_for(redaction_user_with_roles(:editor), scope: :admin, action: :confirm_redaction,
+                                                                      contract: SpecContract.new(state))
+
+        expect(via_state.allowed?).to be(false), "editor must not confirm redaction on #{state}"
+        expect(via_contract.allowed?).to be(false),
+                                         "editor must not confirm redaction on #{state} via context[:contract]"
+      end
+    end
+
+    it "keeps :update narrower than :confirm_redaction on approved (the window, not editability, widened)" do
+      outcome = action_for(redaction_user_with_roles(:editor), scope: :admin, action: :update,
+                                                               contract: SpecContract.new(:approved))
+
+      expect(outcome.allowed?).to be(false), "approved must stay non-editable while remaining confirmable"
+    end
+
+    it "is denied for a reviewer even on confirmable states" do
+      lifecycle::CONFIRMABLE_STATES.each do |state|
+        outcome = action_for(redaction_user_with_roles(:reviewer), scope: :admin, action: :confirm_redaction,
+                                                                   contract: SpecContract.new(state))
+
+        expect(outcome.allowed?).to be(false), "reviewer must not confirm redaction on #{state}"
+      end
+    end
+
+    it "is disallowed (not unset) when no state is reachable — fail-closed" do
+      expect(action_for(redaction_user_with_roles(:editor), scope: :admin, action: :confirm_redaction).allowed?)
+        .to be(false)
+      expect(unset?(redaction_user_with_roles(:editor), scope: :admin, action: :confirm_redaction)).to be(false)
+    end
+
+    it "leaves the public-scope action unset (fail-closed; the catalogue has no redaction surface)" do
+      expect(unset?(redaction_user_with_roles(:editor), scope: :public, action: :confirm_redaction,
+                                                        state: :draft)).to be(true)
+      expect(unset?(nil, scope: :public, action: :confirm_redaction, state: :published)).to be(true)
+    end
+
+    it "treats String states (Rails enum getters) identically to Symbols" do
+      lifecycle::STATES.each do |state|
+        expected = lifecycle::CONFIRMABLE_STATES.include?(state)
+
+        outcome = action_for(redaction_user_with_roles(:editor), scope: :admin, action: :confirm_redaction,
+                                                                 contract: SpecContract.new(state.to_s))
+
+        expect(outcome.allowed?).to eq(expected), "String state diverged for :confirm_redaction on #{state}"
+      end
+    end
+  end
+
   describe "admin scope — download_crz_handoff (M02-05-C split: editor-only, any state)" do
     # Plain-method helper (not a let) so the group stays within the
     # memoized-helpers budget while every example names its user explicitly.
@@ -832,7 +915,8 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
   describe "org admin without accepted terms (default resolver)" do
     it "holds no roles: every admin action is denied" do
-      actions = %i[create read update download_crz_handoff import_crz] + described_class::TRANSITION_EVENTS
+      actions = %i[create read update confirm_redaction download_crz_handoff import_crz] +
+                described_class::TRANSITION_EVENTS
 
       lifecycle::STATES.each do |state|
         actions.each do |action|
@@ -845,7 +929,8 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
   describe "nil user" do
     it "is denied every admin action on a known state" do
-      actions = %i[create read update download_crz_handoff import_crz] + described_class::TRANSITION_EVENTS
+      actions = %i[create read update confirm_redaction download_crz_handoff import_crz] +
+                described_class::TRANSITION_EVENTS
 
       actions.each do |action|
         expect(action_for(nil, scope: :admin, action: action, state: :draft).allowed?)
