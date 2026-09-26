@@ -87,10 +87,7 @@ module Decidim
 
           @form = edit_form
 
-          # The handoff section reads the record's single crz_export document
-          # (civora-org/civora-platform#74): its presence decides between the
-          # download link + regenerate button and the plain generate button.
-          @crz_handoff_document = @contract.documents.find_by(kind: "crz_export")
+          load_crz_handoff_document
         end
 
         def update
@@ -99,6 +96,11 @@ module Decidim
           enforce_permission_to :update, :contract, contract: @contract
 
           @form = ContractForm.new(form_params)
+
+          # The failed-update re-render needs the handoff ivar too, or the
+          # section silently drops off the page until the next full visit
+          # (civora-org/civora-platform#77).
+          load_crz_handoff_document
 
           UpdateContract.call(@form, @contract) do
             on(:ok) { update_succeeded }
@@ -229,6 +231,15 @@ module Decidim
         def update_failed
           flash.now[:alert] = t("decidim.contracts_sk.admin.contracts.update.error")
           render :edit, status: :unprocessable_entity
+        end
+
+        # The handoff section reads the record's single crz_export document
+        # (civora-org/civora-platform#74): its presence decides between the
+        # download link + regenerate button and the plain generate button.
+        # Shared by :edit and :update so a failed-update re-render keeps the
+        # section (civora-org/civora-platform#77).
+        def load_crz_handoff_document
+          @crz_handoff_document = @contract.documents.find_by(kind: "crz_export")
         end
 
         # The handoff is generated before it can be downloaded; a missing
