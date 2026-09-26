@@ -32,7 +32,8 @@ module EngineRoutingContract
   # outside the lifecycle derivation (it is not a lifecycle event). The
   # CRZ single-record import (ADR-008, civora-org/civora-platform#86) is a
   # collection POST (import by CRZ id, not tied to an existing record) —
-  # also outside the lifecycle derivation.
+  # also outside the lifecycle derivation, as is the ADR-007 redaction-
+  # confirmation member POST (civora-org/civora-platform#91).
   # Parties (civora-org/civora-platform#76) hang off their contract through
   # the nested resource: an index plus the full add/edit/remove surface
   # (update maps to BOTH a PATCH and a PUT route entry, so the party block
@@ -59,6 +60,7 @@ module EngineRoutingContract
     ["POST", "/admin/contracts/import_crz(.:format)", "#{ADMIN_CONTROLLER}#import_crz"],
     ["POST", "/admin/contracts/:id/approve(.:format)", "#{ADMIN_CONTROLLER}#approve"],
     ["POST", "/admin/contracts/:id/archive(.:format)", "#{ADMIN_CONTROLLER}#archive"],
+    ["POST", "/admin/contracts/:id/confirm_redaction(.:format)", "#{ADMIN_CONTROLLER}#confirm_redaction"],
     ["GET", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#download_crz_handoff"],
     ["POST", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#generate_crz_handoff"],
     ["GET", "/admin/contracts/:id/edit(.:format)", "#{ADMIN_CONTROLLER}#edit"],
@@ -228,12 +230,12 @@ RSpec.describe Decidim::ContractsSk::Engine do
       )
     end
 
-    it "exposes exactly the CRUD + transition + CRZ-handoff + import actions (no show, no destroy)" do
+    it "exposes exactly the CRUD + transition + CRZ-handoff + import + redaction actions (no show, no destroy)" do
       actions = admin_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
 
       expect(actions).to eq(%w[
-                              approve archive create download_crz_handoff edit generate_crz_handoff
-                              import_crz index new publish reject return submit update
+                              approve archive confirm_redaction create download_crz_handoff edit
+                              generate_crz_handoff import_crz index new publish reject return submit update
                             ])
     end
   end
@@ -264,11 +266,13 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The member POSTs under /admin/contracts/:id, read back from the drawn
     # route table. The CRZ-handoff POST shares the member path shape but is
     # declared explicitly (not a lifecycle event), so it is excluded here —
-    # the derivation equality guards the lifecycle-derived set only.
+    # same for the ADR-007 redaction-confirmation POST
+    # (civora-org/civora-platform#91). The derivation equality guards the
+    # lifecycle-derived set only.
     def route_transition_events
       admin_routes
         .select { |verb, path, _| verb == "POST" && path.start_with?("/admin/contracts/:id/") }
-        .reject { |_, _, endpoint| endpoint == "#{EngineRoutingContract::ADMIN_CONTROLLER}#generate_crz_handoff" }
+        .reject { |_, _, endpoint| endpoint.end_with?("#generate_crz_handoff", "#confirm_redaction") }
         .map { |_, _, endpoint| endpoint.split("#", 2).last.to_sym }
         .sort
     end
@@ -340,6 +344,32 @@ RSpec.describe Decidim::ContractsSk::Engine do
       expect(Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values
                                                                   .flat_map(&:keys)
                                                                   .uniq).not_to include(:import_crz)
+    end
+  end
+
+  describe "redaction-confirmation member route (ADR-007, civora-org/civora-platform#91)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    # The mapping and helper-name expectations are one route contract pinned
+    # together; the dense-assertion budget doesn't fit pair-by-pair.
+    # rubocop:disable RSpec/ExampleLength
+    it "maps a member POST to the confirm action and names its helper" do
+      aggregate_failures do
+        expect(admin_routes).to include(
+          ["POST", "/admin/contracts/:id/confirm_redaction(.:format)",
+           "#{EngineRoutingContract::ADMIN_CONTROLLER}#confirm_redaction"]
+        )
+        expect(url_helpers.confirm_redaction_admin_contract_path(7)).to eq("/admin/contracts/7/confirm_redaction")
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+
+    it "keeps the redaction-confirmation route outside the lifecycle transition derivation" do
+      expect(Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values
+                                                                  .flat_map(&:keys)
+                                                                  .uniq).not_to include(:confirm_redaction)
     end
   end
 

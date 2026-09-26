@@ -154,6 +154,17 @@ RSpec.describe "admin contract transitions", type: :request do
     it "walks the full happy path draft→…→archive, writing one audit row per step" do
       contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
 
+      # The ADR-007 gate (civora-org/civora-platform#91): the publish step
+      # below refuses without the privacy-redaction confirmation, so the
+      # happy path stamps it first — through the real POST (with the
+      # checkbox value the controller consumes server-side), which writes
+      # its own audit row ahead of the loop's per-step assertions.
+      post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "1" }
+
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(flash[:notice]).to be_present
+      expect(contract.reload.redaction_confirmed_at).to be_present
+
       steps = [
         %i[submit editor],
         %i[return reviewer],
@@ -310,6 +321,119 @@ RSpec.describe "admin contract transitions", type: :request do
       # no edge from draft — so no buttons at all, derived, not hand-picked.
       %w[submit return approve reject publish archive].each do |event|
         expect(response.body).not_to include(%(action="/admin/contracts/#{contract.id}/#{event}"))
+      end
+    end
+  end
+
+  describe "publish-time redaction gate (ADR-007, civora-org/civora-platform#91)", :db do
+    let(:resolver_roles) { %i[editor] }
+
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { resolver_roles }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    before do
+      migrate_engine_schema!
+
+      controller = Decidim::ContractsSk::Admin::ContractsController
+
+      allow_any_instance_of(controller).to receive(:current_user).and_return(author)
+      allow_any_instance_of(controller).to receive(:user_signed_in?).and_return(true)
+      allow_any_instance_of(controller).to receive(:current_organization).and_return(organization)
+    end
+
+    it "fails a publish POST on an approved record without the stamp, persisting nothing" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "approved"))
+
+      expect do
+        post "/admin/contracts/#{contract.id}/publish"
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      aggregate_failures do
+        expect(response).to redirect_to("/admin/contracts")
+        # The dedicated redaction-gate flash (#91 review round): the
+        # command's :redaction_gate refusal payload maps onto its own
+        # localized, actionable message instead of the generic one.
+        expect(flash[:alert])
+          .to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.redaction_required"))
+        expect(flash[:alert]).not_to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.invalid"))
+      end
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("approved")
+        expect(contract.published_at).to be_nil
+        expect(contract.redaction_confirmed_at).to be_nil
+      end
+    end
+
+    # The generic-alert contrast case (a non-redaction refusal flashing
+    # transition.invalid, never the dedicated key) is pinned by the audit-
+    # failure example in the sibling :db group above — no extra example
+    # needed here.
+
+    it "publishes an approved record the confirmation POST stamped after approval (#91 H-1)" do
+      # The review round widened the CONFIRMATION window to include
+      # :approved: a record can reach its reviewer sign-off unstamped, the
+      # editor confirms right before publishing, and the publish edge
+      # opens — no draft-walk required.
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "approved"))
+      expect(contract.redaction_confirmed_at).to be_nil
+
+      post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "1" }
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(flash[:notice]).to be_present
+
+      expect do
+        post "/admin/contracts/#{contract.id}/publish"
+      end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
+
+      expect(response).to redirect_to("/admin/contracts")
+      expect(flash[:notice]).to be_present
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("published")
+        expect(contract.published_at).to be_present
+        expect(contract.redaction_confirmed_at).to be_present
+      end
+    end
+
+    it "publishes the same record once the confirmation POST has stamped it" do
+      # The confirmation is admittable from the editable states too (the
+      # window is CONFIRMABLE_STATES: draft/returned/approved), so the
+      # stamp may also land on the DRAFT — before the record walks
+      # submit → approve → publish, mirroring the real editorial order.
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "1" }
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+
+      # Per-step role overrides, same shape as the with_roles helper in the
+      # sibling group (the group's around hook restores the resolver).
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
+      post "/admin/contracts/#{contract.id}/submit"
+      expect(response).to redirect_to("/admin/contracts")
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[reviewer] }
+      post "/admin/contracts/#{contract.id}/approve"
+      expect(response).to redirect_to("/admin/contracts")
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { resolver_roles }
+
+      expect do
+        post "/admin/contracts/#{contract.id}/publish"
+      end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
+
+      expect(response).to redirect_to("/admin/contracts")
+      expect(flash[:notice]).to be_present
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("published")
+        expect(contract.published_at).to be_present
+        expect(contract.redaction_confirmed_at).to be_present
       end
     end
   end

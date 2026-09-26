@@ -16,6 +16,12 @@ module Decidim
     #   the record's state is editable (ContractLifecycle::EDITABLE_STATES) —
     #   the editorial twin of the lifecycle's editability rule; reviewers can
     #   never edit, and non-editable states deny even editors.
+    # - :confirm_redaction (ADR-007, civora-org/civora-platform#91) shares
+    #   :update's role rule but is admittable on the wider confirmable
+    #   window (ContractLifecycle::CONFIRMABLE_STATES = editable states +
+    #   :approved — a reviewer-approved record may still be stamped right
+    #   before publish; `editable?` itself is NOT widened). The command
+    #   re-checks both conditions inside the row lock.
     # - :import_crz (ADR-008, civora-org/civora-platform#86) is allowed when
     #   the user's engine roles include :editor, with NO lifecycle condition
     #   — importing one CRZ record by id is a record-management act on the
@@ -131,8 +137,13 @@ module Decidim
         # membership decides, no lifecycle state is consulted.
         when :create, :download_crz_handoff, :import_crz
           toggle_allow(roles_for_user.include?(:editor))
-        when :update
-          toggle_allow(roles_for_user.include?(:editor) && ContractLifecycle.editable?(state))
+        # :update and :confirm_redaction (ADR-007,
+        # civora-org/civora-platform#91) share the editor-role rule but
+        # consult different lifecycle windows (see #action_state_window):
+        # the stamp may still land on an approved record right before
+        # publish, while editability itself is never widened.
+        when :update, :confirm_redaction
+          toggle_allow(contract_write_allowed?)
         when :read
           toggle_allow(roles_for_user.any?)
         when *TRANSITION_EVENTS
@@ -177,6 +188,26 @@ module Decidim
 
       def amendment_create_allowed?
         editor? && contract_published?
+      end
+
+      # The shared gate behind :update and :confirm_redaction: the editor
+      # role plus the action's lifecycle window (see #action_state_window).
+      def contract_write_allowed?
+        editor? && action_state_window.include?(state)
+      end
+
+      # The lifecycle window behind the two write-ish contract actions:
+      # :update keeps the strict editable set; :confirm_redaction (ADR-007,
+      # civora-org/civora-platform#91) is admittable on the wider
+      # confirmable window — the editable states plus :approved, so a
+      # reviewer-approved record can still be stamped right before publish.
+      # Editability itself is never widened.
+      def action_state_window
+        if action == :update
+          ContractLifecycle::EDITABLE_STATES
+        else
+          ContractLifecycle::CONFIRMABLE_STATES
+        end
       end
 
       def amendment_edit_allowed?

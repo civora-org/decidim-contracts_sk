@@ -25,7 +25,7 @@ ideally in both `en` and `sk` where noted.
 ## Admin contracts (new / edit / index / transitions)
 
 - [ ] **New**: one `h1`; every input has a `label` with a unique `id`; back-to-index link present.
-- [ ] **Edit**: one `h1`; `h2` sections (documents, CRZ handoff); lifecycle state, author, organization and `published_at` are not form-writable.
+- [ ] **Edit**: one `h1`; `h2` sections (privacy redaction, documents, links, CRZ handoff); lifecycle state, author, organization and `published_at` are not form-writable.
 - [ ] **Index**: one `h1`; table headers localized; localized empty state when the organization has no contracts.
 - [ ] **Index (sk pass)**: state labels and transition button labels render localized (no raw enum values).
 - [ ] Per-state transition buttons only (no event whose edge does not start at the record's state, none for roles that own no edge).
@@ -41,6 +41,16 @@ ideally in both `en` and `sk` where noted.
 - [ ] CRZ disclaimer text visible on the edit page (and in the generated PDF: labelled an aid, never a legal publication).
 - [ ] Generate/regenerate offered only on an editable-state record (editor); download offered on any lifecycle state (editor).
 - [ ] Download on a stale page (artifact since deleted) redirects with the localized download-missing flash instead of erroring.
+
+## Privacy redaction (contract edit page + admin index row, ADR-007)
+
+- [ ] The "Privacy redaction" card renders on the edit page of a confirmable record (editable states + approved) — checklist + required checkbox while unstamped; confirmation stamp line once stamped (checkbox form gone).
+- [ ] The admin contracts index shows the same confirmation as a COLLAPSED row card for a confirmable, unstamped record (only the trigger label until opened) — for the acting editor only: nothing once stamped, nothing for a reviewer, nothing outside the confirmable window (e.g. in_review, published).
+- [ ] The checkbox carries an accessible label (`<label for="redaction_confirmed_<record id>">` pointing at the input's id — derived per record, so several confirmable rows on one index page never collide), in both en and sk.
+- [ ] A POST without the checkbox value (hand-crafted / stale page) is refused server-side with the localized alert — no stamp, no audit row (the HTML `required` attribute is a UX aid, never the gate).
+- [ ] A repeat POST on an already-stamped record is refused with the localized alert; the original confirmation date never moves.
+- [ ] Publishing an unstamped record is refused with the DEDICATED redaction-gate flash (actionable, pointing at the edit page) — not the generic transition alert.
+- [ ] CRZ-imported records show no redaction card expectation: mirrors carry no stamp by design (their content is already-public upstream data, ADR-008).
 
 ## Parties
 
@@ -64,7 +74,7 @@ ideally in both `en` and `sk` where noted.
 - [ ] Money and dates render per convention — **DECISION RECORD**: ISO dates, fixed-point EUR amounts, no locale-dependent grouping (deterministic across hosts).
 - [ ] Loading states: N/A (no async UI in the engine).
 - [ ] Mixed en/sk content: page `lang` is host-owned; spot-check that engine strings match the active locale even when record content is in the other language.
-- [ ] Keyboard-only full workflow pass: create → edit → parties → documents → submit → return → approve → publish → amendment → archive.
+- [ ] Keyboard-only full workflow pass: create → edit → parties → documents → redaction confirmation → submit → return → approve → publish → amendment → archive.
 - [ ] Screen-reader spot-check: table headers announced, error list reachable after failed submit, focus returns to the trigger after a confirm dialog closes.
 
 ## Known gaps and follow-ups

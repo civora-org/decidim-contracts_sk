@@ -30,6 +30,11 @@ RSpec.describe Decidim::ContractsSk::Admin::PublishAmendment, :db do
       attrs[:signed_on] = Date.new(2026, 9, 1)
       attrs[:effective_from] = Date.new(2026, 8, 15)
       attrs[:crz_url] = "https://crz.gov.sk/record/123"
+      # The ADR-007 invariant (#91): the normal flow confirms the privacy
+      # redaction before (or at latest at) publication, so this group's
+      # parent carries the stamp — the unstamped backstop is pinned in the
+      # fail-closed group below.
+      attrs[:redaction_confirmed_at] = Time.current
     end)
   end
 
@@ -140,6 +145,59 @@ RSpec.describe Decidim::ContractsSk::Admin::PublishAmendment, :db do
       expect(amendment).to be_draft
       expect(amendment.published_at).to be_nil
       expect(Decidim::ContractsSk::AuditEvent.count).to eq(0)
+    end
+
+    it "refuses to publish when the editorial parent lacks the redaction confirmation stamp (ADR-007 backstop)" do
+      # The snapshot freezes the contract's CURRENT content — already-
+      # confirmed content by construction, per the Gate-1 decision (#91):
+      # no separate amendment checkbox exists, so the stamp gate on the
+      # parent is the backstop that keeps the invariant honest. The parent
+      # here is editorial (the source column's default), the scope the
+      # stamp requirement covers.
+      expect(contract.source).to eq("editorial")
+      contract.update!(redaction_confirmed_at: nil)
+
+      expect do
+        events = described_class.call(amendment, user: author)
+
+        expect(events).to have_key(:invalid)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      amendment.reload
+      expect(amendment).to be_draft
+      expect(amendment.published_at).to be_nil
+      expect(amendment.content_snapshot).to be_nil
+      expect(Decidim::ContractsSk::AuditEvent.count).to eq(0)
+    end
+
+    it "publishes an amendment of an unstamped CRZ-mirror parent (ADR-008 exemption, #91 H-2)" do
+      # A CRZ mirror's content is already-public upstream register data the
+      # importing editor could never have personally affirmed, so mirrors
+      # land published WITHOUT the stamp — and their amendments must stay
+      # publishable. Fail-closed scoping: the exemption matches only the
+      # real CRZ source value.
+      mirror = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(state: "published",
+                            reference: "ZP-2026-900",
+                            source: "crz",
+                            source_id: "900000009").tap do |attrs|
+          attrs[:subject_matter] = "Mirrored public metadata"
+          attrs[:redaction_confirmed_at] = nil
+        end
+      )
+      mirror_amendment = Decidim::ContractsSk::Admin::CreateAmendment
+                         .call(Decidim::ContractsSk::Admin::AmendmentForm.new(summary: "Mirrored correction"),
+                               mirror, user: author)[:ok]
+
+      expect do
+        events = described_class.call(mirror_amendment, user: author)
+
+        expect(events).to have_key(:ok)
+      end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
+
+      expect(mirror_amendment.reload).to be_published
+      expect(mirror.reload.redaction_confirmed_at).to be_nil
     end
   end
 

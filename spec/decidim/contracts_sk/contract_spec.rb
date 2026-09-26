@@ -259,6 +259,7 @@ RSpec.describe Decidim::ContractsSk::Contract do
       allowed_events_for
       terminal?
       editable?
+      confirmable?
       publicly_visible?
       submit!
       return!

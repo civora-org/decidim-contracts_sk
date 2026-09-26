@@ -21,7 +21,12 @@ require "spec_helper"
 RSpec.describe Decidim::ContractsSk::Admin::UpdateAmendment, :db do
   before { migrate_engine_schema! }
 
-  let(:contract) { Decidim::ContractsSk::Contract.create!(contract_attributes(state: "published")) }
+  # The ADR-007 invariant (#91): amendment publication backstops on the
+  # parent's redaction stamp, so this group's published parent carries it.
+  let(:contract) do
+    Decidim::ContractsSk::Contract
+      .create!(contract_attributes(state: "published", redaction_confirmed_at: Time.current))
+  end
   let(:form) { Decidim::ContractsSk::Admin::AmendmentForm.new(summary: "Retitled amendment") }
 
   def create_draft!

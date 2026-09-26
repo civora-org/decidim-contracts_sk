@@ -39,6 +39,10 @@ below is the contract consumed by the permission-mapping milestone **M02-01-B**
 > ([roles-and-permissions.md](roles-and-permissions.md)); *ownership*
 > (only the authoring editor may act) is a model-level concern owned by the
 > Contract model milestone ([civora-org/civora-platform#55]).
+>
+> **Note on row 7:** the publish edge carries the ADR-007 privacy-redaction
+> precondition — it refuses while `redaction_confirmed_at` is blank; see
+> [contracts-domain-notes.md](contracts-domain-notes.md#redaction-confirmation-gate-landed-in-91-adr-007).
 
 ### Role rationale
 
@@ -82,6 +86,7 @@ Decidim::ContractsSk::ContractLifecycle::STATES            # frozen array of 7 s
 Decidim::ContractsSk::ContractLifecycle::INITIAL_STATE     # :draft
 Decidim::ContractsSk::ContractLifecycle::TERMINAL_STATES   # [:rejected, :archived]
 Decidim::ContractsSk::ContractLifecycle::EDITABLE_STATES   # [:draft, :returned]
+Decidim::ContractsSk::ContractLifecycle::CONFIRMABLE_STATES # [:draft, :returned, :approved] — ADR-007 confirmation window
 Decidim::ContractsSk::ContractLifecycle::PUBLIC_STATES     # [:published, :archived]
 Decidim::ContractsSk::ContractLifecycle::ROLES             # [:editor, :reviewer]
 Decidim::ContractsSk::ContractLifecycle::TRANSITIONS       # nested frozen hash
@@ -90,6 +95,7 @@ Decidim::ContractsSk::ContractLifecycle::TRANSITIONS       # nested frozen hash
 .initial_state                              # :draft
 .terminal?(state)                           # bool
 .editable?(state)                           # bool
+.confirmable?(state)                        # bool — ADR-007 confirmation window
 .publicly_visible?(state)                   # bool
 .events_from(state)                         # frozen sorted array; [] for terminal/unknown
 .transition_allowed?(from:, event:, role:)  # bool; false for unknown edges (fail closed)

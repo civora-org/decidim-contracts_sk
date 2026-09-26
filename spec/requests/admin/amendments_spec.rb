@@ -197,9 +197,14 @@ RSpec.describe "admin amendment management", type: :request do
       allow_any_instance_of(controller).to receive(:current_organization).and_return(organization)
     end
 
-    # Amendments are seeded onto published contracts only (ADR-006).
+    # Amendments are seeded onto published contracts only (ADR-006). The
+    # ADR-007 invariant (#91) rides along: the normal flow confirms the
+    # privacy redaction before (or at latest at) publication, so the
+    # seeded parents carry the stamp — amendment publication backstops on
+    # it.
     def create_contract!(overrides = {})
-      Decidim::ContractsSk::Contract.create!(contract_attributes(state: "published").merge(overrides))
+      Decidim::ContractsSk::Contract
+        .create!(contract_attributes(state: "published", redaction_confirmed_at: Time.current).merge(overrides))
     end
 
     it "adds a draft amendment to a published contract for an editor and redirects to the index" do

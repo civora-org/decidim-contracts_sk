@@ -23,6 +23,14 @@ module Decidim
       INITIAL_STATE = :draft
       TERMINAL_STATES = %i[rejected archived].freeze
       EDITABLE_STATES = %i[draft returned].freeze
+      # States on which the ADR-007 privacy-redaction confirmation (ADR-007,
+      # civora-org/civora-platform#91) may still be stamped: the editable
+      # states plus :approved — a record can reach its reviewer sign-off
+      # unstamped, and the confirmation must be admittable right up to the
+      # publish edge. Deliberately NOT folded into EDITABLE_STATES: approval
+      # still locks the content fields, so `editable?` keeps its exact
+      # meaning; only the confirmation window widens.
+      CONFIRMABLE_STATES = (EDITABLE_STATES + %i[approved]).freeze
       PUBLIC_STATES = %i[published archived].freeze
       ROLES = %i[editor reviewer].freeze
 
@@ -64,6 +72,13 @@ module Decidim
 
       def editable?(state)
         EDITABLE_STATES.include?(state)
+      end
+
+      # True while the ADR-007 privacy-redaction confirmation may still be
+      # stamped (CONFIRMABLE_STATES: draft, returned, approved — the
+      # confirmation window, deliberately wider than editability).
+      def confirmable?(state)
+        CONFIRMABLE_STATES.include?(state)
       end
 
       def publicly_visible?(state)

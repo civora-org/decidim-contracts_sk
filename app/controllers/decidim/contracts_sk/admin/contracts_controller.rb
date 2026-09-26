@@ -5,9 +5,10 @@ module Decidim
     module Admin
       # Admin CRUD and lifecycle transitions for contract records
       # (civora-org/civora-platform#58, #59), the manual CRZ-handoff
-      # download/generate pair (M02-05-C, civora-org/civora-platform#74)
-      # and the single-record CRZ import (ADR-008,
-      # civora-org/civora-platform#86).
+      # download/generate pair (M02-05-C, civora-org/civora-platform#74),
+      # the single-record CRZ import (ADR-008,
+      # civora-org/civora-platform#86) and the ADR-007 privacy-redaction
+      # confirmation POST (civora-org/civora-platform#91).
       #
       # index/new/create open with enforce_permission_to before anything
       # else; edit/update and the transition actions load the record first,
@@ -161,6 +162,33 @@ module Decidim
           redirect_to admin_contracts_path
         end
 
+        # ADR-007 privacy-redaction confirmation (civora-org/civora-platform
+        # #91): the editor's checklist affirmation on the edit page that
+        # personal data was redacted — the stamp TransitionContract's publish
+        # edge requires. Gated through the dedicated :confirm_redaction
+        # permission action (editor on a confirmable record — editable
+        # states plus approved, mirroring :update's role rule on a wider
+        # window); the command re-checks both conditions inside the row
+        # lock. The affirmation itself is consumed SERVER-SIDE: the checkbox
+        # value must arrive as a truthy boolean, so a stale or hand-crafted
+        # POST without it is refused before the command runs (no stamp, no
+        # audit row — the checkbox's `required` attribute is a UX aid, never
+        # the gate). Both outcomes are PRG redirects to the edit page (the
+        # control's home) with a localized flash — the checkbox form has no
+        # state to re-render.
+        def confirm_redaction
+          @contract = contracts_scope.find(params[:id])
+
+          enforce_permission_to :confirm_redaction, :contract, contract: @contract
+
+          return confirm_redaction_failed unless redaction_affirmed?
+
+          ConfirmRedaction.call(@contract, user: current_user) do
+            on(:ok) { confirm_redaction_succeeded }
+            on(:invalid) { confirm_redaction_failed }
+          end
+        end
+
         # One explicit action per lifecycle transition event. The route set
         # is derived from ContractLifecycle::TRANSITIONS in config/routes.rb;
         # these named shells exist so the derived routes map onto readable
@@ -254,11 +282,38 @@ module Decidim
           redirect_to edit_admin_contract_path(@contract)
         end
 
+        # Both confirm outcomes are PRG redirects to the edit page, same
+        # doctrine as the generate pair: the :invalid path covers the
+        # missing affirmation and the non-confirmable / already-stamped
+        # refusals, and the edit page shows the truth (stamp line or
+        # checkbox form) either way.
+        def confirm_redaction_succeeded
+          flash[:notice] = t("decidim.contracts_sk.admin.contracts.confirm_redaction.success")
+          redirect_to edit_admin_contract_path(@contract)
+        end
+
+        def confirm_redaction_failed
+          flash[:alert] = t("decidim.contracts_sk.admin.contracts.confirm_redaction.invalid")
+          redirect_to edit_admin_contract_path(@contract)
+        end
+
+        # The affirmation consumed server-side (see #confirm_redaction):
+        # ActiveModel::Type::Boolean's vocabulary is pinned here — "1",
+        # "true", "t" and "on" count as the affirmation; a missing value,
+        # "0", "false", "f", "off" or any other payload does not. The
+        # comparison is against exactly `true`, so nil (missing/empty)
+        # refuses too.
+        def redaction_affirmed?
+          ActiveModel::Type::Boolean.new.cast(params[:redaction_confirmed]) == true
+        end
+
         # Shared transition pipeline: load the record from the tenant scope,
         # ask the permission layer (event-specific: the lifecycle edge's role
         # set decides), then run the command. Both outcomes are PRG redirects
         # — a failure never re-renders, because the record's state may have
-        # changed under us; the index shows the truth.
+        # changed under us; the index shows the truth. The command's refusal
+        # payload (TransitionContract's :redaction_gate) selects the
+        # dedicated publish-gate flash (see #transition_failed).
         def transition(event)
           @contract = contracts_scope.find(params[:id])
 
@@ -266,7 +321,7 @@ module Decidim
 
           TransitionContract.call(@contract, event: event, user: current_user) do
             on(:ok) { transition_succeeded }
-            on(:invalid) { transition_failed }
+            on(:invalid) { |reason = nil| transition_failed(reason) }
           end
         end
 
@@ -275,8 +330,19 @@ module Decidim
           redirect_to admin_contracts_path
         end
 
-        def transition_failed
-          flash[:alert] = t("decidim.contracts_sk.admin.contracts.transition.invalid")
+        # The ADR-007 publish refusal flashes its own actionable message
+        # (the confirmation lives on the edit page), keyed off the command's
+        # broadcast payload — deterministic, no state re-read, and nothing
+        # beyond the already-public gate is revealed. Every other refusal
+        # keeps the generic transition alert.
+        def transition_failed(reason = nil)
+          key = if reason == TransitionContract::REDACTION_GATE_REASON
+                  "decidim.contracts_sk.admin.contracts.transition.redaction_required"
+                else
+                  "decidim.contracts_sk.admin.contracts.transition.invalid"
+                end
+
+          flash[:alert] = t(key)
           redirect_to admin_contracts_path
         end
 

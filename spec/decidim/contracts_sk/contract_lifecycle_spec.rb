@@ -57,6 +57,18 @@ RSpec.describe Decidim::ContractsSk::ContractLifecycle do
       expect(lifecycle::EDITABLE_STATES).to eq(%i[draft returned])
     end
 
+    it "defines confirmable states as the editable states plus approved (ADR-007, civora-org/civora-platform#91)" do
+      expect(lifecycle::CONFIRMABLE_STATES).to eq(%i[draft returned approved])
+    end
+
+    it "keeps the confirmable set a strict superset of the editable set without widening editability" do
+      # The redaction-confirmation window (ADR-007) is wider than
+      # editability on purpose: approval locks the content but must still
+      # admit the confirmation. EDITABLE_STATES itself stays untouched.
+      expect(lifecycle::CONFIRMABLE_STATES).to include(*lifecycle::EDITABLE_STATES)
+      expect(lifecycle::CONFIRMABLE_STATES - lifecycle::EDITABLE_STATES).to eq(%i[approved])
+    end
+
     it "defines public states as published and archived" do
       expect(lifecycle::PUBLIC_STATES).to eq(%i[published archived])
     end
@@ -67,7 +79,7 @@ RSpec.describe Decidim::ContractsSk::ContractLifecycle do
   end
 
   describe "freezing" do
-    %i[STATES TERMINAL_STATES EDITABLE_STATES PUBLIC_STATES ROLES].each do |const|
+    %i[STATES TERMINAL_STATES EDITABLE_STATES CONFIRMABLE_STATES PUBLIC_STATES ROLES].each do |const|
       it "deep-freezes #{const}" do
         expect(lifecycle.const_get(const)).to be_frozen
       end
@@ -179,7 +191,7 @@ RSpec.describe Decidim::ContractsSk::ContractLifecycle do
   end
 
   describe "fail-closed predicates" do
-    %i[terminal? editable? publicly_visible?].each do |predicate|
+    %i[terminal? editable? confirmable? publicly_visible?].each do |predicate|
       [nil, :bogus].each do |input|
         it "#{predicate} returns false without raising for #{input.inspect}" do
           expect(lifecycle.public_send(predicate, input)).to be(false)
@@ -208,6 +220,28 @@ RSpec.describe Decidim::ContractsSk::ContractLifecycle do
 
     it "locks in_review" do
       expect(lifecycle.editable?(:in_review)).to be(false)
+    end
+  end
+
+  describe ".confirmable?" do
+    it "is true exactly for the confirmable states (editable plus approved)" do
+      lifecycle::STATES.each do |state|
+        expect(lifecycle.confirmable?(state)).to eq(lifecycle::CONFIRMABLE_STATES.include?(state))
+      end
+    end
+
+    it "admits approved — the last chance to stamp before the publish edge" do
+      expect(lifecycle.confirmable?(:approved)).to be(true)
+    end
+
+    it "locks in_review — a record under review cannot gain the stamp" do
+      expect(lifecycle.confirmable?(:in_review)).to be(false)
+    end
+
+    it "locks every post-approval state" do
+      %i[published archived rejected].each do |state|
+        expect(lifecycle.confirmable?(state)).to be(false)
+      end
     end
   end
 

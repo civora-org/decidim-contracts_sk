@@ -14,6 +14,19 @@
   </div>
 </div>
 
+<%# ADR-007 privacy-redaction confirmation gate (civora-org/civora-platform
+    #91): the hard precondition of the publish transition, confirmed inline
+    on the edit page — the shared card (checklist + required checkbox + one
+    POST, no new page and no JS; the repo's no-nested-form-JS doctrine).
+    Once the stamp is present the checkbox form is replaced by a small
+    confirmation line; the form is permission-gated exactly like the page's
+    other writes. The stamp line itself is historical record and renders
+    regardless of role. The admin index row carries the same confirmation as
+    a collapsed card through the same partial. %>
+<% if @contract.redaction_confirmed_at.present? || allowed_to?(:confirm_redaction, :contract, contract: @contract) %>
+  <%= render "redaction_confirmation", contract: @contract %>
+<% end %>
+
 <%# Per-contract document management (civora-org/civora-platform#73): the
     route set has no document index, so the contract's edit page is the
     hub — it lists the documents and carries the attach/replace/remove

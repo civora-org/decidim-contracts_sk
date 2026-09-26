@@ -1,0 +1,33 @@
+<%# ADR-007 privacy-redaction confirmation card (civora-org/civora-platform
+    #91), shared by the two admin surfaces so their markup stays in sync —
+    the checklist + checkbox core lives in _redaction_confirmation_body.
+    Locals:
+      contract - the record to confirm or show the stamp for
+      collapsed - false (default): the edit page's full card — once stamped
+                  it renders the historical confirmation line regardless of
+                  role (the caller gates that).
+                  true: the admin index row's collapsed <details> — only the
+                  short trigger label shows until opened; the checklist lives
+                  inside. The caller gates rendering to confirmable,
+                  unstamped records the acting editor may stamp.
+    Rendering is permission-gated at the callers (allowed_to? on
+    :confirm_redaction), exactly like their other write controls. %>
+<% collapsed = local_assigns.fetch(:collapsed, false) %>
+<% if collapsed %>
+  <details class="redaction-confirmation">
+    <summary><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></summary>
+    <%= render "redaction_confirmation_body", contract: contract %>
+  </details>
+<% else %>
+  <div class="card">
+    <div class="card-divider">
+      <h2 class="card-title">
+        <%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %>
+      </h2>
+    </div>
+
+    <div class="card-section">
+      <%= render "redaction_confirmation_body", contract: contract %>
+    </div>
+  </div>
+<% end %>

@@ -55,6 +55,15 @@ module ContractsSkDemoData
             h[:published_at] = Time.zone.parse("2026-03-01T09:00:00Z") + i
             h[:crz_url] = "https://crz.gov.sk/demo-#{reference.downcase}"
           end
+          # ADR-007 redaction stamp (#91), mirroring the demo seed task:
+          # editorial records that are or were published (published /
+          # archived) plus the approve→publish walkthrough record carry the
+          # confirmation, written in the same create as the state. Drafts
+          # (and every across_states: false record) stay unstamped, so the
+          # publish gate stays demonstrable.
+          if %w[approved published archived].include?(h[:state])
+            h[:redaction_confirmed_at] = Time.zone.parse("2026-02-28T10:00:00Z")
+          end
         end
       )
     end

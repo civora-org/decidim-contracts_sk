@@ -15,6 +15,11 @@ module Decidim
     # `published_at` is a system field: TransitionContract stamps it on the
     # publish event — it is never form-writable.
     #
+    # `redaction_confirmed_at` is likewise a system field (ADR-007,
+    # civora-org/civora-platform#91): ConfirmRedaction stamps it when an
+    # editor confirms the privacy-redaction checklist on the edit page, and
+    # the publish transition refuses while it is blank. Never form-writable.
+    #
     # The source/source_id/imported_at/import_status columns are
     # CRZ-mirror provenance metadata (docs/contracts-domain-notes.md);
     # checksum carries the source-payload digest and import_status is

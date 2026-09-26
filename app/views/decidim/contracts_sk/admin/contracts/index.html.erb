@@ -87,6 +87,18 @@
                                 class: "button button__sm button__secondary",
                                 data: { confirm: t("decidim.contracts_sk.admin.contracts.transition.confirm.#{event}") } %>
                 <% end %>
+                <%# ADR-007 surface on the index (civora-org/civora-platform#91):
+                    for a confirmable, unstamped record the acting editor can
+                    confirm the redaction checklist straight from the row —
+                    collapsed by default so it stays compact. Permission-gated
+                    exactly like the transition buttons above: :confirm_redaction
+                    carries the editor role plus the confirmable window
+                    (editable states + approved); the stamp check keeps
+                    already-stamped records free of a second form (their
+                    confirmation line lives on the edit page). %>
+                <% if allowed_to?(:confirm_redaction, :contract, contract: contract) && contract.redaction_confirmed_at.blank? %>
+                  <%= render "redaction_confirmation", contract: contract, collapsed: true %>
+                <% end %>
               </td>
             </tr>
           <% end %>
