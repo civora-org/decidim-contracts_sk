@@ -69,6 +69,8 @@ sk:
           index:
             title: "Zmluvy"
             empty: "Zatiaľ nebola vytvorená žiadna zmluva."
+            counters:
+              all: "Všetky"
             filters:
               state: "Stav"
               source: "Zdroj"
@@ -81,6 +83,10 @@ sk:
                 all: "Všetky zdroje"
                 crz: "Import z CRZ"
                 editorial: "Redakčná"
+            no_matches:
+              heading: "Žiadna zmluva nezodpovedá aktuálnym filtrom."
+              body: "Upravte alebo zrušte filtre a skúste to znova."
+              clear: "Zrušiť filtre a zobraziť všetky zmluvy"
           new:
             title: "Nová zmluva"
           edit:

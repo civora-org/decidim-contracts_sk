@@ -38,9 +38,13 @@ module Decidim
         # hand-enumerated. The index filter option lists and the normalized
         # filter state back the filter form the same way, and
         # #reason_event? tells the row which transition controls take a
-        # reviewer decision reason (civora-org/civora-platform#90).
+        # reviewer decision reason (civora-org/civora-platform#90). The
+        # per-state counter helpers back the index header chips and the
+        # filtered no-matches empty state (civora-org/civora-platform#93).
         helper_method :transition_events_for, :index_filters,
-                      :index_state_options, :index_source_options, :reason_event?
+                      :index_state_options, :index_source_options, :reason_event?,
+                      :index_state_counts, :index_total_count, :index_filters_active?,
+                      :index_counter_label, :index_counter_path, :index_counter_classes
 
         # Case-insensitive free-text match for the index :q filter over the
         # two editorial identity fields; :pattern is always pre-escaped with
@@ -490,6 +494,68 @@ module Decidim
             %i[crz editorial].map do |source|
               [t("decidim.contracts_sk.admin.contracts.index.filters.sources.#{source}"), source]
             end
+        end
+
+        # Per-state lifecycle counters for the index header (civora-org/
+        # civora-platform#93): ONE grouped query over the UNFILTERED tenant
+        # scope — the chips are the honest "3 awaiting review" navigation,
+        # so the counts deliberately ignore the active filter. Keys are
+        # normalized to the lifecycle symbols the view iterates (the DB
+        # hands raw string keys back from the grouped count).
+        def index_state_counts
+          @index_state_counts ||= contracts_scope.group(:state).count
+                                                 .transform_keys(&:to_sym)
+        end
+
+        # The "All" chip total, derived from the same grouped result — no
+        # second query. The state column is NOT NULL (schema default
+        # "draft"), so the grouped counts cover every record.
+        def index_total_count
+          @index_total_count ||= index_state_counts.values.sum
+        end
+
+        # Whether the NORMALIZED index filters are non-default (civora-org/
+        # civora-platform#93): gates the no-matches empty state, so a
+        # garbage param — normalized away to the default view — never gets
+        # the filtered wording over the true-empty one.
+        def index_filters_active?
+          index_filters.state.present? || index_filters.source.present? ||
+            index_filters.q.present?
+        end
+
+        # Chip label: the localized state label (the shared contract_states.*
+        # vocabulary — never a second one) or the "All" label, plus the count
+        # in parentheses — a state's grouped count, or the summed total for
+        # the All chip (the grouped result has no nil key: state is NOT NULL).
+        def index_counter_label(state)
+          count = state ? index_state_counts.fetch(state, 0) : index_total_count
+          label = if state
+                    t(state, scope: "decidim.contracts_sk.contract_states")
+                  else
+                    t("decidim.contracts_sk.admin.contracts.index.counters.all")
+                  end
+          "#{label} (#{count})"
+        end
+
+        # Chip target: state=<value> (absent for the All chip) plus the other
+        # ACTIVE filter values — the normalized ones, never raw params, so a
+        # garbage value cannot ride along (the same allowlist discipline as
+        # the pagination partial's filter_keys).
+        def index_counter_path(state)
+          counter_params = {}
+          counter_params[:state] = state if state
+          counter_params[:source] = index_filters.source if index_filters.source
+          counter_params[:q] = index_filters.q if index_filters.q.present?
+          admin_contracts_path(counter_params)
+        end
+
+        # Chip classes: the view's established button styles plus a
+        # namespaced active marker when the chip's state matches the
+        # normalized filter state (nil marks the All chip).
+        def index_counter_classes(state)
+          classes = %w[button button__sm button__secondary contracts-sk__counter]
+          classes << "contracts-sk__counter--active" if index_filters.state == state
+          classes.join(" ")
         end
 
         # Only the editorial identity and content fields are updatable
