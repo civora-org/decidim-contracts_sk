@@ -39,32 +39,90 @@ module Decidim
       # in-database stamp, never the request-start copy. ConfirmRedaction is
       # the only writer of the stamp.
       #
+      # The reviewer decision reason (civora-org/civora-platform#90,
+      # Gate-1 Option A): the return and reject edges REQUIRE a non-blank
+      # reason, capped at MAX_REASON_LENGTH characters — the reviewer's
+      # judgment text, stored on the record with its reviewed_at timestamp.
+      # The write happens INSIDE the with_lock transaction (reason +
+      # timestamp assigned before the state write, so one UPDATE persists
+      # all three), keeping the decision, its stamps and the audit row
+      # atomic. The reason is request-shaped input that depends on no row
+      # state, so its blank/over-cap guard runs BEFORE the lock (the same
+      # pre-lock fail-closed tier as the role check) — a malformed request
+      # never takes the row lock; everything that reads or writes row state
+      # stays inside it. The judgment vocabulary stays reviewer-only: any
+      # OTHER event (approve, publish, archive, submit) must arrive without
+      # a reason and FAILS CLOSED when one is passed — the internal clearing
+      # below is the command's own act, never an input. On the resubmit
+      # edge (submit from returned) the command itself clears the stale
+      # review_reason and reviewed_at inside the same lock, so a fresh
+      # in_review record never carries the previous round's judgment (from
+      # draft the columns are already nil, making the clearing a no-op).
+      #
       # Refusal reason channel (#91 review round): the :invalid broadcasts
-      # stay :invalid — the caller contract is unchanged — but the
-      # redaction-gate refusal rides a payload (:redaction_gate) that the
-      # existing on(:invalid) handler may read (Wisper passes broadcast
-      # args through). This lets the UI flash a dedicated, actionable
-      # message for THIS refusal without a new outcome symbol and without
-      # exposing anything beyond the already-public gate.
+      # stay :invalid — the caller contract is unchanged — but a refusal
+      # may ride a payload that the existing on(:invalid) handler may read
+      # (Wisper passes broadcast args through). This lets the UI flash a
+      # dedicated, actionable message for a refusal without a new outcome
+      # symbol and without exposing anything beyond the already-public
+      # gates: the redaction-gate refusal carries :redaction_gate (#91),
+      # the missing-decision-reason refusal carries REASON_REQUIRED and the
+      # refused-reason refusal (over-cap, or a reason on an event that
+      # takes none) carries REASON_REJECTED (#90).
       class TransitionContract < Decidim::Command
         # The payload the redaction-gate refusal adds to its :invalid
         # broadcast (see the class comment).
         REDACTION_GATE_REASON = :redaction_gate
 
-        def initialize(contract, event:, user:)
+        # The payloads the reviewer-decision-reason refusals add to their
+        # :invalid broadcasts (civora-org/civora-platform#90): a return/
+        # reject without a usable reason carries REASON_REQUIRED; a refused
+        # reason (over-cap on a judgment edge, or any reason on an event
+        # that takes none) carries REASON_REJECTED.
+        REASON_REQUIRED = :reason_required
+        REASON_REJECTED = :reason_rejected
+
+        # The judgment edges that demand a decision reason, and the cap the
+        # reason must fit. Hand-pinned to the lifecycle's reviewer edges on
+        # purpose: the lifecycle table owns states and roles, the decision
+        # text is this command's input contract. Both frozen so a captured
+        # reference cannot mutate the vocabulary.
+        REASON_EVENTS = %i[return reject].freeze
+        MAX_REASON_LENGTH = 1000
+
+        def initialize(contract, event:, user:, reason: nil)
           super()
           @contract = contract
           @event = event
           @user = user
+          @reason = reason
         end
 
         def call
           return broadcast(:invalid) unless role
 
+          reason_failure = review_reason_failure
+          return broadcast(:invalid, reason_failure) if reason_failure
+
+          perform_transition
+        end
+
+        private
+
+        attr_reader :contract, :event, :user, :reason
+
+        # The locked transition: the in-lock guards and writes of the #69
+        # doctrine. with_lock reloads the row first, so the redaction gate
+        # and the state guard read the in-database state, never the
+        # request-start copy; the event's attribute writes ride the same
+        # transaction, so a failure at any step rolls the record back — a
+        # transition either fully happened (with its audit row and stamps)
+        # or did not happen at all.
+        def perform_transition
           contract.with_lock do
             return broadcast(:invalid, REDACTION_GATE_REASON) unless redaction_gate_open?
 
-            stamp_published_at!
+            apply_event_writes!
             contract.transition_state!(event: event, role: role)
             record_audit!
           end
@@ -74,9 +132,75 @@ module Decidim
           broadcast(:invalid)
         end
 
-        private
+        # The event's attribute writes, inside the caller's lock (each
+        # helper documents its own act): the resubmit clears the stale
+        # reviewer decision, the judgment edges stamp the decision, and the
+        # publish edge stamps its publication date — all assigned BEFORE
+        # the state write, so the state's update! persists every attribute
+        # in one UPDATE.
+        def apply_event_writes!
+          clear_review_decision! if submit_event?
+          stamp_review_decision! if reason_event?
+          stamp_published_at!
+        end
 
-        attr_reader :contract, :event, :user
+        # The refusal payload for the request's reason shape, or nil when
+        # the shape is acceptable: a judgment edge (return/reject) demands
+        # a non-blank reason (REASON_REQUIRED) that fits the cap
+        # (REASON_REJECTED beyond it), and every other edge demands NO
+        # reason at all (REASON_REJECTED when one arrives) — the judgment
+        # vocabulary stays reviewer-only. Evaluated before the lock: the
+        # shape depends only on the request, never on row state.
+        def review_reason_failure
+          if reason_event?
+            return REASON_REQUIRED if normalized_reason.blank?
+            return REASON_REJECTED if normalized_reason.length > MAX_REASON_LENGTH
+          elsif normalized_reason.present?
+            return REASON_REJECTED
+          end
+
+          nil
+        end
+
+        # The reason as it is stored: stripped of surrounding whitespace, so
+        # a whitespace-only payload counts as blank and a padded reason is
+        # trimmed at the single boundary where input meets the record.
+        def normalized_reason
+          @normalized_reason ||= reason.to_s.strip
+        end
+
+        # True on the judgment edges that carry a decision reason. The event
+        # is normalized with #to_sym at this boundary — this file's doctrine
+        # wherever input meets the lifecycle (cf. #role, #stamp_published_at!).
+        def reason_event?
+          REASON_EVENTS.include?(event&.to_sym)
+        end
+
+        def submit_event?
+          event.to_s == "submit"
+        end
+
+        # The resubmit's clearing act (civora-org/civora-platform#90): the
+        # stale reviewer decision must not survive the record's re-entry
+        # into review. Assigned inside the lock BEFORE the state write, so
+        # the state's update! persists the cleared columns with the state —
+        # a resubmit either fully happened (state + cleared decision + audit
+        # row) or did not happen at all. From draft the columns are already
+        # nil, so the assignment is a no-op there.
+        def clear_review_decision!
+          contract.review_reason = nil
+          contract.reviewed_at = nil
+        end
+
+        # The reviewer's decision text and timestamp on the judgment edges:
+        # assigned inside the lock BEFORE transition_state! so the state's
+        # update! persists reason, timestamp and state in one UPDATE (the
+        # stamp_published_at! doctrine) — an audit failure rolls all of it
+        # back together.
+        def stamp_review_decision!
+          contract.review_reason = normalized_reason
+          contract.reviewed_at = Time.current
+        end
 
         # The publish edge's ADR-007 precondition (civora-org/civora-platform
         # #91), evaluated INSIDE the lock on the reloaded row: publishing is

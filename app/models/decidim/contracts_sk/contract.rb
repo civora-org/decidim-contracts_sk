@@ -20,6 +20,11 @@ module Decidim
     # editor confirms the privacy-redaction checklist on the edit page, and
     # the publish transition refuses while it is blank. Never form-writable.
     #
+    # `review_reason`/`reviewed_at` are likewise system fields (#90): only
+    # TransitionContract writes them — the reviewer's return/reject judgment
+    # and its stamp, atomic with the state — and the resubmit edge clears
+    # both. Never form-writable.
+    #
     # The source/source_id/imported_at/import_status columns are
     # CRZ-mirror provenance metadata (docs/contracts-domain-notes.md);
     # checksum carries the source-payload digest and import_status is

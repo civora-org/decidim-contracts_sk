@@ -104,6 +104,9 @@ sk:
           update:
             success: "Zmluva bola úspešne upravená."
             error: "Zmluvu sa nepodarilo upraviť."
+          review_decision:
+            heading: "Rozhodnutie recenzenta"
+            decided_on: "Rozhodnuté dňa %{reviewed_at}."
           transition:
             submit: "Odoslať na kontrolu"
             return: "Vrátiť na doplnenie"
@@ -114,6 +117,11 @@ sk:
             success: "Prechod stavu zmluvy bol úspešne vykonaný."
             invalid: "Prechod stavu zmluvy sa nepodarilo vykonať."
             redaction_required: "Zverejnenie najprv vyžaduje potvrdenie skrytia osobných údajov — potvrďte ho na stránke úprav zmluvy."
+            review_reason_required: "Pre vrátenie alebo zamietnutie zmluvy je potrebný dôvod."
+            review_reason_rejected: "Odoslaný dôvod nebol prijatý — pri vrátení alebo zamietnutí je povinný (najviac 1000 znakov) a pri iných prechodoch nie je dovolený."
+            review_reason:
+              label: "Dôvod rozhodnutia"
+              placeholder: "Uveďte dôvod tohto rozhodnutia (povinný, najviac 1000 znakov)."
             confirm:
               submit: "Odoslať túto zmluvu do recenzie?"
               return: "Vrátiť túto zmluvu na doplnenie?"

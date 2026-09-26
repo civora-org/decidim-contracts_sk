@@ -105,8 +105,10 @@ FakeIndexPage = Struct.new(:records, :current_page, :total_pages, keyword_init: 
 end
 
 # A row renderable by the index view: title/reference/state for the cells
-# and the transition-button derivation, to_param for the edit path.
-FakeIndexContract = Struct.new(:title, :reference, :state) do
+# and the transition-button derivation, review_reason for the decision-
+# reason gate (#90, nil default keeps the collapsed card closed), and
+# to_param for the edit path.
+FakeIndexContract = Struct.new(:title, :reference, :state, :review_reason) do
   def to_param
     "77"
   end

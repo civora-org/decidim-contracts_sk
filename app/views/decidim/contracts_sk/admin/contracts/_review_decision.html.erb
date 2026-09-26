@@ -1,0 +1,40 @@
+<%# Reviewer decision card (civora-org/civora-platform#90), shared by the
+    two admin surfaces so their markup stays in sync — the reason core
+    lives in _review_decision_body. Read-only on both: the decision is
+    reviewer-typed historical record, neither surface offers a control to
+    change it (the editor's answer is the resubmit transition).
+    Locals:
+      contract - the record whose decision to show
+      collapsed - false (default): the edit page's full banner — the
+                  editor's answer to "why was this returned?"; renders
+                  regardless of role (historical record) whenever the
+                  caller's reason/state gate admits it.
+                  true: the admin index row's collapsed read-only
+                  <details> — only the short summary label shows until
+                  opened. The index caller gates on reason presence only:
+                  any admin who can see the row may read it (the same
+                  audience as the index) — deliberately no permission
+                  check, unlike the redaction card, since reading a past
+                  decision is not a write. For a rejected record that row
+                  card is the only reachable surface for its reason: a
+                  terminal state renders no transition controls and the
+                  edit page stays permission-locked. %>
+<% collapsed = local_assigns.fetch(:collapsed, false) %>
+<% if collapsed %>
+  <details class="review-decision-reason">
+    <summary><%= t("decidim.contracts_sk.admin.contracts.review_decision.heading") %></summary>
+    <%= render "review_decision_body", contract: contract %>
+  </details>
+<% else %>
+  <div class="card review-decision-banner">
+    <div class="card-divider">
+      <h2 class="card-title">
+        <%= t("decidim.contracts_sk.admin.contracts.review_decision.heading") %>
+      </h2>
+    </div>
+
+    <div class="card-section">
+      <%= render "review_decision_body", contract: contract %>
+    </div>
+  </div>
+<% end %>

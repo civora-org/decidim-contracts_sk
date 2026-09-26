@@ -73,13 +73,17 @@ RSpec.describe Decidim::ContractsSk::ContractLifecycle do
       expect(lifecycle::PUBLIC_STATES).to eq(%i[published archived])
     end
 
+    it "defines decision states as returned and rejected (civora-org/civora-platform#90)" do
+      expect(lifecycle::DECISION_STATES).to eq(%i[returned rejected])
+    end
+
     it "defines exactly the editor and reviewer roles" do
       expect(lifecycle::ROLES).to eq(%i[editor reviewer])
     end
   end
 
   describe "freezing" do
-    %i[STATES TERMINAL_STATES EDITABLE_STATES CONFIRMABLE_STATES PUBLIC_STATES ROLES].each do |const|
+    %i[STATES TERMINAL_STATES EDITABLE_STATES CONFIRMABLE_STATES DECISION_STATES PUBLIC_STATES ROLES].each do |const|
       it "deep-freezes #{const}" do
         expect(lifecycle.const_get(const)).to be_frozen
       end

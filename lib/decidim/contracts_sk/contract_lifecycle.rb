@@ -31,6 +31,14 @@ module Decidim
       # still locks the content fields, so `editable?` keeps its exact
       # meaning; only the confirmation window widens.
       CONFIRMABLE_STATES = (EDITABLE_STATES + %i[approved]).freeze
+      # States whose entry edge (in_review -> return/reject) demands a
+      # reviewer decision reason (civora-org/civora-platform#90): a record
+      # sitting in one of them carries the reviewer's judgment text, which
+      # the admin edit page renders as a decision banner. The judgment
+      # vocabulary is reviewer-only — TransitionContract fails any other
+      # event closed when a reason is passed, and `submit` from :returned
+      # clears the stale decision on resubmit.
+      DECISION_STATES = %i[returned rejected].freeze
       PUBLIC_STATES = %i[published archived].freeze
       ROLES = %i[editor reviewer].freeze
 

@@ -255,6 +255,43 @@ documents).
   (the UI hides the control once stamped; re-stamping would move the
   confirmation date without a fresh affirmation behind it).
 
+## Reviewer decision reasons landed in #90 (Gate-1 Option A)
+
+The reviewer judgment edges (`in_review` → `return`/`reject`) now carry a
+mandatory decision reason (civora-org/civora-platform#90), stored on the
+contract row itself:
+
+- **Option A — judgment text on the contract, not a payload table.** Two
+  nullable columns: `review_reason` (string, capped at 1000 characters)
+  and `reviewed_at` (datetime). Additive migration, no backfill, no index
+  (mirrors the #91 stamp) — pre-#90 records carry no judgment text, which
+  is exactly the truthful state. A returned/rejected record without a
+  reason can only predate #90 (the command refuses reason-less
+  judgments), so the admin edit banner stays hidden there.
+- **D4 untouched** — the audit row shape stays the #57 vocabulary
+  (`action` = `"contract.<event>"`, timestamps only, no JSON payload): the
+  reason is record content, not audit metadata. The audit row for a
+  judgment edge is written in the same locked transaction as the reason,
+  so decision text, state, stamps and audit commit atomically or not at
+  all.
+- **Cleared on resubmit** — `submit` from `returned` nils both columns
+  inside the same lock, persisted by the state write: a fresh `in_review`
+  record never carries the previous round's judgment. From `draft` the
+  columns are already nil (only a returned record ever carries a reason),
+  making the clearing a no-op there. The banner on the edit page
+  disappears with the clearing — the "Reviewer decision" banner renders
+  exactly while the record sits in `ContractLifecycle::DECISION_STATES`
+  (`returned`/`rejected`) with a reason present.
+- **Judgment vocabulary stays reviewer-only** — any OTHER event
+  (`submit`, `approve`, `publish`, `archive`) fails closed when a reason
+  param arrives (the command broadcasts `:invalid` with a
+  `REASON_REJECTED` payload; the UI flashes a dedicated localized alert).
+  A blank/whitespace reason on a judgment edge refuses with
+  `REASON_REQUIRED`. The reason-shape guard runs BEFORE the row lock
+  (request-shaped input, no row state), while the write — reason +
+  `reviewed_at` + state + audit — happens inside the existing
+  `with_lock` transaction, per the lock discipline above.
+
 ## Amendment lifecycle landed in #65 (M02-05-B)
 
 The amendments table grew its lifecycle (ADR-006, Option A — immutable

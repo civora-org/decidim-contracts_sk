@@ -27,6 +27,23 @@
   <%= render "redaction_confirmation", contract: @contract %>
 <% end %>
 
+<%# Reviewer decision banner (civora-org/civora-platform#90): when the
+    record sits in a decision state (returned/rejected) and carries the
+    reviewer's judgment text, the reason — with the decision title and
+    timestamp — shows here, the editor's answer to "why was this returned?".
+    Like the redaction stamp line above it is historical record: it renders
+    regardless of role (a returned record is editable, so its editor is the
+    audience), and it disappears once the record is resubmitted (submit
+    clears both columns). A returned/rejected record without a reason can
+    only predate #90 — the command refuses reason-less judgments — so the
+    banner stays hidden there rather than rendering an empty frame.
+    The admin index row carries the same decision as a collapsed read-only
+    card through the same partial (there it is a rejected record's only
+    reachable surface for its reason). %>
+<% if @contract.review_reason.present? && Decidim::ContractsSk::ContractLifecycle::DECISION_STATES.include?(@contract.state&.to_sym) %>
+  <%= render "review_decision", contract: @contract %>
+<% end %>
+
 <%# Per-contract document management (civora-org/civora-platform#73): the
     route set has no document index, so the contract's edit page is the
     hub — it lists the documents and carries the attach/replace/remove
