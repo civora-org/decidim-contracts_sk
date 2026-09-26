@@ -18,6 +18,7 @@ module EngineRoutingContract
   PARTIES_CONTROLLER = "decidim/contracts_sk/admin/parties"
   DOCUMENTS_CONTROLLER = "decidim/contracts_sk/admin/documents"
   AMENDMENTS_CONTROLLER = "decidim/contracts_sk/admin/amendments"
+  LINKS_CONTROLLER = "decidim/contracts_sk/admin/links"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -41,7 +42,10 @@ module EngineRoutingContract
   # (destroy): 7 route entries. Amendments (M02-05-B,
   # civora-org/civora-platform#65) nest with the full version-history
   # surface (index/new/create/edit/update both verbs/destroy) PLUS one
-  # explicit member POST per publish event — 9 route entries.
+  # explicit member POST per publish event — 9 route entries. Links
+  # (M01-87, civora-org/civora-platform#87) nest with only the
+  # create/destroy surface — links have no editable content — so 2 route
+  # entries.
   # Note: Rails' `root` helper adds NO optional format segment (path is
   # exactly "/", not "/(.:format)" - unlike a plain `get`), and it maps the
   # `resources` update action to BOTH a PATCH and a PUT route entry, so the
@@ -84,7 +88,9 @@ module EngineRoutingContract
     ["GET", "/admin/contracts/:contract_id/amendments/:id/edit(.:format)", "#{AMENDMENTS_CONTROLLER}#edit"],
     ["PATCH", "/admin/contracts/:contract_id/amendments/:id(.:format)", "#{AMENDMENTS_CONTROLLER}#update"],
     ["PUT", "/admin/contracts/:contract_id/amendments/:id(.:format)", "#{AMENDMENTS_CONTROLLER}#update"],
-    ["DELETE", "/admin/contracts/:contract_id/amendments/:id(.:format)", "#{AMENDMENTS_CONTROLLER}#destroy"]
+    ["DELETE", "/admin/contracts/:contract_id/amendments/:id(.:format)", "#{AMENDMENTS_CONTROLLER}#destroy"],
+    ["POST", "/admin/contracts/:contract_id/links(.:format)", "#{LINKS_CONTROLLER}#create"],
+    ["DELETE", "/admin/contracts/:contract_id/links/:id(.:format)", "#{LINKS_CONTROLLER}#destroy"]
   ].freeze
 
   # Normalized [verb, path, controller#action] triples for every route the
@@ -114,6 +120,10 @@ module EngineRoutingContract
 
   def amendment_routes
     route_triples.select { |_, _, endpoint| endpoint.start_with?("#{AMENDMENTS_CONTROLLER}#") }
+  end
+
+  def link_routes
+    route_triples.select { |_, _, endpoint| endpoint.start_with?("#{LINKS_CONTROLLER}#") }
   end
 
   # Distinct controller strings used by the given routes, sorted.
@@ -449,16 +459,55 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # rubocop:enable RSpec/ExampleLength
   end
 
+  describe "nested link routes (civora-org/civora-platform#87)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    # The action-set example carries two related expectations per design;
+    # the dense-assertion budget doesn't fit a route contract pinned
+    # pair-by-pair.
+    # rubocop:disable RSpec/ExampleLength
+    it "exposes exactly the create/destroy actions on the link controller (no index, no edit)" do
+      aggregate_failures do
+        actions = link_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
+
+        expect(actions).to eq(%w[create destroy])
+      end
+    end
+
+    it "nests both link routes under their contract and maps POST to create, DELETE to destroy" do
+      aggregate_failures do
+        expect(link_routes).to contain_exactly(
+          ["POST", "/admin/contracts/:contract_id/links(.:format)",
+           "#{EngineRoutingContract::LINKS_CONTROLLER}#create"],
+          ["DELETE", "/admin/contracts/:contract_id/links/:id(.:format)",
+           "#{EngineRoutingContract::LINKS_CONTROLLER}#destroy"]
+        )
+        expect(link_routes.map { |_, path, _| path }).not_to include("/admin/links(.:format)")
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+
+    it "names the collection and member helpers" do
+      aggregate_failures do
+        expect(url_helpers.admin_contract_links_path(7)).to eq("/admin/contracts/7/links")
+        expect(url_helpers.admin_contract_link_path(7, 3)).to eq("/admin/contracts/7/links/3")
+      end
+    end
+  end
+
   describe "admin/public route separation" do
     include EngineRoutingContract
 
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's five controllers, distinct by the admin/ segment" do
+    it "routes only the engine's six controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/contracts
-        decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/parties
+        decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links
+        decidim/contracts_sk/admin/parties
         decidim/contracts_sk/contracts
       ].sort
 
@@ -471,7 +520,8 @@ RSpec.describe Decidim::ContractsSk::Engine do
 
       expect(controllers_of(admin_prefixed))
         .to eq(["decidim/contracts_sk/admin/amendments", "decidim/contracts_sk/admin/contracts",
-                "decidim/contracts_sk/admin/documents", "decidim/contracts_sk/admin/parties"])
+                "decidim/contracts_sk/admin/documents", "decidim/contracts_sk/admin/links",
+                "decidim/contracts_sk/admin/parties"])
     end
 
     it "maps no non-admin path to the admin controllers" do

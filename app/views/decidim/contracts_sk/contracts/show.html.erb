@@ -146,6 +146,38 @@
     <% end %>
   </section>
 
+  <%# Related links (M01-87, civora-org/civora-platform#87): the record's
+      links to platform-level project/result entities, resolved LIVE through
+      the config-time link_target_resolver seam at render time. Dangling or
+      unresolvable targets are hidden — never raise, never leak internals —
+      and the section disappears entirely when nothing renderable remains
+      (no empty state on the public page). Labels may render as plain text
+      when the resolver supplies no URL. %>
+  <% renderable_links = @contract.links.filter_map do |link|
+       info = Decidim::ContractsSk.resolve_link_target(link)
+       [link, info] if info
+     end %>
+  <% if renderable_links.any? %>
+    <section class="mt-8">
+      <h2 class="h2 decorator"><%= t("decidim.contracts_sk.contracts.show.links") %></h2>
+      <ul class="card__list-list">
+        <% renderable_links.each do |_link, info| %>
+          <li class="card__list">
+            <div class="card__list-content">
+              <% if info[:url].present? %>
+                <span class="card__list-title">
+                  <%= link_to info[:label], info[:url] %>
+                </span>
+              <% else %>
+                <span class="card__list-title"><%= info[:label] %></span>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
   <section class="mt-8">
     <h2 class="h2 decorator"><%= t("decidim.contracts_sk.contracts.show.versions") %></h2>
     <%# Public version history (M02-05-B, civora-org/civora-platform#65,

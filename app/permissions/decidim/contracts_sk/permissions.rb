@@ -2,11 +2,12 @@
 
 module Decidim
   module ContractsSk
-    # Permission checks for the engine's contract records and their parties,
-    # following Decidim's DefaultPermissions contract: it may set the
-    # permission action's state only for the subjects it owns (:contract and
-    # :party) and leaves every other action untouched, so the rest of the
-    # host's permission_class_chain decides those.
+    # Permission checks for the engine's contract records and their child
+    # records, following Decidim's DefaultPermissions contract: it may set
+    # the permission action's state only for the subjects it owns (:contract,
+    # :party, :document, :amendment, :link) and leaves every other action
+    # untouched, so the rest of the host's permission_class_chain decides
+    # those.
     #
     # Admin scope, subject :contract:
     # - :create is allowed when the user's engine roles include :editor
@@ -32,18 +33,21 @@ module Decidim
     #   derived from ContractLifecycle::TRANSITIONS, never hand-enumerated.
     # - :read is allowed when the user holds any engine role (admin index).
     #
-    # Admin scope, subject :party (civora-org/civora-platform#76) and
-    # subject :document (M02-05-A0, civora-org/civora-platform#73): both are
-    # contract-scoped child records, so their decisions hang off the parent
-    # contract passed in context[:contract] and follow the same editorial
-    # rule (the replace route maps onto the :update action):
+    # Admin scope, subject :party (civora-org/civora-platform#76), subject
+    # :document (M02-05-A0, civora-org/civora-platform#73) and subject :link
+    # (civora-org/civora-platform#87): all are contract-scoped child
+    # records, so their decisions hang off the parent contract passed in
+    # context[:contract] and follow the same editorial rule (the replace
+    # route maps onto the :update action):
     # - :create, :update and :destroy are allowed exactly when the user's
     #   engine roles include :editor AND the parent contract's state is
-    #   editable — party composition and document files are part of editing
-    #   the record.
+    #   editable — party composition, document files and project/result
+    #   links are part of editing the record (links expose only :create and
+    #   :destroy through their routes — links have no editable content —
+    #   but the shared rule covers the whole action set for symmetry).
     # - :read is allowed when the user holds any engine role, same rule as
-    #   the contract's :read (the admin surfaces never grew a document index,
-    #   but the rule is declared for symmetry with :party).
+    #   the contract's :read (the admin surfaces never grew a document or
+    #   link index, but the rule is declared for symmetry with :party).
     #
     # Admin scope, subject :amendment (M02-05-B, civora-org/civora-platform
     # #65): amendments are the contract's version history, which exists only
@@ -94,7 +98,7 @@ module Decidim
                                                         .uniq.sort.freeze
 
       def permissions
-        return permission_action unless %i[contract party document amendment].include? subject
+        return permission_action unless %i[contract party document amendment link].include? subject
 
         case permission_action.scope
         when :admin
@@ -112,7 +116,7 @@ module Decidim
         case subject
         when :contract
           contract_action
-        when :party, :document
+        when :party, :document, :link
           child_record_action
         when :amendment
           amendment_action
@@ -137,9 +141,10 @@ module Decidim
       end
 
       # The shared rule for the contract-scoped child-record subjects
-      # (:party, civora-org/civora-platform#76; :document,
-      # civora-org/civora-platform#73): writing is editorial work, so the
-      # editor-role-plus-editable-state rule is identical for both.
+      # (:party, civora-org/civora-platform#76; :document, M02-05-A0,
+      # civora-org/civora-platform#73; :link, civora-org/civora-platform
+      # #87): writing is editorial work, so the editor-role-plus-editable-
+      # state rule is identical for all of them.
       def child_record_action
         case action
         when :create, :update, :destroy

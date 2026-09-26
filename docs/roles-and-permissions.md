@@ -28,7 +28,8 @@ the engine's two-role vocabulary stays unchanged for MVP.
 ## Vocabulary: scope / subject / action
 
 The permissions class speaks Decidim's `PermissionAction` vocabulary and
-answers for subjects `:contract`, `:party` and `:document`:
+answers for subjects `:contract`, `:party`, `:document`, `:amendment` and
+`:link`:
 
 | Scope | Subject | Action | Allowed when |
 |---|---|---|---|
@@ -43,8 +44,10 @@ answers for subjects `:contract`, `:party` and `:document`:
 | `admin` | `party` | `read` | user holds **any** engine role (party index) |
 | `admin` | `document` | `create`, `update` (replace), `destroy` | user's engine roles include `editor` **and** the parent contract's state is lifecycle-editable (`ContractLifecycle.editable?`) — the same rule as `party` management (civora-org/civora-platform#73) |
 | `admin` | `document` | `read` | user holds **any** engine role (documents section of the contract edit page) |
+| `admin` | `link` | `create`, `update`, `destroy` | user's engine roles include `editor` **and** the parent contract's state is lifecycle-editable (`ContractLifecycle.editable?`) — the same rule as `party`/`document` management; the link routes expose only `create` and `destroy` (links have no editable content) but the shared rule covers the whole action set for symmetry (civora-org/civora-platform#87) |
+| `admin` | `link` | `read` | user holds **any** engine role (declared for symmetry — the links manager lives on the contract edit page; no link index exists) |
 | `public` | `contract` | `read` | `ContractLifecycle.publicly_visible?(state)` — i.e. state in `PUBLIC_STATES` (`published`, `archived`) |
-| anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) — including every `public`-scope `party` and `document` action, so parties and documents are never publicly addressable as subjects (public document links render as part of the published `contract`/`read` page) |
+| anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) — including every `public`-scope `party`, `document`, `amendment` and `link` action, so parties, documents, amendments and links are never publicly addressable as subjects (public document downloads and the version history render as part of the published `contract`/`read` page) |
 
 The transition-event list is **derived** from
 `ContractLifecycle::TRANSITIONS` (`Permissions::TRANSITION_EVENTS`), never

@@ -133,6 +133,49 @@ module LocaleContract
     }
   }.freeze
 
+  # The admin link-management labels per locale (M01-87,
+  # civora-org/civora-platform#87). Target types are host-configured class
+  # names (never localized) — the engine only localizes the chrome around
+  # them.
+  ADMIN_LINK_LABELS = {
+    en: {
+      "admin.links.index.title" => "Links",
+      "admin.links.index.empty" => "No links have been added to this contract yet.",
+      "admin.links.index.dangling" => "Target no longer available — remove this link or fix the target id.",
+      "admin.links.create.success" => "Link added successfully.",
+      "admin.links.create.error" => "Link could not be added.",
+      "admin.links.destroy.link" => "Remove",
+      "admin.links.destroy.confirm" => "Remove this link?",
+      "admin.links.destroy.success" => "Link removed successfully.",
+      "admin.links.destroy.error" => "Link could not be removed.",
+      "admin.links.form.target_type" => "Target type",
+      "admin.links.form.target_id" => "Target id",
+      "admin.links.form.submit" => "Add link"
+    },
+    sk: {
+      "admin.links.index.title" => "Odkazy",
+      "admin.links.index.empty" => "K tejto zmluve neboli pridané žiadne odkazy.",
+      "admin.links.index.dangling" => "Cieľ už nie je dostupný — odstráňte tento odkaz alebo opravte ID cieľa.",
+      "admin.links.create.success" => "Odkaz bol úspešne pridaný.",
+      "admin.links.create.error" => "Odkaz sa nepodarilo pridať.",
+      "admin.links.destroy.link" => "Odstrániť",
+      "admin.links.destroy.confirm" => "Odstrániť tento odkaz?",
+      "admin.links.destroy.success" => "Odkaz bol úspešne odstránený.",
+      "admin.links.destroy.error" => "Odkaz sa nepodarilo odstrániť.",
+      "admin.links.form.target_type" => "Typ cieľa",
+      "admin.links.form.target_id" => "ID cieľa",
+      "admin.links.form.submit" => "Pridať odkaz"
+    }
+  }.freeze
+
+  # The public detail page's link section heading per locale (M01-87,
+  # civora-org/civora-platform#87) — the section is hidden entirely when
+  # nothing renderable remains, so there is no empty-state key.
+  LINK_VIEW_LABELS = {
+    en: { "contracts.show.links" => "Links" },
+    sk: { "contracts.show.links" => "Odkazy" }
+  }.freeze
+
   # The public version-history labels per locale (M02-05-B,
   # civora-org/civora-platform#65, ADR-006): the current/historical
   # distinction is labelled, one heading per published version. The I18n
@@ -296,8 +339,9 @@ module LocaleContract
   # (civora-org/civora-platform#62, #63), the admin/public document keys
   # (civora-org/civora-platform#73), the CRZ-handoff keys (M02-05-C,
   # civora-org/civora-platform#74), the amendment/version-history keys
-  # (M02-05-B, civora-org/civora-platform#65) and the lifecycle
-  # transition-event keys (M02-06-A, civora-org/civora-platform#66). Sorted
+  # (M02-05-B, civora-org/civora-platform#65), the lifecycle
+  # transition-event keys (M02-06-A, civora-org/civora-platform#66) and the
+  # link-management keys (M01-87, civora-org/civora-platform#87). Sorted
   # alphabetically.
   EXPECTED_KEYS = [
     "admin.amendments.back_to_contract",
@@ -408,6 +452,18 @@ module LocaleContract
     "admin.documents.new.title",
     "admin.documents.update.error",
     "admin.documents.update.success",
+    "admin.links.create.error",
+    "admin.links.create.success",
+    "admin.links.destroy.confirm",
+    "admin.links.destroy.error",
+    "admin.links.destroy.link",
+    "admin.links.destroy.success",
+    "admin.links.form.submit",
+    "admin.links.form.target_id",
+    "admin.links.form.target_type",
+    "admin.links.index.dangling",
+    "admin.links.index.empty",
+    "admin.links.index.title",
     "admin.parties.back_to_contract",
     "admin.parties.create.error",
     "admin.parties.create.success",
@@ -459,6 +515,7 @@ module LocaleContract
     "contracts.show.current_version",
     "contracts.show.documents",
     "contracts.show.documents_empty",
+    "contracts.show.links",
     "contracts.show.parties",
     "contracts.show.parties_empty",
     "contracts.show.version_label",
@@ -674,6 +731,22 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the public detail page's document section labels in both locales (civora-org/civora-platform#73)" do
       LocaleContract::DOCUMENT_VIEW_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin link-management labels in both locales (M01-87, civora-org/civora-platform#87)" do
+      LocaleContract::ADMIN_LINK_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the public link section heading in both locales (M01-87, civora-org/civora-platform#87)" do
+      LocaleContract::LINK_VIEW_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

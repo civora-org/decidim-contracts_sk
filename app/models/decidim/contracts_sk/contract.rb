@@ -81,6 +81,13 @@ module Decidim
       has_many :documents, dependent: :destroy
       has_many :amendments, dependent: :destroy
 
+      # Platform-level project/result links (civora-org/civora-platform#87):
+      # record content like the child records above, so they die with the
+      # contract (unlike the audit trail). The association name deliberately
+      # diverges from the class name, so the class_name is spelled out.
+      has_many :links, class_name: "Decidim::ContractsSk::ContractLink",
+                       dependent: :destroy
+
       # The audit trail must survive contract deletion — dangling targets
       # after the target's own destroy are the Decidim ActionLog precedent —
       # so no dependent option here.

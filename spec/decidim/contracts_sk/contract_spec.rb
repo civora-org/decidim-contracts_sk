@@ -100,6 +100,18 @@ RSpec.describe Decidim::ContractsSk::Contract do
       expect(reflection.options[:as]).to eq(:target)
       expect(reflection.options[:dependent]).to be_nil
     end
+
+    it "has many links (project/result targets), destroyed with the contract" do
+      # Links are record content like the child records above
+      # (civora-org/civora-platform#87) — unlike the audit trail. The
+      # association name deliberately diverges from the class name.
+      reflection = described_class.reflect_on_association(:links)
+
+      expect(reflection.macro).to eq(:has_many)
+      expect(reflection.options[:class_name]).to eq("Decidim::ContractsSk::ContractLink")
+      expect(reflection.foreign_key).to eq("contract_id")
+      expect(reflection.options[:dependent]).to eq(:destroy)
+    end
   end
 
   describe "validations" do
