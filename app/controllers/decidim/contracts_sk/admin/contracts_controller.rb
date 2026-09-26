@@ -7,8 +7,10 @@ module Decidim
       # (civora-org/civora-platform#58, #59), the manual CRZ-handoff
       # download/generate pair (M02-05-C, civora-org/civora-platform#74),
       # the single-record CRZ import (ADR-008,
-      # civora-org/civora-platform#86) and the ADR-007 privacy-redaction
-      # confirmation POST (civora-org/civora-platform#91).
+      # civora-org/civora-platform#86), the ADR-007 privacy-redaction
+      # confirmation POST (civora-org/civora-platform#91) and the
+      # reviewer-decision-reason pass-through on the transition actions
+      # (civora-org/civora-platform#90).
       #
       # index/new/create open with enforce_permission_to before anything
       # else; edit/update and the transition actions load the record first,
@@ -34,9 +36,11 @@ module Decidim
         # Exposes the per-record allowed events to the index view; derived
         # from the lifecycle table and the user's engine roles, never
         # hand-enumerated. The index filter option lists and the normalized
-        # filter state back the filter form the same way.
+        # filter state back the filter form the same way, and
+        # #reason_event? tells the row which transition controls take a
+        # reviewer decision reason (civora-org/civora-platform#90).
         helper_method :transition_events_for, :index_filters,
-                      :index_state_options, :index_source_options
+                      :index_state_options, :index_source_options, :reason_event?
 
         # Case-insensitive free-text match for the index :q filter over the
         # two editorial identity fields; :pattern is always pre-escaped with
@@ -320,19 +324,26 @@ module Decidim
 
         # Shared transition pipeline: load the record from the tenant scope,
         # ask the permission layer (event-specific: the lifecycle edge's role
-        # set decides), then run the command. Both outcomes are PRG redirects
-        # — a failure never re-renders, because the record's state may have
-        # changed under us; the index shows the truth. The command's refusal
-        # payload (TransitionContract's :redaction_gate) selects the
-        # dedicated publish-gate flash (see #transition_failed).
+        # set decides), then run the command. The raw reason param rides
+        # along on EVERY event (civora-org/civora-platform#90): the command
+        # is the single authority on the judgment vocabulary — it requires a
+        # reason on return/reject and fails ANY other event closed when one
+        # arrives, so the controller applies no reason logic of its own and
+        # nothing is ever written outside the command's lock. Both outcomes
+        # are PRG redirects — a failure never re-renders, because the
+        # record's state may have changed under us; the index shows the
+        # truth. The command's refusal payloads (TransitionContract's
+        # :redaction_gate, REASON_REQUIRED, REASON_REJECTED) select the
+        # dedicated flashes (see #transition_failed).
         def transition(event)
           @contract = contracts_scope.find(params[:id])
 
           enforce_permission_to event, :contract, contract: @contract
 
-          TransitionContract.call(@contract, event: event, user: current_user) do
+          TransitionContract.call(@contract, event: event, user: current_user,
+                                             reason: params[:reason]) do
             on(:ok) { transition_succeeded }
-            on(:invalid) { |reason = nil| transition_failed(reason) }
+            on(:invalid) { |failure = nil| transition_failed(failure) }
           end
         end
 
@@ -341,23 +352,27 @@ module Decidim
           redirect_to admin_contracts_path
         end
 
-        # The ADR-007 publish refusal flashes its own actionable message
-        # (the confirmation lives on the edit page), keyed off the command's
-        # broadcast payload — deterministic, no state re-read, and nothing
-        # beyond the already-public gate is revealed. Every other refusal
-        # keeps the generic transition alert.
-        def transition_failed(reason = nil)
-          key = if reason == TransitionContract::REDACTION_GATE_REASON
-                  "decidim.contracts_sk.admin.contracts.transition.redaction_required"
-                else
-                  "decidim.contracts_sk.admin.contracts.transition.invalid"
-                end
+        # The refusal-payload → localized-alert mapping: dedicated,
+        # actionable messages for the ADR-007 redaction gate (#91) and the
+        # #90 decision-reason refusals, the generic transition alert for
+        # every other refusal. Keyed off the command's broadcast payload —
+        # deterministic, no state re-read, and nothing beyond the
+        # already-public gates is revealed.
+        TRANSITION_FAILURE_KEYS = {
+          TransitionContract::REDACTION_GATE_REASON => "redaction_required",
+          TransitionContract::REASON_REQUIRED => "review_reason_required",
+          TransitionContract::REASON_REJECTED => "review_reason_rejected"
+        }.freeze
+
+        def transition_failed(failure = nil)
+          key = "decidim.contracts_sk.admin.contracts.transition." \
+                "#{TRANSITION_FAILURE_KEYS.fetch(failure, :invalid)}"
 
           flash[:alert] = t(key)
           redirect_to admin_contracts_path
         end
 
-        # Events the acting user may trigger on this record right now: the
+        # The events the acting user may trigger on this record right now: the
         # lifecycle's events from the record's state, filtered by the edges
         # whose roles intersect the user's engine roles. Uses the same
         # config-time resolution seam as the Permissions class. Empty for a
@@ -369,6 +384,15 @@ module Decidim
           ContractLifecycle.events_from(state).select do |event|
             (ContractLifecycle.allowed_roles(from: state, event: event) & roles).any?
           end
+        end
+
+        # Whether the transition event takes a reviewer decision reason
+        # (civora-org/civora-platform#90) — the index view's switch between
+        # the bare confirm button and the inline reason form. Single-sourced
+        # from the command's REASON_EVENTS vocabulary: the command is the
+        # authority on which events carry a reason, the view only mirrors it.
+        def reason_event?(event)
+          TransitionContract::REASON_EVENTS.include?(event.to_sym)
         end
 
         # The edit form is pre-filled from the persisted record (never from

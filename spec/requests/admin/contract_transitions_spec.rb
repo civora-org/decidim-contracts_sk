@@ -165,25 +165,32 @@ RSpec.describe "admin contract transitions", type: :request do
       expect(flash[:notice]).to be_present
       expect(contract.reload.redaction_confirmed_at).to be_present
 
+      # Per-step payloads: the judgment edges (return/reject, #90) demand a
+      # decision reason through the real POST too.
       steps = [
-        %i[submit editor],
-        %i[return reviewer],
-        %i[submit editor],
-        %i[approve reviewer],
-        %i[publish editor],
-        %i[archive editor]
+        { event: :submit, role: :editor },
+        { event: :return, role: :reviewer, reason: "Annex misses the cost breakdown." },
+        { event: :submit, role: :editor },
+        { event: :approve, role: :reviewer },
+        { event: :publish, role: :editor },
+        { event: :archive, role: :editor }
       ]
 
       # The publish stamp is nil for every step BEFORE publish, then present
       # from the publish step onward — it is never cleared
       # (civora-org/civora-platform#75).
-      publish_index = steps.index { |event, _role| event == :publish }
+      publish_index = steps.index { |step| step[:event] == :publish }
 
-      steps.each_with_index do |(event, role), step_index|
+      steps.each_with_index do |step, step_index|
+        event = step[:event]
+        role = step[:role]
         from = contract.reload.state.to_sym
 
         expect do
-          with_roles(role) { post "/admin/contracts/#{contract.id}/#{event}" }
+          with_roles(role) do
+            post "/admin/contracts/#{contract.id}/#{event}",
+                 params: step[:reason] ? { reason: step[:reason] } : {}
+          end
         end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
 
         expect(response).to redirect_to("/admin/contracts")
@@ -192,6 +199,15 @@ RSpec.describe "admin contract transitions", type: :request do
         contract.reload
         expect(contract.state.to_sym)
           .to eq(Decidim::ContractsSk::ContractLifecycle.next_state(from: from, event: event))
+
+        # The reviewer decision text is stamped with the return and cleared
+        # by the resubmit (civora-org/civora-platform#90) — pinned on
+        # exactly the two steps where the fact changes.
+        if event == :return
+          expect(contract.review_reason).to eq(step[:reason])
+        elsif step_index == 2
+          expect(contract.review_reason).to be_nil
+        end
 
         if step_index < publish_index
           expect(contract.published_at).to be_nil
@@ -213,14 +229,20 @@ RSpec.describe "admin contract transitions", type: :request do
       contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review"))
 
       expect do
-        with_roles(:reviewer) { post "/admin/contracts/#{contract.id}/reject" }
+        with_roles(:reviewer) do
+          post "/admin/contracts/#{contract.id}/reject", params: { reason: "Duplicate of ZP-2026-001." }
+        end
       end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
 
       expect(response).to redirect_to("/admin/contracts")
       expect(flash[:notice]).to be_present
 
       contract.reload
-      expect(contract.state).to eq("rejected")
+      aggregate_failures do
+        expect(contract.state).to eq("rejected")
+        expect(contract.review_reason).to eq("Duplicate of ZP-2026-001.")
+        expect(contract.reviewed_at).to be_present
+      end
 
       audit = Decidim::ContractsSk::AuditEvent.order(:id).last
       expect(audit.action).to eq("contract.reject")
@@ -434,6 +456,297 @@ RSpec.describe "admin contract transitions", type: :request do
         expect(contract.state).to eq("published")
         expect(contract.published_at).to be_present
         expect(contract.redaction_confirmed_at).to be_present
+      end
+    end
+  end
+
+  describe "reviewer decision reasons (civora-org/civora-platform#90)", :db do
+    let(:resolver_roles) { %i[editor] }
+
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { resolver_roles }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    before do
+      migrate_engine_schema!
+
+      controller = Decidim::ContractsSk::Admin::ContractsController
+
+      allow_any_instance_of(controller).to receive(:current_user).and_return(author)
+      allow_any_instance_of(controller).to receive(:user_signed_in?).and_return(true)
+      allow_any_instance_of(controller).to receive(:current_organization).and_return(organization)
+    end
+
+    # Per-step role override: swaps the resolver for the block, restoring
+    # the ambient one afterwards (the around hook restores the original at
+    # example end either way).
+    def with_roles(*roles)
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { roles }
+      yield
+    ensure
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "persists a reviewer return with its reason through the real POST, with the audit row" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review"))
+
+      expect do
+        with_roles(:reviewer) do
+          post "/admin/contracts/#{contract.id}/return", params: { reason: "Annex misses the cost breakdown." }
+        end
+      end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
+
+      expect(response).to redirect_to("/admin/contracts")
+      expect(flash[:notice]).to be_present
+
+      contract.reload
+      audit = Decidim::ContractsSk::AuditEvent.order(:id).last
+      aggregate_failures do
+        expect(contract.state).to eq("returned")
+        expect(contract.review_reason).to eq("Annex misses the cost breakdown.")
+        expect(contract.reviewed_at).to be_present
+        expect(audit.action).to eq("contract.return")
+      end
+    end
+
+    it "answers the localized reason-required alert and writes nothing when the reason is missing" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review"))
+
+      expect do
+        with_roles(:reviewer) { post "/admin/contracts/#{contract.id}/return" }
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      aggregate_failures do
+        expect(response).to redirect_to("/admin/contracts")
+        expect(flash[:alert])
+          .to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.review_reason_required"))
+        expect(flash[:alert])
+          .not_to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.invalid"))
+      end
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("in_review")
+        expect(contract.review_reason).to be_nil
+        expect(contract.reviewed_at).to be_nil
+      end
+    end
+
+    it "fails an editor publish closed when a stray reason arrives, with the localized reason-rejected alert" do
+      contract = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(state: "approved", redaction_confirmed_at: Time.current)
+      )
+
+      expect do
+        post "/admin/contracts/#{contract.id}/publish", params: { reason: "Not a reviewer." }
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      aggregate_failures do
+        expect(response).to redirect_to("/admin/contracts")
+        expect(flash[:alert])
+          .to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.review_reason_rejected"))
+        expect(flash[:alert])
+          .not_to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.redaction_required"))
+      end
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("approved")
+        expect(contract.review_reason).to be_nil
+        expect(contract.reviewed_at).to be_nil
+      end
+    end
+
+    it "clears the stale decision through the real resubmit POST" do
+      contract = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(state: "returned", review_reason: "Fix the annex.", reviewed_at: Time.current)
+      )
+
+      expect do
+        post "/admin/contracts/#{contract.id}/submit"
+      end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("in_review")
+        expect(contract.review_reason).to be_nil
+        expect(contract.reviewed_at).to be_nil
+      end
+    end
+
+    it "renders the decision banner on the edit page for a returned record carrying its reason" do
+      # The banner is historical record: it renders for the editor who owns
+      # the returned (editable) record, regardless of anything else. (A
+      # rejected record carries the banner defensively too, but its edit
+      # page is permission-locked, so the reachable pin is the returned one.)
+      contract = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(state: "returned", review_reason: "Fix the <annex> & resubmit.",
+                            reviewed_at: Time.zone.local(2026, 9, 26))
+      )
+
+      get "/admin/contracts/#{contract.id}/edit"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Reviewer decision")
+        expect(response.body).to include("Returned for changes")
+        expect(response.body).to include("Decided on 2026-09-26.")
+        # Escaped output on purpose: the reason is reviewer-typed free text.
+        expect(response.body).to include("Fix the &lt;annex&gt; &amp; resubmit.")
+        expect(response.body).not_to include("Fix the <annex>")
+      end
+    end
+
+    it "renders no decision banner without a reason or outside the decision states" do
+      # A returned record without a reason can only predate #90 — the
+      # command refuses reason-less judgments — so the banner stays hidden
+      # rather than rendering an empty frame; a draft never carried one.
+      unstamped = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-101", state: "returned")
+      )
+      draft = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-102", review_reason: "Stale?", reviewed_at: Time.current)
+      )
+
+      get "/admin/contracts/#{unstamped.id}/edit"
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("Reviewer decision")
+
+      get "/admin/contracts/#{draft.id}/edit"
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("Reviewer decision")
+    end
+
+    it "renders the banner for a reason carrying a nil reviewed_at without raising" do
+      # The timestamp is nil-guarded in the view: a reason-present/
+      # timestamp-nil row (only possible from pre-#90-style data or manual
+      # seeds — the command stamps reason and stamp atomically) must render
+      # the banner, not a 500.
+      contract = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(state: "returned", review_reason: "Fix the annex.", reviewed_at: nil)
+      )
+
+      get "/admin/contracts/#{contract.id}/edit"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Reviewer decision")
+        expect(response.body).to include("Fix the annex.")
+      end
+    end
+
+    it "renders the collapsed decision reason on the index row for rejected and returned records" do
+      # The index row card is a rejected record's only reachable surface
+      # for its reason: a terminal state renders no transition controls and
+      # the edit page is permission-locked. Gated on reason presence only —
+      # the same audience as the index — so it shows for whichever role
+      # views the page (the editor below holds no edge on a rejected record
+      # at all and still reads it).
+      # The rejected row pins the terminal-state surface (the reason is
+      # otherwise unreachable), the returned row the editable one.
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-105", state: "rejected",
+                            review_reason: "Duplicate of ZP-2026-001. <crz.gov.sk/example> & refile.",
+                            reviewed_at: Time.zone.local(2026, 9, 26))
+      )
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-106", state: "returned",
+                            review_reason: "Fix the annex.", reviewed_at: Time.current)
+      )
+
+      with_roles(:reviewer) { get "/admin/contracts" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("<details")
+        expect(response.body).to include("Reviewer decision")
+        expect(response.body).to include("Decided on 2026-09-26.")
+        # Escaped output on purpose: the reason is reviewer-typed free text.
+        expect(response.body).to include("Duplicate of ZP-2026-001. &lt;crz.gov.sk/example&gt; &amp; refile.")
+        expect(response.body).to include("Fix the annex.")
+        expect(response.body).not_to include("Duplicate of ZP-2026-001. <crz.gov.sk/example>")
+      end
+
+      with_roles(:editor) { get "/admin/contracts" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Reviewer decision")
+        expect(response.body).to include("Duplicate of ZP-2026-001. &lt;crz.gov.sk/example&gt; &amp; refile.")
+      end
+    end
+
+    it "renders no collapsed decision reason on the index without a reason or outside the decision states" do
+      # Mirrors the banner's hidden cases on the row: a returned record
+      # without a reason can only predate #90, and a draft carrying a stale
+      # reason is not in a decision state — neither renders an empty frame.
+      # A returned record without a reason can only predate #90; a draft
+      # carrying a stale reason is not in a decision state — neither row
+      # may render an empty frame.
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-107", state: "returned")
+      )
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-108", review_reason: "Stale?",
+                            reviewed_at: Time.current)
+      )
+
+      with_roles(:reviewer) { get "/admin/contracts" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).not_to include("Reviewer decision")
+        expect(response.body).not_to include("Stale?")
+      end
+    end
+
+    it "renders the inline reason form for a reviewer on an in_review record only" do
+      # Gating per the lifecycle table: the reviewer owns the return/reject
+      # edges out of in_review — both render as collapsed decision forms.
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review"))
+
+      with_roles(:reviewer) { get "/admin/contracts" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include(%(action="/admin/contracts/#{contract.id}/return"))
+        expect(response.body).to include(%(action="/admin/contracts/#{contract.id}/reject"))
+        expect(response.body).to include(%(name="reason"))
+        expect(response.body).to include(%(id="review_reason_#{contract.id}_return"))
+        expect(response.body).to include(I18n.t("decidim.contracts_sk.admin.contracts.transition.review_reason.label"))
+      end
+    end
+
+    it "renders no reason form for a role that owns no judgment edge" do
+      # An editor holds no edge out of in_review; a reviewer holds none out
+      # of draft — neither sees a decision form on those rows. (The reviewer
+      # DOES see one on the in_review row — that gating is the prior
+      # example's pin — so this half scopes its assertions to the draft's
+      # derived ids.)
+      in_review = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-103", state: "in_review")
+      )
+      draft = Decidim::ContractsSk::Contract.create!(contract_attributes(reference: "ZP-2026-104"))
+
+      with_roles(:editor) { get "/admin/contracts" }
+
+      aggregate_failures do
+        expect(response.body).not_to include(%(action="/admin/contracts/#{in_review.id}/return"))
+        expect(response.body).not_to include(%(action="/admin/contracts/#{in_review.id}/reject"))
+        expect(response.body).not_to include(%(name="reason"))
+      end
+
+      with_roles(:reviewer) { get "/admin/contracts" }
+
+      aggregate_failures do
+        expect(response.body).not_to include(%(action="/admin/contracts/#{draft.id}/return"))
+        expect(response.body).not_to include(%(action="/admin/contracts/#{draft.id}/reject"))
+        expect(response.body).not_to include(%(id="review_reason_#{draft.id}_return"))
+        expect(response.body).not_to include(%(id="review_reason_#{draft.id}_reject"))
       end
     end
   end

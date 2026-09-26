@@ -1,0 +1,14 @@
+<%# The reviewer-decision core (civora-org/civora-platform#90) shared by
+    the two admin surfaces so their markup stays in sync — the
+    redaction-confirmation-body precedent: the decided state, the
+    decided-on date and the reason text. The reason is reviewer-typed free
+    text — escaped output on purpose. `reviewed_at` is nil-guarded so a
+    reason-present/timestamp-nil row (pre-#90-style data, a manual seed;
+    the command stamps both atomically) renders the banner instead of
+    raising. %>
+<p>
+  <strong><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></strong>
+  — <%= t("decidim.contracts_sk.admin.contracts.review_decision.decided_on",
+          reviewed_at: contract.reviewed_at&.to_date&.to_fs(:db)) %>
+</p>
+<p><%= contract.review_reason %></p>

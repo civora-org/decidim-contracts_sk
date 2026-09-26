@@ -361,6 +361,29 @@ module LocaleContract
   }.freeze
   # rubocop:enable Style/FormatStringToken
 
+  # The admin reviewer-decision labels per locale (civora-org/civora-platform
+  # #90): the decision banner on the edit page (heading + timestamp line —
+  # the banner's decision title reuses the contract_states.* vocabulary) and
+  # the decision-reason input on the return/reject controls.
+  # rubocop:disable Style/FormatStringToken
+  ADMIN_REVIEW_DECISION_LABELS = {
+    en: {
+      "admin.contracts.review_decision.heading" => "Reviewer decision",
+      "admin.contracts.review_decision.decided_on" => "Decided on %{reviewed_at}.",
+      "admin.contracts.transition.review_reason.label" => "Decision reason",
+      "admin.contracts.transition.review_reason.placeholder" =>
+        "State the reason for this decision (required, up to 1000 characters)."
+    },
+    sk: {
+      "admin.contracts.review_decision.heading" => "Rozhodnutie recenzenta",
+      "admin.contracts.review_decision.decided_on" => "Rozhodnuté dňa %{reviewed_at}.",
+      "admin.contracts.transition.review_reason.label" => "Dôvod rozhodnutia",
+      "admin.contracts.transition.review_reason.placeholder" =>
+        "Uveďte dôvod tohto rozhodnutia (povinný, najviac 1000 znakov)."
+    }
+  }.freeze
+  # rubocop:enable Style/FormatStringToken
+
   # The exact expected leaf-key surface under decidim.contracts_sk, including
   # the public catalogue keys (plan Option B of #39), the admin CRUD keys
   # (civora-org/civora-platform#58), the admin content-field form keys
@@ -447,6 +470,8 @@ module LocaleContract
     "admin.contracts.index.filters.submit",
     "admin.contracts.index.title",
     "admin.contracts.new.title",
+    "admin.contracts.review_decision.decided_on",
+    "admin.contracts.review_decision.heading",
     "admin.contracts.transition.approve",
     "admin.contracts.transition.archive",
     "admin.contracts.transition.confirm.approve",
@@ -460,6 +485,10 @@ module LocaleContract
     "admin.contracts.transition.redaction_required",
     "admin.contracts.transition.reject",
     "admin.contracts.transition.return",
+    "admin.contracts.transition.review_reason.label",
+    "admin.contracts.transition.review_reason.placeholder",
+    "admin.contracts.transition.review_reason_rejected",
+    "admin.contracts.transition.review_reason_required",
     "admin.contracts.transition.submit",
     "admin.contracts.transition.success",
     "admin.contracts.update.error",
@@ -845,6 +874,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the admin privacy-redaction labels in both locales (ADR-007, civora-org/civora-platform#91)" do
       LocaleContract::ADMIN_REDACTION_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin reviewer-decision labels in both locales (civora-org/civora-platform#90)" do
+      LocaleContract::ADMIN_REVIEW_DECISION_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

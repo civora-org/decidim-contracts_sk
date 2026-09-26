@@ -79,13 +79,19 @@
               <td><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
               <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
               <td class="table-list__actions">
-                <%# Derived, never hand-enumerated: only the events the acting role may fire. %>
+                <%# Derived, never hand-enumerated: only the events the acting role may fire.
+                    The judgment edges (return/reject, #90) render the inline decision-reason
+                    form instead of a bare button — the command requires the reason. %>
                 <% transition_events_for(contract).each do |event| %>
-                  <%= button_to t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
-                                public_send(:"#{event}_admin_contract_path", contract),
-                                method: :post,
-                                class: "button button__sm button__secondary",
-                                data: { confirm: t("decidim.contracts_sk.admin.contracts.transition.confirm.#{event}") } %>
+                  <% if reason_event?(event) %>
+                    <%= render "review_decision_form", contract: contract, event: event %>
+                  <% else %>
+                    <%= button_to t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
+                                  public_send(:"#{event}_admin_contract_path", contract),
+                                  method: :post,
+                                  class: "button button__sm button__secondary",
+                                  data: { confirm: t("decidim.contracts_sk.admin.contracts.transition.confirm.#{event}") } %>
+                  <% end %>
                 <% end %>
                 <%# ADR-007 surface on the index (civora-org/civora-platform#91):
                     for a confirmable, unstamped record the acting editor can
@@ -98,6 +104,19 @@
                     confirmation line lives on the edit page). %>
                 <% if allowed_to?(:confirm_redaction, :contract, contract: contract) && contract.redaction_confirmed_at.blank? %>
                   <%= render "redaction_confirmation", contract: contract, collapsed: true %>
+                <% end %>
+                <%# Reviewer decision on the row (civora-org/civora-platform#90):
+                    a record sitting in a decision state with a captured
+                    reason shows it collapsed right here — for a rejected
+                    record this read-only card is the only place its reason
+                    is reachable (terminal states render no transition
+                    controls, and the edit page stays permission-locked).
+                    Gated on reason presence only: any admin who can see
+                    the row may read it — the same audience as the index —
+                    so unlike the redaction card above there is deliberately
+                    no permission check on a read. %>
+                <% if contract.review_reason.present? && Decidim::ContractsSk::ContractLifecycle::DECISION_STATES.include?(contract.state&.to_sym) %>
+                  <%= render "review_decision", contract: contract, collapsed: true %>
                 <% end %>
               </td>
             </tr>

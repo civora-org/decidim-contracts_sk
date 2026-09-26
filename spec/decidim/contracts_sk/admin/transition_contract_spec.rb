@@ -222,6 +222,220 @@ RSpec.describe Decidim::ContractsSk::Admin::TransitionContract, :db do
     end
   end
 
+  describe "reviewer decision reason (civora-org/civora-platform#90)" do
+    let(:resolver_roles) { %i[reviewer] }
+    let(:contract) { Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review")) }
+
+    it "requires a reason on return, writing no state, no decision stamps and no audit row without one" do
+      expect do
+        events = described_class.call(contract, event: :return, user: author)
+
+        expect(events).to have_key(:invalid)
+        expect(events[:invalid]).to eq(described_class::REASON_REQUIRED)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("in_review")
+        expect(contract.review_reason).to be_nil
+        expect(contract.reviewed_at).to be_nil
+      end
+    end
+
+    it "treats a whitespace-only reason as missing" do
+      events = described_class.call(contract, event: :return, user: author, reason: "   \n\t ")
+
+      expect(events).to have_key(:invalid)
+      expect(events[:invalid]).to eq(described_class::REASON_REQUIRED)
+    end
+
+    it "refuses an over-cap reason with the :reason_rejected payload, writing nothing" do
+      expect do
+        events = described_class.call(contract, event: :return, user: author, reason: "x" * 1001)
+
+        expect(events).to have_key(:invalid)
+        expect(events[:invalid]).to eq(described_class::REASON_REJECTED)
+        expect(events).not_to have_key(:ok)
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.state).to eq("in_review")
+        expect(contract.review_reason).to be_nil
+        expect(contract.reviewed_at).to be_nil
+      end
+    end
+
+    it "persists the stripped reason, the decision timestamp, the state and the audit row atomically" do
+      before = Time.current
+
+      events = described_class.call(contract, event: :return, user: author,
+                                              reason: "  Missing cost breakdown in the annex.  ")
+
+      expect(events).to have_key(:ok)
+
+      contract.reload
+      audit = Decidim::ContractsSk::AuditEvent.order(:id).last
+      aggregate_failures do
+        expect(contract.state).to eq("returned")
+        expect(contract.review_reason).to eq("Missing cost breakdown in the annex.")
+        expect(contract.reviewed_at).to be_present
+        expect(contract.reviewed_at).to be >= before
+        expect(audit.action).to eq("contract.return")
+        expect(audit.target).to eq(contract)
+      end
+    end
+
+    it "accepts a reason exactly at the cap (the boundary is inclusive)" do
+      events = described_class.call(contract, event: :return, user: author,
+                                              reason: "x" * described_class::MAX_REASON_LENGTH)
+
+      expect(events).to have_key(:ok)
+
+      contract.reload
+      expect(contract.review_reason.length).to eq(described_class::MAX_REASON_LENGTH)
+    end
+
+    it "rejects with a reason onto the terminal state (same decision plumbing)" do
+      events = described_class.call(contract, event: :reject, user: author,
+                                              reason: "Duplicate of ZP-2026-001.")
+
+      expect(events).to have_key(:ok)
+
+      contract.reload
+      audit = Decidim::ContractsSk::AuditEvent.order(:id).last
+      aggregate_failures do
+        expect(contract.state).to eq("rejected")
+        expect(contract.review_reason).to eq("Duplicate of ZP-2026-001.")
+        expect(audit.action).to eq("contract.reject")
+      end
+    end
+
+    describe "fail-closed vocabulary (non-judgment events take no reason)" do
+      let(:resolver_roles) { %i[editor] }
+
+      it "refuses submit carrying a reason" do
+        draft = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+        expect do
+          events = described_class.call(draft, event: :submit, user: author, reason: "Not my call.")
+
+          expect(events).to have_key(:invalid)
+          expect(events[:invalid]).to eq(described_class::REASON_REJECTED)
+          expect(events).not_to have_key(:ok)
+        end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+        draft.reload
+        aggregate_failures do
+          expect(draft.state).to eq("draft")
+          expect(draft.review_reason).to be_nil
+        end
+      end
+
+      it "refuses publish carrying a reason — before the redaction gate is even reached" do
+        # The guard order pinned: the reason shape is a request precondition
+        # (evaluated before the lock), so the refusal carries REASON_REJECTED
+        # even on a record the redaction gate would also refuse — the request
+        # never takes the row lock.
+        contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "approved"))
+
+        expect do
+          events = described_class.call(contract, event: :publish, user: author, reason: "x")
+
+          expect(events).to have_key(:invalid)
+          expect(events[:invalid]).to eq(described_class::REASON_REJECTED)
+          expect(events[:invalid]).not_to eq(described_class::REDACTION_GATE_REASON)
+        end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+        contract.reload
+        expect(contract.state).to eq("approved")
+      end
+
+      it "refuses archive carrying a reason" do
+        contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "published"))
+
+        expect do
+          events = described_class.call(contract, event: :archive, user: author, reason: "x")
+
+          expect(events).to have_key(:invalid)
+          expect(events[:invalid]).to eq(described_class::REASON_REJECTED)
+        end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+        contract.reload
+        expect(contract.state).to eq("published")
+      end
+    end
+
+    describe "resubmit clears the stale decision" do
+      let(:resolver_roles) { %i[editor] }
+
+      it "clears review_reason and reviewed_at from returned, atomically with the state" do
+        # The command's own clearing act: the nil assignments ride the same
+        # lock and the same state-write UPDATE, so a resubmit either fully
+        # happened (state + cleared decision + audit row) or did not happen.
+        returned = Decidim::ContractsSk::Contract.create!(
+          contract_attributes(state: "returned", review_reason: "Fix the annex.", reviewed_at: Time.current)
+        )
+
+        events = described_class.call(returned, event: :submit, user: author)
+
+        expect(events).to have_key(:ok)
+
+        returned.reload
+        audit = Decidim::ContractsSk::AuditEvent.order(:id).last
+        aggregate_failures do
+          expect(returned.state).to eq("in_review")
+          expect(returned.review_reason).to be_nil
+          expect(returned.reviewed_at).to be_nil
+          expect(audit.action).to eq("contract.submit")
+        end
+      end
+
+      it "clears nothing on submit from draft (the columns are already nil — a no-op)" do
+        contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+        events = described_class.call(contract, event: :submit, user: author)
+
+        expect(events).to have_key(:ok)
+
+        contract.reload
+        aggregate_failures do
+          expect(contract.state).to eq("in_review")
+          expect(contract.review_reason).to be_nil
+          expect(contract.reviewed_at).to be_nil
+        end
+      end
+    end
+
+    describe "stale-object race with a reason (deterministic — no threads)" do
+      it "refuses a stale copy's return, persisting no decision" do
+        # The stale copy models a request admitted while the return edge
+        # still existed (in_review); the row was then moved directly,
+        # bypassing the command. The in-lock re-validation must fail the
+        # edge — the reason must never be written onto the moved row.
+        contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review"))
+        stale = Decidim::ContractsSk::Contract.find(contract.id)
+
+        contract.update!(state: "returned")
+
+        expect do
+          events = described_class.call(stale, event: :return, user: author, reason: "Late decision.")
+
+          expect(events).to have_key(:invalid)
+          expect(events).not_to have_key(:ok)
+        end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+        contract.reload
+        aggregate_failures do
+          expect(contract.state).to eq("returned")
+          expect(contract.review_reason).to be_nil
+          expect(contract.reviewed_at).to be_nil
+        end
+      end
+    end
+  end
+
   describe "invalid paths (no mutation ever)" do
     describe "role mismatch" do
       let(:resolver_roles) { %i[reviewer] }

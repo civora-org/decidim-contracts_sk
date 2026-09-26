@@ -104,6 +104,9 @@ en:
           update:
             success: "Contract updated successfully."
             error: "Contract could not be updated."
+          review_decision:
+            heading: "Reviewer decision"
+            decided_on: "Decided on %{reviewed_at}."
           transition:
             submit: "Submit for review"
             return: "Return for changes"
@@ -114,6 +117,11 @@ en:
             success: "Contract transition performed successfully."
             invalid: "Contract transition could not be performed."
             redaction_required: "Publishing requires the privacy-redaction confirmation first — confirm it from the contract's edit page."
+            review_reason_required: "A reason is required to return or reject a contract."
+            review_reason_rejected: "The submitted reason was not accepted — return/reject decisions require one (up to 1000 characters), and no other transition takes a reason."
+            review_reason:
+              label: "Decision reason"
+              placeholder: "State the reason for this decision (required, up to 1000 characters)."
             confirm:
               submit: "Submit this contract for review?"
               return: "Return this contract for changes?"
