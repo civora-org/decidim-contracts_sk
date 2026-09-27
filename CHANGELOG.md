@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+## [1.2.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.1.0...v1.2.0) (2026-09-27)
+
+
+### Features
+
+* **admin:** add ADR-007 privacy redaction confirmation gate before publication (civora-org/civora-platform[#91](https://github.com/civora-org/decidim-contracts_sk/issues/91)) ([c51799e](https://github.com/civora-org/decidim-contracts_sk/commit/c51799e89b363eb11c85cea9e608ea4080e2376e))
+* **admin:** add read-only audit-trail viewer (civora-org/civora-platform[#92](https://github.com/civora-org/decidim-contracts_sk/issues/92)) ([fae5c64](https://github.com/civora-org/decidim-contracts_sk/commit/fae5c64519caaec06249e0d48d0c4301086ae120))
+* **admin:** per-state counters and distinct no-matches state on the contracts index (civora-org/civora-platform[#93](https://github.com/civora-org/decidim-contracts_sk/issues/93)) ([5093b24](https://github.com/civora-org/decidim-contracts_sk/commit/5093b24ac349e56816f25a8e48e22f54b635c07d))
+* **admin:** require reviewer decision reasons on return/reject (civora-org/civora-platform[#90](https://github.com/civora-org/decidim-contracts_sk/issues/90)) ([328895a](https://github.com/civora-org/decidim-contracts_sk/commit/328895aafa863fa5fbd452ff8f55e7af74c0920a))
+* **links:** add contract-project/result links with host resolver seam (civora-org/civora-platform[#87](https://github.com/civora-org/decidim-contracts_sk/issues/87)) ([#76](https://github.com/civora-org/decidim-contracts_sk/issues/76)) ([84947f0](https://github.com/civora-org/decidim-contracts_sk/commit/84947f086794237c9b0a22253b86edac2c46204b))
+
+
+### Bug Fixes
+
+* **admin:** keep the CRZ handoff section on a failed update re-render (civora-org/civora-platform[#77](https://github.com/civora-org/decidim-contracts_sk/issues/77)) ([2787c4c](https://github.com/civora-org/decidim-contracts_sk/commit/2787c4cc4b93c29dc912bf44d2123b4ff6834a36))
+* **spec:** register audit-trail viewer keys in the locale key-surface contract (civora-org/civora-platform[#92](https://github.com/civora-org/decidim-contracts_sk/issues/92)) ([efcfbe2](https://github.com/civora-org/decidim-contracts_sk/commit/efcfbe2dac5274e8b04e258220a753cd9772c7ad))
+
 ## [1.1.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.0.0...v1.1.0) (2026-09-18)
 
 
