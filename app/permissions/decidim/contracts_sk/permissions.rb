@@ -5,9 +5,9 @@ module Decidim
     # Permission checks for the engine's contract records and their child
     # records, following Decidim's DefaultPermissions contract: it may set
     # the permission action's state only for the subjects it owns (:contract,
-    # :party, :document, :amendment, :link) and leaves every other action
-    # untouched, so the rest of the host's permission_class_chain decides
-    # those.
+    # :party, :document, :amendment, :link, :audit_event) and leaves every
+    # other action untouched, so the rest of the host's permission_class_chain
+    # decides those.
     #
     # Admin scope, subject :contract:
     # - :create is allowed when the user's engine roles include :editor
@@ -76,6 +76,14 @@ module Decidim
     # - :read is allowed when the user holds any engine role, same rule as
     #   :party/:document (the admin index shows drafts and published alike).
     #
+    # Admin scope, subject :audit_event (civora-org/civora-platform#92):
+    # the append-only audit trail is read-only and organization-scoped, so
+    # its single action mirrors the contracts index read:
+    # - :read is allowed when the user holds any engine role (editor OR
+    #   reviewer) — every role holder may consult the org's trail. The gate
+    #   is role-only: no record is needed (the viewer is org-level) and no
+    #   lifecycle state is consulted.
+    #
     # Public scope, subject :contract:
     # - :read is allowed exactly when the record's state is publicly visible
     #   (ContractLifecycle::PUBLIC_STATES). No authentication required.
@@ -104,7 +112,7 @@ module Decidim
                                                         .uniq.sort.freeze
 
       def permissions
-        return permission_action unless %i[contract party document amendment link].include? subject
+        return permission_action unless %i[contract party document amendment link audit_event].include? subject
 
         case permission_action.scope
         when :admin
@@ -120,13 +128,20 @@ module Decidim
 
       def admin_action
         case subject
-        when :contract
-          contract_action
-        when :party, :document, :link
-          child_record_action
-        when :amendment
-          amendment_action
+        when :contract then contract_action
+        when :party, :document, :link then child_record_action
+        when :amendment then amendment_action
+        when :audit_event then audit_event_action
         end
+      end
+
+      # The audit-trail read rule (civora-org/civora-platform#92): any
+      # engine role, no record, no lifecycle condition — identical to the
+      # contracts index's :read. Only :read is answered; every other
+      # action on the subject stays unset (fail-closed), and the trail has
+      # no write surface anywhere.
+      def audit_event_action
+        toggle_allow(roles_for_user.any?) if action == :read
       end
 
       def contract_action
@@ -175,14 +190,10 @@ module Decidim
       # predicates below it.
       def amendment_action
         case action
-        when :create
-          toggle_allow(amendment_create_allowed?)
-        when :update, :destroy
-          toggle_allow(amendment_edit_allowed?)
-        when :publish
-          toggle_allow(amendment_publish_allowed?)
-        when :read
-          toggle_allow(roles_for_user.any?)
+        when :create then toggle_allow(amendment_create_allowed?)
+        when :update, :destroy then toggle_allow(amendment_edit_allowed?)
+        when :publish then toggle_allow(amendment_publish_allowed?)
+        when :read then toggle_allow(roles_for_user.any?)
         end
       end
 

@@ -79,6 +79,15 @@ Decidim::ContractsSk::Engine.routes.draw do
       # records from tenant-scoped associations before the permission check.
       resources :links, only: %i[create destroy]
     end
+
+    # Read-only audit-trail viewer (civora-org/civora-platform#92): one
+    # org-level index over the append-only AuditEvent trail, optionally
+    # filtered to one contract through ?contract_id= (a GET param, not a
+    # nested route — the trail is organization-scoped first; the contract
+    # is only a filter). Index only — the trail is never writable and never
+    # deletable through the model (AuditEvent#readonly?), so there is no
+    # other action to expose.
+    resources :audit_events, only: :index
   end
 
   # Public routes — the mount point is the catalogue itself

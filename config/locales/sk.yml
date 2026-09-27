@@ -161,6 +161,25 @@ sk:
             not_found: "Zmluva s ID %{source_id} nebola v CRZ nájdená."
             failed: "Import zmluvy %{source_id} sa nepodaril (zdroj nie je dostupný). Existujúci záznam nebol zmenený."
             quarantined: "Zmluvu %{source_id} sa nepodarilo načítať zo zdroja; bola preskočená."
+        audit_events:
+          index:
+            title: "Auditná stopa"
+            empty: "Zatiaľ nebola zaznamenaná žiadna udalosť auditnej stopy."
+            headers:
+              action: "Akcia"
+              record: "Záznam"
+              user: "Používateľ"
+              when: "Dátum"
+          actions:
+            redaction_confirmed: "Skrytie údajov potvrdené"
+            amendment_publish: "Dodatok zverejnený"
+            crz_import_create: "Importované z CRZ"
+            crz_import_update: "Aktualizované z CRZ"
+          amendment_target: "Dodatok č. %{version}"
+          deleted_target: "Záznam už neexistuje"
+          filter_banner: "Zobrazujú sa udalosti auditnej stopy pre: %{title}"
+          back_to_all: "Zobraziť všetky udalosti"
+          unknown_actor: "Neznámy používateľ"
         amendments:
           index:
             title: "Dodatky"

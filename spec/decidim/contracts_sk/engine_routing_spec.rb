@@ -19,6 +19,7 @@ module EngineRoutingContract
   DOCUMENTS_CONTROLLER = "decidim/contracts_sk/admin/documents"
   AMENDMENTS_CONTROLLER = "decidim/contracts_sk/admin/amendments"
   LINKS_CONTROLLER = "decidim/contracts_sk/admin/links"
+  AUDIT_EVENTS_CONTROLLER = "decidim/contracts_sk/admin/audit_events"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -46,7 +47,9 @@ module EngineRoutingContract
   # explicit member POST per publish event — 9 route entries. Links
   # (M01-87, civora-org/civora-platform#87) nest with only the
   # create/destroy surface — links have no editable content — so 2 route
-  # entries.
+  # entries. The audit-trail viewer (civora-org/civora-platform#92) is one
+  # org-level index route outside the contracts resource (the contract is
+  # only a GET-param filter, not a nesting).
   # Note: Rails' `root` helper adds NO optional format segment (path is
   # exactly "/", not "/(.:format)" - unlike a plain `get`), and it maps the
   # `resources` update action to BOTH a PATCH and a PUT route entry, so the
@@ -92,7 +95,8 @@ module EngineRoutingContract
     ["PUT", "/admin/contracts/:contract_id/amendments/:id(.:format)", "#{AMENDMENTS_CONTROLLER}#update"],
     ["DELETE", "/admin/contracts/:contract_id/amendments/:id(.:format)", "#{AMENDMENTS_CONTROLLER}#destroy"],
     ["POST", "/admin/contracts/:contract_id/links(.:format)", "#{LINKS_CONTROLLER}#create"],
-    ["DELETE", "/admin/contracts/:contract_id/links/:id(.:format)", "#{LINKS_CONTROLLER}#destroy"]
+    ["DELETE", "/admin/contracts/:contract_id/links/:id(.:format)", "#{LINKS_CONTROLLER}#destroy"],
+    ["GET", "/admin/audit_events(.:format)", "#{AUDIT_EVENTS_CONTROLLER}#index"]
   ].freeze
 
   # Normalized [verb, path, controller#action] triples for every route the
@@ -126,6 +130,10 @@ module EngineRoutingContract
 
   def link_routes
     route_triples.select { |_, _, endpoint| endpoint.start_with?("#{LINKS_CONTROLLER}#") }
+  end
+
+  def audit_event_routes
+    route_triples.select { |_, _, endpoint| endpoint.start_with?("#{AUDIT_EVENTS_CONTROLLER}#") }
   end
 
   # Distinct controller strings used by the given routes, sorted.
@@ -527,17 +535,49 @@ RSpec.describe Decidim::ContractsSk::Engine do
     end
   end
 
+  describe "audit-trail viewer route (civora-org/civora-platform#92)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    # The mapping and helper-name expectations are one route contract pinned
+    # together; the dense-assertion budget doesn't fit pair-by-pair.
+    # rubocop:disable RSpec/ExampleLength
+    it "maps a single org-level GET to the index action and names its helper" do
+      aggregate_failures do
+        expect(audit_event_routes).to contain_exactly(
+          ["GET", "/admin/audit_events(.:format)",
+           "#{EngineRoutingContract::AUDIT_EVENTS_CONTROLLER}#index"]
+        )
+        expect(url_helpers.admin_audit_events_path).to eq("/admin/audit_events")
+        expect(url_helpers.admin_audit_events_path(contract_id: 7)).to eq("/admin/audit_events?contract_id=7")
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+
+    it "exposes exactly the index action (the trail is read-only)" do
+      actions = audit_event_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
+
+      expect(actions).to eq(%w[index])
+    end
+
+    it "keeps the viewer outside the contracts nesting (the contract is a filter, not a parent)" do
+      expect(audit_event_routes.map { |_, path, _| path })
+        .not_to include(a_string_starting_with("/admin/contracts"))
+    end
+  end
+
   describe "admin/public route separation" do
     include EngineRoutingContract
 
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's six controllers, distinct by the admin/ segment" do
+    it "routes only the engine's seven controllers, distinct by the admin/ segment" do
       controllers = %w[
-        decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/contracts
-        decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links
-        decidim/contracts_sk/admin/parties
+        decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
+        decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/documents
+        decidim/contracts_sk/admin/links decidim/contracts_sk/admin/parties
         decidim/contracts_sk/contracts
       ].sort
 
@@ -549,9 +589,9 @@ RSpec.describe Decidim::ContractsSk::Engine do
       admin_prefixed = route_triples.select { |_, path, _| path.start_with?("/admin/") }
 
       expect(controllers_of(admin_prefixed))
-        .to eq(["decidim/contracts_sk/admin/amendments", "decidim/contracts_sk/admin/contracts",
-                "decidim/contracts_sk/admin/documents", "decidim/contracts_sk/admin/links",
-                "decidim/contracts_sk/admin/parties"])
+        .to eq(["decidim/contracts_sk/admin/amendments", "decidim/contracts_sk/admin/audit_events",
+                "decidim/contracts_sk/admin/contracts", "decidim/contracts_sk/admin/documents",
+                "decidim/contracts_sk/admin/links", "decidim/contracts_sk/admin/parties"])
     end
 
     it "maps no non-admin path to the admin controllers" do

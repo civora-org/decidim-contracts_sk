@@ -65,6 +65,15 @@ ideally in both `en` and `sk` where noted.
 - [ ] Publish and remove carry confirm dialogs; create offered on published contracts only.
 - [ ] After a successful publish, the frozen snapshot appears in the public detail page's version history.
 
+## Audit trail (admin, read-only)
+
+- [ ] The contract edit page links to the audit trail pre-filtered to that record; the link renders for every engine role.
+- [ ] The viewer lists the organization's events newest-first; a contract-filtered view shows the naming banner and the back-to-all link.
+- [ ] Rows show the localized action (lifecycle verbs, redaction confirmation, amendment publish, CRZ import), the target record, the acting user and the ISO date.
+- [ ] A target whose record was deleted renders the localized "record no longer exists" label — no error, no internals (en + sk).
+- [ ] The decision-reason column fills only for records sitting in a decision state (returned/rejected) carrying a reason; everything else stays blank.
+- [ ] Localized empty state when the organization has no events (en + sk); pagination carries the contract filter across pages.
+
 ## Cross-cutting
 
 - [ ] Exactly one `h1` per page; heading hierarchy never skips a level.
