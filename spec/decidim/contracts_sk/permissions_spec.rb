@@ -896,6 +896,63 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — audit_event (civora-org/civora-platform#92: read-only viewer)" do
+    # Plain-method helper (not a let) so the group stays within the
+    # memoized-helpers budget while every example names its user explicitly.
+    def audit_user_with_roles(*roles)
+      SpecUser.new(engine_roles: roles)
+    end
+
+    # The group's users carry engine_roles, so swap in the engine_roles-driven
+    # resolver for the duration of each example (restored afterwards).
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "allows :read for every engine role (editor OR reviewer), no record needed" do
+      %i[editor reviewer].each do |role|
+        outcome = action_for(
+          audit_user_with_roles(role),
+          scope: :admin, action: :read, action_subject: :audit_event
+        )
+
+        expect(outcome.allowed?).to be(true), "#{role} must read the audit trail"
+      end
+    end
+
+    it "allows :read with no state reachable (the gate is role-only, org-level)" do
+      expect(action_for(audit_user_with_roles(:editor), scope: :admin, action: :read,
+                                                        action_subject: :audit_event).allowed?).to be(true)
+    end
+
+    it "denies :read for a roleless user and is disallowed (not unset) — fail-closed" do
+      outcome = action_for(audit_user_with_roles, scope: :admin, action: :read, action_subject: :audit_event)
+
+      expect(outcome.allowed?).to be(false)
+      expect(unset?(audit_user_with_roles, scope: :admin, action: :read, action_subject: :audit_event))
+        .to be(false)
+    end
+
+    it "leaves write actions unset (the trail is append-only — no write surface exists)" do
+      %i[create update destroy].each do |audit_action|
+        # Only :read is answered; every other action on the subject is left
+        # unset, which Decidim's allowed_to? rescues to false (fail-closed)
+        # — nobody can write the trail through the permission layer.
+        expect(unset?(audit_user_with_roles(:editor, :reviewer), scope: :admin, action: audit_action,
+                                                                 action_subject: :audit_event)).to be(true)
+      end
+    end
+
+    it "leaves public-scope audit_event actions unset (the trail is never publicly addressable)" do
+      expect(unset?(audit_user_with_roles(:editor), scope: :public, action: :read,
+                                                    action_subject: :audit_event)).to be(true)
+      expect(unset?(nil, scope: :public, action: :read, action_subject: :audit_event)).to be(true)
+    end
+  end
+
   describe "org admin with accepted terms (default resolver)" do
     it "may trigger every edge in the transition table" do
       lifecycle::TRANSITIONS.each do |from, edges|

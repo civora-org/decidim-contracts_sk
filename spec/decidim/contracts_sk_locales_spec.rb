@@ -225,6 +225,50 @@ module LocaleContract
     }
   }.freeze
 
+  # The admin audit-trail viewer labels per locale (civora-org/civora-platform
+  # #92). The six lifecycle-event rows reuse the transition.* vocabulary
+  # verbatim (pinned by TRANSITION_EVENT_LABELS — never a second vocabulary);
+  # only the viewer's own chrome and the four non-transition action labels
+  # carry keys of their own.
+  # rubocop:disable Style/FormatStringToken
+  ADMIN_AUDIT_LABELS = {
+    en: {
+      "admin.audit_events.index.title" => "Audit trail",
+      "admin.audit_events.index.empty" => "No audit events have been recorded yet.",
+      "admin.audit_events.index.headers.action" => "Action",
+      "admin.audit_events.index.headers.record" => "Record",
+      "admin.audit_events.index.headers.user" => "User",
+      "admin.audit_events.index.headers.when" => "Date",
+      "admin.audit_events.actions.redaction_confirmed" => "Redaction confirmed",
+      "admin.audit_events.actions.amendment_publish" => "Amendment published",
+      "admin.audit_events.actions.crz_import_create" => "Imported from CRZ",
+      "admin.audit_events.actions.crz_import_update" => "Updated from CRZ",
+      "admin.audit_events.amendment_target" => "Amendment v%{version}",
+      "admin.audit_events.deleted_target" => "Record no longer exists",
+      "admin.audit_events.filter_banner" => "Showing audit events for: %{title}",
+      "admin.audit_events.back_to_all" => "Show all events",
+      "admin.audit_events.unknown_actor" => "Unknown user"
+    },
+    sk: {
+      "admin.audit_events.index.title" => "Auditná stopa",
+      "admin.audit_events.index.empty" => "Zatiaľ nebola zaznamenaná žiadna udalosť auditnej stopy.",
+      "admin.audit_events.index.headers.action" => "Akcia",
+      "admin.audit_events.index.headers.record" => "Záznam",
+      "admin.audit_events.index.headers.user" => "Používateľ",
+      "admin.audit_events.index.headers.when" => "Dátum",
+      "admin.audit_events.actions.redaction_confirmed" => "Skrytie údajov potvrdené",
+      "admin.audit_events.actions.amendment_publish" => "Dodatok zverejnený",
+      "admin.audit_events.actions.crz_import_create" => "Importované z CRZ",
+      "admin.audit_events.actions.crz_import_update" => "Aktualizované z CRZ",
+      "admin.audit_events.amendment_target" => "Dodatok č. %{version}",
+      "admin.audit_events.deleted_target" => "Záznam už neexistuje",
+      "admin.audit_events.filter_banner" => "Zobrazujú sa udalosti auditnej stopy pre: %{title}",
+      "admin.audit_events.back_to_all" => "Zobraziť všetky udalosti",
+      "admin.audit_events.unknown_actor" => "Neznámy používateľ"
+    }
+  }.freeze
+  # rubocop:enable Style/FormatStringToken
+
   # The admin CRZ single-record import labels per locale (ADR-008,
   # civora-org/civora-platform#86). The outcome vocabulary mirrors the
   # CrzImport::Sync outcomes 1:1.
@@ -439,6 +483,21 @@ module LocaleContract
     "admin.amendments.states.published",
     "admin.amendments.update.error",
     "admin.amendments.update.success",
+    "admin.audit_events.actions.amendment_publish",
+    "admin.audit_events.actions.crz_import_create",
+    "admin.audit_events.actions.crz_import_update",
+    "admin.audit_events.actions.redaction_confirmed",
+    "admin.audit_events.amendment_target",
+    "admin.audit_events.back_to_all",
+    "admin.audit_events.deleted_target",
+    "admin.audit_events.filter_banner",
+    "admin.audit_events.index.empty",
+    "admin.audit_events.index.headers.action",
+    "admin.audit_events.index.headers.record",
+    "admin.audit_events.index.headers.user",
+    "admin.audit_events.index.headers.when",
+    "admin.audit_events.index.title",
+    "admin.audit_events.unknown_actor",
     "admin.contracts.back_to_index",
     "admin.contracts.confirm_redaction.checkbox_label",
     "admin.contracts.confirm_redaction.checklist.amounts",
@@ -962,6 +1021,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the admin amendment labels in both locales (M02-05-B, civora-org/civora-platform#65)" do
       LocaleContract::ADMIN_AMENDMENT_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin audit-trail labels in both locales (civora-org/civora-platform#92)" do
+      LocaleContract::ADMIN_AUDIT_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

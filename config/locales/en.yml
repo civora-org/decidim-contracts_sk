@@ -161,6 +161,25 @@ en:
             not_found: "No CRZ contract with id %{source_id} was found."
             failed: "Import of contract %{source_id} failed (source unavailable). No existing record was changed."
             quarantined: "Contract %{source_id} could not be read from the source; it was skipped."
+        audit_events:
+          index:
+            title: "Audit trail"
+            empty: "No audit events have been recorded yet."
+            headers:
+              action: "Action"
+              record: "Record"
+              user: "User"
+              when: "Date"
+          actions:
+            redaction_confirmed: "Redaction confirmed"
+            amendment_publish: "Amendment published"
+            crz_import_create: "Imported from CRZ"
+            crz_import_update: "Updated from CRZ"
+          amendment_target: "Amendment v%{version}"
+          deleted_target: "Record no longer exists"
+          filter_banner: "Showing audit events for: %{title}"
+          back_to_all: "Show all events"
+          unknown_actor: "Unknown user"
         amendments:
           index:
             title: "Amendments"

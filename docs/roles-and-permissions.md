@@ -28,8 +28,8 @@ the engine's two-role vocabulary stays unchanged for MVP.
 ## Vocabulary: scope / subject / action
 
 The permissions class speaks Decidim's `PermissionAction` vocabulary and
-answers for subjects `:contract`, `:party`, `:document`, `:amendment` and
-`:link`:
+answers for subjects `:contract`, `:party`, `:document`, `:amendment`,
+`:link` and `:audit_event`:
 
 | Scope | Subject | Action | Allowed when |
 |---|---|---|---|
@@ -47,8 +47,13 @@ answers for subjects `:contract`, `:party`, `:document`, `:amendment` and
 | `admin` | `document` | `read` | user holds **any** engine role (documents section of the contract edit page) |
 | `admin` | `link` | `create`, `update`, `destroy` | user's engine roles include `editor` **and** the parent contract's state is lifecycle-editable (`ContractLifecycle.editable?`) — the same rule as `party`/`document` management; the link routes expose only `create` and `destroy` (links have no editable content) but the shared rule covers the whole action set for symmetry (civora-org/civora-platform#87) |
 | `admin` | `link` | `read` | user holds **any** engine role (declared for symmetry — the links manager lives on the contract edit page; no link index exists) |
+| `admin` | `amendment` | `create` | user's engine roles include `editor` **and** the parent contract's state is `published` — version history exists only from publication onwards, so drafts are seeded onto published records only (M02-05-B, civora-org/civora-platform#65, ADR-006) |
+| `admin` | `amendment` | `update`, `destroy` | user's engine roles include `editor` **and** the amendment is a draft — published amendments are immutable forever regardless of the contract's own state (ADR-006) |
+| `admin` | `amendment` | `publish` | user's engine roles include `editor` **and** the parent contract's state is `published` **and** the amendment is a draft — one explicit POST per publish event, gated like the lifecycle transitions |
+| `admin` | `amendment` | `read` | user holds **any** engine role (admin amendment index; drafts and published alike) |
+| `admin` | `audit_event` | `read` | user holds **any** engine role — role-only gate, no record and no lifecycle condition: the audit-trail viewer is organization-level (the trail's tenancy is explicit on each row), and the trail has no write surface (civora-org/civora-platform#92) |
 | `public` | `contract` | `read` | `ContractLifecycle.publicly_visible?(state)` — i.e. state in `PUBLIC_STATES` (`published`, `archived`) |
-| anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) — including every `public`-scope `party`, `document`, `amendment` and `link` action, so parties, documents, amendments and links are never publicly addressable as subjects (public document downloads and the version history render as part of the published `contract`/`read` page) |
+| anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) — including every `public`-scope `party`, `document`, `amendment`, `link` and `audit_event` action, so parties, documents, amendments, links and the audit trail are never publicly addressable as subjects (public document downloads and the version history render as part of the published `contract`/`read` page) |
 
 The transition-event list is **derived** from
 `ContractLifecycle::TRANSITIONS` (`Permissions::TRANSITION_EVENTS`), never

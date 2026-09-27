@@ -1,0 +1,74 @@
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t("decidim.contracts_sk.admin.audit_events.index.title") %>
+    </h1>
+  </div>
+
+  <%# Contract-scoped mode (civora-org/civora-platform#92): the banner
+      names the filtered contract and links back to the unfiltered trail. %>
+  <% if @contract %>
+    <div class="card-section">
+      <p>
+        <strong><%= t("decidim.contracts_sk.admin.audit_events.filter_banner", title: @contract.title) %></strong>
+        <%= link_to t("decidim.contracts_sk.admin.audit_events.back_to_all"),
+                    admin_audit_events_path,
+                    class: "button button__sm button__secondary clear" %>
+      </p>
+    </div>
+  <% end %>
+
+  <% if @audit_events.any? %>
+    <div class="table-scroll">
+      <table class="table-list">
+        <thead>
+          <tr>
+            <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.action") %></th>
+            <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.record") %></th>
+            <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.user") %></th>
+            <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.when") %></th>
+            <th><%= t("decidim.contracts_sk.admin.contracts.transition.review_reason.label") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @audit_events.each do |event| %>
+            <% target_info = audit_target_info(event) %>
+            <% reason = audit_reason_for(event) %>
+            <tr>
+              <td><%= audit_action_label(event.action) %></td>
+              <td>
+                <%# Dangling target (row gone or class unloadable): the
+                    localized label in place of the title link — graceful,
+                    no internals leaked (fail-closed at the helper). %>
+                <% if target_info %>
+                  <% if target_info[:url].present? %>
+                    <%= link_to target_info[:label], target_info[:url] %>
+                  <% else %>
+                    <%= target_info[:label] %>
+                  <% end %>
+                <% else %>
+                  <span class="text-warning"><%= t("decidim.contracts_sk.admin.audit_events.deleted_target") %></span>
+                <% end %>
+              </td>
+              <td><%= audit_actor_name(event) %></td>
+              <td><%= audit_recorded_on(event) %></td>
+              <td><%= reason %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%# Page controls render only from two pages up; the partial carries
+        exactly the filter keys over — never raw request params. %>
+    <% if @audit_events.total_pages > 1 %>
+      <%= render "decidim/contracts_sk/shared/pagination",
+                 collection: @audit_events,
+                 filter_keys: %i[contract_id] %>
+    <% end %>
+  <% else %>
+    <div class="card-section">
+      <p><%= t("decidim.contracts_sk.admin.audit_events.index.empty") %></p>
+    </div>
+  <% end %>
+</div>
