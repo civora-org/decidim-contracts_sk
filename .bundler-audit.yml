@@ -31,3 +31,7 @@ ignore:
   - GHSA-96qw-h329-v5rg
   # rubyzip 2.4.1 (decidim-core pins ~> 2.0; fix requires >= 3.4.0)
   - CVE-2026-85396
+  # rack-proxy 0.8.3 (decidim-core pins ~> 0.8.3, < 1.0; fix requires >= 1.0.3).
+  # Pulled in via premailer-rails for email CSS inlining — the advisory targets
+  # the HTTP proxying surface, which this engine never exercises.
+  - GHSA-42qh-8mx8-7wqm
