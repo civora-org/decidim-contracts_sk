@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "agent-review/v1",
+  "protectedBranches": [
+    "main",
+    "master",
+    "develop"
+  ],
+  "branchPrefix": "agent/",
+  "maxCapturedOutputBytes": 10240,
+  "maxDiffBytesPerFile": 20480,
+  "includeDiffInPackageByDefault": true,
+  "redactionEnabled": true,
+  "commitArtifacts": true,
+  "github": {
+    "enabled": true,
+    "defaultBaseBranch": "main",
+    "createDraftPullRequest": true,
+    "maxInlineComments": 8,
+    "publishSummary": true,
+    "publishInlineComments": true,
+    "skipGeneratedFiles": true,
+    "skipLockfiles": true,
+    "updateMode": "replace-agent-comments"
+  }
+}

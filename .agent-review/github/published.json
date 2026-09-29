@@ -1,0 +1,12 @@
+{
+  "repository": "civora-org/decidim-contracts_sk",
+  "baseBranch": "main",
+  "headBranch": "m03-92-audit-trail-viewer",
+  "pullRequestNumber": 82,
+  "pullRequestUrl": "https://github.com/civora-org/decidim-contracts_sk/pull/82",
+  "headCommit": "fae5c64519caaec06249e0d48d0c4301086ae120",
+  "sessionId": "54a881af-6d32-4e7c-a6b6-5c9c14c22113",
+  "reviewId": 5329437133,
+  "publishedCommentIds": [],
+  "publishedAt": "2026-09-27T08:00:47.088Z"
+}

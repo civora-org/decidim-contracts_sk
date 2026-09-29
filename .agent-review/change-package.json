@@ -1,0 +1,477 @@
+{
+  "schemaVersion": "agent-review/v1",
+  "session": {
+    "id": "6b2892c2-9985-4b7a-9031-fc723f7302c9",
+    "startedAt": "2026-09-28T15:48:32.593Z",
+    "endedAt": "2026-09-28T16:25:37.886Z",
+    "status": "ended"
+  },
+  "task": "Pilot demo UX polish: guard blank live fields on public detail (#80), admin form a11y (#78), input hints + currency select (#79), localized money/date rendering + PDF timestamp UTC label (#81)",
+  "branch": "polish/pilot-demo-ux",
+  "commits": [],
+  "changedFiles": [
+    {
+      "path": ".opencode/commands/agent-review-github-status.md",
+      "kind": "added",
+      "language": "markdown",
+      "insertions": 16,
+      "deletions": 0
+    },
+    {
+      "path": ".opencode/commands/agent-review-prepare-pr.md",
+      "kind": "added",
+      "language": "markdown",
+      "insertions": 19,
+      "deletions": 0
+    },
+    {
+      "path": ".opencode/commands/agent-review-publish-pr.md",
+      "kind": "added",
+      "language": "markdown",
+      "insertions": 19,
+      "deletions": 0
+    },
+    {
+      "path": ".opencode/commands/agent-review-update-review.md",
+      "kind": "added",
+      "language": "markdown",
+      "insertions": 16,
+      "deletions": 0
+    },
+    {
+      "path": ".opencode/plugins/agent-review.ts",
+      "kind": "added",
+      "language": "typescript",
+      "insertions": 357,
+      "deletions": 0,
+      "symbols": [
+        "serialize",
+        "errorMessage",
+        "recordIfActive"
+      ]
+    },
+    {
+      "path": ".opencode/skills/agent-review",
+      "kind": "added",
+      "language": "unknown",
+      "insertions": 0,
+      "deletions": 0
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "modified",
+      "language": "markdown",
+      "insertions": 2,
+      "deletions": 0
+    },
+    {
+      "path": "app/controllers/decidim/contracts_sk/admin/audit_events_controller.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 1,
+      "deletions": 7,
+      "symbols": [
+        "Decidim",
+        "ContractsSk",
+        "Admin",
+        "AuditEventsController",
+        "index",
+        "filtered_events",
+        "audit_events_scope",
+        "filtered_contract",
+        "contracts_scope",
+        "audit_action_label"
+      ]
+    },
+    {
+      "path": "app/helpers/decidim/contracts_sk/application_helper.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 67,
+      "deletions": 0,
+      "symbols": [
+        "Decidim",
+        "ContractsSk",
+        "ApplicationHelper",
+        "imported_contract?",
+        "format_amount",
+        "format_date",
+        "format_timestamp",
+        "mirror_stale?",
+        "localized_amount"
+      ]
+    },
+    {
+      "path": "app/pdfs/decidim/contracts_sk/crz_handoff_pdf.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 28,
+      "deletions": 9,
+      "symbols": [
+        "Decidim",
+        "ContractsSk",
+        "CrzHandoffPdf",
+        "initialize",
+        "render",
+        "document",
+        "render_header",
+        "render_field_rows",
+        "render_parties",
+        "render_footer"
+      ]
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/admin/amendments/_form.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 6,
+      "deletions": 4
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/admin/audit_events/index.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 4,
+      "deletions": 1
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/admin/contracts/_form.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 25,
+      "deletions": 7
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/admin/contracts/_redaction_confirmation_body.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/admin/contracts/_review_decision_body.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/admin/documents/_form.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 6,
+      "deletions": 3
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/admin/parties/_form.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 8,
+      "deletions": 5
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/contracts/index.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 5,
+      "deletions": 4
+    },
+    {
+      "path": "app/views/decidim/contracts_sk/contracts/show.html.erb",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 54,
+      "deletions": 22
+    },
+    {
+      "path": "config/locales/en.yml",
+      "kind": "modified",
+      "language": "yaml",
+      "insertions": 4,
+      "deletions": 0
+    },
+    {
+      "path": "config/locales/sk.yml",
+      "kind": "modified",
+      "language": "yaml",
+      "insertions": 4,
+      "deletions": 0
+    },
+    {
+      "path": "docs/crz-import.md",
+      "kind": "modified",
+      "language": "markdown",
+      "insertions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "docs/qa-checklist.md",
+      "kind": "modified",
+      "language": "markdown",
+      "insertions": 7,
+      "deletions": 6
+    },
+    {
+      "path": "opencode.jsonc",
+      "kind": "modified",
+      "language": "unknown",
+      "insertions": 6,
+      "deletions": 0
+    },
+    {
+      "path": "spec/decidim/contracts_sk_locales_spec.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 30,
+      "deletions": 0,
+      "symbols": [
+        "LocaleContract",
+        "locale_file",
+        "translations",
+        "module_tree",
+        "leaf_paths",
+        "leaf_values",
+        "fresh_backend",
+        "PublicCatalogueLabels"
+      ]
+    },
+    {
+      "path": "spec/decidim/contracts_sk/application_helper_spec.rb",
+      "kind": "added",
+      "language": "ruby",
+      "insertions": 116,
+      "deletions": 0,
+      "symbols": [
+        "with_locale"
+      ]
+    },
+    {
+      "path": "spec/decidim/contracts_sk/crz_handoff_pdf_spec.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 9,
+      "deletions": 0,
+      "symbols": [
+        "blank_optional_fields"
+      ]
+    },
+    {
+      "path": "spec/requests/admin/amendments_spec.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 8,
+      "deletions": 0,
+      "symbols": [
+        "sign_in",
+        "stub_record_lookups",
+        "create_contract!"
+      ]
+    },
+    {
+      "path": "spec/requests/admin/contracts_spec.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 34,
+      "deletions": 0,
+      "symbols": [
+        "RecordingIndexScope",
+        "initialize",
+        "where",
+        "not",
+        "order",
+        "group",
+        "count",
+        "page",
+        "per",
+        "prev_page"
+      ]
+    },
+    {
+      "path": "spec/requests/admin/documents_spec.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 8,
+      "deletions": 0,
+      "symbols": [
+        "sign_in",
+        "stub_record_lookups",
+        "sample_fixture",
+        "upload",
+        "hostile_upload"
+      ]
+    },
+    {
+      "path": "spec/requests/admin/parties_spec.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 10,
+      "deletions": 0,
+      "symbols": [
+        "sign_in",
+        "stub_record_lookups"
+      ]
+    },
+    {
+      "path": "spec/requests/contracts_spec.rb",
+      "kind": "modified",
+      "language": "ruby",
+      "insertions": 31,
+      "deletions": 0,
+      "symbols": [
+        "PublishedContractFixture",
+        "PaginableStub",
+        "initialize",
+        "page",
+        "per",
+        "each",
+        "any?",
+        "current_page",
+        "prev_page",
+        "next_page"
+      ]
+    }
+  ],
+  "logicalChanges": [
+    {
+      "id": "1ceab998-6ab9-4d37-9100-567c6777205d",
+      "sessionId": "6b2892c2-9985-4b7a-9031-fc723f7302c9",
+      "recordedAt": "2026-09-28T15:59:51.598Z",
+      "entity": "Public contract detail rendering (app/views/decidim/contracts_sk/contracts/show.html.erb)",
+      "files": [
+        "app/views/decidim/contracts_sk/contracts/show.html.erb"
+      ],
+      "changeKind": "modified",
+      "reason": "civora-org/civora-platform#80: the live dt/dd pairs (and the metadata line's date/amount spans) render unconditionally except crz_url, so a sparse published record shows an empty subject dd and a dangling EUR dd; each optional pair is now guarded on value presence, mirroring the frozen-snapshot section and the PDF export which already drop blank rows; title/reference stay unconditional (NOT NULL)",
+      "expectedBehavior": "A published record carrying only title+reference renders no empty subject dd, no dangling EUR dd/span, no empty published-on/signed-on/effective-from dds; a full record renders unchanged; the metadata line under the title hides its date/amount spans when blank",
+      "risk": "low",
+      "alternatives": [],
+      "limitations": []
+    },
+    {
+      "id": "58841712-37c6-4efb-8864-cf936ce24632",
+      "sessionId": "6b2892c2-9985-4b7a-9031-fc723f7302c9",
+      "recordedAt": "2026-09-28T16:00:02.159Z",
+      "entity": "Admin form partials accessibility (contracts/parties/documents/amendments _form.html.erb)",
+      "files": [
+        "app/views/decidim/contracts_sk/admin/contracts/_form.html.erb",
+        "app/views/decidim/contracts_sk/admin/parties/_form.html.erb",
+        "app/views/decidim/contracts_sk/admin/documents/_form.html.erb",
+        "app/views/decidim/contracts_sk/admin/amendments/_form.html.erb"
+      ],
+      "changeKind": "modified",
+      "reason": "civora-org/civora-platform#78: validation-error summaries render as a bare ul on 422 re-render and presence-validated inputs carry no required attribute; the ul gets role=\"alert\" tabindex=\"-1\" autofocus and required: true lands on contract title/reference, party name, amendment summary, document file — minimal engine-side a11y, matching the Decidim FormBuilder's supported field options",
+      "expectedBehavior": "On a 422 re-render the error summary ul carries role=\"alert\" tabindex=\"-1\" autofocus; the presence-validated inputs render the required HTML attribute; no field-level aria-invalid/aria-describedby beyond the item-3 hints",
+      "risk": "low",
+      "alternatives": [],
+      "limitations": []
+    },
+    {
+      "id": "9f6b85e5-7639-4398-a8be-d2c70e33db82",
+      "sessionId": "6b2892c2-9985-4b7a-9031-fc723f7302c9",
+      "recordedAt": "2026-09-28T16:00:12.997Z",
+      "entity": "Admin contract form amount input + IČO hint + currency select",
+      "files": [
+        "app/views/decidim/contracts_sk/admin/contracts/_form.html.erb",
+        "app/views/decidim/contracts_sk/admin/parties/_form.html.erb",
+        "config/locales/en.yml",
+        "config/locales/sk.yml",
+        "spec/decidim/contracts_sk_locales_spec.rb"
+      ],
+      "changeKind": "modified",
+      "reason": "civora-org/civora-platform#79: the amount field accepts only dot-decimals (STRICT_AMOUNT_FORMAT on the form) but says nothing about it, the IČO format rule is invisible to editors, and currency is a free-text input over a one-entry allowlist; hints get explicit ids wired with aria-describedby (the pinned Decidim FormBuilder's help_text: option renders neither id nor aria), and the select copies the role/kind select pattern over the frozen vocabulary",
+      "expectedBehavior": "Amount input carries inputmode=\"decimal\" and aria-describedby pointing at a localized hint that only dot-decimals are accepted; IČO input carries a localized blank-or-8-digits hint wired the same way; currency renders as a select over Contract::SUPPORTED_CURRENCIES (selected preserved) instead of a free-text input; hints shipped in en.yml and sk.yml and registered in the locale key-surface contract",
+      "risk": "low",
+      "alternatives": [],
+      "limitations": []
+    },
+    {
+      "id": "51ae51c3-9fe4-47a9-b704-ac08e36decbc",
+      "sessionId": "6b2892c2-9985-4b7a-9031-fc723f7302c9",
+      "recordedAt": "2026-09-28T16:00:26.858Z",
+      "entity": "Localized money/date rendering + CRZ handoff PDF timestamp zone label",
+      "files": [
+        "app/helpers/decidim/contracts_sk/application_helper.rb",
+        "app/views/decidim/contracts_sk/contracts/show.html.erb",
+        "app/views/decidim/contracts_sk/contracts/index.html.erb",
+        "app/views/decidim/contracts_sk/admin/contracts/_review_decision_body.html.erb",
+        "app/views/decidim/contracts_sk/admin/contracts/_redaction_confirmation_body.html.erb",
+        "app/controllers/decidim/contracts_sk/admin/audit_events_controller.rb",
+        "app/pdfs/decidim/contracts_sk/crz_handoff_pdf.rb",
+        "config/locales/en.yml",
+        "config/locales/sk.yml"
+      ],
+      "changeKind": "modified",
+      "reason": "civora-org/civora-platform#81: \"1250.5 EUR\" renders locale-blind while the audience is Slovak, every date renders naive to_fs(:db), and the PDF footer stamps a naive server-local time with no zone; a small helper in the base ApplicationHelper (number_with_precision with explicit sk separators; I18n.l with an explicit engine-shipped format string — the harness has no rails-i18n sk data, so named formats/day names would not resolve) replaces every to_fs(:db) date render and both amount renders, and the PDF footer converts to UTC explicitly",
+      "expectedBehavior": "Amounts render locale-aware: sk \"1 250,50 EUR\" (regular-space grouping, comma decimals — documented decision), en keeps the current fixed-point \"1250.5 EUR\"; dates render through a thin format_date helper backed by engine-shipped date_formats.default keys (sk \"%d. %m. %Y\", en \"%Y-%m-%d\" — no host-app locale data dependency); the PDF footer timestamp renders Time.current converted to UTC with an explicit \" UTC\" suffix; helper is PORO-safe (included by the PDF class)",
+      "risk": "medium",
+      "alternatives": [],
+      "limitations": []
+    }
+  ],
+  "tests": [
+    {
+      "command": "bundle exec rspec",
+      "startedAt": "2026-09-28T15:59:13.070Z",
+      "finishedAt": "2026-09-28T15:59:19.400Z",
+      "durationMs": 6330,
+      "exitCode": 0,
+      "status": "passed",
+      "stdoutSummary": "Run options: exclude {:db=>true}\n\ndb/migrate/*_add_amendment_lifecycle_to_decidim_contracts_sk_amendments.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the five lifecycle columns\n    pins state as NOT NULL defaulting to draft (the pre-lifecycle semantic)\n    keeps the system, tenancy and snapshot columns nullable\n    puts real FKs on the tenancy and actor references\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n\ndb/migrate/*_add_content_fields_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the seven content columns\n    pins the amount as decimal(12,2)\n    pins currency as NOT NULL defaulting to EUR (D1)\n    keeps the remaining content columns nullable\n  published_at backfill (D3)\n    backfills published rows from updated_at inside the up arm of a reversible block\n    guards the backfill against re-stamping (idempotent WHERE clause)\n\ndb/migrate/*_add_import_provenance_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds the checksum column as a nullable string\n  indexes\n    indexes (organization, source, source_id) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n\ndb/migrate/*_add_redaction_confirmation_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds only the redaction_confirmed_at column, as a plain nullable datetime\n    attaches no default and no backfill (a fabricated stamp would defeat the gate)\n    adds no index (the stamp is read per-record, never queried as a set)\n\ndb/migrate/*_add_review_decision_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the review_reason and reviewed_at columns\n    adds review_reason as a plain nullable string capped at 1000 characters\n    adds reviewed_at as a plain nullable datetime\n    attaches no default and no backfill (a fabricated judgment would defeat the gate)\n    adds no index (the decision is read per-record, never queried as a set)\n\ndb/migrate/*_add_source_id_unique_index_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  index\n    uniquely indexes (organization, source_id) under the explicit unique name\n    keeps the index name within PostgreSQL's 63-byte limit\n\ndb/migrate/*_create_decidim_contracts_sk_amendments.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes version a NOT NULL integer\n    makes summary a NOT NULL string\n  indexes\n    uniquely indexes (contract_id, version) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_audit_events.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the tenant reference NOT NULL with a real FK to the organizations table\n    makes the actor reference NOT NULL with a real FK to the users table\n    makes the target a NOT NULL polymorphic reference\n    makes action a NOT NULL string\n  indexes\n    indexes every reference and created_at under explicit names\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_contract_links.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes the target a NOT NULL polymorphic reference with no index of its own\n  indexes\n    uniquely indexes (contract_id, target_type, target_id) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the tenant and author references NOT NULL\n    makes title and reference NOT NULL strings\n    pins state as NOT NULL defaulting to draft\n    pins source as NOT NULL defaulting to editorial\n    keeps the provenance columns nullable\n  indexes\n    indexes the organization reference under an explicit name\n    indexes the author reference\n    uniquely indexes (organization, reference) under an explicit name\n    indexes (organization, state) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_documents.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL with a real FK to the contracts table\n    makes title NOT NULL\n    pins kind as NOT NULL defaulting to contract\n    keeps the file metadata columns nullable\n  indexes\n    indexes the contract reference under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_parties.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes role and name NOT NULL strings\n    keeps ico as a nullable string with the 8-character limit\n    keeps address nullable\n  indexes\n    compositely indexes (contract_id, role) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\nDecidim::ContractsSk::Admin::AmendmentForm\n  accepts a complete amendment form\n  rejects a blank summary\n  rejects a missing summary\n  caps the summary at 255 characters\n\nDecidim::ContractsSk::Admin::AuditEventsController\n  inherits from the engine's admin base controller\n  implements exactly the index action (read-only viewer)\n  does not sit on the engine's public base controller chain\n  pins the audit action vocabulary actually written by the commands\n  derives the six lifecycle-action keys from the transition table, never hand-enumerated\n\nDecidim::ContractsSk::Admin::ContractForm\n  accepts dotted decimal strings\n  accepts proper numerics without the string guard (spec/API compatibility)\n  accepts the decimal(12,2) ceiling itself\n  accepts a nil amount (the value may be unknown while drafting)\n  rejects non-numeric strings instead of letting the cast zero them\n  rejects comma decimals (the Slovak '12,50' habit, caught deliberately)\n  rejects scientific notation (the format guard stays strict)\n  rejects negative amounts\n  rejects amounts beyond the decimal(12,2) column's ceiling\n  rejects over-ceiling strings too (raw input, same cap)\n\nDecidim::ContractsSk::Admin::ContractsController\n  inherits from the engine's admin base controller\n  implements exactly the CRUD + transition + CRZ-handoff + import + redaction actions (no show, no destroy)\n  does not sit on the engine's public base controller chain\n\nDecidim::ContractsSk::Admin::DocumentForm\n  accepts a complete form\n  defaults the kind to the model's column default\n  accepts every kind of the form's editor vocabulary\n  narrows the mod",
+      "stderrSummary": "",
+      "workingDirectory": "/Users/denyskozlov/Code/decidim-contracts_sk",
+      "commandTruncated": false
+    },
+    {
+      "command": "bundle exec rspec",
+      "startedAt": "2026-09-28T16:24:19.457Z",
+      "finishedAt": "2026-09-28T16:24:28.126Z",
+      "durationMs": 8669,
+      "exitCode": 0,
+      "status": "passed",
+      "stdoutSummary": "Run options: exclude {:db=>true}\n\ndb/migrate/*_add_amendment_lifecycle_to_decidim_contracts_sk_amendments.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the five lifecycle columns\n    pins state as NOT NULL defaulting to draft (the pre-lifecycle semantic)\n    keeps the system, tenancy and snapshot columns nullable\n    puts real FKs on the tenancy and actor references\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n\ndb/migrate/*_add_content_fields_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the seven content columns\n    pins the amount as decimal(12,2)\n    pins currency as NOT NULL defaulting to EUR (D1)\n    keeps the remaining content columns nullable\n  published_at backfill (D3)\n    backfills published rows from updated_at inside the up arm of a reversible block\n    guards the backfill against re-stamping (idempotent WHERE clause)\n\ndb/migrate/*_add_import_provenance_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds the checksum column as a nullable string\n  indexes\n    indexes (organization, source, source_id) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n\ndb/migrate/*_add_redaction_confirmation_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds only the redaction_confirmed_at column, as a plain nullable datetime\n    attaches no default and no backfill (a fabricated stamp would defeat the gate)\n    adds no index (the stamp is read per-record, never queried as a set)\n\ndb/migrate/*_add_review_decision_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the review_reason and reviewed_at columns\n    adds review_reason as a plain nullable string capped at 1000 characters\n    adds reviewed_at as a plain nullable datetime\n    attaches no default and no backfill (a fabricated judgment would defeat the gate)\n    adds no index (the decision is read per-record, never queried as a set)\n\ndb/migrate/*_add_source_id_unique_index_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  index\n    uniquely indexes (organization, source_id) under the explicit unique name\n    keeps the index name within PostgreSQL's 63-byte limit\n\ndb/migrate/*_create_decidim_contracts_sk_amendments.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes version a NOT NULL integer\n    makes summary a NOT NULL string\n  indexes\n    uniquely indexes (contract_id, version) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_audit_events.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the tenant reference NOT NULL with a real FK to the organizations table\n    makes the actor reference NOT NULL with a real FK to the users table\n    makes the target a NOT NULL polymorphic reference\n    makes action a NOT NULL string\n  indexes\n    indexes every reference and created_at under explicit names\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_contract_links.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes the target a NOT NULL polymorphic reference with no index of its own\n  indexes\n    uniquely indexes (contract_id, target_type, target_id) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the tenant and author references NOT NULL\n    makes title and reference NOT NULL strings\n    pins state as NOT NULL defaulting to draft\n    pins source as NOT NULL defaulting to editorial\n    keeps the provenance columns nullable\n  indexes\n    indexes the organization reference under an explicit name\n    indexes the author reference\n    uniquely indexes (organization, reference) under an explicit name\n    indexes (organization, state) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_documents.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL with a real FK to the contracts table\n    makes title NOT NULL\n    pins kind as NOT NULL defaulting to contract\n    keeps the file metadata columns nullable\n  indexes\n    indexes the contract reference under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_parties.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes role and name NOT NULL strings\n    keeps ico as a nullable string with the 8-character limit\n    keeps address nullable\n  indexes\n    compositely indexes (contract_id, role) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\nDecidim::ContractsSk::Admin::AmendmentForm\n  accepts a complete amendment form\n  rejects a blank summary\n  rejects a missing summary\n  caps the summary at 255 characters\n\nDecidim::ContractsSk::Admin::AuditEventsController\n  inherits from the engine's admin base controller\n  implements exactly the index action (read-only viewer)\n  does not sit on the engine's public base controller chain\n  pins the audit action vocabulary actually written by the commands\n  derives the six lifecycle-action keys from the transition table, never hand-enumerated\n\nDecidim::ContractsSk::Admin::ContractForm\n  accepts dotted decimal strings\n  accepts proper numerics without the string guard (spec/API compatibility)\n  accepts the decimal(12,2) ceiling itself\n  accepts a nil amount (the value may be unknown while drafting)\n  rejects non-numeric strings instead of letting the cast zero them\n  rejects comma decimals (the Slovak '12,50' habit, caught deliberately)\n  rejects scientific notation (the format guard stays strict)\n  rejects negative amounts\n  rejects amounts beyond the decimal(12,2) column's ceiling\n  rejects over-ceiling strings too (raw input, same cap)\n\nDecidim::ContractsSk::Admin::ContractsController\n  inherits from the engine's admin base controller\n  implements exactly the CRUD + transition + CRZ-handoff + import + redaction actions (no show, no destroy)\n  does not sit on the engine's public base controller chain\n\nDecidim::ContractsSk::Admin::DocumentForm\n  accepts a complete form\n  defaults the kind to the model's column default\n  accepts every kind of the form's editor vocabulary\n  narrows the mod",
+      "stderrSummary": "",
+      "workingDirectory": "/Users/denyskozlov/Code/decidim-contracts_sk",
+      "commandTruncated": false
+    },
+    {
+      "command": "CONTRACTS_SK_DB=1 bundle exec rspec",
+      "startedAt": "2026-09-28T16:24:32.663Z",
+      "finishedAt": "2026-09-28T16:24:32.672Z",
+      "durationMs": 8,
+      "exitCode": null,
+      "status": "error",
+      "stdoutSummary": "",
+      "stderrSummary": "Executable not found in $PATH: \"CONTRACTS_SK_DB=1\"",
+      "workingDirectory": "/Users/denyskozlov/Code/decidim-contracts_sk"
+    },
+    {
+      "command": "env CONTRACTS_SK_DB=1 bundle exec rspec",
+      "startedAt": "2026-09-28T16:24:40.755Z",
+      "finishedAt": "2026-09-28T16:25:31.244Z",
+      "durationMs": 50489,
+      "exitCode": 0,
+      "status": "passed",
+      "stdoutSummary": "\ndb/migrate/*_add_amendment_lifecycle_to_decidim_contracts_sk_amendments.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the five lifecycle columns\n    pins state as NOT NULL defaulting to draft (the pre-lifecycle semantic)\n    keeps the system, tenancy and snapshot columns nullable\n    puts real FKs on the tenancy and actor references\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n  runnable migration\n==  CreateActiveStorageTables: migrating ======================================\n-- create_table(:active_storage_blobs, {:id=>:primary_key})\n   -> 0.0011s\n-- create_table(:active_storage_attachments, {:id=>:primary_key})\n   -> 0.0009s\n-- create_table(:active_storage_variant_records, {:id=>:primary_key})\n   -> 0.0004s\n==  CreateActiveStorageTables: migrated (0.0026s) =============================\n\n==  CreateDecidimContractsSkContracts: migrating ==============================\n-- create_table(:decidim_contracts_sk_contracts)\n   -> 0.0008s\n-- add_index(:decidim_contracts_sk_contracts, [:decidim_organization_id, :reference], {:unique=>true, :name=>\"idx_contracts_sk_contracts_on_organization_id_and_reference\"})\n   -> 0.0002s\n-- add_index(:decidim_contracts_sk_contracts, [:decidim_organization_id, :state], {:name=>\"idx_contracts_sk_contracts_on_organization_id_and_state\"})\n   -> 0.0002s\n==  CreateDecidimContractsSkContracts: migrated (0.0013s) =====================\n\n==  CreateDecidimContractsSkAmendments: migrating =============================\n-- create_table(:decidim_contracts_sk_amendments)\n   -> 0.0004s\n-- add_index(:decidim_contracts_sk_amendments, [:contract_id, :version], {:unique=>true, :name=>\"idx_contracts_sk_amendments_on_contract_id_and_version\"})\n   -> 0.0002s\n==  CreateDecidimContractsSkAmendments: migrated (0.0006s) ====================\n\n==  AddAmendmentLifecycleToDecidimContractsSkAmendments: migrating ============\n-- add_column(:decidim_contracts_sk_amendments, :state, :string, {:null=>false, :default=>\"draft\"})\n   -> 0.0006s\n-- add_column(:decidim_contracts_sk_amendments, :published_at, :datetime)\n   -> 0.0005s\n-- add_reference(:decidim_contracts_sk_amendments, :decidim_organization, {:type=>:bigint, :foreign_key=>{:to_table=>:decidim_organizations}, :index=>{:name=>\"idx_contracts_sk_amendments_on_organization_id\"}})\n   -> 0.0086s\n-- add_reference(:decidim_contracts_sk_amendments, :decidim_author, {:type=>:bigint, :foreign_key=>{:to_table=>:decidim_users}, :index=>true})\n   -> 0.0098s\n-- add_column(:decidim_contracts_sk_amendments, :content_snapshot, :json)\n   -> 0.0004s\n==  AddAmendmentLifecycleToDecidimContractsSkAmendments: migrated (0.0202s) ===\n\n==  AddAmendmentLifecycleToDecidimContractsSkAmendments: reverting ============\n-- remove_column(:decidim_contracts_sk_amendments, :content_snapshot, :json)\n   -> 0.0116s\n-- remove_reference(:decidim_contracts_sk_amendments, :decidim_author, {:type=>:bigint, :foreign_key=>{:to_table=>:decidim_users}, :index=>true})\n   -> 0.0166s\n-- remove_reference(:decidim_contracts_sk_amendments, :decidim_organization, {:type=>:bigint, :foreign_key=>{:to_table=>:decidim_organizations}, :index=>{:name=>\"idx_contracts_sk_amendments_on_organization_id\"}})\n   -> 0.0124s\n-- remove_column(:decidim_contracts_sk_amendments, :published_at, :datetime)\n   -> 0.0050s\n-- remove_column(:decidim_contracts_sk_amendments, :state, :string, {:null=>false, :default=>\"draft\"})\n   -> 0.0044s\n==  AddAmendmentLifecycleToDecidimContractsSkAmendments: reverted (0.0552s) ===\n\n==  AddAmendmentLifecycleToDecidimContractsSkAmendments: migrating ============\n-- add_column(:decidim_contracts_sk_amendments, :state, :string, {:null=>false, :default=>\"draft\"})\n   -> 0.0003s\n-- add_column(:decidim_contracts_sk_amendments, :published_at, :datetime)\n   -> 0.0002s\n-- add_reference(:decidim_contracts_sk_amendments, :decidim_organization, {:type=>:bigint, :foreign_key=>{:to_table=>:decidim_organizations}, :index=>{:name=>\"idx_contracts_sk_amendments_on_organization_id\"}})\n   -> 0.0068s\n-- add_reference(:decidim_contracts_sk_amendments, :decidim_author, {:type=>:bigint, :foreign_key=>{:to_table=>:decidim_users}, :index=>true})\n   -> 0.0092s\n-- add_column(:decidim_contracts_sk_amendments, :content_snapshot, :json)\n   -> 0.0006s\n==  AddAmendmentLifecycleToDecidimContractsSkAmendments: migrated (0.0175s) ===\n\n    adds the columns, defaults pre-lifecycle rows to draft, and reverses cleanly\n\ndb/migrate/*_add_content_fields_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the seven content columns\n    pins the amount as decimal(12,2)\n    pins currency as NOT NULL defaulting to EUR (D1)\n    keeps the remaining content columns nullable\n  published_at backfill (D3)\n    backfills published rows from updated_at inside the up arm of a reversible block\n    guards the backfill against re-stamping (idempotent WHERE clause)\n  runnable migration\n==  CreateActiveStorageTables: migrating ======================================\n-- create_table(:active_storage_blobs, {:id=>:primary_key})\n   -> 0.0005s\n-- create_table(:active_storage_attachments, {:id=>:primary_key})\n   -> 0.0006s\n-- create_table(:active_storage_variant_records, {:id=>:primary_key})\n   -> 0.0004s\n==  CreateActiveStorageTables: migrated (0.0017s) =============================\n\n==  CreateDecidimContractsSkContracts: migrating ==============================\n-- create_table(:decidim_contracts_sk_contracts)\n   -> 0.0011s\n-- add_index(:decidim_contracts_sk_contracts, [:decidim_organization_id, :reference], {:unique=>true, :name=>\"idx_contracts_sk_contracts_on_organization_id_and_reference\"})\n   -> 0.0002s\n-- add_index(:decidim_contracts_sk_contracts, [:decidim_organization_id, :state], {:name=>\"idx_contracts_sk_contracts_on_organization_id_and_state\"})\n   -> 0.0002s\n==  CreateDecidimContractsSkContracts: migrated (0.0015s) =====================\n\n==  AddContentFieldsToDecidimContractsSkContracts: migrating ==================\n-- add_column(:decidim_contracts_sk_contracts, :subject_matter, :text)\n   -> 0.0004s\n-- add_column(:decidim_contracts_sk_contracts, :amount, :decimal, {:precision=>12, :scale=>2})\n   -> 0.0002s\n-- add_column(:decidim_contracts_sk_contracts, :currency, :string, {:limit=>3, :null=>false, :default=>\"EUR\"})\n   -> 0.0003s\n-- add_column(:decidim_contracts_sk_contracts, :signed_on, :date)\n   -> 0.0002s\n-- add_column(:decidim_contracts_sk_contracts, :effective_from, :date)\n   -> 0.0002s\n-- add_column(:decidim_contracts_sk_contracts, :published_at, :datetime)\n   -> 0.0002s\n-- add_column(:decidim_contracts_sk_contracts, :crz_url, :string)\n   -> 0.0004s\n-- execute(\"UPDATE decidim_contracts_sk_contracts\\nSET published_at = updated_at\\nWHERE state = 'published' AND published_at IS NULL\\n\")\n   -> 0.0001s\n==  AddContentFieldsToDecidimContractsSkContracts: migrated (0.0022s) =========\n\n==  AddContentFieldsToDecidimContractsSkContracts: reverting ==================\n-- remove_column(:decidim_contracts_sk_contracts, :crz_url, :string)\n   -> 0.0135s\n-- remove_column(:decidim_contracts_sk_contracts, :published_at, :datetime)\n   -> 0.0119s\n-- remove_column(:decidim_contracts_sk_contracts, :effective_from, :date)\n   -> 0.0107s\n-- remove_column(:decidim_contracts_sk_contracts, :signed_on, :date)\n   -> 0.0129s\n-- remove_column(:decidim_contracts_sk_contracts, :currency, :string, {:limit=>3, :null=>false, :default=>\"EUR\"})\n   -> 0.0218s\n-- remove_column(:decidim_contracts_sk_contracts, :amount, :decimal, {:precision=>12, :scale=>2})\n   -> 0.0114s\n-- remove_column(:decidim_contracts_sk_contracts, :subject_matter, :text)\n   -> 0.0124s\n==  AddContentFieldsToDecidimContractsSkContracts: reverted (0.0957s) =========\n\n==  AddContentFieldsToDecidimContractsSkContracts: migrating ==================\n-- add_column(:decidim_contracts_sk_contracts, :subject_matter, :text)\n   -> 0.0005s\n-- add_column(:decidim_contracts_sk_contracts, :amount, :decimal, {:precision=>12, :scale=>2})\n   -> 0.0004s\n-- add_column(:decidim_contracts_sk_contracts, :currency, :string, {:limit=>3, :null=>false, :default=>\"EUR\"})\n   -> 0.0004s\n-- add_column(:decidim_contracts_sk_contracts, :signed_on, :date)\n   -> 0.0005s\n-- add_column(:decidim_contracts_sk_contracts, :effective_from, :date)\n   -> 0.0004s\n-- add_column(:decidim_contracts_sk_contracts, :published_at, :datetime)\n   -> 0.0003s\n-- add_column(:decidim_contracts_sk_contracts, :crz_url, :string)\n   -> 0.0002s\n-- execute(\"UPDATE decidim_contracts_sk_contracts\\nSET published_at = updated_at\\nWHERE state = 'published' AND published_at IS NULL\\n\")\n   -> 0.0002s\n==  AddContentFieldsToDecidimContractsSkContracts: migrated (0.0032s) =========\n\n    adds the columns, backfills published rows, and reverses cleanly\n\ndb/migrate/*_add_import_provenance_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds the checksum column as a nullable string\n  indexes\n    indexes (organization, source, source_id) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  runnable migration\n==  CreateActiveStorageTables: migrating ======================================\n-- create_table(:active_storage_blobs, {:id=>:primary_key})\n   -> 0.0006s\n-- create_table(:active_storage_attachments, {:id=>:primary_key})\n   -> 0.0006s\n-- create_table(:active_storage_variant_records, {:id=>:primary_key})\n   -> 0.0004s\n==  CreateActiveStorageTables: migrated (0.0016s) =============================\n\n==  CreateDecidimContractsSkContracts: migrating ==============================\n-- create_table(:decidim_contracts_sk_contracts)\n   -> 0.0006s\n-- add_index(:decidim_contracts_",
+      "stderrSummary": "",
+      "workingDirectory": "/Users/denyskozlov/Code/decidim-contracts_sk",
+      "commandTruncated": false
+    }
+  ],
+  "risks": [
+    "Working tree was dirty at session start (17 entries) — pre-existing changes may be mixed into the diff.",
+    "1 test run(s) did not pass (exit codes: signal)."
+  ],
+  "limitations": [
+    "Snapshots cover only files that were changed at checkpoint time.",
+    "Symbol extraction is regex-based, not AST-based.",
+    "Only observed facts are recorded — private model reasoning is not captured."
+  ],
+  "agentMetadata": {
+    "toolCalls": 110,
+    "commands": 40,
+    "checkpoints": 3,
+    "tests": 4,
+    "events": 3791
+  },
+  "generatedAt": "2026-09-28T16:25:37.850Z"
+}
