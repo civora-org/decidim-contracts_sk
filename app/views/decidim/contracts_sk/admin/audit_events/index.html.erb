@@ -51,7 +51,10 @@
                 <% end %>
               </td>
               <td><%= audit_actor_name(event) %></td>
-              <td><%= audit_recorded_on(event) %></td>
+              <%# The row date renders through the shared locale-aware helper
+                  (civora-org/civora-platform#81) directly in the view — the
+                  helper chain is the view's, not the controller's. %>
+              <td><%= format_date(event.created_at) %></td>
               <td><%= reason %></td>
             </tr>
           <% end %>

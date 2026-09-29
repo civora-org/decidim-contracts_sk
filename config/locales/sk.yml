@@ -33,6 +33,8 @@ sk:
         heading: "Pomôcka na odovzdanie do CRZ"
         disclaimer: "Tento dokument je pomôcka na odovzdanie do CRZ — nie právna publikácia."
         generated_on: "Vygenerované"
+      date_formats:
+        default: "%d. %m. %Y"
       menu:
         contracts: "Zmluvy"
         admin_contracts: "Zmluvy"
@@ -140,6 +142,7 @@ sk:
             reference: "Číslo zmluvy"
             subject_matter: "Predmet zmluvy"
             amount: "Hodnota"
+            amount_hint: "Použite bodku ako oddeľovač desatinných miest (napr. 1250.50) — desatinná čiarka nie je prijateľná."
             currency: "Mena"
             signed_on: "Dátum podpisu"
             effective_from: "Dátum účinnosti"
@@ -239,6 +242,7 @@ sk:
             role: "Rola"
             name: "Názov"
             ico: "IČO"
+            ico_hint: "Nechajte prázdne alebo zadajte presne 8 číslic."
             address: "Adresa"
         documents:
           index:

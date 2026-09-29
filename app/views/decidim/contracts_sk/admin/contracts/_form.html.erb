@@ -2,14 +2,23 @@
     the editorial identity fields and the contract content fields
     (civora-org/civora-platform#75) are rendered — the lifecycle state and
     the system-stamped published_at are intentionally absent from every
-    admin form. %>
-<%= form_with url: url, method: method, html: { class: "form form-defaults" } do |form| %>
+    admin form.
+    Accessibility surface (civora-org/civora-platform#78/#79): the error
+    summary is announced as a live alert and focused on the 422 re-render;
+    the presence-validated identity inputs carry the required attribute
+    (the builder is bound to @form — the Decidim builder's required path
+    needs the object, and the explicit name/id options keep every field
+    name stable); the amount input declares its decimal keyboard and its
+    dot-decimal hint through aria-describedby (the Decidim builder's
+    help_text option wires neither an id nor the aria relation, so the
+    hint element is explicit). %>
+<%= form_with model: @form, url: url, method: method, html: { class: "form form-defaults" } do |form| %>
   <div class="card">
     <div class="card-section">
       <div class="form__wrapper">
         <% if @form.errors.any? %>
           <div class="flash alert">
-            <ul>
+            <ul role="alert" tabindex="-1" autofocus>
               <% @form.errors.full_messages.each do |message| %>
                 <li><%= message %></li>
               <% end %>
@@ -18,11 +27,11 @@
         <% end %>
 
         <div class="row column">
-          <%= form.text_field :title, label: t("decidim.contracts_sk.admin.contracts.form.title"), label_options: { for: "contract_title" }, id: "contract_title", name: "contract[title]", value: @form.title %>
+          <%= form.text_field :title, label: t("decidim.contracts_sk.admin.contracts.form.title"), label_options: { for: "contract_title" }, id: "contract_title", name: "contract[title]", value: @form.title, required: true %>
         </div>
 
         <div class="row column">
-          <%= form.text_field :reference, label: t("decidim.contracts_sk.admin.contracts.form.reference"), label_options: { for: "contract_reference" }, id: "contract_reference", name: "contract[reference]", value: @form.reference %>
+          <%= form.text_field :reference, label: t("decidim.contracts_sk.admin.contracts.form.reference"), label_options: { for: "contract_reference" }, id: "contract_reference", name: "contract[reference]", value: @form.reference, required: true %>
         </div>
 
         <div class="row column">
@@ -30,11 +39,20 @@
         </div>
 
         <div class="row column">
-          <%= form.text_field :amount, label: t("decidim.contracts_sk.admin.contracts.form.amount"), label_options: { for: "contract_amount" }, id: "contract_amount", name: "contract[amount]", value: @form.amount %>
+          <%= form.text_field :amount, label: t("decidim.contracts_sk.admin.contracts.form.amount"), label_options: { for: "contract_amount" }, id: "contract_amount", name: "contract[amount]", value: @form.amount, inputmode: "decimal", aria: { describedby: "contract_amount_hint" } %>
+          <span class="help-text" id="contract_amount_hint"><%= t("decidim.contracts_sk.admin.contracts.form.amount_hint") %></span>
         </div>
 
         <div class="row column">
-          <%= form.text_field :currency, label: t("decidim.contracts_sk.admin.contracts.form.currency"), label_options: { for: "contract_currency" }, id: "contract_currency", name: "contract[currency]", value: @form.currency %>
+          <%# The options come from the model's frozen SUPPORTED_CURRENCIES
+              vocabulary (D1 of #75), never hand-enumerated. Currency ISO
+              codes are locale-neutral, so each option labels itself —
+              unlike the role/kind selects, no second localized vocabulary
+              is invented. %>
+          <% currency_options = Decidim::ContractsSk::Contract::SUPPORTED_CURRENCIES.map do |currency|
+               [currency, currency]
+             end %>
+          <%= form.select :currency, currency_options, { selected: @form.currency, label: t("decidim.contracts_sk.admin.contracts.form.currency"), label_options: { for: "contract_currency" } }, id: "contract_currency", name: "contract[currency]" %>
         </div>
 
         <div class="row column">

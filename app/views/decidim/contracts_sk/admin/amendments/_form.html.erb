@@ -2,14 +2,16 @@
     the summary is rendered — a draft amendment carries nothing else
     content-wise: the version is sequenced by the command and the content
     snapshot is taken at publish time from the contract's live fields
-    (civora-org/civora-platform#65, ADR-006). %>
-<%= form_with url: url, method: method, html: { class: "form form-defaults" } do |form| %>
+    (civora-org/civora-platform#65, ADR-006). The summary is the only
+    presence-validated input, so it alone carries the required attribute
+    (civora-org/civora-platform#78). %>
+<%= form_with model: @form, url: url, method: method, html: { class: "form form-defaults" } do |form| %>
   <div class="card">
     <div class="card-section">
       <div class="form__wrapper">
         <% if @form.errors.any? %>
           <div class="flash alert">
-            <ul>
+            <ul role="alert" tabindex="-1" autofocus>
               <% @form.errors.full_messages.each do |message| %>
                 <li><%= message %></li>
               <% end %>
@@ -18,7 +20,7 @@
         <% end %>
 
         <div class="row column">
-          <%= form.text_field :summary, label: t("decidim.contracts_sk.admin.amendments.form.summary"), label_options: { for: "amendment_summary" }, id: "amendment_summary", name: "amendment[summary]", value: @form.summary %>
+          <%= form.text_field :summary, label: t("decidim.contracts_sk.admin.amendments.form.summary"), label_options: { for: "amendment_summary" }, id: "amendment_summary", name: "amendment[summary]", value: @form.summary, required: true %>
         </div>
       </div>
     </div>

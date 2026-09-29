@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "agent-review-pr-preview/v1",
+  "repository": null,
+  "baseBranch": "main",
+  "headBranch": "m03-92-audit-trail-viewer",
+  "title": "Admin audit-trail viewer (civora-org/civora-platform#92): read-only org-level + contract-filtered index",
+  "draft": true,
+  "summary": {
+    "logicalChanges": 1,
+    "filesChanged": 23,
+    "testsPassed": 1,
+    "risks": [
+      "Working tree was dirty at session start (17 entries) — pre-existing changes may be mixed into the diff.",
+      "2 test run(s) did not pass (exit codes: 1, 1)."
+    ]
+  },
+  "inlineComments": [
+    {
+      "id": "comment_001",
+      "logicalChangeId": "4fa1dda2-92d7-4b00-b687-9134fa8a2f7c",
+      "path": "config/routes.rb",
+      "line": 82,
+      "side": "RIGHT",
+      "body": "### Agent context\n\n**What changed:** added — Audit-trail viewer (civora-org/civora-platform#92)\n\n**Why:** The append-only audit trail has no read surface; roles doc promises \"view audit trail\" to every engine role. Gate-1: single GET /admin/audit_events index, contract filter via tenant-scoped contract_id query param, :read :audit_event permission for any engine role, Kaminari 25/page, dangling-target-safe rendering, #90 reason display on live contracts.\n\n**Expected behavior:** Read-only org-scoped audit index (newest first, paged), contract-filtered via tenant-scoped contract_id param, any engine role admitted, dangling targets render gracefully, #90 review reason displayed on live decision-state contracts.\n\n**Evidence:** `bundle exec rspec` executed (recorded test run).\n\n**Risk:** Low\n\n<!-- agent-review:session=54a881af-6d32-4e7c-a6b6-5c9c14c22113;change=4fa1dda2-92d7-4b00-b687-9134fa8a2f7c;version=1 -->",
+      "risk": "low",
+      "evidenceRefs": [
+        "test_001"
+      ],
+      "status": "preview"
+    }
+  ],
+  "fileLevelNotes": [],
+  "skipped": []
+}

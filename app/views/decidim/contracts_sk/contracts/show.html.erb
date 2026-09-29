@@ -7,11 +7,18 @@
     <h1 class="title-decorator"><%= @contract.title %></h1>
     <%# Quick-scan metadata line under the title: the record's identity
         (reference), its publication date and the headline amount. Uses the
-        existing contract vocabulary — no new keys. %>
+        existing contract vocabulary — no new keys. The optional fields are
+        guarded like the dl grid below (civora-org/civora-platform#80): a
+        sparse record renders no dangling date span and no "EUR" with a
+        blank amount. %>
     <div class="text-sm text-gray-2 flex gap-x-4">
       <span><%= t("decidim.contracts_sk.contract.reference_number") %>: <%= @contract.reference %></span>
-      <span><%= t("decidim.contracts_sk.contract.published_on") %>: <%= @contract.published_at&.to_date&.to_fs(:db) %></span>
-      <span><%= t("decidim.contracts_sk.contract.amount") %>: <%= @contract.amount %> <%= @contract.currency %></span>
+      <% if @contract.published_at.present? %>
+        <span><%= t("decidim.contracts_sk.contract.published_on") %>: <%= format_date(@contract.published_at) %></span>
+      <% end %>
+      <% if @contract.amount.present? %>
+        <span><%= t("decidim.contracts_sk.contract.amount") %>: <%= format_amount(@contract.amount, @contract.currency) %></span>
+      <% end %>
     </div>
   </section>
 
@@ -32,9 +39,9 @@
     <section class="mt-8 border-t border-gray-3 pt-4">
       <div class="font-semibold"><%= t("decidim.contracts_sk.provenance.badge") %></div>
       <% if @contract.imported_at.present? %>
-        <%# Deterministic ISO rendering, same rule as the metadata line above. %>
+        <%# Same localized date rule as the metadata line above. %>
         <div class="text-sm text-gray-2">
-          <%= t("decidim.contracts_sk.provenance.imported_on") %> <%= @contract.imported_at.to_date.to_fs(:db) %>
+          <%= t("decidim.contracts_sk.provenance.imported_on") %> <%= format_date(@contract.imported_at) %>
         </div>
       <% end %>
       <% if mirror_stale?(@contract) %>
@@ -56,24 +63,39 @@
       <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.reference_number") %></dt>
       <dd class="text-md text-black mt-0"><%= @contract.reference %></dd>
 
-      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.published_on") %></dt>
-      <%# Deterministic ISO rendering on purpose: the engine ships no locale
-          date formats, so I18n.l would depend on host-app data. %>
-      <dd class="text-md text-black mt-0"><%= @contract.published_at&.to_date&.to_fs(:db) %></dd>
+      <%# The optional pairs are rendered only when the value is present
+          (civora-org/civora-platform#80) — the frozen-snapshot section and
+          the PDF export already drop blank rows, so the live grid must not
+          render empty dds and dangling currency labels for sparse records.
+          The reference stays unconditional: identity is NOT NULL. Dates and
+          amounts render through the shared locale-aware helpers
+          (civora-org/civora-platform#81). %>
+      <% if @contract.published_at.present? %>
+        <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.published_on") %></dt>
+        <dd class="text-md text-black mt-0"><%= format_date(@contract.published_at) %></dd>
+      <% end %>
 
-      <dt class="text-sm text-gray-2 md:col-span-2"><%= t("decidim.contracts_sk.contract.subject_matter") %></dt>
-      <dd class="text-md text-black mt-0 md:col-span-2"><%= @contract.subject_matter %></dd>
+      <% if @contract.subject_matter.present? %>
+        <dt class="text-sm text-gray-2 md:col-span-2"><%= t("decidim.contracts_sk.contract.subject_matter") %></dt>
+        <dd class="text-md text-black mt-0 md:col-span-2"><%= @contract.subject_matter %></dd>
+      <% end %>
 
-      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.amount") %></dt>
-      <dd class="text-md text-black mt-0"><%= @contract.amount %> <%= @contract.currency %></dd>
+      <% if @contract.amount.present? %>
+        <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.amount") %></dt>
+        <dd class="text-md text-black mt-0"><%= format_amount(@contract.amount, @contract.currency) %></dd>
+      <% end %>
 
-      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
-      <dd class="text-md text-black mt-0"><%= @contract.signed_on&.to_fs(:db) %></dd>
+      <% if @contract.signed_on.present? %>
+        <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
+        <dd class="text-md text-black mt-0"><%= format_date(@contract.signed_on) %></dd>
+      <% end %>
 
-      <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.effective_from") %></dt>
-      <dd class="text-md text-black mt-0"><%= @contract.effective_from&.to_fs(:db) %></dd>
+      <% if @contract.effective_from.present? %>
+        <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.effective_from") %></dt>
+        <dd class="text-md text-black mt-0"><%= format_date(@contract.effective_from) %></dd>
+      <% end %>
 
-      <%# The only guarded field: a link to a blank URL would render href="". %>
+      <%# The originally guarded field: a link to a blank URL would render href="". %>
       <% if @contract.crz_url.present? %>
         <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
         <dd class="text-md text-black mt-0"><%= link_to @contract.crz_url, @contract.crz_url %></dd>
@@ -202,23 +224,41 @@
           <div class="font-semibold">
             <%= t("decidim.contracts_sk.contracts.show.version_label", version: amendment.version) %>
             <% if amendment.published_at.present? %>
-              · <%= amendment.published_at.to_date.to_fs(:db) %>
+              · <%= format_date(amendment.published_at) %>
             <% end %>
           </div>
           <%# Same dl treatment as the current version's fields above — one
-              consistent key/value grid for both snapshot and live data. %>
+              consistent key/value grid for both snapshot and live data,
+              including the blank-value guards (#80) and the locale-aware
+              date/amount helpers (#81). %>
           <dl class="grid grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-2">
             <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.summary") %></dt>
             <dd class="text-md text-black mt-0"><%= amendment.summary %></dd>
 
-            <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.published_on") %></dt>
-            <dd class="text-md text-black mt-0"><%= amendment.published_at&.to_date&.to_fs(:db) %></dd>
+            <% if amendment.published_at.present? %>
+              <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.published_on") %></dt>
+              <dd class="text-md text-black mt-0"><%= format_date(amendment.published_at) %></dd>
+            <% end %>
 
             <% amendment.content_snapshot.to_h.each do |field, value| %>
               <% next if value.blank? %>
               <% if field == "crz_url" %>
                 <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
                 <dd class="text-md text-black mt-0"><%= link_to value, value %></dd>
+              <% elsif field == "amount" %>
+                <%# The frozen amount renders through the same locale-aware
+                    helper as the live fields (#81); the currency renders
+                    under its own row, exactly as stored. %>
+                <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.amount") %></dt>
+                <dd class="text-md text-black mt-0"><%= format_amount(value) %></dd>
+              <% elsif %w[signed_on effective_from].include?(field) %>
+                <%# Frozen ISO date strings localize through format_date too
+                    (#81, reviewer M-1: one card, one format). Parsing is
+                    guarded — a malformed frozen value renders raw, never
+                    500s the public page. %>
+                <% parsed = Date.iso8601(value) rescue nil %>
+                <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.#{field}") %></dt>
+                <dd class="text-md text-black mt-0"><%= parsed ? format_date(parsed) : value %></dd>
               <% else %>
                 <dt class="text-sm text-gray-2"><%= t("decidim.contracts_sk.contract.#{field}") %></dt>
                 <dd class="text-md text-black mt-0"><%= value %></dd>

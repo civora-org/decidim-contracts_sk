@@ -2,14 +2,16 @@
     the party's content fields are rendered — the parent contract is never
     form-writable (civora-org/civora-platform#76). The role options are
     derived from the model's frozen ROLES vocabulary, never hand-enumerated,
-    with localized labels. %>
-<%= form_with url: url, method: method, html: { class: "form form-defaults" } do |form| %>
+    with localized labels. The IČO hint (civora-org/civora-platform#79)
+    states the blank-or-8-digits rule the form validates, wired to the
+    input through aria-describedby. %>
+<%= form_with model: @form, url: url, method: method, html: { class: "form form-defaults" } do |form| %>
   <div class="card">
     <div class="card-section">
       <div class="form__wrapper">
         <% if @form.errors.any? %>
           <div class="flash alert">
-            <ul>
+            <ul role="alert" tabindex="-1" autofocus>
               <% @form.errors.full_messages.each do |message| %>
                 <li><%= message %></li>
               <% end %>
@@ -26,11 +28,12 @@
         </div>
 
         <div class="row column">
-          <%= form.text_field :name, label: t("decidim.contracts_sk.admin.parties.form.name"), label_options: { for: "party_name" }, id: "party_name", name: "party[name]", value: @form.name %>
+          <%= form.text_field :name, label: t("decidim.contracts_sk.admin.parties.form.name"), label_options: { for: "party_name" }, id: "party_name", name: "party[name]", value: @form.name, required: true %>
         </div>
 
         <div class="row column">
-          <%= form.text_field :ico, label: t("decidim.contracts_sk.admin.parties.form.ico"), label_options: { for: "party_ico" }, id: "party_ico", name: "party[ico]", value: @form.ico %>
+          <%= form.text_field :ico, label: t("decidim.contracts_sk.admin.parties.form.ico"), label_options: { for: "party_ico" }, id: "party_ico", name: "party[ico]", value: @form.ico, aria: { describedby: "party_ico_hint" } %>
+          <span class="help-text" id="party_ico_hint"><%= t("decidim.contracts_sk.admin.parties.form.ico_hint") %></span>
         </div>
 
         <div class="row column">

@@ -290,6 +290,16 @@ RSpec.describe "admin party management", type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
       expect(flash[:alert]).to be_present
       expect(Decidim::ContractsSk::Party.count).to eq(0)
+      # The re-rendered form (civora-org/civora-platform#78, #79): the
+      # error summary is announced/focused, the required name input carries
+      # the attribute, and the IČO hint is wired through aria-describedby.
+      aggregate_failures do
+        expect(response.body).to include('role="alert"')
+        expect(response.body).to include("autofocus")
+        expect(response.body).to include('aria-describedby="party_ico_hint"')
+        expect(response.body).to include("Leave blank or enter exactly 8 digits.")
+        expect(response.body).to include('required="required"')
+      end
     end
 
     it "answers 422 with the alert and persists nothing when the role is outside the vocabulary" do

@@ -386,6 +386,14 @@ RSpec.describe "admin document management", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(Decidim::ContractsSk::Document.count).to eq(0)
+      # The re-rendered form (civora-org/civora-platform#78): the announced
+      # error summary and the required attribute on the presence-validated
+      # file input.
+      aggregate_failures do
+        expect(response.body).to include('role="alert"')
+        expect(response.body).to include("autofocus")
+        expect(response.body).to include('required="required"')
+      end
     end
 
     it "answers 422 with the alert and persists nothing when the kind is outside the vocabulary" do

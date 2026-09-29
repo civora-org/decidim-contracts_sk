@@ -402,6 +402,37 @@ RSpec.describe "public contracts catalogue", type: :request do
       end
     end
 
+    it "renders no blank field rows for a sparse published record (civora-org/civora-platform#80)" do
+      # Only the identity is filled: every optional live field is blank —
+      # the exact shape that used to render an empty subject dd and a
+      # dangling "EUR" dd (and metadata spans).
+      sparse = detail_contract_double(
+        published_at: Time.new(2026, 9, 1, 12, 0, 0),
+        subject_matter: nil,
+        amount: nil,
+        signed_on: nil,
+        effective_from: nil,
+        crz_url: nil
+      )
+      stub_published_contracts(double(find: sparse))
+
+      get "/7"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        # The identity pair stays unconditional — title/reference are NOT NULL.
+        expect(response.body).to include("Road reconstruction")
+        expect(response.body).to include("ZP-2026-001")
+        # The guarded optional pairs disappear entirely: no blank dd
+        # placeholders, no dangling currency label next to a nil amount.
+        expect(response.body).not_to include("Subject matter")
+        expect(response.body).not_to include("EUR")
+        expect(response.body).not_to include("Signed on")
+        expect(response.body).not_to include("Effective from")
+        expect(response.body).not_to include('<dd class="text-md text-black mt-0"></dd>')
+      end
+    end
+
     it "renders the empty-party state gracefully" do
       stub_published_contracts(double(find: contract))
 

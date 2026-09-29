@@ -146,7 +146,7 @@ import writes — mirrors are labelled, never implied to be real-time
 (ADR-002 rule 1, ADR-008 decisions 4/6):
 
 - **Index card:** the "Externally confirmed" badge plus the mirror date
-  (`imported_at`, rendered as an ISO date). No stale indicator — cards
+  (`imported_at`, rendered as a localized date). No stale indicator — cards
   stay lean.
 - **Detail page:** a provenance block with the badge, the mirror date and
   the preserved attribution note (data via ekosystem.slovensko.digital;

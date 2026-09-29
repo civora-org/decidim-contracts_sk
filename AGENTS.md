@@ -133,6 +133,8 @@ Current lessons:
 
 - **The `with_lock` + in-lock re-check discipline applies to every command that writes state another request can change — not just lifecycle transitions.** Any guard (`draft?`, `published?`, `editable?`) evaluated on a request-loaded object is TOCTOU-bypassable: two concurrent publishes both pass the stale re-check and double-write. Wrap the write in `with_lock` (which reloads under lock) and re-check inside; read attributes the write depends on (snapshots, sequence numbers) from the post-lock instance. Test it deterministically with a stale pre-loaded object, no threads (proven in the #65 arc: reviewer H-1 on the amendment commands; `TransitionContract` was already the precedent).
 
+- **Close the previous agent-review session before starting a new arc, and expect `confirm:true` not to pass through.** A stale active session (e.g. a dry-run left over from a prior arc) blocks `agent_review_start` until the old session is finalized with `agent_review_build_package`; and the plugin's branch-creation confirmation can loop on `confirm:true`, in which case create the approved branch with plain `git checkout -b` and start the session on it (proven in the #87 arc).
+
 *Archived lessons (tracker & issue hygiene; engine mount-design; tooling & verification hygiene; host-app & ops; engine implementation mechanics; release-please; Decidim view & asset mechanics; live-source operations; issue & planning hygiene clusters) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
 
 ## Testing Expectations

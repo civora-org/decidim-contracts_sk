@@ -26,7 +26,7 @@ module Decidim
       # admin contracts index (:read :contract): any engine role.
       class AuditEventsController < Admin::ApplicationController
         helper_method :audit_action_label, :audit_actor_name, :audit_target_info,
-                      :audit_reason_for, :audit_recorded_on
+                      :audit_reason_for
 
         # Deterministic index ordering: newest events first, id as the
         # tiebreaker (same doctrine as the contracts index — a total order,
@@ -182,12 +182,6 @@ module Decidim
           contract.review_reason
         rescue StandardError
           nil
-        end
-
-        # The event's timestamp, ISO date like the decision banner's
-        # decided-on line (nil-guarded the same way).
-        def audit_recorded_on(event)
-          event.created_at&.to_date&.to_fs(:db)
         end
       end
     end
