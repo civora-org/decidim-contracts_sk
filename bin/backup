@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Pilot backup template for the HOST app server (Ubuntu 24.04, PostgreSQL 16).
+# This script is NOT used by the engine's test suite — it is a copy-pasteable
+# operations template shipped with docs/pilot-operations.md (epic #15).
+#
+# Required env vars:
+#   DATABASE_URL   e.g. postgres://contracts_sk:<pw>@localhost:5432/contracts_sk_production
+#   STORAGE_PATH   ActiveStorage local-disk root of the host app (e.g. /var/www/app/storage)
+#   BACKUP_DIR     local retention dir (e.g. /var/backups/contracts_sk)
+#   RCLONE_REMOTE  off-site target (e.g. sos:contracts-sk-backups) — optional; skips off-site if empty
+#
+# Retention: 7 days local, 30 days off-site.
+set -euo pipefail
+
+: "${DATABASE_URL:?DATABASE_URL is required}"
+: "${STORAGE_PATH:?STORAGE_PATH is required}"
+: "${BACKUP_DIR:?BACKUP_DIR is required}"
+
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+DB_NAME="$(basename "${DATABASE_URL%%\?*}")"
+
+mkdir -p "$BACKUP_DIR/db" "$BACKUP_DIR/storage"
+
+# 1. Database dump (custom format, compressed by pg_dump itself)
+pg_dump -Fc "$DATABASE_URL" -f "$BACKUP_DIR/db/${DB_NAME}-${STAMP}.dump"
+
+# 2. ActiveStorage local storage tree
+tar -czf "$BACKUP_DIR/storage/storage-${STAMP}.tgz" -C "$(dirname "$STORAGE_PATH")" "$(basename "$STORAGE_PATH")"
+
+# 3. Rolling "latest" symlinks for the restore drill
+ln -sfn "$BACKUP_DIR/db/${DB_NAME}-${STAMP}.dump" "$BACKUP_DIR/db/latest.dump"
+ln -sfn "$BACKUP_DIR/storage/storage-${STAMP}.tgz" "$BACKUP_DIR/storage/latest.tgz"
+
+# 4. Local retention: keep 7 days
+find "$BACKUP_DIR/db"     -name "${DB_NAME}-*.dump" -mtime +7 -delete
+find "$BACKUP_DIR/storage" -name "storage-*.tgz"   -mtime +7 -delete
+
+# 5. Off-site: 30-day retention (skipped silently when RCLONE_REMOTE is unset)
+if [ -n "${RCLONE_REMOTE:-}" ]; then
+  rclone copy "$BACKUP_DIR/db/${DB_NAME}-${STAMP}.dump"  "$RCLONE_REMOTE/db/"
+  rclone copy "$BACKUP_DIR/storage/storage-${STAMP}.tgz" "$RCLONE_REMOTE/storage/"
+  rclone delete "$RCLONE_REMOTE/db/"     --min-age 30d
+  rclone delete "$RCLONE_REMOTE/storage/" --min-age 30d
+fi
+
+echo "backup OK: $STAMP (db + storage)"

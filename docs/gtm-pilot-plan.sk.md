@@ -6,7 +6,7 @@
 
 ## 1. Produkt a hodnota (čo predávame)
 
-**Pre koho:** slovenské obce, mestá a VŠÏ (verejnosť prospešné inštitúcie), ktoré dnes riešia zmluvy v VÝKAZOCH, e-mailoch ashared dokladoch.
+**Pre koho:** slovenské obce, mestá a VŠI (verejne prospešné inštitúcie), ktoré dnes riešia zmluvy v tabuľkách, e-mailoch a zdieľaných dokladoch.
 
 **Hodnota:**
 - poriadok v životnom cykle zmluvy (draft → posúdenie → publikácia → archív) s rolami editor/recenzent;
@@ -37,11 +37,11 @@ Kritérium č. 1 pre slovenský verejný sektor: **dáta v EÚ/na Slovensku + GD
 
 ## 3. Legálne a compliance kroky (SK)
 
-1. **GDPR:** zmluva o spracovaní údajov (ZoOU) s obecou; register spracovaní; DPA šablónu pripraviť vopred.
+1. **GDPR:** zmluva o spracovaní údajov (ZoOU) s obcou; register spracovaní; šablónu DPA pripraviť vopred.
 2. **ISVS:** ak systém používa štátna správa, zvaž registráciu v ISVS (katalóg IS VS) — pre obec to uľahčuje obstarávanie.
 3. **Obstarávanie:** pilota podlimitne (do 1 000 € bez DPH — § 8 ZVO) priamo; nad limit → súpiska/CGP. Cena pilota nastaviť podľa toho.
 4. **eIDAS/podpisy:** mimo rozsahu V0 — zmluvy sa do systému *zapisujú*, nepodpisujú. Toto povedať jasne na demo.
-5. **Zodpovednosť za dáta:** CRZ mirror je len metadáta zverejnené štátom;editoriálne záznamy obstaráva obec.
+5. **Zodpovednosť za dáta:** CRZ mirror je len metadáta zverejnené štátom; editoriálne záznamy obstaráva obec.
 
 ## 4. Cenotvorba (návrh)
 
@@ -62,24 +62,25 @@ Začať lacno: cieľom pilota je **referencia**, nie zisk.
 5. **Pilotná ponuka:** 3-mesačný pilot, 1 obec, 3–5 používateľov, cena symbolická, ukončenie kedykoľvek. Merateľný cieľ: „X zmlúv v katalógu do 90 dní".
 6. **Pilotná prevádzka:** onboarding call, import ich skutočných zverejnených zmlúv z CRZ, týždenná spätná väzba (epic #15 — feedback proces).
 7. **Konverzia:** po 90 dňoch — vyhodnotenie (počet zmlúv, čas úspor), ponuka prevádzky. Referencia + citácia primátora.
-8. **Škálovanie:** každá referencia → 5 ďalších obcí v regióne; zvaž partnerstvo s Uniformom/ItVelocity/Slovensko.Digital ekosystémom.
+8. **Škálovanie:** každá referencia → 5 ďalších obcí v regióne; zváž partnerstvo v ekosystéme Slovensko.Digital.
 
 **Metriky pilota na predaj:** počet zverejnených zmlúv, čas od draftu po publikáciu, počet oslovených obcí → demo → pilot konverzia.
 
 ## 6. Čo treba dokončiť pred prvým plateným zákazníkom
 
-- [ ] staging + produkčný deploy runbook (epic #15) — migrácie/rollback; § 3.1
-- [ ] záloha + obnova (rehearsal) — raz prebehnúť naživo
-- [ ] monitoring vlastník + alerting (epic #16)
-- [ ] pilotný feedback proces (týždenný 15-min call)
-- [ ] releasen notes v1.2 (release-please + docs/manual-test-scenarios.md)
+- [x] staging + produkčný deploy runbook (epic #15) — migrácie/rollback; § 3 → [pilot-operations.md](pilot-operations.md) § 3–4
+- [x] záloha + obnova (rehearsal) — postup + skripty pripravené → [pilot-operations.md](pilot-operations.md) § 5–6 (`bin/backup`, `bin/restore`)
+  - [ ] rehearsal raz prebehnúť naživo (vyžaduje reálny host server)
+- [ ] monitoring vlastník + alerting (epic #16) — pilotné minimum definované → [pilot-operations.md](pilot-operations.md) § 7
+- [x] pilotný feedback proces (týždenný 15-min call) → [pilot-operations.md](pilot-operations.md) § 9 + [pilot-feedback-log.md](pilot-feedback-log.md)
+- [x] release notes proces (release-please + pilotné oznámenie) → [pilot-operations.md](pilot-operations.md) § 10
 
 Toto je obsah epicu #15 — po dokončení je produkt „predateľný".
 
 ## 7. Riziká
 
-- **Jeden zakladateľ** — podpora + vývoj súčasne; riešenie: cena musí pokrývať aspoň čiastočne outsourcov support neskôr.
-- **Decidim upgrade treadmill** (Rails 7.2 EOL) — držať hostí na 0.31.x, plánovať 0.32 upgrade ako platenú prácu.
+- **Jeden zakladateľ** — podpora + vývoj súčasne; riešenie: cena musí neskôr pokryť aspoň čiastočne outsourcing podpory.
+- **Decidim upgrade treadmill** (Rails 7.2 EOL) — držať hostiteľa na 0.31.x, plánovať 0.32 upgrade ako platenú prácu.
 - **Obstarávanie VŠ** môže trvať mesiace — pilot podlimitom to obchádza.
 
 ---

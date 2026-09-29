@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Pilot restore template for the HOST app server. Companion to bin/backup —
+# NOT used by the engine's test suite (see docs/pilot-operations.md § 6).
+#
+# Required env vars:
+#   DATABASE_URL   target database (use a SCRATCH/drill DB — never restore over production blindly)
+#   BACKUP_FILE    path to a pg_dump -Fc file (e.g. /var/backups/contracts_sk/db/latest.dump)
+#   STORAGE_PATH   ActiveStorage local-disk root to repopulate (optional; with STORAGE_ARCHIVE set)
+#   STORAGE_ARCHIVE path to the storage .tgz from bin/backup (optional)
+#
+# Drop-in drill usage (restore into a scratch DB and boot the app against it):
+#   DATABASE_URL=postgres://.../contracts_sk_drill BACKUP_FILE=.../latest.dump bin/restore
+set -euo pipefail
+
+: "${DATABASE_URL:?DATABASE_URL is required}"
+: "${BACKUP_FILE:?BACKUP_FILE is required}"
+
+DB_URL_NO_Q="${DATABASE_URL%%\?*}"
+DB_NAME="$(basename "$DB_URL_NO_Q")"
+
+# 1. Recreate the target database from scratch (idempotent, drill-safe)
+dropdb --if-exists "$DB_NAME"
+createdb "$DB_NAME"
+
+# 2. Restore schema + data
+pg_restore -d "$DATABASE_URL" --no-owner --no-privileges "$BACKUP_FILE"
+
+# 3. Optional: restore the ActiveStorage storage tree
+if [ -n "${STORAGE_ARCHIVE:-}" ] && [ -n "${STORAGE_PATH:-}" ]; then
+  mkdir -p "$(dirname "$STORAGE_PATH")"
+  tar -xzf "$STORAGE_ARCHIVE" -C "$(dirname "$STORAGE_PATH")"
+fi
+
+echo "restore OK: $BACKUP_FILE -> $DB_NAME (verify with a smoke check before pointing production here)"
