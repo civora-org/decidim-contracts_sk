@@ -5,13 +5,13 @@
     civora-org/civora-platform#73). The kind options are derived from the
     form's EDITOR_KINDS vocabulary, never hand-enumerated, with localized
     labels. The form is multipart: the file travels with the request. %>
-<%= form_with url: url, method: method, html: { multipart: true, class: "form form-defaults" } do |form| %>
+<%= form_with model: @form, url: url, method: method, html: { multipart: true, class: "form form-defaults" } do |form| %>
   <div class="card">
     <div class="card-section">
       <div class="form__wrapper">
         <% if @form.errors.any? %>
           <div class="flash alert">
-            <ul>
+            <ul role="alert" tabindex="-1" autofocus>
               <% @form.errors.full_messages.each do |message| %>
                 <li><%= message %></li>
               <% end %>
@@ -38,7 +38,10 @@
         <% end %>
 
         <div class="row column">
-          <%= form.file_field :file, label: t("decidim.contracts_sk.admin.documents.form.file"), label_options: { for: "document_file" }, id: "document_file", name: "document[file]" %>
+          <%# The file is presence-validated on the form, so it carries the
+              required attribute on both the attach and the replace page
+              (civora-org/civora-platform#78). %>
+          <%= form.file_field :file, label: t("decidim.contracts_sk.admin.documents.form.file"), label_options: { for: "document_file" }, id: "document_file", name: "document[file]", required: true %>
         </div>
       </div>
     </div>

@@ -9,6 +9,6 @@
 <p>
   <strong><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></strong>
   — <%= t("decidim.contracts_sk.admin.contracts.review_decision.decided_on",
-          reviewed_at: contract.reviewed_at&.to_date&.to_fs(:db)) %>
+          reviewed_at: format_date(contract.reviewed_at)) %>
 </p>
 <p><%= contract.review_reason %></p>

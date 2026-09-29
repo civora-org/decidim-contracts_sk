@@ -33,6 +33,8 @@ en:
         heading: "CRZ handoff aid"
         disclaimer: "This document is a handoff aid for the CRZ record — not a legal publication."
         generated_on: "Generated on"
+      date_formats:
+        default: "%Y-%m-%d"
       menu:
         contracts: "Contracts"
         admin_contracts: "Contracts"
@@ -140,6 +142,7 @@ en:
             reference: "Reference"
             subject_matter: "Subject matter"
             amount: "Amount"
+            amount_hint: "Use a dot as the decimal separator (e.g. 1250.50) — comma decimals are rejected."
             currency: "Currency"
             signed_on: "Signed on"
             effective_from: "Effective from"
@@ -239,6 +242,7 @@ en:
             role: "Role"
             name: "Name"
             ico: "Company ID (IČO)"
+            ico_hint: "Leave blank or enter exactly 8 digits."
             address: "Address"
         documents:
           index:

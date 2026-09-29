@@ -409,6 +409,33 @@ RSpec.describe "admin contracts CRUD", type: :request do
     end
   end
 
+  describe "contract form rendering (offline, DB-free, civora-org/civora-platform#78, #79)" do
+    it "renders the accessible amount hint, the decimal input mode and the currency select" do
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts/new"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        # Amount input (#79): decimal keyboard hint plus the localized
+        # dot-decimal hint, wired through aria-describedby to the hint's id.
+        expect(response.body).to include('inputmode="decimal"')
+        expect(response.body).to include('aria-describedby="contract_amount_hint"')
+        expect(response.body).to include('id="contract_amount_hint"')
+        expect(response.body).to include("Use a dot as the decimal separator")
+        # Currency (#79): a select over the allowlist with the default
+        # selected — never the free-text input again.
+        expect(response.body).to include(">EUR</option>")
+        expect(response.body).to include("selected=")
+        expect(response.body).not_to match(/<input[^>]*name="contract\[currency\]"/)
+        # Presence-validated identity inputs carry the required attribute
+        # (#78) — exactly two: title and reference.
+        expect(response.body.scan('required="required"').size).to eq(2)
+        expect(response.body).to include("label-required")
+      end
+    end
+  end
+
   describe "allowed and validation paths", :db do
     # The current_user belongs to the stubbed organization, like a real
     # signed-in editor — CreateContract's tenancy guard reads
@@ -587,6 +614,13 @@ RSpec.describe "admin contracts CRUD", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
+      # The re-rendered form's error summary is announced and focused
+      # (civora-org/civora-platform#78) — a bare ul is an a11y regression.
+      aggregate_failures do
+        expect(response.body).to include('role="alert"')
+        expect(response.body).to include('tabindex="-1"')
+        expect(response.body).to include("autofocus")
+      end
     end
 
     it "answers 422 and persists nothing on a duplicate (organization, reference)" do

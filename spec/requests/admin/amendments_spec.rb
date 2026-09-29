@@ -346,6 +346,14 @@ RSpec.describe "admin amendment management", type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
       expect(flash[:alert]).to be_present
       expect(Decidim::ContractsSk::Amendment.count).to eq(0)
+      # The re-rendered form (civora-org/civora-platform#78): the announced,
+      # focused error summary and the required attribute on the
+      # presence-validated summary input.
+      aggregate_failures do
+        expect(response.body).to include('role="alert"')
+        expect(response.body).to include("autofocus")
+        expect(response.body).to include('required="required"')
+      end
     end
 
     it "denies a reviewer-only user on create" do

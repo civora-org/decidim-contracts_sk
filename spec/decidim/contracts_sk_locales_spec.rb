@@ -448,6 +448,25 @@ module LocaleContract
   }.freeze
   # rubocop:enable Style/FormatStringToken
 
+  # The admin form hints and the engine-shipped date format per locale
+  # (civora-org/civora-platform#79, #81). The date format is a strftime
+  # STRING resolved by the engine's format_date helper — never a named I18n
+  # format, so no host-app or rails-i18n locale data is ever required.
+  FORM_HINT_AND_DATE_FORMAT_LABELS = {
+    en: {
+      "admin.contracts.form.amount_hint" =>
+        "Use a dot as the decimal separator (e.g. 1250.50) — comma decimals are rejected.",
+      "admin.parties.form.ico_hint" => "Leave blank or enter exactly 8 digits.",
+      "date_formats.default" => "%Y-%m-%d"
+    },
+    sk: {
+      "admin.contracts.form.amount_hint" =>
+        "Použite bodku ako oddeľovač desatinných miest (napr. 1250.50) — desatinná čiarka nie je prijateľná.",
+      "admin.parties.form.ico_hint" => "Nechajte prázdne alebo zadajte presne 8 číslic.",
+      "date_formats.default" => "%d. %m. %Y"
+    }
+  }.freeze
+
   # The exact expected leaf-key surface under decidim.contracts_sk, including
   # the public catalogue keys (plan Option B of #39), the admin CRUD keys
   # (civora-org/civora-platform#58), the admin content-field form keys
@@ -514,6 +533,7 @@ module LocaleContract
     "admin.contracts.create.success",
     "admin.contracts.edit.title",
     "admin.contracts.form.amount",
+    "admin.contracts.form.amount_hint",
     "admin.contracts.form.crz_url",
     "admin.contracts.form.currency",
     "admin.contracts.form.effective_from",
@@ -628,6 +648,7 @@ module LocaleContract
     "admin.parties.edit.title",
     "admin.parties.form.address",
     "admin.parties.form.ico",
+    "admin.parties.form.ico_hint",
     "admin.parties.form.name",
     "admin.parties.form.role",
     "admin.parties.index.empty",
@@ -678,6 +699,7 @@ module LocaleContract
     "crz_handoff_pdf.disclaimer",
     "crz_handoff_pdf.generated_on",
     "crz_handoff_pdf.heading",
+    "date_formats.default",
     "menu.admin_contracts",
     "menu.contracts",
     "pagination.aria_label",
@@ -1029,6 +1051,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the admin audit-trail labels in both locales (civora-org/civora-platform#92)" do
       LocaleContract::ADMIN_AUDIT_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin form hints and the engine date format in both locales (#79, #81)" do
+      LocaleContract::FORM_HINT_AND_DATE_FORMAT_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

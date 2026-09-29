@@ -90,4 +90,13 @@ RSpec.describe Decidim::ContractsSk::CrzHandoffPdf do
 
     expect { pdf_bytes }.not_to raise_error
   end
+
+  it "labels the footer generation stamp with an explicit UTC zone (civora-org/civora-platform#81)" do
+    # Byte-level content assertions are impossible (font-subset encoding —
+    # see the header), so the stamp is asserted through the method the
+    # footer draws: UTC-converted digits plus the zone label.
+    stamp = described_class.new(contract).send(:generated_stamp)
+
+    expect(stamp).to match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC\z/)
+  end
 end

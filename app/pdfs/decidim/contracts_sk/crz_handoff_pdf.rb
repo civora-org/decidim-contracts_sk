@@ -31,7 +31,17 @@ module Decidim
     # The contract is duck-typed (title, reference, state, subject_matter,
     # amount, currency, signed_on, effective_from, crz_url, parties), so the
     # renderer is testable without ActiveRecord.
+    #
+    # Money, dates and the footer stamp render through the engine's shared
+    # ApplicationHelper formatters (civora-org/civora-platform#81) — the
+    # PDF runs under I18n.with_locale(:sk), so they come out locale-aware
+    # ("1 250,50 EUR", "31. 01. 2026") — one formatting vocabulary with the
+    # views, never a second one. The footer stamp additionally converts the
+    # generation time to UTC explicitly and labels it, so the printed
+    # moment is never naive server-local time.
     class CrzHandoffPdf
+      include Decidim::ContractsSk::ApplicationHelper
+
       def initialize(contract)
         super()
         @contract = contract
@@ -82,7 +92,15 @@ module Decidim
 
       def render_footer(pdf)
         pdf.move_down 12
-        pdf.text "#{t("decidim.contracts_sk.crz_handoff_pdf.generated_on")} #{Time.current.to_fs(:db)}", size: 9
+        pdf.text "#{t("decidim.contracts_sk.crz_handoff_pdf.generated_on")} #{generated_stamp}", size: 9
+      end
+
+      # The footer's generation stamp (civora-org/civora-platform#81): the
+      # moment is converted to UTC BEFORE formatting and carries an explicit
+      # zone label, so a naive server-local "2026-09-27 09:53:07" can never
+      # be misread as registry time.
+      def generated_stamp
+        format_timestamp(Time.current)
       end
 
       # The identity + content field rows, in the data dictionary's order,
@@ -103,8 +121,8 @@ module Decidim
           [t("decidim.contracts_sk.contract.status"), state_label],
           [t("decidim.contracts_sk.contract.subject_matter"), contract.subject_matter],
           [t("decidim.contracts_sk.contract.amount"), amount_value],
-          [t("decidim.contracts_sk.contract.signed_on"), contract.signed_on&.to_fs(:db)],
-          [t("decidim.contracts_sk.contract.effective_from"), contract.effective_from&.to_fs(:db)],
+          [t("decidim.contracts_sk.contract.signed_on"), format_date(contract.signed_on)],
+          [t("decidim.contracts_sk.contract.effective_from"), format_date(contract.effective_from)],
           [t("decidim.contracts_sk.contract.crz_url"), contract.crz_url]
         ].select { |_, value| value.present? }
       end
@@ -119,15 +137,16 @@ module Decidim
         I18n.t("decidim.contracts_sk.contract_states.#{contract.state}", default: contract.state.to_s)
       end
 
-      # Fixed-point rendering on purpose: BigDecimal#to_s alone is
-      # scientific ("0.125e4"); the public catalogue's ERB interpolation
-      # hides that, a plain text draw would not. Nil when the amount is
-      # blank, so the row drops out of the field list.
+      # Locale-aware rendering on purpose (civora-org/civora-platform#81):
+      # under the PDF's forced :sk locale the shared formatter groups the
+      # thousands with regular spaces and comma-decimalizes ("12 345,67"),
+      # which also keeps BigDecimal's scientific to_s ("0.125e4") out of a
+      # plain text draw. Nil when the amount is blank, so the row drops out
+      # of the field list; a blank currency renders the bare number.
       def amount_value
         return nil if contract.amount.blank?
-        return contract.amount.to_s("F") if contract.currency.blank?
 
-        "#{contract.amount.to_s("F")} #{contract.currency}"
+        format_amount(contract.amount, contract.currency)
       end
 
       def t(key)

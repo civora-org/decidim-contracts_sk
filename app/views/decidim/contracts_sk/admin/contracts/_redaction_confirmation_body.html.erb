@@ -12,7 +12,7 @@
                  (the index can show several confirmable rows on one page),
                  while the name stays the server-side contract. %>
 <% if contract.redaction_confirmed_at.present? %>
-  <p><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.confirmed_on", confirmed_at: contract.redaction_confirmed_at.to_date.to_fs(:db)) %></p>
+  <p><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.confirmed_on", confirmed_at: format_date(contract.redaction_confirmed_at)) %></p>
 <% else %>
   <p><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.description") %></p>
   <ul>
