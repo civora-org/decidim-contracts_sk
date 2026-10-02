@@ -57,6 +57,16 @@ module Decidim
         I18n.l(date, format: I18n.t("decidim.contracts_sk.date_formats.default"))
       end
 
+      # Same contract as format_date, with the time of day: the audit trail
+      # records several events per contract per day, and a date alone
+      # cannot order them for the reader. Rendered in the application time
+      # zone (Time.zone), never the server's.
+      def format_datetime(time)
+        return "" if time.blank?
+
+        I18n.l(time.in_time_zone, format: I18n.t("decidim.contracts_sk.date_formats.datetime"))
+      end
+
       # The PDF footer's generation stamp (civora-org/civora-platform#81):
       # the timestamp is converted to UTC BEFORE formatting, so the naive
       # to_fs(:db) digits can never silently carry the server's local zone
@@ -86,6 +96,34 @@ module Decidim
         return true if contract.imported_at.blank?
 
         contract.imported_at < Decidim::ContractsSk.stale_after.to_i.seconds.ago
+      end
+
+      # Remix Icon outlines (Apache-2.0, the set Decidim's own `icon` helper
+      # draws from) for the public pages. Inline, so the engine needs neither
+      # Decidim's icon registry nor the host's sprite build to render them.
+      CONTRACTS_ICON_PATHS = {
+        search: [
+          "M18.031 16.617l4.283 4.282-1.415 1.415-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 ",
+          "0-9-4.032-9-9s4.032-9 9-9 9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617zm-2.006-.742A6.977 ",
+          "6.977 0 0 0 18 11c0-3.868-3.133-7-7-7-3.868 0-7 3.132-7 7 0 3.867 3.132 7 7 7a6.977 ",
+          "6.977 0 0 0 4.875-1.975l.15-.15z"
+        ].join,
+        information: [
+          "M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 ",
+          "1 0 0-16 8 8 0 0 0 0 16zM11 7h2v2h-2V7zm0 4h2v6h-2v-6z"
+        ].join,
+        document: [
+          "M21 8v12.993A1 1 0 0 1 20.007 22H3.993A.993.993 0 0 1 3 21.008V2.992C3 2.455 3.449 2 ",
+          "4.002 2h10.995L21 8zm-2 1h-5V4H5v16h14V9zM8 7h3v2H8V7zm0 4h8v2H8v-2zm0 4h8v2H8v-2z"
+        ].join
+      }.freeze
+
+      # A decorative icon: hidden from assistive technology (the adjacent
+      # text carries the meaning), sized and coloured by the caller's CSS.
+      def contracts_icon(name)
+        tag.svg(tag.path(d: CONTRACTS_ICON_PATHS.fetch(name)),
+                viewBox: "0 0 24 24", width: "1em", height: "1em", fill: "currentColor",
+                "aria-hidden": "true", focusable: "false")
       end
 
       private

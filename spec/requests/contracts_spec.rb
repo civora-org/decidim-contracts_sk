@@ -138,14 +138,32 @@ RSpec.describe "public contracts catalogue", type: :request do
       # line, so the double must answer the provenance surface even when the
       # example does not care about it.
       source: "editorial",
-      imported_at: nil,
-      import_status: nil,
+      imported_at: nil, import_status: nil,
+      # The register row's amount column (guarded: a blank amount renders
+      # no cell).
+      amount: BigDecimal("1250.5"), currency: "EUR",
       to_param: "7",
       **overrides
     )
   end
 
   describe "catalogue index (civora-org/civora-platform#62)" do
+    it "shows the amount with its currency in the register row" do
+      stub_published_contracts(PaginableStub.new([published_contract_double]))
+
+      get "/"
+
+      expect(response.body).to include("1250.5 EUR")
+    end
+
+    it "renders no amount cell when the amount is blank" do
+      stub_published_contracts(PaginableStub.new([published_contract_double(amount: nil)]))
+
+      get "/"
+
+      expect(response.body).not_to include("cs-amount")
+    end
+
     it "lists a published contract with title, reference, publication date and a detail link" do
       stub_published_contracts(PaginableStub.new([published_contract_double]))
 

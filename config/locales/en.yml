@@ -35,6 +35,8 @@ en:
         generated_on: "Generated on"
       date_formats:
         default: "%Y-%m-%d"
+        datetime: "%Y-%m-%d %H:%M"
+        datetime: "%Y-%m-%d %H:%M"
       menu:
         contracts: "Contracts"
         admin_contracts: "Contracts"
@@ -54,8 +56,10 @@ en:
           empty: "No published contracts yet."
           search_label: "Search contracts"
           search_submit: "Search"
+          intro: "Published contracts of the organisation, with their documents and change history."
           no_search_results: "No contracts match your search."
         show:
+          facts: "Contract details"
           parties: "Parties"
           parties_empty: "No parties have been recorded for this contract."
           documents: "Documents"
