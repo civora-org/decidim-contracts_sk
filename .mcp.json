@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "agent-review": {
+      "command": "node",
+      "args": ["/Users/denyskozlov/Code/agent-review/bin/agent-review-mcp.js"]
+    },
+    "slov-lex": {
+      "command": "node",
+      "args": ["/Users/denyskozlov/.local/share/slov-lex-mcp/dist/index.js"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}
