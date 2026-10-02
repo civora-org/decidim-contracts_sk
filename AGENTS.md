@@ -7,6 +7,7 @@ The primary AI configuration for this repository should live in `opencode.jsonc`
 - **Config:** `opencode.jsonc`
 - **Agents:** `.opencode/agents/`
 - **Commands:** `.opencode/commands/`
+- **Claude Code mirror:** `CLAUDE.md`, `.claude/` (agents, skills, settings), `.mcp.json` — keep in sync with `.opencode/`.
 
 This repository is a focused Decidim engine, not the full Civora platform. Agents must optimize for a reusable, maintainable module with clear boundaries, deterministic behavior, and low solo-maintainer overhead. The orchestration model is inspired by Civora, but the context is adapted to this engine's actual scope.
 
