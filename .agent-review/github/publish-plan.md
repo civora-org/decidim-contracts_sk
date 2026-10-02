@@ -1,9 +1,10 @@
 # Publish plan
 
-- Draft PR: `m03-92-audit-trail-viewer` → `main`
-- Title: Admin audit-trail viewer (civora-org/civora-platform#92): read-only org-level + contract-filtered index
-- Inline comments: 1
-  - `config/routes.rb`:82
+- Draft PR: `chore/claude-code-config` → `main`
+- Title: Migrate OpenCode agents, commands, agent-review skill, MCP servers and permissions to Claude Code
+- Inline comments: 2
+  - `.claude/settings.json`:1
+  - `.claude/skills/agent-review`:1
 - Skipped: 0
 
 Nothing has been pushed or published. Publishing requires explicit user confirmation.

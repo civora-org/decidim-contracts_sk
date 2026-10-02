@@ -1,16 +1,29 @@
 {
   "schemaVersion": "agent-review-inline-comments/v1",
-  "branch": "m03-92-audit-trail-viewer",
+  "branch": "chore/claude-code-config",
   "baseBranch": "main",
   "comments": [
     {
       "id": "comment_001",
-      "logicalChangeId": "4fa1dda2-92d7-4b00-b687-9134fa8a2f7c",
-      "path": "config/routes.rb",
-      "line": 82,
+      "logicalChangeId": "6c1abf82-4513-47c1-a072-4edf4f90e454",
+      "path": ".claude/settings.json",
+      "line": 1,
       "side": "RIGHT",
-      "body": "### Agent context\n\n**What changed:** added — Audit-trail viewer (civora-org/civora-platform#92)\n\n**Why:** The append-only audit trail has no read surface; roles doc promises \"view audit trail\" to every engine role. Gate-1: single GET /admin/audit_events index, contract filter via tenant-scoped contract_id query param, :read :audit_event permission for any engine role, Kaminari 25/page, dangling-target-safe rendering, #90 reason display on live contracts.\n\n**Expected behavior:** Read-only org-scoped audit index (newest first, paged), contract-filtered via tenant-scoped contract_id param, any engine role admitted, dangling targets render gracefully, #90 review reason displayed on live decision-state contracts.\n\n**Evidence:** `bundle exec rspec` executed (recorded test run).\n\n**Risk:** Low\n\n<!-- agent-review:session=54a881af-6d32-4e7c-a6b6-5c9c14c22113;change=4fa1dda2-92d7-4b00-b687-9134fa8a2f7c;version=1 -->",
+      "body": "### Agent context\n\n**What changed:** added — Claude Code permissions\n\n**Why:** Mirror opencode.jsonc permissions\n\n**Expected behavior:** git status/diff/log allowed; branch/commit/push/pull/docker compose/web ask; git reset/clean, rm, docker system prune, db drop/reset denied\n\n**Evidence:** `bundle exec rspec` executed (recorded test run).\n\n**Risk:** Low — edit:ask not mirrored as a hard rule; governed by permission mode plus AGENTS.md approval gates\n\n<!-- agent-review:session=d89b86e3-d25a-4b4e-aa50-1bd7560e389d;change=6c1abf82-4513-47c1-a072-4edf4f90e454;version=1 -->",
       "risk": "low",
+      "evidenceRefs": [
+        "test_001"
+      ],
+      "status": "preview"
+    },
+    {
+      "id": "comment_002",
+      "logicalChangeId": "ac3edcfd-5a8f-4604-aae8-ca1d3c290a57",
+      "path": ".claude/skills/agent-review",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "### Agent context\n\n**What changed:** added — agent-review skill, MCP servers and journaling hook\n\n**Why:** Expose the agent_review_* tools to Claude Code via the agent-review MCP server and replace the OpenCode plugin hooks with a PostToolUse hook; carry over slov-lex and playwright MCP servers\n\n**Expected behavior:** Tools appear as mcp__agent-review__agent_review_*; Edit/Write/Bash calls are journaled to .agent-review/events.jsonl only while a session is active\n\n**Evidence:** `agent-review npm test: 70/70 pass incl. MCP listTools + hook mapping; stdio smoke call agent_review_status returned status inactive` executed.\n\n**Risk:** Medium — Absolute machine paths in .mcp.json (same as opencode.jsonc); Hook assumes agent-review is a sibling checkout; Skill is a symlink into ../agent-review\n\n<!-- agent-review:session=d89b86e3-d25a-4b4e-aa50-1bd7560e389d;change=ac3edcfd-5a8f-4604-aae8-ca1d3c290a57;version=1 -->",
+      "risk": "medium",
       "evidenceRefs": [
         "test_001"
       ],
