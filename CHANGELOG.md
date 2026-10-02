@@ -1,5 +1,19 @@
 ## [Unreleased]
 
+## [1.3.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.2.0...v1.3.0) (2026-10-02)
+
+
+### Features
+
+* **views:** pilot demo polish — guarded sparse fields, form a11y, input hints, localized money/dates (civora-org/civora-platform[#80](https://github.com/civora-org/decidim-contracts_sk/issues/80) [#78](https://github.com/civora-org/decidim-contracts_sk/issues/78) [#79](https://github.com/civora-org/decidim-contracts_sk/issues/79) [#81](https://github.com/civora-org/decidim-contracts_sk/issues/81)) ([c87747b](https://github.com/civora-org/decidim-contracts_sk/commit/c87747b35902acb746e1f19ca168ceaa71ab07ef))
+* **views:** redesign public catalogue and contract detail; fix audit trail table ([037a038](https://github.com/civora-org/decidim-contracts_sk/commit/037a038bf80ee72a3b1b6ae5ac7fd8b5a575d0e1))
+* **views:** redesign public catalogue and contract detail; fix audit trail table ([1d1d085](https://github.com/civora-org/decidim-contracts_sk/commit/1d1d085eb6e482e0f1ebf974212de5442cb3333a))
+
+
+### Bug Fixes
+
+* **ci:** ignore upstream-blocked rack-proxy advisory GHSA-42qh-8mx8-7wqm (decidim 0.31.7 pin) ([6628842](https://github.com/civora-org/decidim-contracts_sk/commit/662884245ecc5f986fbafb44f0eca6258f5bfaef))
+
 ## [1.2.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.1.0...v1.2.0) (2026-09-27)
 
 
