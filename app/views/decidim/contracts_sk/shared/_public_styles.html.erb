@@ -1,0 +1,108 @@
+<%# Engine-owned styles for the public catalogue and detail pages.
+
+    Why not Tailwind utilities: the host compiles its CSS once, at image
+    build time, from whatever classes its content scan saw then — a utility
+    used only by a newer engine release silently does not ship (most of the
+    layout utilities these pages need are absent from the 0.31 bundle). So
+    the pages keep Decidim's own component classes (.title-decorator,
+    .decorator, .label, .button, .form-defaults) and everything layout-
+    specific lives here, scoped under the .cs- prefix.
+
+    Delivered through Decidim's :css_content slot, which the core layout
+    yields in <head> right after the decidim_core stylesheet (so these
+    rules win ties); Decidim's default CSP allows inline styles. Colours
+    are Decidim's own palette tokens: the organisation's --secondary for
+    links, the core gray-2 / gray-3 / background-2 values for text, rules
+    and panels. %>
+<% content_for :css_content do %>
+<style>
+  .cs-page { padding-top: 2.5rem; }
+  .cs-page .title-decorator { margin-bottom: 2.25rem; overflow-wrap: anywhere; }
+  .cs-lead { margin: 0; max-width: 42rem; font-size: 1.125rem; line-height: 1.6; color: #3e4c5c; }
+
+  .cs-search { margin: 2rem 0 1.5rem; }
+  .cs-search label { display: block; margin-bottom: .5rem; font-weight: 600; color: #020203; }
+  .cs-search__row { display: flex; flex-direction: column; gap: .5rem; max-width: 42rem; }
+  .cs-search__row input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; }
+  .cs-search__row .button { justify-content: center; white-space: nowrap; }
+
+  .cs-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; }
+  .cs-list > li + li { border-top: 1px solid #e1e5ef; }
+
+  .cs-row { display: grid; gap: .5rem; padding: 1.25rem 0; }
+  .cs-row__title { font-size: 1.125rem; font-weight: 600; line-height: 1.35; color: var(--secondary); text-decoration: none; overflow-wrap: anywhere; }
+  .cs-row__title:hover { text-decoration: underline; text-underline-offset: .2em; }
+  .cs-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin-top: .25rem; font-size: .875rem; color: #3e4c5c; }
+  .cs-meta strong { font-weight: 600; color: #020203; }
+  /* The separator belongs to the item it introduces, so a wrapped line
+     starts with it instead of ending on a dangling dot; "/ ''" keeps it
+     out of the accessible name where supported. */
+  .cs-meta > * + *::before { content: "·"; content: "·" / ""; margin-right: .75rem; color: #3e4c5c; }
+  .cs-meta > .label::before { content: none; }
+  .cs-amount { font-weight: 600; color: #020203; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cs-tags { margin-top: .5rem; }
+  .cs-empty { margin: 0; padding: 2.5rem 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; font-size: 1.125rem; color: #3e4c5c; }
+  .cs-empty--inline { padding: 0; border: 0; font-size: 1rem; }
+
+  .cs-detail { display: grid; gap: 2.5rem; margin-top: 2.5rem; }
+  .cs-main { display: flex; flex-direction: column; gap: 3rem; min-width: 0; }
+  .cs-main .decorator { margin-bottom: 2rem; }
+
+  .cs-facts { padding: 1.5rem; border: 1px solid #e1e5ef; border-radius: .25rem; background: #fafbfc; }
+  .cs-facts__title { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: #020203; }
+  .cs-dl { display: grid; gap: 1rem; margin: 0; }
+  .cs-dl dt { font-size: .875rem; color: #3e4c5c; }
+  .cs-dl dd { margin: .125rem 0 0; color: #020203; overflow-wrap: anywhere; }
+  .cs-dl__figure { font-size: 1.5rem; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
+  .cs-dl a { color: var(--secondary); text-decoration: underline; text-underline-offset: .2em; word-break: break-all; }
+
+  .cs-subject__label { margin: 0; font-size: .875rem; font-weight: 400; color: #3e4c5c; }
+  .cs-subject__text { margin: .25rem 0 0; font-size: 1.25rem; line-height: 1.45; color: #020203; overflow-wrap: anywhere; }
+
+  .cs-notice { display: flex; gap: .75rem; padding: 1.25rem 1.5rem; border: 1px solid #e1e5ef; border-radius: .25rem; }
+  .cs-notice > svg, .cs-doc > svg { flex: none; width: 1.25rem; height: 1.25rem; margin-top: .125rem; fill: currentColor; color: #3e4c5c; }
+  .cs-notice__body { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+  .cs-notice__title { margin: 0; font-size: 1rem; font-weight: 600; color: #020203; }
+  .cs-small { margin: 0; font-size: .875rem; line-height: 1.55; color: #3e4c5c; }
+  .cs-notice .label { white-space: normal; }
+
+  .cs-party { display: grid; gap: .5rem; padding: 1rem 0; }
+  .cs-party__name { margin: 0; font-weight: 600; color: #020203; overflow-wrap: anywhere; }
+  .cs-party__side { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; font-size: .875rem; color: #3e4c5c; }
+  .cs-party__side span.cs-num { color: #020203; font-variant-numeric: tabular-nums; }
+
+  .cs-doc { display: flex; align-items: flex-start; gap: .75rem; padding: 1rem 0; }
+  .cs-doc__body { min-width: 0; }
+  .cs-link { font-weight: 600; color: var(--secondary); text-decoration: none; overflow-wrap: anywhere; }
+  .cs-link:hover { text-decoration: underline; text-underline-offset: .2em; }
+  .cs-plain { display: block; padding: 1rem 0; }
+
+  .cs-version { padding: 1.25rem 0; }
+  .cs-version--current { padding: 1rem 0; }
+  .cs-version__head { margin: 0; font-weight: 600; color: #020203; }
+  .cs-version__head span { font-weight: 400; color: #3e4c5c; }
+  .cs-version .cs-dl { margin-top: .75rem; column-gap: 2rem; row-gap: .75rem; }
+
+  @media (min-width: 640px) {
+    .cs-search__row { flex-direction: row; }
+    .cs-party { grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; align-items: start; }
+    .cs-party__side { justify-content: flex-end; }
+  }
+  @media (min-width: 768px) {
+    .cs-page { padding-top: 4rem; }
+    .cs-row { grid-template-columns: minmax(0, 1fr) auto; column-gap: 2rem; align-items: start; }
+    .cs-row .cs-amount { padding-top: .125rem; text-align: right; }
+    .cs-version .cs-dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cs-dl__wide { grid-column: 1 / -1; }
+  }
+  @media (min-width: 1024px) {
+    .cs-detail { grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr); gap: 3rem; align-items: start; }
+    .cs-facts { order: 2; }
+  }
+  @media print {
+    .cs-search { display: none; }
+    .cs-detail { grid-template-columns: 1fr; }
+    .cs-facts { order: 0; background: none; }
+  }
+</style>
+<% end %>

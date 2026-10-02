@@ -457,13 +457,15 @@ module LocaleContract
       "admin.contracts.form.amount_hint" =>
         "Use a dot as the decimal separator (e.g. 1250.50) — comma decimals are rejected.",
       "admin.parties.form.ico_hint" => "Leave blank or enter exactly 8 digits.",
-      "date_formats.default" => "%Y-%m-%d"
+      "date_formats.default" => "%Y-%m-%d",
+      "date_formats.datetime" => "%Y-%m-%d %H:%M"
     },
     sk: {
       "admin.contracts.form.amount_hint" =>
         "Použite bodku ako oddeľovač desatinných miest (napr. 1250.50) — desatinná čiarka nie je prijateľná.",
       "admin.parties.form.ico_hint" => "Nechajte prázdne alebo zadajte presne 8 číslic.",
-      "date_formats.default" => "%d. %m. %Y"
+      "date_formats.default" => "%d. %m. %Y",
+      "date_formats.datetime" => "%d. %m. %Y %H:%M"
     }
   }.freeze
 
@@ -683,6 +685,7 @@ module LocaleContract
     "contract_states.rejected",
     "contract_states.returned",
     "contracts.index.empty",
+    "contracts.index.intro",
     "contracts.index.no_search_results",
     "contracts.index.search_label",
     "contracts.index.search_submit",
@@ -690,6 +693,7 @@ module LocaleContract
     "contracts.show.current_version",
     "contracts.show.documents",
     "contracts.show.documents_empty",
+    "contracts.show.facts",
     "contracts.show.links",
     "contracts.show.parties",
     "contracts.show.parties_empty",
@@ -699,6 +703,7 @@ module LocaleContract
     "crz_handoff_pdf.disclaimer",
     "crz_handoff_pdf.generated_on",
     "crz_handoff_pdf.heading",
+    "date_formats.datetime",
     "date_formats.default",
     "menu.admin_contracts",
     "menu.contracts",
@@ -770,6 +775,8 @@ module PublicCatalogueLabels
       "contracts.index.no_search_results" => "No contracts match your search.",
       "contracts.index.search_label" => "Search contracts",
       "contracts.index.search_submit" => "Search",
+      "contracts.index.intro" => "Published contracts of the organisation, with their documents and change history.",
+      "contracts.show.facts" => "Contract details",
       "contracts.show.parties" => "Parties",
       "contracts.show.parties_empty" => "No parties have been recorded for this contract."
     },
@@ -779,6 +786,8 @@ module PublicCatalogueLabels
       "contracts.index.no_search_results" => "Žiadna zmluva nezodpovedá vášmu hľadaniu.",
       "contracts.index.search_label" => "Hľadať zmluvy",
       "contracts.index.search_submit" => "Hľadať",
+      "contracts.index.intro" => "Zverejnené zmluvy organizácie s dokumentmi a históriou zmien.",
+      "contracts.show.facts" => "Údaje o zmluve",
       "contracts.show.parties" => "Zmluvné strany",
       "contracts.show.parties_empty" => "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."
     }

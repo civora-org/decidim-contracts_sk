@@ -35,6 +35,8 @@ sk:
         generated_on: "Vygenerované"
       date_formats:
         default: "%d. %m. %Y"
+        datetime: "%d. %m. %Y %H:%M"
+        datetime: "%d. %m. %Y %H:%M"
       menu:
         contracts: "Zmluvy"
         admin_contracts: "Zmluvy"
@@ -54,8 +56,10 @@ sk:
           empty: "Zatiaľ nie je zverejnená žiadna zmluva."
           search_label: "Hľadať zmluvy"
           search_submit: "Hľadať"
+          intro: "Zverejnené zmluvy organizácie s dokumentmi a históriou zmien."
           no_search_results: "Žiadna zmluva nezodpovedá vášmu hľadaniu."
         show:
+          facts: "Údaje o zmluve"
           parties: "Zmluvné strany"
           parties_empty: "K tejto zmluve nie sú zaznamenané žiadne zmluvné strany."
           documents: "Dokumenty"

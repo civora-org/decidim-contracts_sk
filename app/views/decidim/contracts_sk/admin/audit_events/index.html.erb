@@ -19,8 +19,11 @@
   <% end %>
 
   <% if @audit_events.any? %>
+    <%# table-list--selectable is Decidim admin's own modifier that
+        left-aligns the second column (the table-list default centres every
+        column after the first, which floated the record titles mid-cell). %>
     <div class="table-scroll">
-      <table class="table-list">
+      <table class="table-list table-list--selectable">
         <thead>
           <tr>
             <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.action") %></th>
@@ -51,11 +54,21 @@
                 <% end %>
               </td>
               <td><%= audit_actor_name(event) %></td>
-              <%# The row date renders through the shared locale-aware helper
-                  (civora-org/civora-platform#81) directly in the view — the
-                  helper chain is the view's, not the controller's. %>
-              <td><%= format_date(event.created_at) %></td>
-              <td><%= reason %></td>
+              <%# The row timestamp renders through the shared locale-aware
+                  helpers (civora-org/civora-platform#81) directly in the
+                  view — the helper chain is the view's, not the
+                  controller's. Date AND time: several events per contract
+                  share a day, and the trail must be readable in order. %>
+              <td style="white-space: nowrap"><%= format_datetime(event.created_at) %></td>
+              <%# No reason recorded: an explicit muted dash, so the column
+                  reads as "none" rather than as missing data. %>
+              <td>
+                <% if reason.present? %>
+                  <%= reason %>
+                <% else %>
+                  <span aria-hidden="true">—</span>
+                <% end %>
+              </td>
             </tr>
           <% end %>
         </tbody>

@@ -1,76 +1,99 @@
 <%# The centered single-column container the host layout partial
-    (layouts/decidim/shared/layout_center, columns: 8) would emit: the
-    compiled classes are used directly so the engine keeps no view-path
-    dependency on the host's layout partials. %>
-<main class="layout-1col cols-8">
-  <h1 class="title-decorator"><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
+    (layouts/decidim/shared/layout_center) would emit: the compiled classes
+    are used directly so the engine keeps no view-path dependency on the
+    host's layout partials. cols-10 (not cols-8): the catalogue is a
+    register with a right-aligned amount column, and needs the width.
+    Layout styling comes from the engine's own scoped stylesheet (see
+    shared/_public_styles for why not Tailwind utilities). %>
+<%= render "decidim/contracts_sk/shared/public_styles" %>
+<main class="layout-1col cols-10">
+  <div class="cs-page">
+    <%# The heading decorator draws its bar BELOW the heading box, so the
+        heading carries its own bottom margin (.cs-page .title-decorator)
+        and the bar can never strike through the line that follows. %>
+    <h1 class="title-decorator"><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
+    <p class="cs-lead"><%= t("decidim.contracts_sk.contracts.index.intro") %></p>
 
-  <%# Free-text catalogue search (the public twin of the admin index's :q
-      filter): a compact GET form, so the search state lives in the URL and
-      survives the pagination links. Plain Rails tag helpers — never a
-      Decidim FormBuilder field next to a standalone label (the builder
-      renders its own label around each field); label_tag + text_field_tag
-      is the safe pairing here. %>
-  <div class="py-4">
-    <%= form_tag contracts_path, method: :get do %>
-      <%= label_tag :q, t("decidim.contracts_sk.contracts.index.search_label") %>
-      <%= text_field_tag :q, search_term %>
-      <%= submit_tag t("decidim.contracts_sk.contracts.index.search_submit"),
-                     class: "button button__sm button__secondary" %>
-    <% end %>
-  </div>
-
-  <% if @contracts.any? %>
-    <div class="card__list-list">
-      <% @contracts.each do |contract| %>
-        <div class="card__list">
-          <div class="card__list-content">
-            <span class="card__list-title">
-              <%= link_to contract.title, contract_path(contract) %>
-            </span>
-            <div class="card__list-text"><%= contract.reference %></div>
-            <div class="card__list-metadata">
-              <%# Locale-aware date rendering (civora-org/civora-platform#81):
-                  the format string ships with the engine, so no host-app
-                  locale data is required. %>
-              <div><%= format_date(contract.published_at) %></div>
-              <%# CRZ-mirror provenance (civora-org/civora-platform#88, ADR-002
-                  rule 1): imported records are labelled externally confirmed,
-                  with the mirror date — never presented as engine-published
-                  content. Editorial records render nothing extra. The stale
-                  indicator is deliberately detail-only to keep cards lean.
-                  Classes stay within the engine's compiled Tailwind
-                  vocabulary (host CSS is JIT-compiled). %>
-              <% if imported_contract?(contract) %>
-                <div class="text-sm text-gray-2">
-                  <%= t("decidim.contracts_sk.provenance.badge") %>
-                  <% if contract.imported_at.present? %>
-                    · <%= format_date(contract.imported_at) %>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
-          </div>
+    <%# Free-text catalogue search (the public twin of the admin index's :q
+        filter): a compact GET form, so the search state lives in the URL
+        and survives the pagination links. Plain Rails tag helpers — never a
+        Decidim FormBuilder field next to a standalone label (the builder
+        renders its own label around each field); label_tag +
+        text_field_tag is the safe pairing here. Label above; field and
+        button share one row, the field takes the slack. %>
+    <div class="cs-search">
+      <%= form_tag contracts_path, method: :get, class: "form-defaults", role: "search" do %>
+        <%= label_tag :q, t("decidim.contracts_sk.contracts.index.search_label") %>
+        <div class="cs-search__row">
+          <%= text_field_tag :q, search_term, autocomplete: "off" %>
+          <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary" do %>
+            <%= contracts_icon(:search) %>
+            <span><%= t("decidim.contracts_sk.contracts.index.search_submit") %></span>
+          <% end %>
         </div>
       <% end %>
     </div>
 
-    <%# Catalogue pagination (civora-org/civora-platform#86b): the shared
-        engine partial, page controls only from two pages up; the catalogue
-        carries its single filter (:q) over the page links. %>
-    <% if @contracts.total_pages > 1 %>
-      <%= render "decidim/contracts_sk/shared/pagination",
-                 collection: @contracts,
-                 filter_keys: [:q] %>
-    <% end %>
-  <% else %>
-    <%# Two distinct empty states: a search that finds nothing is a
-        different situation from an empty catalogue — the record exists,
-        it just does not match the query. %>
-    <% if search_term.present? %>
-      <p class="text-lg text-gray-2"><%= t("decidim.contracts_sk.contracts.index.no_search_results") %></p>
+    <% if @contracts.any? %>
+      <%# The register: one row per contract, hairline-separated. Title and
+          identity on the left; the amount — the figure a reader compares
+          down the list — right-aligned in tabular numerals on md+, below
+          the title on narrow screens. %>
+      <ol class="cs-list">
+        <% @contracts.each do |contract| %>
+          <li class="cs-row">
+            <div>
+              <%= link_to contract.title, contract_path(contract), class: "cs-row__title" %>
+              <div class="cs-meta">
+                <span><%= contract.reference %></span>
+                <%# Locale-aware date rendering (civora-org/civora-platform#81):
+                    the format string ships with the engine, so no host-app
+                    locale data is required. %>
+                <% if contract.published_at.present? %>
+                  <span><%= format_date(contract.published_at) %></span>
+                <% end %>
+              </div>
+              <%# CRZ-mirror provenance (civora-org/civora-platform#88, ADR-002
+                  rule 1): imported records are labelled externally
+                  confirmed, with the mirror date — never presented as
+                  engine-published content. Editorial records render nothing
+                  extra. The stale indicator is deliberately detail-only to
+                  keep rows lean. %>
+              <% if imported_contract?(contract) %>
+                <div class="cs-tags">
+                  <span class="label">
+                    <%= t("decidim.contracts_sk.provenance.badge") %>
+                    <% if contract.imported_at.present? %>
+                      · <%= format_date(contract.imported_at) %>
+                    <% end %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+            <% if contract.amount.present? %>
+              <div class="cs-amount"><%= format_amount(contract.amount, contract.currency) %></div>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+
+      <%# Catalogue pagination (civora-org/civora-platform#86b): the shared
+          engine partial, page controls only from two pages up; the
+          catalogue carries its single filter (:q) over the page links. %>
+      <% if @contracts.total_pages > 1 %>
+        <%= render "decidim/contracts_sk/shared/pagination",
+                   collection: @contracts,
+                   filter_keys: [:q] %>
+      <% end %>
     <% else %>
-      <p class="text-lg text-gray-2"><%= t("decidim.contracts_sk.contracts.index.empty") %></p>
+      <%# Two distinct empty states: a search that finds nothing is a
+          different situation from an empty catalogue — the record exists,
+          it just does not match the query. %>
+      <% if search_term.present? %>
+        <p class="cs-empty"><%= t("decidim.contracts_sk.contracts.index.no_search_results") %></p>
+      <% else %>
+        <p class="cs-empty"><%= t("decidim.contracts_sk.contracts.index.empty") %></p>
+      <% end %>
     <% end %>
-  <% end %>
+  </div>
 </main>

@@ -65,6 +65,7 @@ Recommended agents for this repository:
 - Do not fork or patch Decidim core unless explicitly approved.
 - Prefer Rails engines, Decidim extension points, standard Rails patterns, and isolated engine-friendly design.
 - Keep admin and public behaviour clearly separated.
+- Public views lay out with Decidim component classes plus the engine-owned `.cs-` stylesheet (`shared/_public_styles`), never with Tailwind utilities only the engine uses: the host bundle is compiled at image build and silently drops them. See `docs/public-ui.md`.
 - Keep the engine usable independently from the wider Civora product context.
 - Do not introduce premature microservices, background infra, or product-wide assumptions.
 - Explain migrations before applying them.
