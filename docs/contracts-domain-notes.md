@@ -197,7 +197,8 @@ keep the "minimal constraints" stance:
    lifecycle transition appends one audit event atomically with its state
    change (single `with_lock` transaction in `Admin::TransitionContract`;
    failed transitions write nothing). The row shape is fixed by the #57
-   migration (**D4**): `action` is `"contract.<event>"`, the polymorphic
+   migration (**D4**): `action` is `"contract.<event>"` (or
+   `"contract.<event>_self"` under `allow_self_review`, #123), the polymorphic
    target is the contract, organization and actor are stored explicitly,
    timestamps only — no JSON payload, no from/to columns.
 
@@ -269,7 +270,8 @@ contract row itself:
   reason can only predate #90 (the command refuses reason-less
   judgments), so the admin edit banner stays hidden there.
 - **D4 untouched** — the audit row shape stays the #57 vocabulary
-  (`action` = `"contract.<event>"`, timestamps only, no JSON payload): the
+  (`action` = `"contract.<event>"`, or `"contract.<event>_self"` under
+  `allow_self_review`, #123; timestamps only, no JSON payload): the
   reason is record content, not audit metadata. The audit row for a
   judgment edge is written in the same locked transaction as the reason,
   so decision text, state, stamps and audit commit atomically or not at
@@ -336,6 +338,25 @@ the current version):
   values (copying the parent contract's author would invent provenance).
   The model requires both through `belongs_to ... optional: false`, so
   every engine write path still carries them.
+
+## Four-eyes submitter stamp landed in #123
+
+- **Column** — nullable `decidim_submitted_by_id` on the contracts table:
+  no foreign key and no index (the `decidim_author_id` shape; it is read
+  per record, never queried as a set). A system field: only
+  `TransitionContract` writes it, never a form or the CRZ upsert.
+- **Stamp semantics** — rewritten on EVERY `submit` (first submission and
+  resubmission from `returned`), inside the row lock and the same UPDATE as
+  the state, so it always names the last submitter. The person it names may
+  not return, approve or reject the record (Permissions + in-lock command
+  re-check; see `docs/roles-and-permissions.md`).
+- **Backfill (D2-B)** — the migration stamps each record with the actor of
+  its most recent `contract.submit` audit row; records with no such row stay
+  nil, and nil is never blocked. Reversible: rollback drops the column.
+- **The one D4 exception** — with `allow_self_review = true` a
+  self-judgment is audited as `contract.approve_self`, `contract.return_self`
+  or `contract.reject_self`; every other row keeps the plain
+  `contract.<event>` vocabulary and shape.
 
 ## Known gaps / drift (flagged, unowned)
 

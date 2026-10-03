@@ -63,6 +63,10 @@ namespace :decidim_contracts_sk do
         author: author,
         **content
       )
+      # Seeded states are written directly, never submitter-attributed
+      # (four-eyes, #123): reset any stamp a UI walkthrough left behind so a
+      # re-seed returns the records to a state a single demo admin can judge.
+      record.decidim_submitted_by_id = nil
       record.published_at = Time.current if state == "published" && record.published_at.blank?
       # ADR-007 redaction stamp (#91): editorial records that end published
       # — or sit one approve→publish walkthrough away — carry the

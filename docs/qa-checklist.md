@@ -29,6 +29,7 @@ ideally in both `en` and `sk` where noted.
 - [ ] **Index**: one `h1`; table headers localized; localized empty state when the organization has no contracts.
 - [ ] **Index (sk pass)**: state labels and transition button labels render localized (no raw enum values).
 - [ ] Per-state transition buttons only (no event whose edge does not start at the record's state, none for roles that own no edge).
+- [ ] Four-eyes rule (civora-org/civora-platform#123): the user who submitted a record sees no return/approve/reject controls on its row (another admin does), a direct POST by them is denied, and with `allow_self_review = true` they may judge it and the audit viewer labels the row "(self-review)" / "(vlastné posúdenie)".
 - [ ] Each transition button POSTs to its event route, asks for confirmation, and lands back on the index with a success flash (PRG).
 - [ ] Confirm dialogs are keyboard-operable (Tab / Enter / Esc via the host's confirm.js).
 - [ ] **Error paths**: a 422 re-render keeps the entered values; the error list / alert is visible near the form top. Announcement to assistive tech = **KNOWN GAP** (follow-up issue); no required-field markers either = **KNOWN GAP**.
@@ -83,7 +84,7 @@ ideally in both `en` and `sk` where noted.
 - [ ] Money and dates render per convention — **DECISION RECORD** (civora-org/civora-platform#81): locale-aware rendering — under :sk amounts group thousands with a regular space and use comma decimals ("1 250,50 EUR") and dates render "01. 09. 2026"; under :en the historical ISO dates and fixed-point amounts ("1250.5 EUR") are kept. The date format strings and the sk separators ship with the engine (no host locale data), and the PDF footer stamp is UTC-converted and explicitly labelled "UTC".
 - [ ] Loading states: N/A (no async UI in the engine).
 - [ ] Mixed en/sk content: page `lang` is host-owned; spot-check that engine strings match the active locale even when record content is in the other language.
-- [ ] Keyboard-only full workflow pass: create → edit → parties → documents → redaction confirmation → submit → return → approve → publish → amendment → archive.
+- [ ] Keyboard-only full workflow pass: create → edit → parties → documents → redaction confirmation → submit → return → approve → publish → amendment → archive (return and approve are done by a second admin, four-eyes rule #123, or with `allow_self_review = true`).
 - [ ] Screen-reader spot-check: table headers announced, error list reachable after failed submit, focus returns to the trigger after a confirm dialog closes.
 
 ## Known gaps and follow-ups

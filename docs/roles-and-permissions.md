@@ -131,7 +131,62 @@ permission layer.
 The default resolver implements the org-admin union anticipated by the
 lifecycle doc's deferrals: org admins (with accepted admin terms) hold
 **all** engine roles on **every** transition-table row, additively — the
-table itself stays untouched.
+table itself stays untouched. The union gives one admin both roles, which is
+why the per-person [four-eyes rule](#four-eyes-rule-per-person-segregation-123)
+below exists: roles alone never separated duties between two *people*.
+
+## Four-eyes rule (per-person segregation, #123)
+
+([civora-org/civora-platform#123]) The person who last **submitted** a
+contract for review may not **return, approve or reject** it. Role
+segregation (`editor` drafts, `reviewer` judges) is not enough under the
+org-admin union, where a single admin holds both roles and could draft,
+submit and approve their own record.
+
+- **Submitter stamp.** Every `submit` event (first submission and
+  resubmission from `returned` alike) writes the acting user's id to
+  `decidim_submitted_by_id` on the contract, inside the same row lock and
+  UPDATE as the state change. A resubmission by someone else overwrites the
+  stamp, so *who is blocked* always follows the last submitter. The column is
+  a system field: no form and no CRZ upsert ever writes it. It has no foreign
+  key and no index (same shape as `decidim_author_id`).
+- **Which events.** Only the judgment events: `return`, `approve`, `reject`.
+  The submitter keeps `submit`, `publish`, `archive` and every editorial
+  action.
+- **Where it is enforced (two layers, one predicate).**
+  1. `Permissions` denies the three events to the recorded submitter when the
+     record is passed in `context[:contract]`: the admin index renders no
+     return/approve/reject controls for that person, and a direct POST gets
+     the standard Decidim permission denial. A context carrying only `:state`
+     has no submitter and is unaffected.
+  2. `TransitionContract` re-checks inside the row lock against the reloaded
+     row (defense in depth for races such as a resubmit landing after
+     admission, and for other callers). It refuses with the `:self_review`
+     payload, a dedicated flash, and writes no state, no decision reason and
+     no audit row.
+
+  Both call `Decidim::ContractsSk.self_review_blocked?(contract, user, event)`
+  (`lib/decidim/contracts_sk/self_review.rb`), the single source of the event
+  vocabulary and the comparison.
+- **Legacy records.** A record whose stamp is nil (never submitted, or
+  predating the rule) is not blocked. The migration
+  `AddSubmittedByToDecidimContractsSkContracts` backfills the stamp from the
+  audit trail: the actor of each record's most recent `contract.submit` audit
+  row, reversibly (the column is simply dropped on rollback). Records with no
+  submit audit row stay nil.
+- **Opt-out seam, `allow_self_review`.** For one-person municipalities that
+  cannot field a second reviewer, assign `true` in an initializer (default
+  `false`, config-time only, like `role_resolver`). The submitter may then
+  judge their own record, and every such act is audited under a distinct
+  action, `contract.approve_self`, `contract.return_self` or
+  `contract.reject_self` (labelled "(self-review)" in the audit viewer), so
+  the trail keeps the exception visible. A non-submitter's judgment under the
+  seam stays the plain `contract.<event>`.
+
+```ruby
+# config/initializers/contracts_sk.rb: only if you genuinely have one person.
+Decidim::ContractsSk.allow_self_review = true
+```
 
 ## Explicit deferrals
 
@@ -157,3 +212,4 @@ should ever reach the logs from this layer.
 [civora-org/civora-platform#57]: https://github.com/civora-org/civora-platform/issues/57
 [civora-org/civora-platform#58]: https://github.com/civora-org/civora-platform/issues/58
 [civora-org/civora-platform#60]: https://github.com/civora-org/civora-platform/issues/60
+[civora-org/civora-platform#123]: https://github.com/civora-org/civora-platform/issues/123

@@ -56,6 +56,12 @@ M02-01-B's job entirely.
 - **`reviewer`** owns exactly the three judgment gates out of `in_review`:
   return, approve, reject. Segregation of duties: the role that drafts never
   judges; the role that judges never drafts or publishes.
+- **Per person, not only per role** (civora-org/civora-platform#123): the
+  default resolver gives org admins both roles, so the role split alone does
+  not stop one admin from drafting, submitting and approving their own record.
+  The person who last submitted a record therefore may not return, approve or
+  reject it (the four-eyes rule; details, the `allow_self_review` opt-out and
+  the audit trail in [roles-and-permissions.md](roles-and-permissions.md#four-eyes-rule-per-person-segregation-123)).
 
 Role→user mapping and permission checks (M02-01-B): [roles-and-permissions.md](roles-and-permissions.md).
 

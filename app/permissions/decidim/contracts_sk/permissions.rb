@@ -37,6 +37,12 @@ module Decidim
     #   :archive) are allowed when ContractLifecycle.allowed_roles for the
     #   record's state intersect the user's engine roles. The event list is
     #   derived from ContractLifecycle::TRANSITIONS, never hand-enumerated.
+    #   Four-eyes rule (civora-org/civora-platform#123): the judgment
+    #   events (:return, :approve, :reject) are additionally DENIED to the
+    #   person recorded as the record's submitter
+    #   (context[:contract].decidim_submitted_by_id), unless the host
+    #   enabled Decidim::ContractsSk.allow_self_review. A context with only
+    #   :state carries no submitter and is unaffected.
     # - :read is allowed when the user holds any engine role (admin index).
     #
     # Admin scope, subject :party (civora-org/civora-platform#76), subject
@@ -162,8 +168,20 @@ module Decidim
         when :read
           toggle_allow(roles_for_user.any?)
         when *TRANSITION_EVENTS
-          toggle_allow(transition_roles.any?)
+          toggle_allow(transition_roles.any? && !self_review_blocked?)
         end
+      end
+
+      # The four-eyes rule at request admission (civora-org/civora-platform
+      # #123): the judgment events (return, approve, reject) are denied to
+      # the person recorded as the contract's submitter, unless the host
+      # enabled allow_self_review. Needs the record (context[:contract]);
+      # a context carrying only :state has no submitter to compare, so it
+      # is unaffected. The predicate is single-sourced in
+      # Decidim::ContractsSk.self_review_blocked?; TransitionContract
+      # re-checks it inside the row lock.
+      def self_review_blocked?
+        Decidim::ContractsSk.self_review_blocked?(context[:contract], user, action)
       end
 
       # The shared rule for the contract-scoped child-record subjects

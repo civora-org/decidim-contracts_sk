@@ -25,6 +25,11 @@ module Decidim
     # and its stamp, atomic with the state — and the resubmit edge clears
     # both. Never form-writable.
     #
+    # `decidim_submitted_by_id` is likewise a system field (four-eyes rule,
+    # civora-org/civora-platform#123): TransitionContract stamps the acting
+    # user on every submit, the rule forbids that person to return, approve
+    # or reject the record, and no form or the CRZ upsert ever writes it.
+    #
     # The source/source_id/imported_at/import_status columns are
     # CRZ-mirror provenance metadata (docs/contracts-domain-notes.md);
     # checksum carries the source-payload digest and import_status is
@@ -84,6 +89,16 @@ module Decidim
       belongs_to :author,
                  foreign_key: "decidim_author_id",
                  class_name: "Decidim::User"
+
+      # The person who last submitted the record for review (four-eyes
+      # rule, civora-org/civora-platform#123). Optional: legacy and
+      # never-submitted records carry nil, which the rule treats as "not
+      # blocked". Mirrors the author association, deliberately without a
+      # database FK (see the migration).
+      belongs_to :submitted_by,
+                 foreign_key: "decidim_submitted_by_id",
+                 class_name: "Decidim::User",
+                 optional: true
 
       # Contract-scoped child records: they follow the contract's tenancy
       # and are destroyed with it.

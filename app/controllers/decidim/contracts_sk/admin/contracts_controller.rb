@@ -337,7 +337,7 @@ module Decidim
         # are PRG redirects — a failure never re-renders, because the
         # record's state may have changed under us; the index shows the
         # truth. The command's refusal payloads (TransitionContract's
-        # :redaction_gate, REASON_REQUIRED, REASON_REJECTED) select the
+        # :redaction_gate, REASON_REQUIRED, REASON_REJECTED, SELF_REVIEW_REASON) select the
         # dedicated flashes (see #transition_failed).
         def transition(event)
           @contract = contracts_scope.find(params[:id])
@@ -365,7 +365,8 @@ module Decidim
         TRANSITION_FAILURE_KEYS = {
           TransitionContract::REDACTION_GATE_REASON => "redaction_required",
           TransitionContract::REASON_REQUIRED => "review_reason_required",
-          TransitionContract::REASON_REJECTED => "review_reason_rejected"
+          TransitionContract::REASON_REJECTED => "review_reason_rejected",
+          TransitionContract::SELF_REVIEW_REASON => "self_review"
         }.freeze
 
         def transition_failed(failure = nil)
@@ -380,13 +381,17 @@ module Decidim
         # lifecycle's events from the record's state, filtered by the edges
         # whose roles intersect the user's engine roles. Uses the same
         # config-time resolution seam as the Permissions class. Empty for a
-        # roleless user — no derivation hand-enumerated anywhere.
+        # roleless user — no derivation hand-enumerated anywhere. The
+        # four-eyes rule (civora-org/civora-platform#123) additionally
+        # drops the judgment events the user may not perform on their own
+        # submission, so their buttons never render.
         def transition_events_for(contract)
           state = contract.state&.to_sym
           roles = Array(Decidim::ContractsSk.role_resolver.call(current_user, {})) & ContractLifecycle::ROLES
 
           ContractLifecycle.events_from(state).select do |event|
-            (ContractLifecycle.allowed_roles(from: state, event: event) & roles).any?
+            (ContractLifecycle.allowed_roles(from: state, event: event) & roles).any? &&
+              !Decidim::ContractsSk.self_review_blocked?(contract, current_user, event)
           end
         end
 
