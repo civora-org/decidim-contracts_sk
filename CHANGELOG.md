@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [1.4.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.3.0...v1.4.0) (2026-10-03)
+
+
+### Features
+
+* **crz-import:** scope the sync to the organization's own contracts ([b8946d7](https://github.com/civora-org/decidim-contracts_sk/commit/b8946d7e4917208367d7a45e26507fdf73481317))
+* **crz-import:** scope the sync to the organization's own contracts ([fb3e011](https://github.com/civora-org/decidim-contracts_sk/commit/fb3e0112b6e22e60953c1b6b4f119503cba1abe4))
+
 ## [1.3.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.2.0...v1.3.0) (2026-10-02)
 
 
