@@ -19,7 +19,7 @@
 
 | Komponent | Voľba | Poznámka |
 |---|---|---|
-| Produkčný VPS | WebSupport alebo Slovanet, 2 vCPU / 4 GB RAM / 50 GB SSD, Ubuntu 24.04 | dáta v SR — kľúčový predajný argument (gtm-pilot-plan § 2) |
+| Produkčný VPS | WebSupport alebo Slovanet, 2 vCPU / 4 GB RAM / 50 GB SSD, Ubuntu 24.04 | dáta v SR — kľúčový predajný argument ([gtm-pilot-plan § 2](https://github.com/civora-org/civora-platform/blob/main/docs/06-sales/gtm-pilot-plan.sk.md), civora-platform) |
 | Staging VPS | rovnaký poskytovateľ, menší (2 vCPU / 2 GB RAM) | rovnaký OS a stack ako produkcia, iná doména |
 | Databáza | PostgreSQL 16 (apt, `pgdg` nie je potrebný — Ubuntu 24.04 má 16) | lokálne na každom VPS |
 | App server | Puma (systemd unit) | cez UNIX socket |
@@ -445,4 +445,4 @@ docs/qa-checklist.md; demo dáta seed-neš podľa § 2.8.
 
 ---
 
-*Súvisiace: [manual-test-scenarios.md](manual-test-scenarios.md) (zdroj checklistu § 8), [qa-checklist.md](qa-checklist.md), [crz-import.md](crz-import.md) (import operatíva), [gtm-pilot-plan.sk.md](gtm-pilot-plan.sk.md) § 6 (čo ešte zostáva), epic #15 (tento dokument), epic #16 (monitoring škálovanie).*
+*Súvisiace: [manual-test-scenarios.md](manual-test-scenarios.md) (zdroj checklistu § 8), [qa-checklist.md](qa-checklist.md), [crz-import.md](crz-import.md) (import operatíva), [gtm-pilot-plan.sk.md](https://github.com/civora-org/civora-platform/blob/main/docs/06-sales/gtm-pilot-plan.sk.md) § 6 (civora-platform) (čo ešte zostáva), epic #15 (tento dokument), epic #16 (monitoring škálovanie).*
