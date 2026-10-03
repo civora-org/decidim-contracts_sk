@@ -75,7 +75,7 @@ RSpec.describe "decidim_contracts_sk:seed_demo demo seed task", :db do
 
     [
       Date.new(2026, 10, 3), Date.new(2026, 11, 30), Date.new(2027, 1, 31), Date.new(2027, 2, 28),
-      Date.new(2027, 5, 31), Date.new(2027, 8, 31), Date.new(2028, 2, 29), Date.new(2028, 5, 22)
+      Date.new(2027, 5, 22), Date.new(2027, 5, 31), Date.new(2027, 8, 31), Date.new(2028, 2, 29), Date.new(2028, 5, 22)
     ].each do |day|
       it "is due soon with the deadline on or just after today + 7 when seeded on #{day}" do
         travel_to(day.in_time_zone.change(hour: 12)) do

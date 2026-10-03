@@ -180,7 +180,7 @@ module Decidim
 
       def crz_deadline_unknown_badge
         title = crz_t("badge.unknown")
-        tag.span("\u2014", title: title, "aria-label": title)
+        tag.span(tag.span("\u2014", "aria-hidden": "true") + tag.span(title, class: "sr-only"), title: title)
       end
 
       # "1 deň" / "3 dni" / "7 dní" (plural keys; the host's rails-i18n

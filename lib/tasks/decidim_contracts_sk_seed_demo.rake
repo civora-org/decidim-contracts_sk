@@ -28,6 +28,9 @@
 # dates, no CRZ link) are overdue and DEMO-2026-001 (draft without a signing
 # date) shows "deadline unknown". Re-seed to refresh the due-soon demo.
 #
+# Date.current uses the host's Time.zone (not the organization's), so near
+# midnight the demo can be off by one day.
+#
 # Idempotent per (organization, reference): re-running upserts on the
 # composite unique index instead of duplicating. A second organization is
 # created when none other exists, so cross-tenant 404 behaviour is testable.

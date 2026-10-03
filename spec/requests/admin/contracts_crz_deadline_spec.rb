@@ -197,6 +197,8 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
       expect(body).to include(%(<span class="label warning">14 days</span>))
       expect(body).to include(%(<span class="label">15 days</span>))
       expect(body).to include("Deadline unknown")
+      expect(body).to include(%(<span class="sr-only">Deadline unknown — add signing date</span>))
+      expect(body).to include(%(<span aria-hidden="true">\u2014</span>))
     end
 
     it "renders due today, singular and the Slovak plural forms" do
@@ -285,13 +287,17 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
 
     it "reads the persisted record, not the rejected form values, after a failed update" do
       record = create_contract!(reference: "ZP-DL-406", signed_on: Date.new(2026, 3, 8))
+      create_contract!(reference: "ZP-DL-900")
 
+      # The duplicate reference passes the form and fails only at the
+      # model (update! raises RecordInvalid with the values assigned), so
+      # this exercises update_failed's restore_attributes.
       patch "/admin/contracts/#{record.id}",
-            params: { contract: { title: "Road", reference: "ZP-DL-406", signed_on: "2026-01-01",
-                                  crz_url: "javascript:alert(1)" } }
+            params: { contract: { title: "Road-REJECTED", reference: "ZP-DL-900", signed_on: "2026-01-01" } }
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(response.body).to include("CRZ filing deadline: 2026-06-08 (7 days left)")
+      expect(response.body).to include("Road-REJECTED")
       expect(record.reload.signed_on).to eq(Date.new(2026, 3, 8))
     end
   end

@@ -43,7 +43,8 @@ RSpec.describe Decidim::ContractsSk::CrzDeadline do
     end
 
     it "refuses zero, negative and non-Duration values and keeps the previous setting" do
-      [0.days, -3.months, nil, "3.months", 3.5].each do |bad|
+      [0.days, -3.months, nil, "3.months", 3.5, 36.hours, 90.minutes,
+       ActiveSupport::Duration.build(7_776_000), 1.month + 12.hours].each do |bad|
         expect { Decidim::ContractsSk.crz_deadline = bad }.to raise_error(ArgumentError)
       end
       expect(Decidim::ContractsSk.crz_deadline).to eq(3.months)

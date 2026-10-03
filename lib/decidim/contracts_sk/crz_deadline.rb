@@ -27,12 +27,17 @@ module Decidim
     # The default is 3.months, the statutory window.
     #
     # Config-time only: never mutate this setting at request time.
+    # Duration units the seam accepts: calendar units only, since the
+    # deadline is counted in days (hours/minutes/seconds would be silently
+    # truncated by Date arithmetic).
+    CALENDAR_UNITS = %i[years months weeks days].freeze
+
     class << self
       attr_reader :crz_deadline
 
       def crz_deadline=(value)
         unless value.is_a?(ActiveSupport::Duration) && value.parts.any? &&
-               value.parts.values.all?(&:positive?)
+               value.parts.all? { |unit, amount| CALENDAR_UNITS.include?(unit) && amount.positive? }
           raise ArgumentError,
                 "crz_deadline must be a positive ActiveSupport::Duration (e.g. 3.months), " \
                 "got #{value.inspect}"
