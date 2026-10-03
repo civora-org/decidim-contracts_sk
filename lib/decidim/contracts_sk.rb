@@ -17,6 +17,7 @@ require_relative "contracts_sk/contract_lifecycle"
 require_relative "contracts_sk/role_resolver"
 require_relative "contracts_sk/stale_after"
 require_relative "contracts_sk/link_targets"
+require_relative "contracts_sk/crz_scope"
 require_relative "contracts_sk/menu"
 
 # The CRZ import ETL (ADR-008, civora-org/civora-platform#86): pure-Ruby
@@ -28,5 +29,6 @@ require_relative "contracts_sk/crz_import/transport"
 require_relative "contracts_sk/crz_import/mapper"
 require_relative "contracts_sk/crz_import/client"
 require_relative "contracts_sk/crz_import/sync"
+require_relative "contracts_sk/crz_import/prune"
 
 require_relative "contracts_sk/engine" if defined?(Rails)

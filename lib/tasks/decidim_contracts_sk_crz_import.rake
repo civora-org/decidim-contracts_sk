@@ -17,6 +17,15 @@
 # a specific account. See docs/crz-import.md for operations, scheduling and
 # failure modes.
 #
+# Scope (civora-org/civora-platform#145): only the organization's own
+# contracts are mirrored — records whose parties carry its IČO, resolved
+# through Decidim::ContractsSk.crz_organization_ico_resolver. Without a
+# configured IČO the sync refuses to run (exit 1). Mirrors imported before
+# the scoping existed are removed with the prune task:
+#
+#   bin/rails "decidim_contracts_sk:crz_import:prune_out_of_scope[<organization_id>]"            # dry run
+#   CONFIRM=1 bin/rails "decidim_contracts_sk:crz_import:prune_out_of_scope[<organization_id>]"  # delete
+#
 # Privacy: the sync logs ids, statuses and counts only — never payloads or
 # party names.
 
@@ -55,7 +64,7 @@ namespace :decidim_contracts_sk do
       puts "CRZ import for organization ##{organization.id} (since #{since}):"
       puts "  created=#{result.created} updated=#{result.updated} unchanged=#{result.unchanged}"
       puts "  collisions=#{result.collisions} quarantined=#{result.quarantined} " \
-           "failed=#{result.failed} skipped=#{result.skipped}"
+           "failed=#{result.failed} skipped=#{result.skipped} out_of_scope=#{result.out_of_scope}"
       puts "  created ids: #{result.created_ids.join(", ")}" if result.created_ids.any?
       puts "  collision ids: #{result.collision_ids.join(", ")}" if result.collision_ids.any?
       puts "  quarantined source ids: #{result.quarantined_ids.compact.join(", ")}" if result.quarantined_ids.any?
@@ -63,8 +72,35 @@ namespace :decidim_contracts_sk do
       puts "  collisions must be resolved manually (docs/crz-import.md)." if result.collisions.positive?
 
       if result.error
-        warn "  sync stopped early: #{result.error}"
+        refused = result.error == Decidim::ContractsSk::CrzImport::Sync::NOT_CONFIGURED_MESSAGE
+        warn "  sync #{refused ? "refused" : "stopped early"}: #{result.error}"
         exit 1
+      end
+    end
+
+    desc "List (dry run) or delete (CONFIRM=1) CRZ mirrors that are not the organization's own contracts"
+    task :prune_out_of_scope, %i[organization_id] => :environment do |_task, args|
+      org_id = args[:organization_id].to_i
+      unless org_id.positive?
+        abort "Usage: rails \"decidim_contracts_sk:crz_import:prune_out_of_scope[<organization_id>]\""
+      end
+
+      organization = Decidim::Organization.find_by(id: org_id)
+      abort "Organization ##{org_id} not found" unless organization
+
+      ico = Decidim::ContractsSk.crz_organization_ico(organization)
+      unless ico
+        abort "No IČO configured for organization ##{org_id} (Decidim::ContractsSk.crz_organization_ico_resolver)"
+      end
+
+      pruned = Decidim::ContractsSk::CrzImport::Prune.call(organization: organization, ico: ico,
+                                                           confirm: ENV["CONFIRM"] == "1")
+
+      if pruned.confirmed
+        puts "Deleted #{pruned.matched} out-of-scope CRZ mirror(s) from organization ##{org_id}."
+      else
+        puts "Dry run: #{pruned.matched} out-of-scope CRZ mirror(s) in organization ##{org_id} " \
+             "(IČO #{ico} on neither party). Re-run with CONFIRM=1 to delete them."
       end
     end
 

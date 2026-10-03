@@ -54,3 +54,17 @@ module ContractsSkCrzPayloads
 end
 
 RSpec.configure { |config| config.include ContractsSkCrzPayloads, :db }
+
+# The CRZ import fails closed without an organization IČO
+# (civora-org/civora-platform#145). Import specs opt in to the scope seam
+# answering the fixture contracting authority's IČO ("00 000 001" in
+# crz_payload), restoring the engine default afterwards.
+RSpec.shared_context "with the CRZ scope configured" do
+  around do |example|
+    original = Decidim::ContractsSk.crz_organization_ico_resolver
+    Decidim::ContractsSk.crz_organization_ico_resolver = ->(_organization) { "00000001" }
+    example.run
+  ensure
+    Decidim::ContractsSk.crz_organization_ico_resolver = original
+  end
+end

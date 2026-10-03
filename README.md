@@ -94,6 +94,13 @@ The freshness threshold behind the catalogue's stale indicator is configurable t
 Decidim::ContractsSk.stale_after = 12.hours
 ```
 
+The CRZ import only mirrors the organization's own contracts — records where its IČO is one of the two parties — so it needs to know that IČO (`Decidim::ContractsSk.crz_organization_ico_resolver`, a callable receiving the `Decidim::Organization`). The default resolves nothing and the import fails closed: without an IČO the sync refuses to run instead of mirroring the whole national register. Answers are normalized to 8 digits (spaces ignored); anything else, or a raising resolver, counts as unconfigured. See [docs/crz-import.md](docs/crz-import.md) (civora-org/civora-platform#145):
+
+```ruby
+# config/initializers/contracts_sk.rb
+Decidim::ContractsSk.crz_organization_ico_resolver = ->(organization) { ENV["CRZ_ICO_ORG_#{organization.id}"] }
+```
+
 Contract↔project/result links resolve their display info through two config-time seams (`Decidim::ContractsSk.supported_link_target_types` and `Decidim::ContractsSk.link_target_resolver`). The defaults are deliberately inert — an empty supported-type whitelist and a resolver that resolves nothing — so the standalone engine links nothing. A host enables linking by whitelisting target class names and assigning a callable that receives a link and returns `{ label:, url: }` display info (`url` optional; nil hides the link publicly). The resolution whitelists the target type, tolerates dangling targets (a link whose target row is gone stays flagged in admin, hidden publicly) and fails closed — a raising resolver can never break a public page:
 
 ```ruby

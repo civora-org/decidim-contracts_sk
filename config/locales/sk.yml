@@ -168,6 +168,8 @@ sk:
             not_found: "Zmluva s ID %{source_id} nebola v CRZ nájdená."
             failed: "Import zmluvy %{source_id} sa nepodaril (zdroj nie je dostupný). Existujúci záznam nebol zmenený."
             quarantined: "Zmluvu %{source_id} sa nepodarilo načítať zo zdroja; bola preskočená."
+            out_of_scope: "Zmluva %{source_id} sa netýka tejto organizácie (jej IČO nie je ani pri jednej zmluvnej strane); neimportovala sa."
+            not_configured: "Import z CRZ nie je pre túto organizáciu nastavený (chýba IČO). Nič sa neimportovalo."
         audit_events:
           index:
             title: "Auditná stopa"

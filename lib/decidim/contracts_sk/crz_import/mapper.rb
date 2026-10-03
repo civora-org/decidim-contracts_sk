@@ -130,7 +130,15 @@ module Decidim
           # digits after whitespace removal ("bez ičo", partial numbers)
           # maps to nil — the Party model validates an 8-digit IČO, and a
           # malformed source value must not crash the write.
+          #
+          # ekosystem serves the disambiguated *_cin as a JSON INTEGER, so
+          # the leading zeros of most public bodies' IČOs are lost
+          # (00323560 arrives as 323560). An Integer is therefore
+          # left-padded back to its 8 digits; a String stays strict, as
+          # above (civora-org/civora-platform#145).
           def normalize_cin(raw)
+            return format("%08d", raw) if raw.is_a?(Integer) && raw.between?(1, 99_999_999)
+
             digits = text(raw).gsub(/\s+/, "")
             digits.match?(/\A\d{8}\z/) ? digits : nil
           end
