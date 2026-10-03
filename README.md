@@ -139,4 +139,4 @@ Public views (catalogue and detail) carry their own scoped stylesheet instead of
 
 ## License
 
-AGPL-3.0 — same license as Decidim.
+AGPL-3.0 — same license as Decidim. Full text in [LICENSE-AGPLv3.txt](LICENSE-AGPLv3.txt).
