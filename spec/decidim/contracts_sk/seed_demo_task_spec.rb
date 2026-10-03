@@ -64,6 +64,59 @@ RSpec.describe "decidim_contracts_sk:seed_demo demo seed task", :db do
     end
   end
 
+  # CRZ deadline demo (civora-org/civora-platform#124): DEMO-2026-003 is
+  # signed relative to the seeding day so its deadline is 7 days away. The
+  # dates include month ends and a leap day, where plain date subtraction
+  # is off; where a clamp gap makes exactly 7 unreachable (no signing date
+  # has that deadline) the record lands on the next reachable day, still
+  # inside the 14-day window.
+  describe "the CRZ deadline demo record (civora-org/civora-platform#124)" do
+    include ActiveSupport::Testing::TimeHelpers
+
+    [
+      Date.new(2026, 10, 3), Date.new(2026, 11, 30), Date.new(2027, 1, 31), Date.new(2027, 2, 28),
+      Date.new(2027, 5, 22), Date.new(2027, 5, 31), Date.new(2027, 8, 31), Date.new(2028, 2, 29), Date.new(2028, 5, 22)
+    ].each do |day|
+      it "is due soon with the deadline on or just after today + 7 when seeded on #{day}" do
+        travel_to(day.in_time_zone.change(hour: 12)) do
+          run_seed!
+
+          record = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-003")
+          reachable = (record.signed_on - 10.days..record.signed_on + 10.days)
+                      .map { |signed| signed + Decidim::ContractsSk.crz_deadline }
+          expected = reachable.include?(day + 7) ? 7 : (reachable.select { |d| d > day + 7 }.min - day).to_i
+
+          expect(record.crz_days_left(today: day)).to eq(expected)
+          expect(record.crz_deadline_status(today: day)).to eq(:due_soon)
+          expect(record).to be_in(Decidim::ContractsSk::Contract.crz_due_soon(day))
+        end
+      end
+    end
+
+    it "demonstrates every badge: overdue, due soon and deadline unknown" do
+      travel_to(Time.zone.local(2026, 10, 3, 12)) do
+        run_seed!
+
+        status = ->(ref) { Decidim::ContractsSk::Contract.find_by!(reference: ref).crz_deadline_status }
+        expect(status.call("DEMO-2026-001")).to eq(:unknown)
+        expect(status.call("DEMO-2026-002")).to eq(:overdue)
+        expect(status.call("DEMO-2026-003")).to eq(:due_soon)
+        expect(status.call("DEMO-2026-004")).to eq(:overdue)
+        expect(status.call("DEMO-2026-006")).to eq(:untracked)
+        expect(status.call("DEMO-2026-008")).to eq(:untracked)
+      end
+    end
+
+    it "re-signs DEMO-2026-003 on a re-seed so the demo can be refreshed" do
+      travel_to(Time.zone.local(2026, 10, 3, 12)) { run_seed! }
+      first = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-003").signed_on
+
+      travel_to(Time.zone.local(2026, 10, 20, 12)) { run_seed! }
+
+      expect(Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-003").signed_on).to be > first
+    end
+  end
+
   it "resets any submitter stamp on re-seed (four-eyes, civora-org/civora-platform#123)" do
     run_seed!
     contract = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-002")

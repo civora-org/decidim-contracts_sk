@@ -27,6 +27,7 @@ ideally in both `en` and `sk` where noted.
 - [ ] **New**: one `h1`; every input has a `label` with a unique `id`; back-to-index link present.
 - [ ] **Edit**: one `h1`; `h2` sections (privacy redaction, documents, links, CRZ handoff); lifecycle state, author, organization and `published_at` are not form-writable.
 - [ ] **Index**: one `h1`; table headers localized; localized empty state when the organization has no contracts.
+- [ ] **Index (CRZ deadline, #124)**: a "CRZ deadline" column with `label` badges (overdue = alert, 0–14 days = warning, beyond = plain, unknown = muted dash with a title, filed/mirror/terminal = empty cell); the `deadline` filter and the two counter chips agree with the badges; Slovak plurals read "1 deň" / "3 dni" / "7 dní"; the edit page shows the deadline line (or the "deadline unknown — add signing date" prompt) and nothing for a record recorded as filed.
 - [ ] **Index (sk pass)**: state labels and transition button labels render localized (no raw enum values).
 - [ ] Per-state transition buttons only (no event whose edge does not start at the record's state, none for roles that own no edge).
 - [ ] Four-eyes rule (civora-org/civora-platform#123): the user who submitted a record sees no return/approve/reject controls on its row (another admin does), a direct POST by them is denied, and with `allow_self_review = true` they may judge it and the audit viewer labels the row "(self-review)" / "(vlastné posúdenie)".

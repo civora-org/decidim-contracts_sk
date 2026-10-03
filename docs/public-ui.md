@@ -50,6 +50,10 @@ Rules that hold across both pages:
 
 `admin/audit_events/index` stays on Decidim admin's own classes. `table-list--selectable` is the admin modifier that left-aligns the second column (the record titles); plain `table-list` centres every column after the first. Rows show date **and** time (`format_datetime`, application time zone), and an empty decision reason renders as a muted `—`.
 
+## Admin CRZ deadline badges
+
+The admin index's CRZ deadline badges (civora-org/civora-platform#124) use Decidim's own `label` modifiers (`label`, `label warning`, `label alert`) — the same build-time rule applies to admin views: no engine-only Tailwind utilities, the host bundle would silently drop them.
+
 ## Verifying a change
 
 1. `bundle exec rspec` and `bundle exec rubocop` (the request specs pin the user-visible strings, the empty states and the guards).

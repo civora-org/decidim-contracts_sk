@@ -20,6 +20,20 @@
     <% end %>
   </div>
 
+  <%# CRZ publication deadline counters (§ 47a OZ, civora-org/
+      civora-platform#124): editorial records NOT RECORDED AS FILED in CRZ
+      (crz_url empty) that are overdue or due within 14 days. Like the state
+      chips they count the UNFILTERED tenant scope and link to the deadline=
+      filter while preserving the other normalized filters. Aid only, not
+      legal advice (see the hint). %>
+  <div class="card-section">
+    <% %i[due_soon overdue].each do |deadline| %>
+      <%= link_to index_deadline_counter_label(deadline), index_deadline_counter_path(deadline),
+                  class: index_deadline_counter_classes(deadline) %>
+    <% end %>
+    <p><em><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></em></p>
+  </div>
+
   <% if allowed_to?(:create, :contract) %>
     <div class="card-section">
       <p><%= link_to t("decidim.contracts_sk.admin.contracts.new.title"), new_admin_contract_path, class: "button button__sm button__secondary" %></p>
@@ -61,6 +75,10 @@
         <%= select_tag :source, options_for_select(index_source_options, selected: index_filters.source) %>
       </div>
       <div class="row column">
+        <%= label_tag :deadline, t("decidim.contracts_sk.admin.contracts.index.filters.deadline") %>
+        <%= select_tag :deadline, options_for_select(index_deadline_options, selected: index_filters.deadline) %>
+      </div>
+      <div class="row column">
         <%= label_tag :q, t("decidim.contracts_sk.admin.contracts.index.filters.q") %>
         <%= text_field_tag :q, index_filters.q %>
       </div>
@@ -82,6 +100,7 @@
             <th><%= t("decidim.contracts_sk.contract.title") %></th>
             <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
             <th><%= t("decidim.contracts_sk.contract.status") %></th>
+            <th><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></th>
             <th><%= t("decidim.contracts_sk.admin.contracts.edit.title") %></th>
             <th></th>
           </tr>
@@ -92,6 +111,8 @@
               <td><%= contract.title %></td>
               <td><%= contract.reference %></td>
               <td><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
+              <%# CRZ deadline badge (civora-org/civora-platform#124): empty for filed, mirror and terminal rows. %>
+              <td><%= crz_deadline_badge(contract, today: index_today) %></td>
               <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
               <td class="table-list__actions">
                 <%# Derived, never hand-enumerated: only the events the acting role may fire.
@@ -146,7 +167,7 @@
     <% if @contracts.total_pages > 1 %>
       <%= render "decidim/contracts_sk/shared/pagination",
                  collection: @contracts,
-                 filter_keys: %i[state source q] %>
+                 filter_keys: %i[state source q deadline] %>
     <% end %>
   <% else %>
     <div class="card-section">

@@ -387,6 +387,8 @@ docs/qa-checklist.md; demo dáta seed-neš podľa § 2.8.
 - [ ] Pilot má aspoň **2 osoby** s rolami enginu (odosielateľ ≠ posudzovateľ; pri predvolenom resolveri 2 org adminov s prijatými admin podmienkami), alebo je v initializeri vedome nastavené `Decidim::ContractsSk.allow_self_review = true` — **pass:** pravidlo štyroch očí (#123).
 - [ ] Osoba, ktorá urobila `submit` (demo: `contracts-editor@example.org`), na riadku záznamu nevidí tlačidlá `approve` / `return` / `reject`; priamy POST na tieto akcie je zamietnutý; druhý admin (demo: `contracts-admin@example.org`) ich vidí a `approve` prejde — **pass:** #123.
 
+- [ ] Lehota CRZ (#124): admin index má stĺpec „Lehota CRZ"; na demo dátach má DEMO-2026-003 oranžový štítok „7 dní" (po novom seede), DEMO-2026-002 a -004 červený „Po termíne", DEMO-2026-001 tlmenú pomlčku (neznámy dátum podpisu), mirror/zamietnuté/archivované záznamy a DEMO-2026-006 žiadny (publikované redakčné záznamy sa sledujú; DEMO-2026-006 nemá štítok len preto, že má CRZ URL, teda je zverejnený); čipy „CRZ po termíne" / „CRZ do 14 dní" majú správne počty a filter `?deadline=overdue` / `?deadline=due_soon` zúži zoznam; edit DEMO-2026-003 ukazuje riadok s lehotou — **pass:** #124 (pomôcka, nie právne poradenstvo; štítky starnú, na obnovu spusti seed znova).
+
 - [ ] `GET /zmluvy/` → 200; vidno publikované demo záznamy (DEMO-2026-006, 008, 009) — **pass:** tri karty, lokalizované.
 - [ ] Prihlásenie adminom; `GET /zmluvy/admin/contracts` bez prihlásenia → redirect na sign-in — **pass:** A1.
 - [ ] Vytvor záznam (title + reference) → stav `draft` — **pass:** A3.

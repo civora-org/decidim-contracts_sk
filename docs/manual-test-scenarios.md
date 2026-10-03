@@ -96,6 +96,13 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 | A13 | documents on edit page of DEMO-2026-001 | attach/replace/remove; metadata columns sync from blob |
 | A14 | `GET .../contracts/:id/crz_handoff` (download) | editor-gated, allowed in any state; PDF labelled as a handoff aid |
 | A15 | `POST .../crz_handoff` on DEMO-2026-001 | generates/replaces the `crz_export` document |
+| A16 | CRZ deadline (#124): admin index, then `?deadline=due_soon` and `?deadline=overdue`, then edit DEMO-2026-003 / -001 | "CRZ deadline" column: DEMO-2026-003 amber "7 days" / "7 dní", DEMO-2026-002 and -004 red "Overdue" / "Po termíne", DEMO-2026-001 muted dash (no signing date); archived/rejected/mirror rows empty, and DEMO-2026-006 (published) shows no badge only because it has a CRZ URL (filed) — published editorial records ARE tracked; chips "CRZ due within 14 days (1)" and "CRZ overdue (2)" ignore the active filter; each filter shows exactly its rows; DEMO-2026-003's edit page shows "CRZ filing deadline: … (7 days left)", DEMO-2026-001's "deadline unknown — add signing date"; record a CRZ URL on DEMO-2026-003 → badge and counts drop it |
+
+> **A16 decays by design:** DEMO-2026-003's signing date is computed relative to the
+> seeding day (deadline = seed day + 7), so its badge counts down as days pass and
+> eventually turns overdue. Re-run `seed_demo` to re-demo (the seed re-signs it).
+> Where a month-end clamp makes exactly 7 days unreachable, the badge shows the
+> next reachable day count (8–10). Aid only, not legal advice.
 
 > **Privacy-redaction gate walkthrough (ADR-007, on a fresh seed):** DEMO-2026-001
 > is the one record demonstrating the gate. (1) `POST .../submit`, then

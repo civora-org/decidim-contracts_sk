@@ -77,6 +77,8 @@ sk:
             empty: "Zatiaľ nebola vytvorená žiadna zmluva."
             counters:
               all: "Všetky"
+              crz_due_soon: "CRZ do %{days} dní"
+              crz_overdue: "CRZ po termíne"
             filters:
               state: "Stav"
               source: "Zdroj"
@@ -89,10 +91,32 @@ sk:
                 all: "Všetky zdroje"
                 crz: "Import z CRZ"
                 editorial: "Redakčná"
+              deadline: "Lehota CRZ (nezaznamenané ako zverejnené)"
+              deadlines:
+                any: "Ľubovoľná lehota"
+                due_soon: "Do %{days} dní"
+                overdue: "Po termíne"
+            headers:
+              crz_deadline: "Lehota CRZ"
             no_matches:
               heading: "Žiadna zmluva nezodpovedá aktuálnym filtrom."
               body: "Upravte alebo zrušte filtre a skúste to znova."
               clear: "Zrušiť filtre a zobraziť všetky zmluvy"
+          deadline:
+            hint: "Zobrazuje sa, kým zmluva nie je zaznamenaná ako zverejnená v CRZ (prázdny odkaz na CRZ). Pomôcka podľa dátumu podpisu, nie právne poradenstvo."
+            badge:
+              overdue: "Po termíne"
+              today: "Dnes"
+              unknown: "Lehota neznáma — doplňte dátum podpisu"
+            days:
+              one: "1 deň"
+              few: "%{count} dni"
+              other: "%{count} dní"
+            header:
+              upcoming: "Lehota na zverejnenie v CRZ: %{date} (zostáva: %{left})"
+              today: "Lehota na zverejnenie v CRZ: %{date} (uplynie dnes)"
+              overdue: "Lehota na zverejnenie v CRZ uplynula %{date} (omeškanie: %{days})"
+              unknown: "Lehota na zverejnenie v CRZ je neznáma — doplňte dátum podpisu"
           new:
             title: "Nová zmluva"
           edit:

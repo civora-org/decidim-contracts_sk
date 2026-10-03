@@ -22,6 +22,15 @@
 #     as the single record demonstrating the publish gate, and the CRZ
 #     mirrors stay unstamped by design (ADR-008 exemption).
 #
+# The CRZ deadline tracking demo (civora-org/civora-platform#124) is
+# date-relative: DEMO-2026-003 is re-signed on every run so its deadline is
+# ~7 days away (due-soon), while DEMO-2026-002 and -004 (fixed 2026 signing
+# dates, no CRZ link) are overdue and DEMO-2026-001 (draft without a signing
+# date) shows "deadline unknown". Re-seed to refresh the due-soon demo.
+#
+# Date.current uses the host's Time.zone (not the organization's), so near
+# midnight the demo can be off by one day.
+#
 # Idempotent per (organization, reference): re-running upserts on the
 # composite unique index instead of duplicating. A second organization is
 # created when none other exists, so cross-tenant 404 behaviour is testable.
@@ -110,7 +119,17 @@ namespace :decidim_contracts_sk do
       ref: "DEMO-2026-003", title: "Údržba verejnej zelene 2026",
       state: "returned",
       subject_matter: "Pravidelná údržba parkov a verejnej zelene",
-      amount: BigDecimal("22100.00"), signed_on: Date.new(2026, 2, 2),
+      amount: BigDecimal("22100.00"),
+      # CRZ deadline demo (civora-org/civora-platform#124): signed so the
+      # § 47a OZ deadline falls 7 days after the seeding day — the amber
+      # "7 dní" badge and the "due within 14 days" filter are demonstrable.
+      # The smallest signing date whose deadline is on/after today + 7 is
+      # computed with the engine's own month-end-exact helper (plain date
+      # subtraction is off on month ends); the demo decays as days pass —
+      # re-run the seed to re-demo. Where no signing date lands exactly on
+      # today + 7 (a clamp gap at a month end) the deadline is the next
+      # reachable day, still inside the 14-day window.
+      signed_on: Decidim::ContractsSk::CrzDeadline.threshold(Date.current + 7),
       effective_from: Date.new(2026, 3, 1)
     )
 

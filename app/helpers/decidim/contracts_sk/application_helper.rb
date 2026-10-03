@@ -126,7 +126,74 @@ module Decidim
                 "aria-hidden": "true", focusable: "false")
       end
 
+      # Decidim `label` modifiers per tracked deadline status (civora-org/
+      # civora-platform#124). Decidim classes only — never Tailwind
+      # utilities: the host stylesheet is compiled at image build and
+      # silently drops any utility the host itself does not use
+      # (docs/public-ui.md; the rule holds for admin views too).
+      CRZ_DEADLINE_BADGE_CLASSES = {
+        overdue: "label alert",
+        due_soon: "label warning",
+        ok: "label"
+      }.freeze
+
+      # The admin index's per-row CRZ deadline badge (civora-org/
+      # civora-platform#124, § 47a OZ): nil for untracked rows (filed,
+      # mirror, terminal — an empty cell), a muted dash with an explanatory
+      # title for a tracked row whose signing date is unknown, otherwise a
+      # `label` badge: alert "po termíne" when overdue, warning (0..14 days
+      # left, "dnes" on the day) or plain with the days left. Reads the
+      # status from the record (single-sourced with the Contract scopes).
+      def crz_deadline_badge(contract, today: Date.current)
+        status = contract.crz_deadline_status(today: today)
+        return nil if status == :untracked
+        return crz_deadline_unknown_badge if status == :unknown
+
+        text = status == :overdue ? crz_t("badge.overdue") : crz_days_text(contract.crz_days_left(today: today))
+        tag.span(text, class: CRZ_DEADLINE_BADGE_CLASSES.fetch(status))
+      end
+
+      # The edit page's deadline line (civora-org/civora-platform#124): nil
+      # for untracked records, the "deadline unknown — add signing date"
+      # prompt when signed_on is missing, otherwise the deadline date with
+      # the days left, due-today or overdue wording. Callers pass the
+      # PERSISTED record, never form values.
+      def crz_deadline_line(contract, today: Date.current)
+        status = contract.crz_deadline_status(today: today)
+        return nil if status == :untracked
+        return crz_t("header.unknown") if status == :unknown
+
+        crz_deadline_wording(contract, status, today)
+      end
+
       private
+
+      # The dated wording of the edit page's deadline line.
+      def crz_deadline_wording(contract, status, today)
+        date = format_date(contract.crz_deadline)
+        left = contract.crz_days_left(today: today)
+        return crz_t("header.overdue", date: date, days: crz_days_text(-left)) if status == :overdue
+        return crz_t("header.today", date: date) if left.zero?
+
+        crz_t("header.upcoming", date: date, left: crz_days_text(left))
+      end
+
+      def crz_deadline_unknown_badge
+        title = crz_t("badge.unknown")
+        tag.span(tag.span("\u2014", "aria-hidden": "true") + tag.span(title, class: "sr-only"), title: title)
+      end
+
+      # "1 deň" / "3 dni" / "7 dní" (plural keys; the host's rails-i18n
+      # supplies the sk rule, otherwise one/other applies).
+      def crz_days_text(count)
+        return crz_t("badge.today") if count.zero?
+
+        I18n.t("decidim.contracts_sk.admin.contracts.deadline.days", count: count)
+      end
+
+      def crz_t(key, **options)
+        I18n.t("decidim.contracts_sk.admin.contracts.deadline.#{key}", **options)
+      end
 
       # The locale branch of format_amount. Under :sk the value is grouped
       # and comma-decimalized through number_with_precision; under every

@@ -86,6 +86,27 @@ class RecordingIndexScope
     @grouped_counts
   end
 
+  # The #124 CRZ deadline scopes: recorded like any other chain step. The
+  # returned view answers #count with a plain 0 (the deadline chips' scalar
+  # counts) and delegates everything else (page, ...) to this scope, so
+  # both the filter chain and the counters stay observable offline.
+  def crz_overdue(today)
+    @applied << [:crz_overdue, today]
+    CountingView.new(self)
+  end
+
+  def crz_due_soon(today)
+    @applied << [:crz_due_soon, today]
+    CountingView.new(self)
+  end
+
+  # Scalar-count view over the recording scope (see #crz_overdue).
+  class CountingView < SimpleDelegator
+    def count
+      0
+    end
+  end
+
   def page(num)
     @applied << [:page, num]
     @page_result
@@ -124,6 +145,13 @@ end
 FakeIndexContract = Struct.new(:title, :reference, :state, :review_reason) do
   def to_param
     "77"
+  end
+
+  # The #124 CRZ deadline badge reads the record's status; the offline fake
+  # is never tracked (the badge cell renders empty).
+  def crz_deadline_status(today: nil)
+    _ = today
+    :untracked
   end
 end
 
@@ -237,7 +265,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
       scope = stubbed_index
       sign_in(roles: %i[editor])
 
-      get "/admin/contracts", params: { state: "bogus", source: "bogus", q: "   ", page: ["2"] }
+      get "/admin/contracts", params: { state: "bogus", source: "bogus", deadline: "bogus", q: "   ", page: ["2"] }
 
       expect(response).to have_http_status(:ok)
       # Unknown filter values fell back to the "any"/"all" defaults and the
@@ -249,8 +277,49 @@ RSpec.describe "admin contracts CRUD", type: :request do
       expect(scope.applied).to eq([
                                     [:order, [{ created_at: :desc, id: :desc }]],
                                     [:page, "[\"2\"]"],
-                                    [:group, [:state]]
+                                    [:group, [:state]],
+                                    # The #124 deadline chips: one scoped count each (unfiltered
+                                    # scope), the garbage deadline param added no filter step.
+                                    [:crz_due_soon, Date.current],
+                                    [:crz_overdue, Date.current]
                                   ])
+    end
+
+    it "applies a valid deadline param as the matching model scope (civora-org/civora-platform#124)" do
+      scope = stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { deadline: "overdue" }
+
+      expect(response).to have_http_status(:ok)
+      # One call from the filter (before the page) and one from the chip.
+      expect(scope.applied.count { |entry| entry.first == :crz_overdue }).to eq(2)
+      expect(scope.applied.index([:crz_overdue, Date.current])).to be < scope.applied.index([:page, ""])
+    end
+
+    it "renders the deadline filter select with its three options (civora-org/civora-platform#124)" do
+      stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { deadline: "due_soon" }
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include(%(name="deadline"))
+        expect(response.body).to include("Any deadline")
+        expect(response.body).to include("Due within 14 days")
+        expect(response.body).to include(%(<option selected="selected" value="due_soon">))
+      end
+    end
+
+    it "carries the deadline filter in the pagination links (civora-org/civora-platform#124)" do
+      stubbed_index(records: [FakeIndexContract.new("Road", "ZP-2026-001", "published")], total_pages: 2)
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { deadline: "overdue" }
+
+      expect(response.body).to include("deadline=overdue")
+      expect(response.body).to include("page=2")
     end
 
     it "pins the deterministic index ordering on the scoped query" do
