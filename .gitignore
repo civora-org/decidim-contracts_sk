@@ -23,3 +23,6 @@
 /.agent-review/session.json
 /.agent-review/checkpoints/
 /.agent-review/snapshots/
+
+# Playwright MCP console/page dumps
+/.playwright-mcp/
