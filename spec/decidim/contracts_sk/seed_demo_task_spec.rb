@@ -64,6 +64,16 @@ RSpec.describe "decidim_contracts_sk:seed_demo demo seed task", :db do
     end
   end
 
+  it "resets any submitter stamp on re-seed (four-eyes, civora-org/civora-platform#123)" do
+    run_seed!
+    contract = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-002")
+    contract.update!(decidim_submitted_by_id: contract.author.id)
+
+    run_seed!
+
+    expect(contract.reload.decidim_submitted_by_id).to be_nil
+  end
+
   it "never refreshes imported_at on re-seed (the new-record guard, issue #88)" do
     run_seed!
     stamped = %w[DEMO-2026-008 DEMO-2026-009].index_with do |ref|

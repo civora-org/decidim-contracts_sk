@@ -51,6 +51,8 @@ FakeTransitionUser = Struct.new(:engine_roles, keyword_init: true)
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/AnyInstance
 RSpec.describe "admin contract transitions", type: :request do
   let(:unauthorized) { "You are not authorized to perform this action." }
+  # DB-only (the lazy let creates a row); the offline group never touches it.
+  let(:reviewer_user) { Decidim::User.create!(organization: organization) }
 
   # Swaps the config-time role seam for an engine_roles-driven resolver for
   # the duration of each example (same pattern as the permissions specs).
@@ -74,6 +76,19 @@ RSpec.describe "admin contract transitions", type: :request do
   def stub_record_lookup(record)
     allow_any_instance_of(Decidim::ContractsSk::Admin::ContractsController)
       .to receive(:contracts_scope).and_return(double(find: record))
+  end
+
+  # Signs the controller's current_user stub in as +user+ for the block,
+  # restoring the author afterwards (the DB groups' default actor). The
+  # four-eyes rule (civora-org/civora-platform#123) separates the
+  # submitting and the judging PERSON, so DB-backed flows that walk a
+  # record through review need a second signed-in user.
+  def acting_as(user)
+    controller = Decidim::ContractsSk::Admin::ContractsController
+    allow_any_instance_of(controller).to receive(:current_user).and_return(user)
+    yield
+  ensure
+    allow_any_instance_of(controller).to receive(:current_user).and_return(author)
   end
 
   describe "denied paths (offline, DB-free)" do
@@ -185,11 +200,15 @@ RSpec.describe "admin contract transitions", type: :request do
         event = step[:event]
         role = step[:role]
         from = contract.reload.state.to_sym
+        # Four-eyes (#123): the judgment steps are taken by a second person.
+        actor = role == :reviewer ? reviewer_user : author
 
         expect do
-          with_roles(role) do
-            post "/admin/contracts/#{contract.id}/#{event}",
-                 params: step[:reason] ? { reason: step[:reason] } : {}
+          acting_as(actor) do
+            with_roles(role) do
+              post "/admin/contracts/#{contract.id}/#{event}",
+                   params: step[:reason] ? { reason: step[:reason] } : {}
+            end
           end
         end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
 
@@ -219,7 +238,7 @@ RSpec.describe "admin contract transitions", type: :request do
         expect(audit.action).to eq("contract.#{event}")
         expect(audit.target).to eq(contract)
         expect(audit.organization).to eq(organization)
-        expect(audit.actor).to eq(author)
+        expect(audit.actor).to eq(actor)
       end
 
       expect(contract.state).to eq("archived")
@@ -440,7 +459,7 @@ RSpec.describe "admin contract transitions", type: :request do
       post "/admin/contracts/#{contract.id}/submit"
       expect(response).to redirect_to("/admin/contracts")
       Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[reviewer] }
-      post "/admin/contracts/#{contract.id}/approve"
+      acting_as(reviewer_user) { post "/admin/contracts/#{contract.id}/approve" }
       expect(response).to redirect_to("/admin/contracts")
       Decidim::ContractsSk.role_resolver = ->(_user, _context) { resolver_roles }
 
@@ -748,6 +767,123 @@ RSpec.describe "admin contract transitions", type: :request do
         expect(response.body).not_to include(%(id="review_reason_#{draft.id}_return"))
         expect(response.body).not_to include(%(id="review_reason_#{draft.id}_reject"))
       end
+    end
+  end
+
+  describe "four-eyes rule (civora-org/civora-platform#123)", :db do
+    # The default resolver gives org admins both roles; model that so only
+    # the per-person rule can separate the submitter from the judgment.
+    let(:resolver_roles) { %i[editor reviewer] }
+    let(:in_review) do
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(state: "in_review", decidim_submitted_by_id: author.id)
+      )
+    end
+
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      original_seam = Decidim::ContractsSk.allow_self_review
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { resolver_roles }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+      Decidim::ContractsSk.allow_self_review = original_seam
+    end
+
+    before do
+      migrate_engine_schema!
+
+      controller = Decidim::ContractsSk::Admin::ContractsController
+
+      allow_any_instance_of(controller).to receive(:current_user).and_return(author)
+      allow_any_instance_of(controller).to receive(:user_signed_in?).and_return(true)
+      allow_any_instance_of(controller).to receive(:current_organization).and_return(organization)
+    end
+
+    def judgment_action(contract, event)
+      %(action="/admin/contracts/#{contract.id}/#{event}")
+    end
+
+    it "renders no return/approve/reject controls on the submitter's own row" do
+      in_review
+
+      get "/admin/contracts"
+
+      %w[return approve reject].each do |event|
+        expect(response.body).not_to include(judgment_action(in_review, event)), "submitter sees #{event}"
+      end
+    end
+
+    it "renders the judgment controls on the same row for another admin" do
+      in_review
+
+      acting_as(reviewer_user) { get "/admin/contracts" }
+
+      %w[return approve reject].each do |event|
+        expect(response.body).to include(judgment_action(in_review, event)), "reviewer misses #{event}"
+      end
+    end
+
+    it "renders the judgment controls for the submitter once allow_self_review is enabled" do
+      Decidim::ContractsSk.allow_self_review = true
+      in_review
+
+      get "/admin/contracts"
+
+      %w[return approve reject].each do |event|
+        expect(response.body).to include(judgment_action(in_review, event))
+      end
+    end
+
+    %w[approve return reject].each do |event|
+      it "denies a direct #{event} POST by the submitter with the permission flash, changing nothing" do
+        expect do
+          post "/admin/contracts/#{in_review.id}/#{event}", params: { reason: "Because." }
+        end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+        expect(response).to redirect_to("/")
+        expect(flash[:alert]).to eq(unauthorized)
+
+        in_review.reload
+        aggregate_failures do
+          expect(in_review.state).to eq("in_review")
+          expect(in_review.review_reason).to be_nil
+        end
+      end
+    end
+
+    it "lets another admin approve the same record" do
+      acting_as(reviewer_user) { post "/admin/contracts/#{in_review.id}/approve" }
+
+      expect(response).to redirect_to("/admin/contracts")
+      expect(flash[:notice]).to be_present
+      expect(in_review.reload.state).to eq("approved")
+      expect(Decidim::ContractsSk::AuditEvent.order(:id).last.action).to eq("contract.approve")
+    end
+
+    it "lets the submitter approve under allow_self_review, audited as contract.approve_self" do
+      Decidim::ContractsSk.allow_self_review = true
+
+      post "/admin/contracts/#{in_review.id}/approve"
+
+      expect(response).to redirect_to("/admin/contracts")
+      expect(in_review.reload.state).to eq("approved")
+      expect(Decidim::ContractsSk::AuditEvent.order(:id).last.action).to eq("contract.approve_self")
+    end
+
+    it "flashes the dedicated self-review alert when the command refuses a request admission let through" do
+      # Permission-vs-command race: admission passed (the stamp was not the
+      # submitter's yet), the in-lock re-check then refuses. Simulated by
+      # neutralizing the permission twin only.
+      allow_any_instance_of(Decidim::ContractsSk::Permissions)
+        .to receive(:self_review_blocked?).and_return(false)
+
+      expect do
+        post "/admin/contracts/#{in_review.id}/approve"
+      end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+      expect(response).to redirect_to("/admin/contracts")
+      expect(flash[:alert]).to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.self_review"))
+      expect(in_review.reload.state).to eq("in_review")
     end
   end
 end

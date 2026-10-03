@@ -384,15 +384,18 @@ docs/qa-checklist.md; demo dáta seed-neš podľa § 2.8.
 
 ### Základ a životný cyklus
 
+- [ ] Pilot má aspoň **2 osoby** s rolami enginu (odosielateľ ≠ posudzovateľ; pri predvolenom resolveri 2 org adminov s prijatými admin podmienkami), alebo je v initializeri vedome nastavené `Decidim::ContractsSk.allow_self_review = true` — **pass:** pravidlo štyroch očí (#123).
+- [ ] Osoba, ktorá urobila `submit` (demo: `contracts-editor@example.org`), na riadku záznamu nevidí tlačidlá `approve` / `return` / `reject`; priamy POST na tieto akcie je zamietnutý; druhý admin (demo: `contracts-admin@example.org`) ich vidí a `approve` prejde — **pass:** #123.
+
 - [ ] `GET /zmluvy/` → 200; vidno publikované demo záznamy (DEMO-2026-006, 008, 009) — **pass:** tri karty, lokalizované.
 - [ ] Prihlásenie adminom; `GET /zmluvy/admin/contracts` bez prihlásenia → redirect na sign-in — **pass:** A1.
 - [ ] Vytvor záznam (title + reference) → stav `draft` — **pass:** A3.
 - [ ] Uprav DEMO-2026-001: state/author/organization nie sú form-writable — **pass:** A4.
 - [ ] Uprav DEMO-2026-006 (published) → update zamietnutý — **pass:** A5.
-- [ ] `submit` na DEMO-2026-001 → `in_review` + audit event — **pass:** A6.
+- [ ] `submit` na DEMO-2026-001 → `in_review` + audit event (ďalšie kroky `return`/`approve` na tomto zázname robí **iný** admin ako ten, kto urobil `submit`) — **pass:** A6.
 - [ ] `return` s povinným dôvodom na DEMO-2026-002 → `returned`; dôvod vidno v "Reviewer decision" baneri na edit stránke; `submit` znova → `in_review` a baner zmizne — **pass:** #90 cesta.
-- [ ] `approve` DEMO-2026-002 → `approved` — **pass:** A7.
-- [ ] Publikácia bez redakčného stampu (DEMO-2026-001 po approve) → zamietnutá špecifickým flashom; confirm na edit stránke (checkbox) → stamp; publikácia teraz úspešná — **pass:** redakčná brána ADR-007.
+- [ ] `approve` DEMO-2026-002 → `approved` — **pass:** A7 (seed zapisuje stavy priamo bez odosielateľa, takže ho zvládne aj jediný demo admin; po `submit` cez UI už `approve` musí urobiť iný admin).
+- [ ] Publikácia bez redakčného stampu (DEMO-2026-001 po approve druhým adminom) → zamietnutá špecifickým flashom; confirm na edit stránke (checkbox) → stamp; publikácia teraz úspešná — **pass:** redakčná brána ADR-007.
 - [ ] `archive` na DEMO-2026-006 → `archived`, stále verejne vidno — **pass:** A9.
 - [ ] Zopakuj ľubovoľný transition POST druhýkrát → zamietnutý — **pass:** A10 (concurrency guard).
 - [ ] `reject` na jednom draftovom zázname cez curl bez rolí → zamietnutý — **pass:** permissions fail-closed.

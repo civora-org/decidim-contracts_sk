@@ -131,6 +131,7 @@ sk:
             redaction_required: "Zverejnenie najprv vyžaduje potvrdenie skrytia osobných údajov — potvrďte ho na stránke úprav zmluvy."
             review_reason_required: "Pre vrátenie alebo zamietnutie zmluvy je potrebný dôvod."
             review_reason_rejected: "Odoslaný dôvod nebol prijatý — pri vrátení alebo zamietnutí je povinný (najviac 1000 znakov) a pri iných prechodoch nie je dovolený."
+            self_review: "Túto zmluvu ste odoslali na posúdenie vy, preto ju musí vrátiť, schváliť alebo zamietnuť iný posudzovateľ (pravidlo štyroch očí)."
             review_reason:
               label: "Dôvod rozhodnutia"
               placeholder: "Uveďte dôvod tohto rozhodnutia (povinný, najviac 1000 znakov)."
@@ -181,6 +182,9 @@ sk:
               when: "Dátum"
           actions:
             redaction_confirmed: "Skrytie údajov potvrdené"
+            return_self: "Vrátené (vlastné posúdenie)"
+            approve_self: "Schválené (vlastné posúdenie)"
+            reject_self: "Zamietnuté (vlastné posúdenie)"
             amendment_publish: "Dodatok zverejnený"
             crz_import_create: "Importované z CRZ"
             crz_import_update: "Aktualizované z CRZ"

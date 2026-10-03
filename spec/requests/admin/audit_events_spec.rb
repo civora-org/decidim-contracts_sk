@@ -248,6 +248,22 @@ RSpec.describe "admin audit-trail viewer", type: :request do
       end
     end
 
+    it "renders the localized self-review labels for the _self actions (civora-org/civora-platform#123)" do
+      %w[approve_self return_self reject_self].each do |suffix|
+        create_event!(action: "contract.#{suffix}")
+      end
+
+      get "/admin/audit_events"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Approved (self-review)")
+        expect(response.body).to include("Returned (self-review)")
+        expect(response.body).to include("Rejected (self-review)")
+        expect(response.body).not_to include("Approve self")
+      end
+    end
+
     it "degrades an unknown action string to the humanized fallback without raising" do
       create_event!(action: "mystery_future_action")
 

@@ -448,6 +448,28 @@ module LocaleContract
   }.freeze
   # rubocop:enable Style/FormatStringToken
 
+  # The four-eyes labels per locale (civora-org/civora-platform#123): the
+  # self-review refusal flash and the audit-viewer labels of the
+  # contract.<event>_self actions.
+  FOUR_EYES_LABELS = {
+    en: {
+      "admin.contracts.transition.self_review" =>
+        "You submitted this contract for review, so another reviewer must return, approve or reject it " \
+        "(four-eyes rule).",
+      "admin.audit_events.actions.return_self" => "Returned (self-review)",
+      "admin.audit_events.actions.approve_self" => "Approved (self-review)",
+      "admin.audit_events.actions.reject_self" => "Rejected (self-review)"
+    },
+    sk: {
+      "admin.contracts.transition.self_review" =>
+        "Túto zmluvu ste odoslali na posúdenie vy, preto ju musí vrátiť, schváliť alebo zamietnuť iný " \
+        "posudzovateľ (pravidlo štyroch očí).",
+      "admin.audit_events.actions.return_self" => "Vrátené (vlastné posúdenie)",
+      "admin.audit_events.actions.approve_self" => "Schválené (vlastné posúdenie)",
+      "admin.audit_events.actions.reject_self" => "Zamietnuté (vlastné posúdenie)"
+    }
+  }.freeze
+
   # The admin form hints and the engine-shipped date format per locale
   # (civora-org/civora-platform#79, #81). The date format is a strftime
   # STRING resolved by the engine's format_date helper — never a named I18n
@@ -505,9 +527,12 @@ module LocaleContract
     "admin.amendments.update.error",
     "admin.amendments.update.success",
     "admin.audit_events.actions.amendment_publish",
+    "admin.audit_events.actions.approve_self",
     "admin.audit_events.actions.crz_import_create",
     "admin.audit_events.actions.crz_import_update",
     "admin.audit_events.actions.redaction_confirmed",
+    "admin.audit_events.actions.reject_self",
+    "admin.audit_events.actions.return_self",
     "admin.audit_events.amendment_target",
     "admin.audit_events.back_to_all",
     "admin.audit_events.deleted_target",
@@ -596,6 +621,7 @@ module LocaleContract
     "admin.contracts.transition.review_reason.placeholder",
     "admin.contracts.transition.review_reason_rejected",
     "admin.contracts.transition.review_reason_required",
+    "admin.contracts.transition.self_review",
     "admin.contracts.transition.submit",
     "admin.contracts.transition.success",
     "admin.contracts.update.error",
@@ -1006,6 +1032,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the admin reviewer-decision labels in both locales (civora-org/civora-platform#90)" do
       LocaleContract::ADMIN_REVIEW_DECISION_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the four-eyes labels in both locales (civora-org/civora-platform#123)" do
+      LocaleContract::FOUR_EYES_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

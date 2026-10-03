@@ -87,6 +87,7 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 | A5 | edit DEMO-2026-006 (published) | update refused — not editable |
 | A6 | `POST .../contracts/:id/submit` on DEMO-2026-001 | → `in_review`, audit event written |
 | A7 | `POST .../return`, `/approve`, `/reject` on DEMO-2026-002 | each → next state; try the same on a draft — refused |
+| A7b | four-eyes (#123): as `contracts-editor@example.org` (the submitter who ran A6 on DEMO-2026-001), open the index; then `POST .../approve` directly | no approve/return/reject controls on that row; the POST is denied with the permission flash; a **second** admin (`contracts-admin@example.org`) sees the controls and can approve (audit `contract.approve`) |
 | A8 | `POST .../publish` on DEMO-2026-004 (seeded stamped) | → `published`, `published_at` stamped; now visible in P1 |
 | A9 | `POST .../archive` on DEMO-2026-006 | → `archived`; still publicly visible |
 | A10 | repeat any transition POST twice | second one refused (state moved on) |
@@ -98,7 +99,7 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 
 > **Privacy-redaction gate walkthrough (ADR-007, on a fresh seed):** DEMO-2026-001
 > is the one record demonstrating the gate. (1) `POST .../submit`, then
-> `POST .../approve` (reviewer role) — the record is now approved but
+> `POST .../approve` (reviewer role, by a **second** admin — the submitter is refused by the four-eyes rule, A7b) — the record is now approved but
 > unstamped. (2) `POST .../publish` → **refused** with the dedicated
 > redaction-gate flash pointing at the edit page. (3) On the edit page the
 > "Privacy redaction" card offers the checklist + required checkbox — the

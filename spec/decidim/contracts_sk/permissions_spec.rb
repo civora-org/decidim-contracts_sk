@@ -40,6 +40,20 @@ end
 # holder exercised via context[:contract].
 SpecContract = Struct.new(:state)
 
+# Four-eyes stand-ins (civora-org/civora-platform#123): a user carrying an id
+# (the rule compares it with the record's submitter stamp) and a contract
+# carrying that stamp. Both stay duck-typed, DB-free.
+FourEyesUser = Struct.new(:id, :admin, :admin_terms_accepted, keyword_init: true) do
+  def admin?
+    admin
+  end
+
+  def admin_terms_accepted?
+    admin_terms_accepted
+  end
+end
+FourEyesContract = Struct.new(:state, :decidim_submitted_by_id)
+
 # Minimal stand-in for the Amendment model (#65): a duck-typed state
 # holder exercised via context[:amendment].
 SpecAmendment = Struct.new(:state)
@@ -1133,6 +1147,71 @@ RSpec.describe Decidim::ContractsSk::Permissions do
       swap_resolver(->(_user, _context) { :editor }) do
         expect(action_for(org_admin, scope: :admin, action: :submit, state: :draft).allowed?).to be(true)
       end
+    end
+  end
+
+  describe "four-eyes rule (civora-org/civora-platform#123)" do
+    # Default resolver: an accepted org admin holds both engine roles, so
+    # only the per-person rule can deny.
+    def submitter
+      FourEyesUser.new(id: 7, admin: true, admin_terms_accepted: true)
+    end
+
+    def other_admin
+      FourEyesUser.new(id: 8, admin: true, admin_terms_accepted: true)
+    end
+
+    def in_review
+      FourEyesContract.new("in_review", 7)
+    end
+
+    after { Decidim::ContractsSk.allow_self_review = false }
+
+    %i[return approve reject].each do |event|
+      it "denies #{event} to the recorded submitter" do
+        expect(action_for(submitter, scope: :admin, action: event, contract: in_review).allowed?).to be(false)
+      end
+
+      it "allows #{event} to another admin" do
+        expect(action_for(other_admin, scope: :admin, action: event, contract: in_review).allowed?).to be(true)
+      end
+
+      it "allows #{event} to the submitter once allow_self_review is enabled" do
+        Decidim::ContractsSk.allow_self_review = true
+
+        expect(action_for(submitter, scope: :admin, action: event, contract: in_review).allowed?).to be(true)
+      end
+    end
+
+    it "does not touch the non-judgment events for the submitter" do
+      expect(action_for(submitter, scope: :admin, action: :submit,
+                                   contract: FourEyesContract.new("draft", 7)).allowed?).to be(true)
+      expect(action_for(submitter, scope: :admin, action: :publish,
+                                   contract: FourEyesContract.new("approved", 7)).allowed?).to be(true)
+      expect(action_for(submitter, scope: :admin, action: :archive,
+                                   contract: FourEyesContract.new("published", 7)).allowed?).to be(true)
+    end
+
+    it "does not block a legacy record with no submitter stamp" do
+      expect(action_for(submitter, scope: :admin, action: :approve,
+                                   contract: FourEyesContract.new("in_review", nil)).allowed?).to be(true)
+    end
+
+    it "is unaffected when the context carries only :state (no record, no submitter)" do
+      expect(action_for(submitter, scope: :admin, action: :approve, state: :in_review).allowed?).to be(true)
+    end
+
+    it "is unaffected for a contract object that does not expose the stamp" do
+      expect(action_for(submitter, scope: :admin, action: :approve,
+                                   contract: SpecContract.new("in_review")).allowed?).to be(true)
+    end
+
+    it "still denies a roleless submitter regardless of the seam" do
+      Decidim::ContractsSk.allow_self_review = true
+
+      roleless = FourEyesUser.new(id: 7, admin: false, admin_terms_accepted: true)
+
+      expect(action_for(roleless, scope: :admin, action: :approve, contract: in_review).allowed?).to be(false)
     end
   end
 end

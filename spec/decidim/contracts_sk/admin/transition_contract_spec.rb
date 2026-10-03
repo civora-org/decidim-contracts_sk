@@ -522,5 +522,185 @@ RSpec.describe Decidim::ContractsSk::Admin::TransitionContract, :db do
       expect(contract.state).to eq("in_review")
     end
   end
+
+  describe "four-eyes (civora-org/civora-platform#123)" do
+    # The default resolver gives org admins both roles; model that here so
+    # only the per-person rule can refuse.
+    let(:resolver_roles) { %i[editor reviewer] }
+    let(:reviewer_user) { Decidim::User.create!(organization: organization) }
+    let(:third_user) { Decidim::User.create!(organization: organization) }
+    let(:in_review) do
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(state: "in_review", decidim_submitted_by_id: author.id)
+      )
+    end
+
+    def audit_actions
+      Decidim::ContractsSk::AuditEvent.order(:id).pluck(:action)
+    end
+
+    def reason_for(event)
+      %i[return reject].include?(event) ? "A reason." : nil
+    end
+
+    around do |example|
+      original = Decidim::ContractsSk.allow_self_review
+      example.run
+      Decidim::ContractsSk.allow_self_review = original
+    end
+
+    describe "the submit stamp" do
+      it "stamps the acting user as the submitter" do
+        described_class.call(contract, event: :submit, user: author)
+
+        expect(contract.reload.decidim_submitted_by_id).to eq(author.id)
+        expect(contract.submitted_by).to eq(author)
+      end
+
+      it "overwrites the stamp when someone else resubmits from returned" do
+        returned = Decidim::ContractsSk::Contract
+                   .create!(contract_attributes(state: "returned", decidim_submitted_by_id: author.id))
+
+        events = described_class.call(returned, event: :submit, user: reviewer_user)
+
+        expect(events).to have_key(:ok)
+        expect(returned.reload.decidim_submitted_by_id).to eq(reviewer_user.id)
+      end
+    end
+
+    describe "the submitter judging their own submission" do
+      %i[return approve reject].each do |event|
+        it "refuses #{event} with :self_review and writes nothing" do
+          expect do
+            events = described_class.call(in_review, event: event, user: author, reason: reason_for(event))
+
+            expect(events).to have_key(:invalid)
+            expect(events[:invalid]).to eq(described_class::SELF_REVIEW_REASON)
+            expect(events).not_to have_key(:ok)
+          end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+          in_review.reload
+          aggregate_failures do
+            expect(in_review.state).to eq("in_review")
+            expect(in_review.review_reason).to be_nil
+            expect(in_review.reviewed_at).to be_nil
+          end
+        end
+      end
+
+      it "refuses a String event the same way" do
+        events = described_class.call(in_review, event: "approve", user: author)
+
+        expect(events[:invalid]).to eq(described_class::SELF_REVIEW_REASON)
+      end
+
+      it "re-checks inside the lock: a stale copy loaded before the stamp is refused (no threads)" do
+        contract = Decidim::ContractsSk::Contract
+                   .create!(contract_attributes(state: "in_review", decidim_submitted_by_id: reviewer_user.id))
+        stale = Decidim::ContractsSk::Contract.find(contract.id)
+        expect(stale.decidim_submitted_by_id).to eq(reviewer_user.id)
+
+        # The row changes behind the stale copy: the acting user becomes the
+        # submitter (e.g. a resubmit that landed after request admission).
+        contract.update_column(:decidim_submitted_by_id, author.id)
+
+        expect do
+          events = described_class.call(stale, event: :approve, user: author)
+
+          expect(events[:invalid]).to eq(described_class::SELF_REVIEW_REASON)
+        end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
+
+        expect(contract.reload.state).to eq("in_review")
+      end
+    end
+
+    describe "a stale judgment against a record that left review" do
+      it "gets the generic :invalid refusal, not :self_review" do
+        approved = Decidim::ContractsSk::Contract
+                   .create!(contract_attributes(state: "in_review", decidim_submitted_by_id: author.id))
+        stale = Decidim::ContractsSk::Contract.find(approved.id)
+        approved.update!(state: "approved")
+
+        events = described_class.call(stale, event: :reject, user: author, reason: "Late.")
+
+        expect(events).to have_key(:invalid)
+        expect(events[:invalid]).not_to eq(described_class::SELF_REVIEW_REASON)
+        expect(approved.reload.state).to eq("approved")
+      end
+    end
+
+    describe "another reviewer" do
+      it "may approve, with the plain contract.approve audit action" do
+        events = described_class.call(in_review, event: :approve, user: reviewer_user)
+
+        expect(events).to have_key(:ok)
+        expect(in_review.reload.state).to eq("approved")
+        expect(audit_actions).to eq(["contract.approve"])
+      end
+
+      it "may return and reject with a reason" do
+        returned = described_class.call(in_review, event: :return, user: reviewer_user, reason: "Fix it.")
+        expect(returned).to have_key(:ok)
+
+        other = Decidim::ContractsSk::Contract
+                .create!(contract_attributes(reference: "ZP-2026-002", state: "in_review",
+                                             decidim_submitted_by_id: author.id))
+        rejected = described_class.call(other, event: :reject, user: reviewer_user, reason: "No.")
+        expect(rejected).to have_key(:ok)
+      end
+    end
+
+    describe "resubmission by someone else" do
+      it "changes who is blocked: A submits, B returns, C resubmits, then A may approve and C may not" do
+        expect(described_class.call(contract, event: :submit, user: author)).to have_key(:ok)
+        expect(described_class.call(contract, event: :return, user: reviewer_user, reason: "Redo."))
+          .to have_key(:ok)
+        expect(described_class.call(contract, event: :submit, user: third_user)).to have_key(:ok)
+
+        expect(described_class.call(contract, event: :approve, user: third_user)[:invalid])
+          .to eq(described_class::SELF_REVIEW_REASON)
+        expect(described_class.call(contract, event: :approve, user: author)).to have_key(:ok)
+        expect(contract.reload.state).to eq("approved")
+      end
+    end
+
+    describe "legacy records" do
+      it "does not block a record with no submitter stamp" do
+        legacy = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review"))
+
+        events = described_class.call(legacy, event: :approve, user: author)
+
+        expect(events).to have_key(:ok)
+        expect(audit_actions).to eq(["contract.approve"])
+      end
+    end
+
+    describe "with allow_self_review enabled" do
+      before { Decidim::ContractsSk.allow_self_review = true }
+
+      %i[return approve reject].each do |event|
+        it "lets the submitter #{event} and audits it as contract.#{event}_self" do
+          events = described_class.call(in_review, event: event, user: author, reason: reason_for(event))
+
+          expect(events).to have_key(:ok)
+          expect(in_review.reload.state).not_to eq("in_review")
+          expect(audit_actions).to eq(["contract.#{event}_self"])
+        end
+      end
+
+      it "keeps the plain contract.approve action for a non-submitter" do
+        events = described_class.call(in_review, event: :approve, user: reviewer_user)
+
+        expect(events).to have_key(:ok)
+        expect(audit_actions).to eq(["contract.approve"])
+      end
+
+      it "audits the submit itself as plain contract.submit" do
+        described_class.call(contract, event: :submit, user: author)
+
+        expect(audit_actions).to eq(["contract.submit"])
+      end
+    end
+  end
 end
 # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength

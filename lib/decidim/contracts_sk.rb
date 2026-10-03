@@ -15,6 +15,7 @@ end
 
 require_relative "contracts_sk/contract_lifecycle"
 require_relative "contracts_sk/role_resolver"
+require_relative "contracts_sk/self_review"
 require_relative "contracts_sk/stale_after"
 require_relative "contracts_sk/link_targets"
 require_relative "contracts_sk/crz_scope"

@@ -69,10 +69,31 @@ module Decidim
       # the missing-decision-reason refusal carries REASON_REQUIRED and the
       # refused-reason refusal (over-cap, or a reason on an event that
       # takes none) carries REASON_REJECTED (#90).
+      #
+      # The four-eyes rule (civora-org/civora-platform#123): every submit
+      # stamps the acting user as the record's submitter
+      # (decidim_submitted_by_id, inside the lock, in the same UPDATE as the
+      # state — a resubmit by someone else overwrites it), and the judgment
+      # events (return, approve, reject) are refused to that person with
+      # SELF_REVIEW_REASON. The Permissions layer denies the same act at
+      # request admission (buttons hidden); this check is the defense in
+      # depth, evaluated INSIDE the lock against the reloaded row — so a
+      # stale-object race (a resubmit landing between admission and lock)
+      # and other callers get the same dedicated refusal, with no state,
+      # decision-text or audit write. The single predicate lives in
+      # Decidim::ContractsSk.self_review_blocked? (lib/.../self_review.rb).
+      # When the host opts out (allow_self_review = true), a self review
+      # proceeds but is audited as "contract.<event>_self", so the trail
+      # still shows it.
       class TransitionContract < Decidim::Command
         # The payload the redaction-gate refusal adds to its :invalid
         # broadcast (see the class comment).
         REDACTION_GATE_REASON = :redaction_gate
+
+        # The payload the four-eyes refusal adds to its :invalid broadcast
+        # (civora-org/civora-platform#123): the submitter tried to return,
+        # approve or reject their own submission.
+        SELF_REVIEW_REASON = :self_review
 
         # The payloads the reviewer-decision-reason refusals add to their
         # :invalid broadcasts (civora-org/civora-platform#90): a return/
@@ -121,6 +142,7 @@ module Decidim
         def perform_transition
           contract.with_lock do
             return broadcast(:invalid, REDACTION_GATE_REASON) unless redaction_gate_open?
+            return broadcast(:invalid, SELF_REVIEW_REASON) if self_review_blocked?
 
             apply_event_writes!
             contract.transition_state!(event: event, role: role)
@@ -139,6 +161,7 @@ module Decidim
         # the state write, so the state's update! persists every attribute
         # in one UPDATE.
         def apply_event_writes!
+          stamp_submitter! if submit_event?
           clear_review_decision! if submit_event?
           stamp_review_decision! if reason_event?
           stamp_published_at!
@@ -178,6 +201,31 @@ module Decidim
 
         def submit_event?
           event.to_s == "submit"
+        end
+
+        # The four-eyes stamp (civora-org/civora-platform#123): the acting
+        # user becomes the record's submitter on EVERY submit edge (first
+        # submit and resubmit from returned alike), assigned inside the lock
+        # BEFORE the state write so the state's update! persists it in the
+        # same UPDATE — the stamp and the state commit (or roll back)
+        # together.
+        def stamp_submitter!
+          contract.decidim_submitted_by_id = user.id
+        end
+
+        # The four-eyes refusal (civora-org/civora-platform#123), evaluated
+        # INSIDE the lock on the reloaded row: true when the acting user is
+        # the record's recorded submitter, the event is a judgment event and
+        # the host has not enabled allow_self_review. Reads the in-database
+        # stamp, never the request-start copy.
+        #
+        # Gated on the reloaded state actually being in_review: a stale
+        # judgment against a record that already left review is not a
+        # self-review problem and falls through to the generic invalid
+        # refusal (the lifecycle guard in transition_state!).
+        def self_review_blocked?
+          contract.state.to_s == "in_review" &&
+            Decidim::ContractsSk.self_review_blocked?(contract, user, event)
         end
 
         # The resubmit's clearing act (civora-org/civora-platform#90): the
@@ -227,8 +275,18 @@ module Decidim
         # The D4-payload audit row: written inside the caller's transaction,
         # so its failure rolls the state change back with it.
         def record_audit!
-          AuditEvent.create!(action: "contract.#{event}", target: contract,
+          AuditEvent.create!(action: audit_action, target: contract,
                              organization: contract.organization, actor: user)
+        end
+
+        # "contract.<event>", or "contract.<event>_self" when the submitter
+        # judged their own record (only reachable with allow_self_review
+        # enabled, civora-org/civora-platform#123) — the trail keeps the
+        # self review visible. Evaluated against the in-lock row, before
+        # any later resubmit could change the stamp.
+        def audit_action
+          suffix = Decidim::ContractsSk.self_review?(contract, user, event) ? "_self" : ""
+          "contract.#{event}#{suffix}"
         end
 
         # The single engine role that may fire this event from the record's

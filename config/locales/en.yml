@@ -131,6 +131,7 @@ en:
             redaction_required: "Publishing requires the privacy-redaction confirmation first — confirm it from the contract's edit page."
             review_reason_required: "A reason is required to return or reject a contract."
             review_reason_rejected: "The submitted reason was not accepted — return/reject decisions require one (up to 1000 characters), and no other transition takes a reason."
+            self_review: "You submitted this contract for review, so another reviewer must return, approve or reject it (four-eyes rule)."
             review_reason:
               label: "Decision reason"
               placeholder: "State the reason for this decision (required, up to 1000 characters)."
@@ -181,6 +182,9 @@ en:
               when: "Date"
           actions:
             redaction_confirmed: "Redaction confirmed"
+            return_self: "Returned (self-review)"
+            approve_self: "Approved (self-review)"
+            reject_self: "Rejected (self-review)"
             amendment_publish: "Amendment published"
             crz_import_create: "Imported from CRZ"
             crz_import_update: "Updated from CRZ"
