@@ -18,6 +18,7 @@
 require "spec_helper"
 
 require "i18n"
+require "rails_i18n/common_pluralizations/west_slavic"
 require "yaml"
 
 # Shared vocabulary and introspection for the example groups below. Kept in a
@@ -501,7 +502,8 @@ module LocaleContract
   # civora-org/civora-platform#74), the amendment/version-history keys
   # (M02-05-B, civora-org/civora-platform#65), the lifecycle
   # transition-event keys (M02-06-A, civora-org/civora-platform#66) and the
-  # link-management keys (M01-87, civora-org/civora-platform#87). Sorted
+  # link-management keys (M01-87, civora-org/civora-platform#87) and the CRZ
+  # deadline-tracking keys (civora-org/civora-platform#124). Sorted
   # alphabetically.
   EXPECTED_KEYS = [
     "admin.amendments.back_to_contract",
@@ -558,6 +560,17 @@ module LocaleContract
     "admin.contracts.confirm_redaction.title",
     "admin.contracts.create.error",
     "admin.contracts.create.success",
+    "admin.contracts.deadline.badge.overdue",
+    "admin.contracts.deadline.badge.today",
+    "admin.contracts.deadline.badge.unknown",
+    "admin.contracts.deadline.days.few",
+    "admin.contracts.deadline.days.one",
+    "admin.contracts.deadline.days.other",
+    "admin.contracts.deadline.header.overdue",
+    "admin.contracts.deadline.header.today",
+    "admin.contracts.deadline.header.unknown",
+    "admin.contracts.deadline.header.upcoming",
+    "admin.contracts.deadline.hint",
     "admin.contracts.edit.title",
     "admin.contracts.form.amount",
     "admin.contracts.form.amount_hint",
@@ -587,8 +600,14 @@ module LocaleContract
     "admin.contracts.import_crz.unchanged",
     "admin.contracts.import_crz.updated",
     "admin.contracts.index.counters.all",
+    "admin.contracts.index.counters.crz_due_soon",
+    "admin.contracts.index.counters.crz_overdue",
     "admin.contracts.index.empty",
     "admin.contracts.index.filters.clear",
+    "admin.contracts.index.filters.deadline",
+    "admin.contracts.index.filters.deadlines.any",
+    "admin.contracts.index.filters.deadlines.due_soon",
+    "admin.contracts.index.filters.deadlines.overdue",
     "admin.contracts.index.filters.q",
     "admin.contracts.index.filters.source",
     "admin.contracts.index.filters.sources.all",
@@ -597,6 +616,7 @@ module LocaleContract
     "admin.contracts.index.filters.state",
     "admin.contracts.index.filters.states.any",
     "admin.contracts.index.filters.submit",
+    "admin.contracts.index.headers.crz_deadline",
     "admin.contracts.index.no_matches.body",
     "admin.contracts.index.no_matches.clear",
     "admin.contracts.index.no_matches.heading",
@@ -830,6 +850,40 @@ module PublicCatalogueLabels
   }.freeze
 end
 
+# The CRZ deadline-tracking vocabulary (civora-org/civora-platform#124),
+# kept in its own module like the public catalogue's. The days keys are
+# plurals (one/few/other): Slovak 2-4 take "dni" ("3 dni"), 5+ and 0 take
+# "dní"; English carries few == other for key parity.
+module CrzDeadlineLabels
+  # rubocop:disable Style/FormatStringToken
+  LABELS = {
+    en: {
+      "admin.contracts.deadline.badge.overdue" => "Overdue",
+      "admin.contracts.deadline.badge.today" => "Due today",
+      "admin.contracts.deadline.header.unknown" => "CRZ filing deadline unknown — add signing date",
+      "admin.contracts.deadline.header.upcoming" => "CRZ filing deadline: %{date} (%{left} left)",
+      "admin.contracts.index.headers.crz_deadline" => "CRZ deadline"
+    },
+    sk: {
+      "admin.contracts.deadline.badge.overdue" => "Po termíne",
+      "admin.contracts.deadline.badge.today" => "Dnes",
+      "admin.contracts.deadline.header.unknown" =>
+        "Lehota na zverejnenie v CRZ je neznáma — doplňte dátum podpisu",
+      "admin.contracts.deadline.header.upcoming" =>
+        "Lehota na zverejnenie v CRZ: %{date} (zostáva: %{left})",
+      "admin.contracts.index.headers.crz_deadline" => "Lehota CRZ"
+    }
+  }.freeze
+  # rubocop:enable Style/FormatStringToken
+
+  # count => expected text, resolved through the Pluralization backend with
+  # the rails-i18n West Slavic (cs/sk) rule.
+  PLURALS = {
+    en: { 1 => "1 day", 2 => "2 days", 7 => "7 days" },
+    sk: { 1 => "1 deň", 2 => "2 dni", 3 => "3 dni", 4 => "4 dni", 5 => "5 dní", 7 => "7 dní", 21 => "21 dní" }
+  }.freeze
+end
+
 RSpec.describe Decidim::ContractsSk do
   include LocaleContract
 
@@ -1045,6 +1099,37 @@ RSpec.describe Decidim::ContractsSk do
         end
       end
     end
+
+    it "translates the CRZ deadline labels in both locales (civora-org/civora-platform#124)" do
+      CrzDeadlineLabels::LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    # rubocop:disable RSpec/ExampleLength
+    it "resolves the deadline day plurals with the Slovak one/few/other rule (civora-org/civora-platform#124)" do
+      plural_backend = Class.new(I18n::Backend::Simple) { include I18n::Backend::Pluralization }.new
+      plural_backend.load_translations(*LocaleContract::LOCALES.map { |locale| locale_file(locale) })
+      plural_backend.store_translations(:sk, RailsI18n::Pluralization::WestSlavic.with_locale(:sk)[:sk])
+
+      # The Pluralization module resolves the rule through the GLOBAL
+      # I18n lookup, so the backend is swapped in for the example only.
+      original_backend = I18n.backend
+      I18n.backend = plural_backend
+      begin
+        CrzDeadlineLabels::PLURALS.each do |locale, expectations|
+          expectations.each do |count, text|
+            expect(I18n.t("decidim.contracts_sk.admin.contracts.deadline.days", locale: locale, count: count))
+              .to eq(text)
+          end
+        end
+      ensure
+        I18n.backend = original_backend
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
 
     it "translates the navigation menu labels in both locales (civora-org/civora-platform#86c)" do
       LocaleContract::MENU_LABELS.each do |locale, labels|

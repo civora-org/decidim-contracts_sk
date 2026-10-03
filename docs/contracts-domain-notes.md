@@ -358,6 +358,19 @@ the current version):
   or `contract.reject_self`; every other row keeps the plain
   `contract.<event>` vocabulary and shape.
 
+## CRZ publication deadline landed in #124
+
+- The § 47a OZ deadline is **computed, not stored**: `signed_on` +
+  `Decidim::ContractsSk.crz_deadline` (default `3.months`). No column, no
+  migration; the `Contract` scopes (`crz_deadline_tracked`, `crz_overdue`,
+  `crz_due_soon`) compare `signed_on` against Ruby-computed thresholds because
+  SQL date arithmetic is not portable (month-end clamping).
+- "Filed in CRZ" is a **proxy**: `crz_url` present (NOT NULL and not `''`) —
+  consistent with ADR-002's manual handoff. Real filing confirmation is #125.
+  Only editorial records (`source != "crz"`) in non-terminal states are tracked.
+- Details, caveats and non-goals in
+  [contract-lifecycle.md](contract-lifecycle.md#crz-publication-deadline-124).
+
 ## Known gaps / drift (flagged, unowned)
 
 - ~~The data dictionary does not exist anywhere yet~~ — **resolved 2026-09-03

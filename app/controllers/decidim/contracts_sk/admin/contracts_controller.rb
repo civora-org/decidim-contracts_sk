@@ -26,6 +26,8 @@ module Decidim
       # shipped with decidim-core) over a filtered scope: state, source and
       # free-text q are GET params validated against the real vocabularies,
       # and an unknown value falls back to the default instead of erroring.
+      # The deadline filter (civora-org/civora-platform#124) narrows to the
+      # tracked records due within 14 days or overdue for filing in CRZ.
       #
       # Cop note: the class stays deliberately cohesive — the six transition
       # shells exist so the derived routes map onto readable actions, and
@@ -44,7 +46,10 @@ module Decidim
         helper_method :transition_events_for, :index_filters,
                       :index_state_options, :index_source_options, :reason_event?,
                       :index_state_counts, :index_total_count, :index_filters_active?,
-                      :index_counter_label, :index_counter_path, :index_counter_classes
+                      :index_counter_label, :index_counter_path, :index_counter_classes,
+                      :index_deadline_options, :index_deadline_counts,
+                      :index_deadline_counter_label, :index_deadline_counter_path,
+                      :index_deadline_counter_classes, :index_today
 
         # Case-insensitive free-text match for the index :q filter over the
         # two editorial identity fields; :pattern is always pre-escaped with
@@ -61,7 +66,12 @@ module Decidim
         # state is a lifecycle state symbol or nil ("any state"), source is
         # :crz / :editorial or nil ("all sources"), q is the stripped search
         # term. Carries request-derived values only — never persisted.
-        IndexFilters = Struct.new(:state, :source, :q, keyword_init: true)
+        # deadline (civora-org/civora-platform#124) is :due_soon / :overdue
+        # or nil ("any deadline").
+        IndexFilters = Struct.new(:state, :source, :q, :deadline, keyword_init: true)
+
+        # The deadline filter vocabulary (civora-org/civora-platform#124).
+        DEADLINE_FILTERS = %i[due_soon overdue].freeze
 
         def index
           enforce_permission_to :read, :contract
@@ -265,6 +275,11 @@ module Decidim
         end
 
         def update_failed
+          # A RecordInvalid leaves the submitted values assigned on the
+          # in-memory record; the edit header's CRZ deadline line
+          # (civora-org/civora-platform#124) must read the PERSISTED values,
+          # so drop the unsaved changes (the form re-renders from @form).
+          @contract.restore_attributes
           flash.now[:alert] = t("decidim.contracts_sk.admin.contracts.update.error")
           render :edit, status: :unprocessable_entity
         end
@@ -433,7 +448,25 @@ module Decidim
         # never to a 500.
         def filtered_contracts
           scope = contracts_scope.order(INDEX_ORDER)
-          apply_q_filter(apply_source_filter(apply_state_filter(scope)))
+          apply_deadline_filter(apply_q_filter(apply_source_filter(apply_state_filter(scope))))
+        end
+
+        # CRZ deadline filter (civora-org/civora-platform#124): composes on
+        # the tenant scope like the others; the model scopes compare
+        # signed_on against Ruby-computed thresholds (D1), so the date
+        # arithmetic is exact on every database.
+        def apply_deadline_filter(scope)
+          case index_filters.deadline
+          when :due_soon then scope.crz_due_soon(index_today)
+          when :overdue then scope.crz_overdue(index_today)
+          else scope
+          end
+        end
+
+        # "Today" for every deadline computation of one request, in the
+        # application time zone (Decidim's admin applies the organization's).
+        def index_today
+          @index_today ||= Date.current
         end
 
         def apply_state_filter(scope)
@@ -462,8 +495,14 @@ module Decidim
           IndexFilters.new(
             state: index_state_param,
             source: index_source_param,
-            q: params[:q].to_s.strip
+            q: params[:q].to_s.strip,
+            deadline: index_deadline_param
           )
+        end
+
+        def index_deadline_param
+          candidate = params[:deadline].to_s.presence&.to_sym
+          candidate if DEADLINE_FILTERS.include?(candidate)
         end
 
         def index_state_param
@@ -491,6 +530,14 @@ module Decidim
           [[t("decidim.contracts_sk.admin.contracts.index.filters.states.any"), ""]] +
             ContractLifecycle::STATES.map do |state|
               [t(state, scope: "decidim.contracts_sk.contract_states"), state]
+            end
+        end
+
+        def index_deadline_options
+          [[t("decidim.contracts_sk.admin.contracts.index.filters.deadlines.any"), ""]] +
+            DEADLINE_FILTERS.map do |deadline|
+              [t("decidim.contracts_sk.admin.contracts.index.filters.deadlines.#{deadline}",
+                 days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS), deadline]
             end
         end
 
@@ -525,7 +572,42 @@ module Decidim
         # the filtered wording over the true-empty one.
         def index_filters_active?
           index_filters.state.present? || index_filters.source.present? ||
-            index_filters.q.present?
+            index_filters.q.present? || index_filters.deadline.present?
+        end
+
+        # CRZ deadline counters (civora-org/civora-platform#124): due-soon
+        # and overdue counts over the UNFILTERED tenant scope, like the state
+        # chips — navigation, not a readout of the active view. Two COUNT
+        # queries, memoized per request.
+        def index_deadline_counts
+          @index_deadline_counts ||= {
+            due_soon: contracts_scope.crz_due_soon(index_today).count,
+            overdue: contracts_scope.crz_overdue(index_today).count
+          }
+        end
+
+        def index_deadline_counter_label(deadline)
+          label = t("decidim.contracts_sk.admin.contracts.index.counters.crz_#{deadline}",
+                    days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS)
+          "#{label} (#{index_deadline_counts.fetch(deadline)})"
+        end
+
+        # Chip target: deadline=<value> plus the other ACTIVE normalized
+        # filters (state/source/q).
+        def index_deadline_counter_path(deadline)
+          admin_contracts_path(index_filter_params.merge(deadline: deadline))
+        end
+
+        def index_deadline_counter_classes(deadline)
+          classes = %w[button button__sm button__secondary contracts-sk__counter]
+          classes << "contracts-sk__counter--active" if index_filters.deadline == deadline
+          classes.join(" ")
+        end
+
+        # The normalized, ACTIVE filters as link params (never raw params).
+        def index_filter_params
+          { state: index_filters.state, source: index_filters.source,
+            q: index_filters.q.presence, deadline: index_filters.deadline }.compact
         end
 
         # Chip label: the localized state label (the shared contract_states.*
@@ -547,10 +629,8 @@ module Decidim
         # garbage value cannot ride along (the same allowlist discipline as
         # the pagination partial's filter_keys).
         def index_counter_path(state)
-          counter_params = {}
+          counter_params = index_filter_params.except(:state)
           counter_params[:state] = state if state
-          counter_params[:source] = index_filters.source if index_filters.source
-          counter_params[:q] = index_filters.q if index_filters.q.present?
           admin_contracts_path(counter_params)
         end
 

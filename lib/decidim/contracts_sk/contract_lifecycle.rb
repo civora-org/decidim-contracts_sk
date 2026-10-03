@@ -40,6 +40,15 @@ module Decidim
       # clears the stale decision on resubmit.
       DECISION_STATES = %i[returned rejected].freeze
       PUBLIC_STATES = %i[published archived].freeze
+      # States whose editorial records still owe a CRZ filing and are
+      # therefore tracked against the § 47a OZ publication deadline
+      # (civora-org/civora-platform#124): every non-terminal state, i.e.
+      # STATES - TERMINAL_STATES (draft, in_review, returned, approved,
+      # published). A rejected record is abandoned and an archived one is
+      # closed, so neither can still be late; a signed draft IS tracked —
+      # the clock runs from the signature, not from our workflow. The
+      # single source for the Contract scopes and the pure deadline module.
+      DEADLINE_TRACKED_STATES = (STATES - TERMINAL_STATES).freeze
       ROLES = %i[editor reviewer].freeze
 
       TRANSITIONS = {

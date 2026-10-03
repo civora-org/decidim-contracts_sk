@@ -4,6 +4,15 @@
   </h1>
 </div>
 
+<%# CRZ publication deadline line (§ 47a OZ, civora-org/civora-platform#124):
+    read from the PERSISTED record — a failed update re-renders this page
+    with the submitted form values, which must never move the deadline.
+    Empty for filed, mirror and terminal records. Aid only, not legal advice. %>
+<% deadline_line = crz_deadline_line(@contract) %>
+<% if deadline_line %>
+  <p><strong><%= deadline_line %></strong><br><em><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></em></p>
+<% end %>
+
 <p><%= link_to t("decidim.contracts_sk.admin.parties.index.title"), admin_contract_parties_path(@contract) %></p>
 
 <p><%= link_to t("decidim.contracts_sk.admin.amendments.index.title"), admin_contract_amendments_path(@contract) %></p>

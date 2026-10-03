@@ -153,6 +153,67 @@ module Decidim
       # deprecated and removed in Rails 8). The getter returns Strings, which
       # ContractState and the permissions layer normalize via #to_sym.
       enum :state, STATE_VALUES, default: "draft"
+
+      # CRZ publication deadline tracking (§ 47a OZ, civora-org/civora-platform
+      # #124). The deadline is computed from signed_on and the config seam
+      # Decidim::ContractsSk.crz_deadline — never stored — and the arithmetic
+      # lives in CrzDeadline; the scopes below only compare signed_on against
+      # dates that module computes (SQL date arithmetic is not portable), so
+      # the instance helpers and the scopes agree by construction.
+      #
+      # Tracked = an editorial record (source != the CRZ mirror's), in a
+      # DEADLINE_TRACKED_STATES state, with crz_url NULL or '' — "not
+      # recorded as filed in CRZ", the interim filed proxy until real filing
+      # confirmation lands (civora-org/civora-platform#125). Records with an
+      # unknown signed_on ARE tracked here (the edit page and the row badge
+      # flag them) but belong to neither the overdue nor the due-soon scope.
+      scope :crz_deadline_tracked, lambda {
+        where.not(source: CrzImport::Mapper::SOURCE)
+             .where(state: ContractLifecycle::DEADLINE_TRACKED_STATES.map(&:to_s))
+             .where(crz_url: [nil, ""])
+      }
+
+      # Tracked records whose deadline lies before +today+:
+      # deadline < today <=> signed_on < threshold(today).
+      scope :crz_overdue, lambda { |today = Date.current|
+        crz_deadline_tracked.where(signed_on: ...CrzDeadline.threshold(today))
+      }
+
+      # Tracked records with 0..DUE_SOON_DAYS days left (inclusive):
+      # deadline in [today, today + 14] <=> signed_on in
+      # [threshold(today), threshold(today + 15)).
+      scope :crz_due_soon, lambda { |today = Date.current|
+        crz_deadline_tracked.where(
+          signed_on: CrzDeadline.threshold(today)...CrzDeadline.threshold(today + (CrzDeadline::DUE_SOON_DAYS + 1))
+        )
+      }
+
+      # The record's computed CRZ deadline; nil when signed_on is unknown.
+      def crz_deadline
+        CrzDeadline.deadline_for(signed_on)
+      end
+
+      # Whole days until the deadline (0 = today, negative = overdue); nil
+      # when signed_on is unknown.
+      def crz_days_left(today: Date.current)
+        CrzDeadline.days_left(signed_on, today: today)
+      end
+
+      # Whether this record is subject to deadline tracking (the instance
+      # twin of the crz_deadline_tracked scope).
+      def crz_deadline_tracked?
+        CrzDeadline.tracked?(source: source, state: state, crz_url: crz_url)
+      end
+
+      # :untracked (filed, mirror or terminal), :unknown (tracked, no
+      # signing date), :overdue, :due_soon or :ok — consistent with scope
+      # membership: :overdue/:due_soon exactly when the record is in the
+      # crz_overdue/crz_due_soon scope for the same +today+.
+      def crz_deadline_status(today: Date.current)
+        return :untracked unless crz_deadline_tracked?
+
+        CrzDeadline.status(signed_on, today: today)
+      end
     end
   end
 end

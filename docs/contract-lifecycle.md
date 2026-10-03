@@ -85,6 +85,53 @@ Role→user mapping and permission checks (M02-01-B): [roles-and-permissions.md]
   `decidim.contracts_sk.contract_states.*` / `decidim.contracts_sk.contract_events.*`
   (M02-06-A, #66).
 
+## CRZ publication deadline (#124)
+
+A contract that must be published in the CRZ and is not published within
+three months of its conclusion is deemed never concluded (§ 47a of Act No.
+211/2000 Coll., OZ). The engine shows the days left for every editorial
+record that is not yet recorded as filed in CRZ, so an overdue or at-risk
+contract cannot be missed.
+
+- **Rule.** Deadline = `signed_on` + `Decidim::ContractsSk.crz_deadline`
+  (default `3.months`, a config-time `ActiveSupport::Duration`, see the README).
+  The deadline is **computed, never stored** — there is no column, so changing
+  the signing date or the setting is always consistent. "Conclusion" is read as
+  the date of the **last signature**, which is what `signed_on` records.
+- **Tracked records.** Editorial records (`source != "crz"` — a CRZ mirror is
+  filed by definition) in a non-terminal state, i.e.
+  `ContractLifecycle::DEADLINE_TRACKED_STATES` = `STATES - TERMINAL_STATES`
+  (`draft`, `in_review`, `returned`, `approved`, `published`). A signed draft
+  is tracked: the clock runs from the signature, not from our workflow.
+  `rejected` and `archived` are never tracked.
+- **"Filed" is a proxy.** A record counts as recorded as filed when `crz_url`
+  is present (NOT NULL and not `''`). Until real filing confirmation lands
+  (civora-org/civora-platform#125) the UI says "not recorded as filed in CRZ",
+  never "not published". Caveat: `crz_url` is only writable in the editable
+  states (`draft`, `returned`), so a record that has moved past `returned`
+  without a CRZ link cannot clear the flag until #125 ships.
+- **Where it shows.** Admin index: a badge per tracked row (alert "po termíne"
+  when overdue, warning for 0–14 days left, plain beyond; muted dash when
+  `signed_on` is unknown), the `deadline=due_soon|overdue` filter and two
+  counters next to the state chips (counted over the unfiltered tenant scope).
+  Edit page: a deadline line under the header, read from the persisted record;
+  a tracked record without `signed_on` shows "deadline unknown — add signing
+  date".
+- **Month-end semantics.** A period counted in months that lands on a missing
+  day ends on the month's last day (§ 122(2) Civil Code), which is exactly Ruby's
+  `Date + 3.months`: 2026-11-30 → 2027-02-28, 2027-11-30 → 2028-02-29. SQL date
+  arithmetic is not portable (SQLite `date('2026-11-30','+3 months')` is
+  2027-03-02), so the scopes only compare `signed_on` against dates computed in
+  Ruby (`CrzDeadline.threshold`, the smallest signing date whose deadline is on
+  or after a given day) — pinned against a brute-force classification in the
+  specs.
+- **Not modeled.** The § 122(3) shift of a deadline falling on a weekend or
+  public holiday to the next working day. The displayed deadline is the
+  conservative (earlier) one. The feature is an aid for editors, **not legal
+  advice**.
+- **Follow-ups.** Notifications on approaching deadlines: civora-org/civora-platform#94.
+  Real filing confirmation replacing the `crz_url` proxy: #125.
+
 ## Public API
 
 ```ruby
@@ -94,6 +141,7 @@ Decidim::ContractsSk::ContractLifecycle::TERMINAL_STATES   # [:rejected, :archiv
 Decidim::ContractsSk::ContractLifecycle::EDITABLE_STATES   # [:draft, :returned]
 Decidim::ContractsSk::ContractLifecycle::CONFIRMABLE_STATES # [:draft, :returned, :approved] — ADR-007 confirmation window
 Decidim::ContractsSk::ContractLifecycle::PUBLIC_STATES     # [:published, :archived]
+Decidim::ContractsSk::ContractLifecycle::DEADLINE_TRACKED_STATES # [:draft, :in_review, :returned, :approved, :published] — CRZ deadline tracking (#124)
 Decidim::ContractsSk::ContractLifecycle::ROLES             # [:editor, :reviewer]
 Decidim::ContractsSk::ContractLifecycle::TRANSITIONS       # nested frozen hash
 

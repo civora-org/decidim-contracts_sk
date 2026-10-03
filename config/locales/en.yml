@@ -77,6 +77,8 @@ en:
             empty: "No contracts have been created yet."
             counters:
               all: "All"
+              crz_due_soon: "CRZ due within %{days} days"
+              crz_overdue: "CRZ overdue"
             filters:
               state: "State"
               source: "Source"
@@ -89,10 +91,32 @@ en:
                 all: "All sources"
                 crz: "CRZ import"
                 editorial: "Editorial"
+              deadline: "CRZ deadline (not recorded as filed)"
+              deadlines:
+                any: "Any deadline"
+                due_soon: "Due within %{days} days"
+                overdue: "Overdue"
+            headers:
+              crz_deadline: "CRZ deadline"
             no_matches:
               heading: "No contracts match the current filters."
               body: "Adjust or clear the filters and try again."
               clear: "Clear filters and show all contracts"
+          deadline:
+            hint: "Shown while the contract is not recorded as filed in CRZ (CRZ URL empty). An aid based on the signing date, not legal advice."
+            badge:
+              overdue: "Overdue"
+              today: "Due today"
+              unknown: "Deadline unknown — add signing date"
+            days:
+              one: "1 day"
+              few: "%{count} days"
+              other: "%{count} days"
+            header:
+              upcoming: "CRZ filing deadline: %{date} (%{left} left)"
+              today: "CRZ filing deadline: %{date} (due today)"
+              overdue: "CRZ filing deadline passed on %{date} (%{days} overdue)"
+              unknown: "CRZ filing deadline unknown — add signing date"
           new:
             title: "New contract"
           edit:
