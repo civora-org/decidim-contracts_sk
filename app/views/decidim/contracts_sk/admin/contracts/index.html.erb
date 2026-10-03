@@ -21,8 +21,8 @@
   </div>
 
   <%# CRZ publication deadline counters (§ 47a OZ, civora-org/
-      civora-platform#124): editorial records NOT RECORDED AS FILED in CRZ
-      (crz_url empty) that are overdue or due within 14 days. Like the state
+      civora-platform#124): editorial records NOT CONFIRMED AS FILED in CRZ
+      (crz_filed_at empty, #125) that are overdue or due within 14 days. Like the state
       chips they count the UNFILTERED tenant scope and link to the deadline=
       filter while preserving the other normalized filters. Aid only, not
       legal advice (see the hint). %>
@@ -140,6 +140,15 @@
                     confirmation line lives on the edit page). %>
                 <% if allowed_to?(:confirm_redaction, :contract, contract: contract) && contract.redaction_confirmed_at.blank? %>
                   <%= render "redaction_confirmation", contract: contract, collapsed: true %>
+                <% end %>
+                <%# CRZ filing confirmation entry (civora-org/civora-platform#125):
+                    shown only when the acting editor may confirm (editor, a
+                    published, unfiled editorial record — the :confirm_crz_filing
+                    permission). The flow itself lives on its own page. %>
+                <% if allowed_to?(:confirm_crz_filing, :contract, contract: contract) %>
+                  <%= link_to t("decidim.contracts_sk.admin.contracts.crz_filing.link"),
+                              crz_filing_admin_contract_path(contract),
+                              class: "button button__sm button__secondary" %>
                 <% end %>
                 <%# Reviewer decision on the row (civora-org/civora-platform#90):
                     a record sitting in a decision state with a captured

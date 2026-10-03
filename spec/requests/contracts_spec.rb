@@ -387,6 +387,8 @@ RSpec.describe "public contracts catalogue", type: :request do
         signed_on: Date.new(2026, 9, 1),
         effective_from: Date.new(2026, 8, 15),
         crz_url: "https://crz.gov.sk/record/123",
+        crz_filed_at: nil,
+        crz_published_on: nil,
         source: "editorial",
         imported_at: nil,
         import_status: nil,
@@ -847,6 +849,45 @@ RSpec.describe "public contracts catalogue", type: :request do
         # A fresh timestamp relative to the run (the helper compares against
         # Time.current): no stale notice.
         expect(response.body).not_to include("may be out of date")
+      end
+    end
+
+    it "says the CRZ publication is confirmed, with the date and the official link (#125)" do
+      contract = create_contract!(crz_url: "https://crz.gov.sk/zmluva/2142424/", crz_filed_at: Time.current,
+                                  crz_published_on: Date.new(2026, 4, 20))
+
+      get "/#{contract.id}"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        expect(response.body).to include("Published in CRZ on 2026-04-20")
+        expect(response.body).to include('href="https://crz.gov.sk/zmluva/2142424/"')
+        expect(response.body).not_to include("CRZ URL")
+      end
+    end
+
+    it "falls back to the plain confirmation line when CRZ carried no publication date (#125)" do
+      contract = create_contract!(crz_url: "https://crz.gov.sk/zmluva/2142424/", crz_filed_at: Time.current,
+                                  crz_published_on: nil)
+
+      get "/#{contract.id}"
+
+      aggregate_failures do
+        expect(response.body).to include("Publication in CRZ confirmed")
+        expect(response.body).not_to include("Published in CRZ on")
+        expect(response.body).to include('href="https://crz.gov.sk/zmluva/2142424/"')
+      end
+    end
+
+    it "keeps the plain CRZ URL row for a record not confirmed as filed (#125)" do
+      contract = create_contract!(crz_url: "https://crz.gov.sk/zmluva/2142424/")
+
+      get "/#{contract.id}"
+
+      aggregate_failures do
+        expect(response.body).to include("CRZ URL")
+        expect(response.body).not_to include("Published in CRZ")
+        expect(response.body).not_to include("Publication in CRZ confirmed")
       end
     end
 

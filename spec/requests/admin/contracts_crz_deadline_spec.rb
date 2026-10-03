@@ -71,9 +71,9 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
     create_contract!(reference: "ZP-DL-004", signed_on: Date.new(2026, 3, 16))               # 15 left, ok
     create_contract!(reference: "ZP-DL-005", signed_on: nil)                                 # unknown
     create_contract!(reference: "ZP-DL-006", signed_on: Date.new(2026, 1, 1),
-                     crz_url: "https://crz.gov.sk/zmluva/1/", state: "published")            # filed
+                     crz_filed_at: Time.current, state: "published") # filed
     create_contract!(reference: "ZP-DL-007", signed_on: Date.new(2026, 1, 1),
-                     source: "crz", source_id: "900000001", state: "published")              # mirror
+                     source: "crz", source_id: "900000001", state: "published") # mirror
     create_contract!(reference: "ZP-DL-008", signed_on: Date.new(2026, 1, 1), state: "rejected") # terminal
   end
 
@@ -225,7 +225,7 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
 
     it "renders no badge for filed, mirror and terminal rows" do
       create_contract!(reference: "ZP-DL-201", signed_on: Date.new(2026, 1, 1),
-                       crz_url: "https://crz.gov.sk/zmluva/1/", state: "published")
+                       crz_filed_at: Time.current, state: "published")
       create_contract!(reference: "ZP-DL-202", signed_on: Date.new(2026, 1, 1), source: "crz",
                        source_id: "900000001", state: "published")
       create_contract!(reference: "ZP-DL-203", signed_on: Date.new(2026, 1, 1), state: "archived")
@@ -237,8 +237,9 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
       expect(response.body).not_to include("Deadline unknown")
     end
 
-    it "counts an empty-string crz_url as not filed" do
-      create_contract!(reference: "ZP-DL-301", signed_on: Date.new(2026, 1, 1), crz_url: "")
+    it "counts a typed crz_url without a filing confirmation as not filed (#125)" do
+      create_contract!(reference: "ZP-DL-301", signed_on: Date.new(2026, 1, 1),
+                       crz_url: "https://crz.gov.sk/zmluva/1/")
 
       get "/admin/contracts"
 
@@ -275,9 +276,9 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
       expect(response.body).to include("CRZ filing deadline unknown — add signing date")
     end
 
-    it "renders nothing for a record recorded as filed" do
+    it "renders nothing for a record confirmed as filed" do
       record = create_contract!(reference: "ZP-DL-405", signed_on: Date.new(2026, 3, 8),
-                                crz_url: "https://crz.gov.sk/zmluva/1/")
+                                crz_filed_at: Time.current)
 
       get "/admin/contracts/#{record.id}/edit"
 

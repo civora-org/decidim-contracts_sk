@@ -33,6 +33,14 @@ module Decidim
     #   role-gated only, so an editor can retrieve it on any lifecycle
     #   state (unlike :update, which stays editable-state-gated for the
     #   generating twin action).
+    # - :confirm_crz_filing (civora-org/civora-platform#125) is allowed when
+    #   the user's engine roles include :editor AND the record
+    #   (context[:contract] — required, a bare :state context is denied
+    #   fail-closed) is editorial (source != the CRZ mirror's), published and
+    #   not yet confirmed as filed (crz_filed_at blank): only a published
+    #   editorial record that has been handed off to the CRZ can be linked to
+    #   its official record, and once. Reviewers are denied. The command
+    #   re-checks all of it inside the row lock.
     # - Transition events (:submit, :return, :approve, :reject, :publish,
     #   :archive) are allowed when ContractLifecycle.allowed_roles for the
     #   record's state intersect the user's engine roles. The event list is
@@ -112,6 +120,10 @@ module Decidim
     # at class-body load; this file is only ever loaded through the gem's
     # lib require chain (which defines ContractLifecycle first), never
     # standalone.
+    # Cop note: the class stays deliberately cohesive — one rule table per
+    # subject, every gate readable in one file; splitting it would scatter
+    # the permission contract rather than simplify it.
+    # rubocop:disable Metrics/ClassLength
     class Permissions < Decidim::DefaultPermissions
       TRANSITION_EVENTS = ContractLifecycle::TRANSITIONS.values
                                                         .flat_map(&:keys)
@@ -163,7 +175,7 @@ module Decidim
         # consult different lifecycle windows (see #action_state_window):
         # the stamp may still land on an approved record right before
         # publish, while editability itself is never widened.
-        when :update, :confirm_redaction
+        when :update, :confirm_redaction, :confirm_crz_filing
           toggle_allow(contract_write_allowed?)
         when :read
           toggle_allow(roles_for_user.any?)
@@ -222,6 +234,8 @@ module Decidim
       # The shared gate behind :update and :confirm_redaction: the editor
       # role plus the action's lifecycle window (see #action_state_window).
       def contract_write_allowed?
+        return editor? && crz_filing_allowed? if action == :confirm_crz_filing
+
         editor? && action_state_window.include?(state)
       end
 
@@ -237,6 +251,17 @@ module Decidim
         else
           ContractLifecycle::CONFIRMABLE_STATES
         end
+      end
+
+      # The CRZ filing confirmation window (civora-org/civora-platform#125):
+      # an editorial, published, not-yet-filed record. Needs the record
+      # itself — the filed flag and the source are not derivable from a bare
+      # state, so a context without :contract denies.
+      def crz_filing_allowed?
+        record = context[:contract]
+        return false unless record
+
+        record.source.to_s != CrzImport::Mapper::SOURCE && state == :published && record.crz_filed_at.blank?
       end
 
       def amendment_edit_allowed?
@@ -287,5 +312,6 @@ module Decidim
         Array(Decidim::ContractsSk.role_resolver.call(user, context)) & ContractLifecycle::ROLES
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

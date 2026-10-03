@@ -10,7 +10,10 @@ module Decidim
       # civora-org/civora-platform#86), the ADR-007 privacy-redaction
       # confirmation POST (civora-org/civora-platform#91) and the
       # reviewer-decision-reason pass-through on the transition actions
-      # (civora-org/civora-platform#90).
+      # (civora-org/civora-platform#90), and the CRZ filing confirmation
+      # pair (civora-org/civora-platform#125: a read-only side-by-side
+      # preview and the verifying POST, both editor-gated on a published,
+      # unfiled editorial record).
       #
       # index/new/create open with enforce_permission_to before anything
       # else; edit/update and the transition actions load the record first,
@@ -209,6 +212,40 @@ module Decidim
           end
         end
 
+        # CRZ filing confirmation (civora-org/civora-platform#125), GET: the
+        # CRZ-id form and — with ?crz_id= — the read-only side-by-side
+        # comparison of this record against the official one fetched
+        # through the ekosystem feed. WRITES NOTHING: the confirm form it
+        # renders carries the preview's checksum token, which the POST's
+        # command re-verifies inside the row lock. The id is validated
+        # (`\A\d+\z`) before any network call (the import_crz precedent).
+        # A refusal re-renders the id form with a localized alert.
+        def crz_filing
+          @contract = contracts_scope.find(params[:id])
+
+          enforce_permission_to :confirm_crz_filing, :contract, contract: @contract
+
+          @crz_id = params[:crz_id].to_s.strip
+          load_filing_preview if @crz_id.present?
+        end
+
+        # CRZ filing confirmation, POST: the verifying command. Every
+        # outcome is a PRG redirect with a localized flash — success to the
+        # index (a filed record is published and no longer editable); a
+        # refusal the editor can act on (stale preview, reason problems)
+        # back to the preview of the same id, the others to the id form or
+        # the index (see FILING_PREVIEW_REASONS / #filing_failed).
+        def confirm_crz_filing
+          @contract = contracts_scope.find(params[:id])
+
+          enforce_permission_to :confirm_crz_filing, :contract, contract: @contract
+
+          crz_id = params[:crz_id].to_s.strip
+          return filing_failed(:not_found, crz_id) unless crz_id.match?(CRZ_ID_FORMAT)
+
+          run_filing_confirmation(crz_id)
+        end
+
         # One explicit action per lifecycle transition event. The route set
         # is derived from ContractLifecycle::TRANSITIONS in config/routes.rb;
         # these named shells exist so the derived routes map onto readable
@@ -239,7 +276,15 @@ module Decidim
 
         # The import outcome vocabulary mirrors CrzImport outcomes 1:1;
         # the successful trio flashes :notice, everything else :alert.
-        IMPORT_NOTICE_OUTCOMES = %i[created updated unchanged].freeze
+        IMPORT_NOTICE_OUTCOMES = %i[created updated unchanged linked].freeze
+
+        # Filing-confirmation refusals that redirect back to the PREVIEW of
+        # the same id (the editor can correct the reason, or must re-read a
+        # changed official record); every other refusal returns to the bare
+        # id form, and :already_filed / :not_fileable to the index.
+        CRZ_ID_FORMAT = /\A\d+\z/
+        FILING_PREVIEW_REASONS = %i[stale reason_required reason_rejected].freeze
+        FILING_INDEX_REASONS = %i[already_filed not_fileable].freeze
 
         private
 
@@ -254,6 +299,52 @@ module Decidim
         def import_blank_id
           flash[:alert] = t("decidim.contracts_sk.admin.contracts.import_crz.blank_id")
           redirect_to admin_contracts_path
+        end
+
+        # The preview fetch (read-only, FilingLookup): sets the comparison
+        # and checksum token for the view, or re-renders the id form with a
+        # localized refusal. A non-numeric id never reaches the network.
+        def load_filing_preview
+          return filing_invalid_id unless @crz_id.match?(CRZ_ID_FORMAT)
+
+          lookup = CrzImport::FilingLookup.call(crz_id: @crz_id, organization: current_organization)
+          return flash.now[:alert] = filing_message(lookup.refusal, @crz_id) unless lookup.ok?
+
+          @crz_record = lookup.record
+          @comparison = CrzImport::FilingComparison.new(contract: @contract, record: @crz_record)
+        end
+
+        def filing_invalid_id
+          flash.now[:alert] = t("decidim.contracts_sk.admin.contracts.crz_filing.invalid_id")
+        end
+
+        def run_filing_confirmation(crz_id)
+          ConfirmCrzFiling.call(@contract, crz_id: crz_id, checksum: params[:checksum],
+                                           reason: params[:reason], user: current_user) do
+            on(:ok) { |outcome| filing_succeeded(outcome, crz_id) }
+            on(:invalid) { |reason| filing_failed(reason, crz_id) }
+          end
+        end
+
+        def filing_message(reason, crz_id)
+          t("decidim.contracts_sk.admin.contracts.crz_filing.refusals.#{reason}", crz_id: crz_id)
+        end
+
+        def filing_succeeded(outcome, crz_id)
+          flash[:notice] = t("decidim.contracts_sk.admin.contracts.crz_filing.#{outcome}", crz_id: crz_id)
+          redirect_to admin_contracts_path
+        end
+
+        def filing_failed(reason, crz_id)
+          flash[:alert] = filing_message(reason, crz_id)
+
+          if FILING_INDEX_REASONS.include?(reason)
+            redirect_to admin_contracts_path
+          elsif FILING_PREVIEW_REASONS.include?(reason)
+            redirect_to crz_filing_admin_contract_path(@contract, crz_id: crz_id)
+          else
+            redirect_to crz_filing_admin_contract_path(@contract)
+          end
         end
 
         # PRG on success: notice + back to the admin index.

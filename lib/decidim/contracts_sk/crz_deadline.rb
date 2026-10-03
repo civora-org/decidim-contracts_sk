@@ -133,15 +133,16 @@ module Decidim
 
       # Whether a record is subject to deadline tracking: an editorial
       # record (the CRZ mirror is already filed by definition), in a
-      # non-terminal state, not yet recorded as filed. "Filed" is the
-      # +crz_url+ proxy (NULL or empty means not filed) until real filing
-      # confirmation lands (civora-org/civora-platform#125). The unfiled
-      # test is deliberately exactly "NULL or ''" so it matches the SQL
-      # scope; a whitespace-only value counts as filed in both.
-      def tracked?(source:, state:, crz_url:)
+      # non-terminal state, not yet CONFIRMED as filed in CRZ. "Filed" is
+      # the crz_filed_at stamp of the verified filing confirmation
+      # (Admin::ConfirmCrzFiling, civora-org/civora-platform#125) — a hard
+      # switch from the interim +crz_url+ proxy of #124: a typed CRZ link
+      # no longer counts as filed. The unfiled test is exactly "NULL" so it
+      # matches the SQL scope.
+      def tracked?(source:, state:, crz_filed_at:)
         source.to_s != mirror_source &&
           Decidim::ContractsSk::ContractLifecycle::DEADLINE_TRACKED_STATES.include?(state&.to_sym) &&
-          crz_url.to_s.empty?
+          crz_filed_at.nil?
       end
 
       # The provenance value of CRZ mirror rows (single source: the import

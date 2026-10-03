@@ -132,6 +132,20 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 > CRZ mirrors are exempt (their content is already-public upstream data,
 > ADR-008) and publish amendments unstamped.
 
+> **CRZ filing confirmation (#125).** On a published editorial record (e.g.
+> DEMO-2026-006 is already confirmed; publish another editorial record first)
+> the index row offers **Record CRZ filing**. Enter a CRZ id of a contract of
+> the demo organization: the page shows the CRZ record beside yours with
+> match / mismatch / cannot-be-verified rows. With all rows matching, confirm;
+> with a difference the reason field appears (required, 1000 characters max)
+> and the audit trail records `CRZ filing confirmed despite differences`. An
+> unknown id answers "not found — the data source may lag the CRZ by about a
+> day"; an id of another organization, or a cancelled/withdrawn record, is
+> refused outright. After confirming, the record leaves the deadline counters,
+> the public detail page says "Published in CRZ on <date>" with the official
+> link, and a later `import_crz` of the same id answers "already linked"
+> without writing. Needs network access to the ekosystem feed.
+
 ## 4. RSpec-side demo data
 
 `CONTRACTS_SK_DB=1 bundle exec rspec` gains the `ContractsSkDemoData` helper

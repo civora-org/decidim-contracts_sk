@@ -153,6 +153,98 @@ RSpec.describe Decidim::ContractsSk::CrzImport::Sync, :db do
     end
   end
 
+  describe ".run (filed editorial records, civora-org/civora-platform#125)" do
+    it "counts a filing-confirmed editorial record as linked — not a collision — and writes nothing" do
+      filed = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-808", state: "published", source_id: "302",
+                            crz_filed_at: Time.zone.parse("2026-09-01T10:00:00Z"))
+      )
+      unfiled = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-809", source_id: "303")
+      )
+      allow(client).to receive(:sync)
+        .and_return(page([crz_payload("302"), crz_payload("303"), crz_payload("400")]))
+      before = filed.updated_at
+
+      result = run_sync
+
+      aggregate_failures do
+        expect(result.linked).to eq(1)
+        expect(result.linked_ids).to eq([filed.id])
+        expect(result.collisions).to eq(1)
+        expect(result.collision_ids).to eq([unfiled.id])
+        expect(result.created).to eq(1)
+        expect(Decidim::ContractsSk::Contract.where(source_id: "302").count).to eq(1)
+        expect(filed.reload.updated_at).to eq(before)
+        expect(filed.title).to eq("Road reconstruction")
+      end
+    end
+
+    it "is repeatable: the next sync of the same filed record links again, never duplicates" do
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-808", state: "published", source_id: "302",
+                            crz_filed_at: Time.current)
+      )
+      allow(client).to receive(:sync).and_return(page([crz_payload("302")]))
+
+      2.times { expect(run_sync.linked).to eq(1) }
+      expect(Decidim::ContractsSk::Contract.count).to eq(1)
+    end
+
+    it "never stamps import_status on an editorial record when its id is quarantined (G4)" do
+      editorial = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-808", source_id: "302")
+      )
+      allow(client).to receive(:sync).and_return(page([{ 1 => "mixed key types", "id" => "302" }]))
+
+      result = run_sync
+
+      aggregate_failures do
+        expect(result.quarantined).to eq(1)
+        expect(result.failed).to eq(0)
+        expect(editorial.reload.import_status).to be_nil
+      end
+    end
+
+    it "never stamps import_status on an editorial record after an unexpected per-record failure (G4)" do
+      editorial = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-808", source_id: "302", crz_filed_at: Time.current)
+      )
+      allow(Decidim::ContractsSk::CrzImport::UpsertContract).to receive(:call).and_raise(StandardError, "boom")
+      allow(client).to receive(:sync).and_return(page([crz_payload("302")]))
+
+      run_sync
+
+      expect(editorial.reload.import_status).to be_nil
+    end
+
+    it "never stamps an editorial record when a single import of its id fails (G4)" do
+      editorial = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-808", source_id: "302", crz_filed_at: Time.current)
+      )
+      allow(client).to receive(:contract).and_raise(Decidim::ContractsSk::CrzImport::Client::TransportError)
+
+      outcome = described_class.import_one(source_id: "302", organization: organization,
+                                           actor: author, client: client)
+
+      expect(outcome).to eq(:failed)
+      expect(editorial.reload.import_status).to be_nil
+    end
+
+    it "answers :linked for a single import of a filed record's id" do
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-808", state: "published", source_id: "302",
+                            crz_filed_at: Time.current)
+      )
+      allow(client).to receive(:contract).with("302").and_return(crz_payload("302"))
+
+      outcome = described_class.import_one(source_id: "302", organization: organization,
+                                           actor: author, client: client)
+
+      expect(outcome).to eq(:linked)
+    end
+  end
+
   describe ".run (pagination and stale fallback)" do
     it "follows the Link cursor verbatim across pages" do
       first_page = page([crz_payload("400")],

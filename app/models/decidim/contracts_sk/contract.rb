@@ -162,15 +162,16 @@ module Decidim
       # the instance helpers and the scopes agree by construction.
       #
       # Tracked = an editorial record (source != the CRZ mirror's), in a
-      # DEADLINE_TRACKED_STATES state, with crz_url NULL or '' — "not
-      # recorded as filed in CRZ", the interim filed proxy until real filing
-      # confirmation lands (civora-org/civora-platform#125). Records with an
+      # DEADLINE_TRACKED_STATES state, with crz_filed_at NULL — "not
+      # confirmed as filed in CRZ" (the verified filing confirmation of
+      # civora-org/civora-platform#125 replaced the #124 crz_url proxy;
+      # a typed crz_url alone no longer counts). Records with an
       # unknown signed_on ARE tracked here (the edit page and the row badge
       # flag them) but belong to neither the overdue nor the due-soon scope.
       scope :crz_deadline_tracked, lambda {
         where.not(source: CrzImport::Mapper::SOURCE)
              .where(state: ContractLifecycle::DEADLINE_TRACKED_STATES.map(&:to_s))
-             .where(crz_url: [nil, ""])
+             .where(crz_filed_at: nil)
       }
 
       # Tracked records whose deadline lies before +today+:
@@ -202,7 +203,7 @@ module Decidim
       # Whether this record is subject to deadline tracking (the instance
       # twin of the crz_deadline_tracked scope).
       def crz_deadline_tracked?
-        CrzDeadline.tracked?(source: source, state: state, crz_url: crz_url)
+        CrzDeadline.tracked?(source: source, state: state, crz_filed_at: crz_filed_at)
       end
 
       # :untracked (filed, mirror or terminal), :unknown (tracked, no

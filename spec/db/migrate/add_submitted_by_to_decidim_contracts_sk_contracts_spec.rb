@@ -71,11 +71,12 @@ RSpec.describe "db/migrate/*_add_submitted_by_to_decidim_contracts_sk_contracts.
       expect(migration_source).to match(/\A#\s+frozen_string_literal: true\s*$/)
     end
 
-    it "sorts after every earlier engine migration" do
-      timestamps = Dir.glob(File.join(engine_root, "db", "migrate", "*.rb"))
-                      .map { |path| File.basename(path).split("_", 2).first }.sort
+    it "sorts after the migrations it reads (the contracts and audit-trail tables)" do
+      own = File.basename(migration_path).split("_", 2).first
 
-      expect(timestamps.last).to eq(File.basename(migration_path).split("_", 2).first)
+      %w[create_decidim_contracts_sk_contracts create_decidim_contracts_sk_audit_events].each do |suffix|
+        expect(File.basename(migration_path_for(suffix)).split("_", 2).first).to be < own
+      end
     end
   end
 

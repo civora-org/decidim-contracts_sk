@@ -53,4 +53,23 @@ RSpec.describe Decidim::ContractsSk do
       expect([described_class.crz_organization_ico(nil), calls]).to eq([nil, []])
     end
   end
+
+  describe Decidim::ContractsSk::CrzScope do
+    let(:record) { { parties: [{ ico: "00000001" }, { ico: "00000002" }] } }
+
+    it "is in scope when the organization IČO is on either party" do
+      aggregate_failures do
+        expect(described_class.in_scope?(record, "00000001")).to be(true)
+        expect(described_class.in_scope?(record, "00000002")).to be(true)
+      end
+    end
+
+    it "is out of scope for another IČO and fails closed without a configured IČO" do
+      aggregate_failures do
+        expect(described_class.in_scope?(record, "00000009")).to be(false)
+        expect(described_class.in_scope?(record, nil)).to be(false)
+        expect(described_class.in_scope?({ parties: [{ ico: nil }] }, nil)).to be(false)
+      end
+    end
+  end
 end

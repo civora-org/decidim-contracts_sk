@@ -147,6 +147,16 @@ FakeIndexContract = Struct.new(:title, :reference, :state, :review_reason) do
     "77"
   end
 
+  # The #125 filing-confirmation permission reads the record's source and
+  # filed flag: the offline fake is an unfiled editorial record.
+  def source
+    "editorial"
+  end
+
+  def crz_filed_at
+    nil
+  end
+
   # The #124 CRZ deadline badge reads the record's status; the offline fake
   # is never tracked (the badge cell renders empty).
   def crz_deadline_status(today: nil)

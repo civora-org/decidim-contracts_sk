@@ -20,13 +20,16 @@ module Decidim
         expect(described_class.superclass).to eq(Admin::ApplicationController)
       end
 
-      it "implements exactly the CRUD + transition + CRZ-handoff + import + redaction actions (no show, no destroy)" do
+      # rubocop:disable RSpec/ExampleLength
+      it "implements exactly the CRUD, transition, CRZ handoff/import/filing and redaction actions (no show/destroy)" do
         expect(described_class.public_instance_methods(false).map(&:to_s).sort)
           .to eq(%w[
-                   approve archive confirm_redaction create download_crz_handoff edit
-                   generate_crz_handoff import_crz index new publish reject return submit update
+                   approve archive confirm_crz_filing confirm_redaction create crz_filing
+                   download_crz_handoff edit generate_crz_handoff import_crz index new publish reject
+                   return submit update
                  ])
       end
+      # rubocop:enable RSpec/ExampleLength
 
       it "does not sit on the engine's public base controller chain" do
         expect(described_class.ancestors)

@@ -179,6 +179,26 @@ RSpec.describe "admin CRZ import", type: :request do
       end
     end
 
+    it "flashes the linked notice and writes nothing when a filing-confirmed editorial record holds the id (#125)" do
+      filed = Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-808", state: "published", source_id: "2142424",
+                            crz_filed_at: Time.current)
+      )
+      before = filed.updated_at
+      stub_transport(response_with(200, body: crz_payload("2142424").to_json))
+
+      post "/admin/contracts/import_crz", params: { source_id: "2142424" }
+
+      aggregate_failures do
+        expect(response).to redirect_to("/admin/contracts")
+        expect(flash[:notice]).to eq("Contract 2142424 is already linked to a record confirmed as filed in CRZ " \
+                                     "— nothing was changed.")
+        expect(flash[:alert]).to be_nil
+        expect(Decidim::ContractsSk::Contract.count).to eq(1)
+        expect(filed.reload.updated_at).to eq(before)
+      end
+    end
+
     it "flashes the out-of-scope alert and imports nothing for another organization's contract" do
       stub_transport(response_with(200, body: crz_payload("505", "contracting_authority_cin" => "00 000 009").to_json))
 

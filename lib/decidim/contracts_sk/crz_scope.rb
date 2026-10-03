@@ -21,6 +21,10 @@ module Decidim
     # resolver yields nil — the import then refuses to run rather than
     # mirroring the whole national register.
     #
+    # The scope predicate itself lives in CrzScope.in_scope? (below), shared
+    # by the sync and the filing confirmation (civora-org/civora-platform
+    # #125).
+    #
     # Config-time only: never mutate the resolver at request time.
     class << self
       attr_accessor :crz_organization_ico_resolver
@@ -37,6 +41,21 @@ module Decidim
       ico.match?(/\A\d{8}\z/) ? ico : nil
     rescue StandardError
       nil
+    end
+
+    # The record-in-scope predicate (civora-org/civora-platform#145, shared
+    # with #125): a mapped CRZ record is in scope for an organization when
+    # the organization's IČO is on either mirrored party. Pure; +ico+ is
+    # the already-normalized organization IČO — nil (not configured)
+    # answers false, so callers fail closed.
+    module CrzScope
+      module_function
+
+      def in_scope?(record, ico)
+        return false if ico.blank?
+
+        record[:parties].any? { |party| party[:ico] == ico }
+      end
     end
   end
 end

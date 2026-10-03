@@ -27,7 +27,7 @@ ideally in both `en` and `sk` where noted.
 - [ ] **New**: one `h1`; every input has a `label` with a unique `id`; back-to-index link present.
 - [ ] **Edit**: one `h1`; `h2` sections (privacy redaction, documents, links, CRZ handoff); lifecycle state, author, organization and `published_at` are not form-writable.
 - [ ] **Index**: one `h1`; table headers localized; localized empty state when the organization has no contracts.
-- [ ] **Index (CRZ deadline, #124)**: a "CRZ deadline" column with `label` badges (overdue = alert, 0–14 days = warning, beyond = plain, unknown = muted dash with a title, filed/mirror/terminal = empty cell); the `deadline` filter and the two counter chips agree with the badges; Slovak plurals read "1 deň" / "3 dni" / "7 dní"; the edit page shows the deadline line (or the "deadline unknown — add signing date" prompt) and nothing for a record recorded as filed.
+- [ ] **Index (CRZ deadline, #124)**: a "CRZ deadline" column with `label` badges (overdue = alert, 0–14 days = warning, beyond = plain, unknown = muted dash with a title, filed/mirror/terminal = empty cell); the `deadline` filter and the two counter chips agree with the badges; Slovak plurals read "1 deň" / "3 dni" / "7 dní"; the edit page shows the deadline line (or the "deadline unknown — add signing date" prompt) and nothing for a record confirmed as filed.
 - [ ] **Index (sk pass)**: state labels and transition button labels render localized (no raw enum values).
 - [ ] Per-state transition buttons only (no event whose edge does not start at the record's state, none for roles that own no edge).
 - [ ] Four-eyes rule (civora-org/civora-platform#123): the user who submitted a record sees no return/approve/reject controls on its row (another admin does), a direct POST by them is denied, and with `allow_self_review = true` they may judge it and the audit viewer labels the row "(self-review)" / "(vlastné posúdenie)".
@@ -87,6 +87,15 @@ ideally in both `en` and `sk` where noted.
 - [ ] Mixed en/sk content: page `lang` is host-owned; spot-check that engine strings match the active locale even when record content is in the other language.
 - [ ] Keyboard-only full workflow pass: create → edit → parties → documents → redaction confirmation → submit → return → approve → publish → amendment → archive (return and approve are done by a second admin, four-eyes rule #123, or with `allow_self_review = true`).
 - [ ] Screen-reader spot-check: table headers announced, error list reachable after failed submit, focus returns to the trigger after a confirm dialog closes.
+
+## CRZ filing confirmation (#125)
+
+- [ ] Index row: **Record CRZ filing** shows only for an editor on a published, unfiled editorial record; hidden for reviewers, mirrors, drafts and filed records.
+- [ ] Filing page: id form (numeric only; a non-numeric id never reaches the network), side-by-side comparison with per-row labels (match = success, mismatch = alert, cannot be verified = warning), lag hint visible (en + sk, proper diacritics in sk).
+- [ ] Full match: confirm button only, no reason field; mismatch/unverifiable: reason textarea required, `maxlength` 1000; a stale preview, a missing reason and an already-linked id each flash a distinct message and change nothing.
+- [ ] Not found, source unavailable, other organization, withdrawn/cancelled and no-IČO each refuse with a localized flash and write no audit row.
+- [ ] After confirming: record leaves the deadline counters and filter; audit trail shows `CRZ filing confirmed` (or `... despite differences`, and `CRZ mirror absorbed ...` when a pristine mirror was replaced); public detail shows "Published in CRZ on <date>" (or "Publication in CRZ confirmed" without a date) with the official link.
+- [ ] `import_crz` / sync of a filed record's id: "already linked", no new mirror, `updated_at` unchanged; the rake summary counts it under `linked`.
 
 ## Known gaps and follow-ups
 

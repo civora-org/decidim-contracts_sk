@@ -34,7 +34,10 @@ module EngineRoutingContract
   # CRZ single-record import (ADR-008, civora-org/civora-platform#86) is a
   # collection POST (import by CRZ id, not tied to an existing record) —
   # also outside the lifecycle derivation, as is the ADR-007 redaction-
-  # confirmation member POST (civora-org/civora-platform#91).
+  # confirmation member POST (civora-org/civora-platform#91). The CRZ
+  # filing confirmation (civora-org/civora-platform#125) is another
+  # explicit member pair (GET preview + POST confirm), outside the
+  # derivation too.
   # Parties (civora-org/civora-platform#76) hang off their contract through
   # the nested resource: an index plus the full add/edit/remove surface
   # (update maps to BOTH a PATCH and a PUT route entry, so the party block
@@ -54,6 +57,11 @@ module EngineRoutingContract
   # exactly "/", not "/(.:format)" - unlike a plain `get`), and it maps the
   # `resources` update action to BOTH a PATCH and a PUT route entry, so the
   # admin CRUD block counts 6 route entries, not 5.
+  EXPECTED_ADMIN_ACTIONS = %w[
+    approve archive confirm_crz_filing confirm_redaction create crz_filing download_crz_handoff edit
+    generate_crz_handoff import_crz index new publish reject return submit update
+  ].freeze
+
   EXPECTED_ROUTES = [
     ["GET", "/", "#{PUBLIC_CONTROLLER}#index"],
     ["GET", "/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
@@ -64,6 +72,8 @@ module EngineRoutingContract
     ["POST", "/admin/contracts/:id/approve(.:format)", "#{ADMIN_CONTROLLER}#approve"],
     ["POST", "/admin/contracts/:id/archive(.:format)", "#{ADMIN_CONTROLLER}#archive"],
     ["POST", "/admin/contracts/:id/confirm_redaction(.:format)", "#{ADMIN_CONTROLLER}#confirm_redaction"],
+    ["GET", "/admin/contracts/:id/crz_filing(.:format)", "#{ADMIN_CONTROLLER}#crz_filing"],
+    ["POST", "/admin/contracts/:id/crz_filing(.:format)", "#{ADMIN_CONTROLLER}#confirm_crz_filing"],
     ["GET", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#download_crz_handoff"],
     ["POST", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#generate_crz_handoff"],
     ["GET", "/admin/contracts/:id/edit(.:format)", "#{ADMIN_CONTROLLER}#edit"],
@@ -241,10 +251,7 @@ RSpec.describe Decidim::ContractsSk::Engine do
     it "exposes exactly the CRUD + transition + CRZ-handoff + import + redaction actions (no show, no destroy)" do
       actions = admin_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
 
-      expect(actions).to eq(%w[
-                              approve archive confirm_redaction create download_crz_handoff edit
-                              generate_crz_handoff import_crz index new publish reject return submit update
-                            ])
+      expect(actions).to eq(EngineRoutingContract::EXPECTED_ADMIN_ACTIONS)
     end
   end
 
@@ -275,13 +282,17 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # route table. The CRZ-handoff POST shares the member path shape but is
     # declared explicitly (not a lifecycle event), so it is excluded here —
     # same for the ADR-007 redaction-confirmation POST
-    # (civora-org/civora-platform#91). The derivation equality guards the
+    # (civora-org/civora-platform#91) and the CRZ filing POST
+    # (#125). The derivation equality guards the
     # lifecycle-derived set only.
     def route_transition_events
+      explicit = %w[#generate_crz_handoff #confirm_redaction #confirm_crz_filing]
+
       admin_routes
         .select { |verb, path, _| verb == "POST" && path.start_with?("/admin/contracts/:id/") }
-        .reject { |_, _, endpoint| endpoint.end_with?("#generate_crz_handoff", "#confirm_redaction") }
-        .map { |_, _, endpoint| endpoint.split("#", 2).last.to_sym }
+        .map { |_, _, endpoint| endpoint }
+        .reject { |endpoint| endpoint.end_with?(*explicit) }
+        .map { |endpoint| endpoint.split("#", 2).last.to_sym }
         .sort
     end
 
@@ -325,6 +336,35 @@ RSpec.describe Decidim::ContractsSk::Engine do
       expect(Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values
                                                                   .flat_map(&:keys)
                                                                   .uniq).not_to include(:crz_handoff)
+    end
+  end
+
+  describe "CRZ filing confirmation member routes (civora-org/civora-platform#125)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    it "shares one member path between the preview (GET) and confirm (POST) actions" do
+      controller = EngineRoutingContract::ADMIN_CONTROLLER
+
+      expect(admin_routes).to include(
+        ["GET", "/admin/contracts/:id/crz_filing(.:format)", "#{controller}#crz_filing"],
+        ["POST", "/admin/contracts/:id/crz_filing(.:format)", "#{controller}#confirm_crz_filing"]
+      )
+    end
+
+    it "names the preview helper crz_filing_admin_contract_path" do
+      expect(url_helpers.crz_filing_admin_contract_path(7)).to eq("/admin/contracts/7/crz_filing")
+    end
+
+    it "names the confirm helper confirm_crz_filing_admin_contract_path" do
+      expect(url_helpers.confirm_crz_filing_admin_contract_path(7)).to eq("/admin/contracts/7/crz_filing")
+    end
+
+    it "keeps the filing routes outside the lifecycle transition derivation" do
+      events = Decidim::ContractsSk::ContractLifecycle::TRANSITIONS.values.flat_map(&:keys).uniq
+
+      expect(events).not_to include(:crz_filing, :confirm_crz_filing)
     end
   end
 
