@@ -26,3 +26,31 @@
 
 # Playwright MCP console/page dumps
 /.playwright-mcp/
+
+# OS and editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Secrets and local environment (keep examples committable)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs and Ruby/Node tooling caches
+*.log
+*.gem
+.byebug_history
+.ruby-lsp/
+node_modules/
+
+# Personal Claude Code / Impeccable settings (shared config stays committed)
+/.claude/settings.local.json
+/CLAUDE.local.md
+/.impeccable/config.local.json
+/.impeccable/hook.cache.json
