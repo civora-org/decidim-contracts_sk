@@ -23,8 +23,14 @@ module Decidim
       #   a KNOWN record: the existing mirror row (if any) is stamped
       #   import_status="failed" in its own transaction, its data untouched
       #   (stale fallback).
-      # - collisions — editorial records holding the same source_id: never
-      #   touched; resolved manually (docs/crz-import.md).
+      # - collisions — UNFILED editorial records holding the same source_id:
+      #   never touched; resolved manually (docs/crz-import.md).
+      # - linked — a record whose CRZ id is held by an editorial record that
+      #   was CONFIRMED as filed (civora-org/civora-platform#125): that
+      #   record is already the canonical, linked record of the id, so the
+      #   sync writes nothing and counts it here — neither a mirror nor a
+      #   collision. An editorial record that merely carries the source_id
+      #   (not confirmed as filed) stays a collision.
       # - skipped — imported records that left the published state: the
       #   lifecycle guard refuses the update, data untouched.
       # - out_of_scope — a record whose parties do not carry the
@@ -52,9 +58,10 @@ module Decidim
       class Sync
         # Summary of one run/import: counts + the ids behind them + the
         # stopping error (nil on a clean run).
-        Result = Struct.new(:created, :updated, :unchanged, :collisions, :quarantined,
-                            :failed, :skipped, :out_of_scope, :created_ids, :collision_ids,
-                            :quarantined_ids, :failed_ids, :error, keyword_init: true)
+        Result = Struct.new(:created, :updated, :unchanged, :linked, :collisions, :quarantined,
+                            :failed, :skipped, :out_of_scope, :created_ids, :linked_ids,
+                            :collision_ids, :quarantined_ids, :failed_ids, :error,
+                            keyword_init: true)
 
         class << self
           # Full batch sync of one organization. `since` is an ISO8601
@@ -67,7 +74,7 @@ module Decidim
 
           # Single-record import by CRZ id (the admin action's path).
           # Returns an outcome symbol for the controller's flash mapping:
-          # :created/:updated/:unchanged/:collision/:lifecycle_guard/
+          # :created/:updated/:unchanged/:linked/:collision/:lifecycle_guard/
           # :record_invalid/:quarantined/:not_found/:failed/:out_of_scope/
           # :not_configured.
           def import_one(source_id:, organization:, actor:, client: nil)
@@ -85,10 +92,10 @@ module Decidim
           @actor = actor
           @client = client
           @ico = ContractsSk.crz_organization_ico(organization)
-          @result = Result.new(created: 0, updated: 0, unchanged: 0, collisions: 0,
+          @result = Result.new(created: 0, updated: 0, unchanged: 0, linked: 0, collisions: 0,
                                quarantined: 0, failed: 0, skipped: 0, out_of_scope: 0,
-                               created_ids: [], collision_ids: [], quarantined_ids: [],
-                               failed_ids: [], error: nil)
+                               created_ids: [], linked_ids: [], collision_ids: [],
+                               quarantined_ids: [], failed_ids: [], error: nil)
         end
 
         def run(since)
@@ -153,10 +160,11 @@ module Decidim
           record_error!(payload, e)
         end
 
-        # In scope when the organization's IČO is on either mirrored party.
-        # The party IČOs are the mapper's normalized ekosystem *_cin values.
+        # In scope when the organization's IČO is on either mirrored party
+        # (the predicate is shared with the filing confirmation:
+        # CrzScope.in_scope?).
         def in_scope?(record)
-          record[:parties].any? { |party| party[:ico] == @ico }
+          CrzScope.in_scope?(record, @ico)
         end
 
         def out_of_scope!
@@ -187,6 +195,9 @@ module Decidim
             result.created_ids << contract.id
           when :updated then result.updated += 1
           when :unchanged then result.unchanged += 1
+          when :linked
+            result.linked += 1
+            result.linked_ids << contract.id
           end
         end
 
@@ -216,17 +227,30 @@ module Decidim
         end
 
         def apply_record_invalid!(record, contract)
-          if contract
-            result.failed += 1
-            result.failed_ids << contract.id
-            mark_failed!(record[:source_id], contract)
-          else
-            # Nothing exists to stamp — the record is unimportable, so it
-            # lands in the quarantine bucket.
-            result.quarantined += 1
-            result.quarantined_ids << record[:source_id]
-          end
+          mirror = mirror_only(contract)
+          mirror ? fail_mirror!(record, mirror) : quarantine_unimportable!(record)
           log(:warn, "record #{record[:source_id]}: invalid data, no write")
+        end
+
+        def fail_mirror!(record, mirror)
+          result.failed += 1
+          result.failed_ids << mirror.id
+          mark_failed!(record[:source_id], mirror)
+        end
+
+        # Nothing exists to stamp — the record is unimportable, so it lands
+        # in the quarantine bucket.
+        def quarantine_unimportable!(record)
+          result.quarantined += 1
+          result.quarantined_ids << record[:source_id]
+        end
+
+        # Only a mirror can be stamped failed (G4, civora-org/
+        # civora-platform#125): an editorial record surfacing here (a create
+        # that raced one) is left alone and the record counts as
+        # unimportable.
+        def mirror_only(contract)
+          contract if contract&.source == Mapper::SOURCE
         end
 
         # Quarantine: skip the record, count it, log the id only. When a
@@ -276,7 +300,7 @@ module Decidim
         # the stamped row, or nil when nothing exists to stamp.
         def mark_failed!(source_id, contract = nil)
           fresh = contract ? Contract.find(contract.id) : find_mirror(source_id)
-          return unless fresh
+          return unless fresh&.source == Mapper::SOURCE
 
           fresh.update!(import_status: "failed")
           fresh
@@ -285,8 +309,14 @@ module Decidim
           nil
         end
 
+        # Only a source="crz" row is a mirror: the failure/quarantine paths
+        # stamp import_status on whatever this returns, and an editorial
+        # record that merely carries the source_id (a collision, or a
+        # filing-confirmed link — civora-org/civora-platform#125) must never
+        # be stamped by the import.
         def find_mirror(source_id)
-          source_id && Contract.find_by(organization: @organization, source_id: source_id)
+          source_id && Contract.find_by(organization: @organization, source_id: source_id,
+                                        source: Mapper::SOURCE)
         end
 
         def log(level, message)

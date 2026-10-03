@@ -187,6 +187,48 @@ RSpec.describe Decidim::ContractsSk::CrzImport::Mapper do
     end
   end
 
+  describe ".map (filing-confirmation fields, civora-org/civora-platform#125)" do
+    it "maps status_id and the published date beside — never inside — the written attributes" do
+      record = described_class.map(crz_payload("status_id" => 2, "published_at" => "2026-04-20"))
+
+      aggregate_failures do
+        expect(record[:status_id]).to eq(2)
+        expect(record[:published_on]).to eq(Date.new(2026, 4, 20))
+        expect(record[:attributes].keys).not_to include(:status_id, :published_on, :published_at)
+      end
+    end
+
+    it "maps a blank status, a non-numeric status and the 0000-00-00 sentinel to nil" do
+      aggregate_failures do
+        expect(described_class.map(crz_payload)[:status_id]).to be_nil
+        expect(described_class.map(crz_payload("status_id" => "n/a"))[:status_id]).to be_nil
+        expect(described_class.map(crz_payload("status_id" => "4"))[:status_id]).to eq(4)
+        expect(described_class.map(crz_payload("published_at" => "0000-00-00"))[:published_on]).to be_nil
+        expect(described_class.map(crz_payload("published_at" => ""))[:published_on]).to be_nil
+      end
+    end
+
+    it "takes a published_at timestamp on the Slovak calendar day (near-midnight UTC)" do
+      published = lambda do |value|
+        described_class.map(crz_payload("published_at" => value))[:published_on]
+      end
+
+      aggregate_failures do
+        expect(published.call("2026-04-20T22:30:00Z")).to eq(Date.new(2026, 4, 21)) # CEST = UTC+2
+        expect(published.call("2026-01-20T23:30:00Z")).to eq(Date.new(2026, 1, 21)) # CET = UTC+1
+        expect(published.call("2026-04-20T10:00:00Z")).to eq(Date.new(2026, 4, 20))
+        expect(published.call("2026-04-20 00:30:00")).to eq(Date.new(2026, 4, 20)) # zone-less = local
+        expect(published.call("not a date")).to be_nil
+      end
+    end
+
+    it "leaves the checksum a digest of the raw payload only (unchanged by the new keys)" do
+      payload = crz_payload("status_id" => 2, "published_at" => "2026-04-20")
+
+      expect(described_class.map(payload)[:checksum]).to eq(described_class.checksum(payload))
+    end
+  end
+
   describe ".checksum (determinism gate)" do
     it "is stable across key order and consistent across identical payloads" do
       shuffled = crz_payload.to_a.shuffle.to_h

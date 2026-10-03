@@ -365,11 +365,47 @@ the current version):
   migration; the `Contract` scopes (`crz_deadline_tracked`, `crz_overdue`,
   `crz_due_soon`) compare `signed_on` against Ruby-computed thresholds because
   SQL date arithmetic is not portable (month-end clamping).
-- "Filed in CRZ" is a **proxy**: `crz_url` present (NOT NULL and not `''`) —
-  consistent with ADR-002's manual handoff. Real filing confirmation is #125.
-  Only editorial records (`source != "crz"`) in non-terminal states are tracked.
+- "Filed in CRZ" was a **proxy** here (`crz_url` present); #125 replaced it
+  with the verified `crz_filed_at` (below). Only editorial records
+  (`source != "crz"`) in non-terminal states with `crz_filed_at` NULL are
+  tracked.
 - Details, caveats and non-goals in
   [contract-lifecycle.md](contract-lifecycle.md#crz-publication-deadline-124).
+
+## CRZ filing confirmation landed in #125
+
+- **Columns** (one additive, reversible migration, no backfill, all nullable
+  system fields — never form-writable, like `redaction_confirmed_at`):
+  `crz_filed_at` (datetime — the "filed" flag), `crz_published_on` (date, the
+  publication date CRZ reports; nil for the sentinel/blank) and
+  `crz_filing_reason` (string, 1000 — the editor's override reason, nil on a
+  clean match).
+- **Writer:** `Admin::ConfirmCrzFiling` only. Fetch outside any lock
+  (`CrzImport::FilingLookup`), then `contract.with_lock` and an in-lock
+  re-check on the reloaded row: editorial source, `published` state, not
+  already filed, the preview's checksum token still equal to the fresh
+  payload's, the `FilingComparison` re-run against the row as it is now, the
+  reason rule, the id free. The unique `(organization, source_id)` index is
+  the backstop (`RecordNotUnique` → "already linked"). Deterministic specs
+  prove the stale-object paths without threads.
+- **Lock order:** contract first, then the CRZ mirror holding the id — the
+  only place two contract rows are locked, so no inverse order exists. A
+  pristine mirror (no amendments/links/documents) is destroyed and audited as
+  `contract.crz_mirror_absorbed`; the audit row targets the **editorial**
+  record (the destroyed mirror would dangle and drop out of the per-contract
+  trail filter; its own import rows keep their dangling targets as for every
+  contract deletion).
+- **Linked rule (sync):** `UpsertContract` treats a `source != "crz"` record
+  holding the id with `crz_filed_at` present as `:linked` — zero writes, no
+  mirror, not a collision (`Sync::Result#linked`/`linked_ids`). An unfiled
+  editorial record holding the id stays a collision. The sync's failure paths
+  stamp `import_status` only on `source="crz"` rows (`Sync#find_mirror` and
+  `mark_failed!` are scoped to the mirror source), so a filed or colliding
+  editorial record is never stamped.
+- **Audit actions:** `contract.crz_filed`, `contract.crz_filed_override`,
+  `contract.crz_mirror_absorbed`.
+- **Permission:** `:confirm_crz_filing` — editor, editorial, published,
+  unfiled ([roles-and-permissions.md](roles-and-permissions.md)).
 
 ## Known gaps / drift (flagged, unowned)
 

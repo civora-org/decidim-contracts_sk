@@ -24,6 +24,14 @@
   dodávateľ → `contractor`). **Not mirrored:** documents (link-only via
   `crz_url`), currency and the VAT flag (absent upstream — manual fields),
   amendment linkage hints (structurally unreliable per the spike).
+- **Filing-confirmation fields (#125):** the mapper also returns `status_id`
+  (CRZ status code) and `published_on` (from `published_at`, "Dátum
+  zverejnenia v CRZ", spike-verified field) beside the written attributes —
+  they are read only by the filing confirmation and never written by the
+  import or part of the checksum. The spike does not document the format of
+  `published_at`: a plain `YYYY-MM-DD` is taken as is, a timestamp is
+  converted to Europe/Bratislava before taking the date, and the
+  `0000-00-00` sentinel, blanks and garbage map to nil.
 - **Organization scope (civora-org/civora-platform#145):** the ekosystem
   feed carries every contract published anywhere in Slovakia. Only
   records whose parties carry the organization's IČO (as objednávateľ or
@@ -43,7 +51,8 @@
 | A `source="crz"` record exists, payload checksum unchanged | **No-op** (zero writes, `updated_at` untouched). This is what makes re-running the sync safe. |
 | A `source="crz"` record exists, checksum changed, record still `published` | Content fields, parties and provenance are re-mirrored + a `crz_import_update` audit event. Lifecycle state, author and currency are never touched. |
 | A `source="crz"` record exists but left `published` (e.g. archived) | **Skipped** — never resurrected or overwritten. |
-| A record with the same source id has `source != "crz"` (editorial record) | **Never touched** — the collision is counted and logged for manual resolution (see below). |
+| A record with the same source id has `source != "crz"` and **`crz_filed_at` present** (an editorial record confirmed as filed, civora-org/civora-platform#125) | **Linked, no-op** — the filed editorial record is already the canonical record of the CRZ id: zero writes (`updated_at` untouched), no mirror created, counted as `linked` (not a collision). |
+| A record with the same source id has `source != "crz"` and **no filing confirmation** (an editorial record that merely carries the id) | **Never touched** — the collision is counted and logged for manual resolution (see below). |
 
 Provenance on every write: `source="crz"`, `source_id` (the CRZ numeric
 id), `imported_at` (write time), `import_status="succeeded"`,
@@ -95,10 +104,13 @@ bin/rails "decidim_contracts_sk:crz_import:sync[<organization_id>,2026-09-08T00:
 - The task exits **non-zero** when the sync stopped early (source
   unreachable), so a scheduler can alert. Partial pages already applied
   stay applied; re-running is always safe (idempotent upsert).
-- Summary counters (created/updated/unchanged/collisions/quarantined/
+- Summary counters (created/updated/unchanged/linked/collisions/quarantined/
   failed/skipped/out_of_scope + ids) print at the end; collisions and
   quarantined ids need human follow-up (below). `out_of_scope` is a count
-  only (other organizations' contracts), never a follow-up item.
+  only (other organizations' contracts), never a follow-up item; `linked`
+  (with `linked_ids`) counts editorial records already confirmed as filed —
+  informational, no follow-up. The same `Sync::Result` carries `linked` and
+  `linked_ids`.
 
 #### Pruning mirrors from before the scoping
 
@@ -132,8 +144,41 @@ dry run, check the count, and after pruning re-sync from the go-live
 the form on the admin contracts index. Editor-gated (the `:import_crz`
 permission, role-only). Every outcome is a localized flash: created /
 updated / unchanged / collision / lifecycle guard / invalid data /
-not found / source unavailable. Use it to pull one contract by hand, e.g.
-when a municipal clerk references a specific CRZ record.
+not found / source unavailable, plus **linked** (a filing-confirmed editorial
+record holds the id: nothing changed). Use it to pull one contract by hand,
+e.g. when a municipal clerk references a specific CRZ record.
+
+### 3. Admin filing confirmation (the round trip, civora-org/civora-platform#125)
+
+The import pulls CRZ records **into** the catalogue; the filing confirmation
+closes the loop for a contract the municipality filed in the CRZ **by hand**
+(the ADR-002 handoff aid). From a published editorial record's row on the
+admin index, **"Record CRZ filing"** (`GET /admin/contracts/:id/crz_filing`)
+takes the CRZ id, fetches the official record **read-only** through the same
+ekosystem feed (never written, never logged beyond URL and status) and shows
+it side by side with the editorial record: reference (whitespace/case
+insensitive), supplier IČO (any editorial contractor matches), amount (to the
+cent). Each row is match / mismatch / cannot-be-verified.
+
+- A **full match** confirms with one click; a mismatch or an unverifiable row
+  needs a **reason** (at most 1000 characters), stored on the record and
+  audited as `contract.crz_filed_override`. A clean match audits as
+  `contract.crz_filed`; a reason on a clean match is refused.
+- **Hard refusals** (no override): no organization IČO configured, the record
+  is not the organization's (neither party carries its IČO), or CRZ status
+  cancelled/withdrawn (4/5).
+- The command (`Admin::ConfirmCrzFiling`) fetches outside any lock, then
+  re-checks everything under the contract's row lock — including that the
+  official record is unchanged since the preview (`stale` otherwise).
+- It stamps `crz_filed_at`, `crz_published_on`, `crz_url` and `source_id`;
+  the record **stays editorial** (`source` never changes) and becomes the
+  canonical linked record of the id, which the sync then leaves alone
+  (table above). The #124 deadline stops tracking it.
+- **Mirror absorption:** if the sync already mirrored that id, a *pristine*
+  mirror (no amendments, links or documents) is destroyed and the editorial
+  record claims the id (audited as `contract.crz_mirror_absorbed`); a worked
+  mirror, or another editorial record holding the id, refuses with "already
+  linked" — resolve manually (below).
 
 ### Actor / authorship
 
@@ -171,6 +216,9 @@ engine never fabricates synthetic users.
 | No IČO configured for the organization | The rake task prints the refusal and exits non-zero without calling the source; the admin action flashes "not configured". Nothing is written. | Configure `crz_organization_ico_resolver` in the host (README § Configuration). |
 | Record belongs to another organization | Counted `out_of_scope`, not written; an existing mirror of it is left untouched (remove it with the prune task). The admin action flashes "does not involve this organization". | None — expected for every other organization's contract in the national feed. |
 | Unknown source id (admin action) | Localized "not found" flash; nothing written. | Verify the numeric CRZ id on crz.gov.sk. |
+| Filing confirmation: record not found yet (**ekosystem lag**) | The feed can trail the CRZ by about a day, so a record filed today may answer "not found". The confirmation changes nothing and writes no audit row; the flash says so. | Try again later (next day). |
+| Filing confirmation: source unreachable / unreadable | Same: no change, no audit row, "source unavailable" flash. | Retry later. |
+| Filing confirmation: official record changed since the preview | Refused as `stale`; the preview is shown again. | Re-read the comparison and confirm. |
 | Timeouts | The transport uses explicit timeouts (5s connection / 60s read — the live 2026-09-09 run observed ~50s server-side response times under throttling); timeouts are retried like other transient failures. | None — the run reports itself. |
 | Old mirror, dead `crz_url` | The public CRZ portal serves records only while they are within its publication window; ekosystem keeps its historical harvest indefinitely. A mirror of an old record (e.g. a 2015 contract) can therefore point at a `crz.gov.sk/zmluva/<id>/` URL that now 404s, while the ekosystem payload still says `status_id: 2` (published). Verified live 2026-09-09 (id 2142424). | Expected behaviour, not a bug — keep the canonical URL per ADR-008 attribution; the freshness indicator already signals mirror age. |
 
@@ -207,12 +255,21 @@ import writes — mirrors are labelled, never implied to be real-time
 
 ## Manual resolution steps
 
-- **Editorial collisions** (a manually created record holds a CRZ id):
-  the import never touches them. Resolve by deciding which record is the
+- **Editorial collisions** (an *unfiled* manually created record holds a CRZ
+  id): the import never touches them. A record that the editor confirmed as
+  filed (#125) is not a collision any more — it is counted `linked`. For a
+  genuine collision, if the editorial record IS the contract filed in CRZ,
+  use "Record CRZ filing" on it (verified, audited) instead of editing data
+  by hand; otherwise resolve by deciding which record is the
   source of truth: either (a) delete/merge the manual record and let the
   import mirror the CRZ data, or (b) clear the manual record's
   `source_id` if it was set by mistake. The sync's collision ids list is
   the worklist.
+- **"Already linked" on a filing confirmation:** the CRZ id is held by
+  another editorial record, or by a mirror an editor has worked on
+  (amendments, links or documents). Decide which record is the source of
+  truth: delete or merge the other record (or clear its `source_id` if it was
+  set by mistake), then confirm again.
 - **Quarantined ids**: check ekosystem's record for schema drift; a
   single record can usually be imported via the admin action once the
   source is sane.
@@ -250,6 +307,12 @@ import writes — mirrors are labelled, never implied to be real-time
 
 - No official-CRZ nightly-ZIP fallback/backfill implementation yet
   (designated by ADR-008; a future arc).
+- A filing-confirmed (linked) editorial record is never re-checked against
+  later CRZ changes (e.g. status cancelled/withdrawn after the filing) —
+  follow-up material.
+- No official-CRZ ZIP verification of the filing confirmation: it relies on
+  the ekosystem feed (and its up-to-a-day lag); the ZIP fallback is the same
+  future arc.
 - No document (binary) mirroring — link-only via `crz_url`.
 - No amendment linkage — EK's `kind_id`/`reference` hints are officially
   unreliable; treat any future linking as a separate, heuristic arc.

@@ -248,6 +248,21 @@ RSpec.describe "admin audit-trail viewer", type: :request do
       end
     end
 
+    it "renders the override reason on a contract.crz_filed_override row (#125)" do
+      filed = create_contract!(state: "published", crz_filed_at: Time.current,
+                               crz_filing_reason: "Amount corrected in CRZ after filing")
+      create_event!(action: "contract.crz_filed_override", target: filed)
+      clean = create_contract!(state: "published", crz_filed_at: Time.current, crz_filing_reason: "Hidden here")
+      create_event!(action: "contract.crz_filed", target: clean)
+
+      get "/admin/audit_events"
+
+      aggregate_failures do
+        expect(response.body).to include("Amount corrected in CRZ after filing")
+        expect(response.body).not_to include("Hidden here")
+      end
+    end
+
     it "renders the localized self-review labels for the _self actions (civora-org/civora-platform#123)" do
       %w[approve_self return_self reject_self].each do |suffix|
         create_event!(action: "contract.#{suffix}")

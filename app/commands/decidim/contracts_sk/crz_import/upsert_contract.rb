@@ -24,8 +24,15 @@ module Decidim
       #   provenance are re-mirrored; state/author/currency are never
       #   touched; a "crz_import_update" audit event rides the same
       #   transaction.
+      # - LINKED when a record with the same source_id has a different
+      #   source (an editorial record) that was CONFIRMED as filed
+      #   (crz_filed_at present, Admin::ConfirmCrzFiling,
+      #   civora-org/civora-platform#125): that record is already the
+      #   canonical, linked record of the CRZ id — ZERO writes (updated_at
+      #   untouched), outcome :linked. Not a mirror, not a collision.
       # - COLLISION when a record with the same source_id has a different
-      #   source (an editorial record): never touched, reason :collision —
+      #   source and is NOT confirmed as filed (an editorial record that
+      #   merely carries the id): never touched, reason :collision —
       #   logged for manual resolution by the caller.
       # - UNCHANGED when the checksum matches: zero writes (updated_at
       #   untouched — the idempotency guarantee).
@@ -50,7 +57,7 @@ module Decidim
       #
       # Broadcast payloads (single-arg hashes; the EventRecorder captures
       # them whole):
-      #   on(:ok)      { |result| } — result[:outcome] :created|:updated|:unchanged,
+      #   on(:ok)      { |result| } — result[:outcome] :created|:updated|:unchanged|:linked,
       #                               result[:contract]
       #   on(:invalid) { |result| } — result[:reason]
       #                               :collision|:lifecycle_guard|:record_invalid,
@@ -95,7 +102,7 @@ module Decidim
         def perform
           existing = find_existing
 
-          return invalid_outcome(:collision, existing) if existing && existing.source != SOURCE
+          return foreign_holder_outcome(existing) if existing && existing.source != SOURCE
           return update_locked(existing) if existing
 
           create_transactional
@@ -121,7 +128,7 @@ module Decidim
         # stamp the race winner failed.
         def lost_create_race
           fresh = find_existing
-          return invalid_outcome(:collision, fresh) if fresh && fresh.source != SOURCE
+          return foreign_holder_outcome(fresh) if fresh && fresh.source != SOURCE
           return update_locked(fresh) if fresh
 
           # Unreachable in practice (the index fired, so a row committed);
@@ -138,7 +145,7 @@ module Decidim
           return create! if fresh.nil?
           return update_locked(fresh) if fresh.source == SOURCE
 
-          invalid_outcome(:collision, fresh)
+          foreign_holder_outcome(fresh)
         end
 
         def create!
@@ -168,18 +175,45 @@ module Decidim
           result
         rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved
           invalid_outcome(:record_invalid, contract)
+        rescue ActiveRecord::RecordNotFound
+          lost_row_race
+        end
+
+        # The row vanished between the pre-read and the lock's reload (a
+        # filing confirmation absorbed this mirror, civora-org/
+        # civora-platform#125): re-find AFTER the rollback and reroute like
+        # lost_create_race, so the sync ends :linked instead of a spurious
+        # failure.
+        def lost_row_race
+          fresh = find_existing
+          return create_transactional unless fresh
+          return foreign_holder_outcome(fresh) if fresh.source != SOURCE
+
+          update_locked(fresh)
         end
 
         # The in-lock decision, read from the RELOADED row (with_lock
         # refetches under the row lock) — the TOCTOU doctrine: a pre-lock
         # read or a stale caller's copy never admits a write.
         def in_lock_update_outcome(contract)
-          return invalid_outcome(:collision, contract) if contract.source != SOURCE
+          return foreign_holder_outcome(contract) if contract.source != SOURCE
           return ok_outcome(:unchanged, contract) if unchanged_checksum?(contract)
           return invalid_outcome(:lifecycle_guard, contract) if update_guarded?(contract)
 
           apply_update!(contract)
           ok_outcome(:updated, contract)
+        end
+
+        # A non-mirror record holds the source_id (civora-org/civora-platform
+        # #125): confirmed as filed → :linked, zero writes; otherwise the
+        # protected editorial :collision. Every decision point calls this
+        # with the record as that point sees it — the in-lock call reads the
+        # RELOADED row, so a filing confirmed between the pre-read and the
+        # lock is honoured.
+        def foreign_holder_outcome(contract)
+          return ok_outcome(:linked, contract) if contract.crz_filed_at.present?
+
+          invalid_outcome(:collision, contract)
         end
 
         # The provenance stamps every import write carries; on create it

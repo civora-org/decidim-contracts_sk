@@ -43,12 +43,12 @@ RSpec.describe Decidim::ContractsSk::Contract, :db do
         .to eq(%w[T-0 T-1 T-2 T-3 T-4 T-UNSIGNED])
     end
 
-    it "excludes records recorded as filed (crz_url present) but keeps an empty crz_url tracked" do
-      create_contract!("FILED", crz_url: "https://crz.gov.sk/zmluva/1/")
-      create_contract!("EMPTY", crz_url: "")
+    it "excludes records confirmed as filed (crz_filed_at) but keeps a typed crz_url tracked (#125)" do
+      create_contract!("FILED", crz_url: "https://crz.gov.sk/zmluva/1/", crz_filed_at: Time.current)
+      create_contract!("TYPED-URL", crz_url: "https://crz.gov.sk/zmluva/2/")
       create_contract!("NULL", crz_url: nil)
 
-      expect(references(contract_class.crz_deadline_tracked)).to eq(%w[EMPTY NULL])
+      expect(references(contract_class.crz_deadline_tracked)).to eq(%w[NULL TYPED-URL])
     end
 
     it "excludes CRZ mirrors and terminal states" do
@@ -82,7 +82,7 @@ RSpec.describe Decidim::ContractsSk::Contract, :db do
     end
 
     it "leaves filed, mirror and terminal records out of both scopes" do
-      create_contract!("FILED", crz_url: "https://crz.gov.sk/zmluva/1/", signed_on: Date.new(2025, 1, 1))
+      create_contract!("FILED", crz_filed_at: Time.current, signed_on: Date.new(2025, 1, 1))
       create_contract!("MIRROR", source: "crz", source_id: "900000001", state: "published",
                                  signed_on: Date.new(2025, 1, 1))
       create_contract!("REJECTED", state: "rejected", signed_on: Date.new(2025, 1, 1))
@@ -118,7 +118,7 @@ RSpec.describe Decidim::ContractsSk::Contract, :db do
 
     it "reports :unknown for a tracked record without a signing date and :untracked otherwise" do
       expect(create_contract!("U", signed_on: nil).crz_deadline_status(today: today)).to eq(:unknown)
-      expect(create_contract!("F", crz_url: "https://crz.gov.sk/zmluva/1/")
+      expect(create_contract!("F", crz_filed_at: Time.current)
                .crz_deadline_status(today: today)).to eq(:untracked)
       expect(create_contract!("R", state: "rejected").crz_deadline_status(today: today)).to eq(:untracked)
     end
@@ -130,7 +130,7 @@ RSpec.describe Decidim::ContractsSk::Contract, :db do
       dates.each_with_index do |signed, index|
         records << create_contract!("SET-#{index}", signed_on: signed)
       end
-      records << create_contract!("SET-FILED", crz_url: "https://crz.gov.sk/zmluva/1/",
+      records << create_contract!("SET-FILED", crz_filed_at: Time.current,
                                                signed_on: Date.new(2026, 11, 30))
       records << create_contract!("SET-REJECTED", state: "rejected", signed_on: Date.new(2026, 11, 30))
 

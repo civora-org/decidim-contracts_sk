@@ -60,6 +60,9 @@ module Decidim
           "contract.archive" => "decidim.contracts_sk.admin.contracts.transition.archive",
           "contract.redaction_confirmed" => "decidim.contracts_sk.admin.audit_events.actions.redaction_confirmed",
           "amendment.publish" => "decidim.contracts_sk.admin.audit_events.actions.amendment_publish",
+          "contract.crz_filed" => "decidim.contracts_sk.admin.audit_events.actions.crz_filed",
+          "contract.crz_filed_override" => "decidim.contracts_sk.admin.audit_events.actions.crz_filed_override",
+          "contract.crz_mirror_absorbed" => "decidim.contracts_sk.admin.audit_events.actions.crz_mirror_absorbed",
           "crz_import_create" => "decidim.contracts_sk.admin.audit_events.actions.crz_import_create",
           "crz_import_update" => "decidim.contracts_sk.admin.audit_events.actions.crz_import_update"
         }.freeze
@@ -179,12 +182,20 @@ module Decidim
           return nil unless event.target_type == CONTRACT_TARGET_TYPE
 
           contract = event.target
+          # The override reason of a CRZ filing confirmation (civora-org/
+          # civora-platform#125) is shown on its own audit row.
+          return contract&.crz_filing_reason.presence if event.action == "contract.crz_filed_override"
+
+          decision_reason(contract)
+        rescue StandardError
+          nil
+        end
+
+        def decision_reason(contract)
           return nil unless contract.present? && contract.review_reason.present?
           return nil unless ContractLifecycle::DECISION_STATES.include?(contract.state&.to_sym)
 
           contract.review_reason
-        rescue StandardError
-          nil
         end
       end
     end

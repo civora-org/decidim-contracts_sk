@@ -62,10 +62,14 @@ namespace :decidim_contracts_sk do
       )
 
       puts "CRZ import for organization ##{organization.id} (since #{since}):"
-      puts "  created=#{result.created} updated=#{result.updated} unchanged=#{result.unchanged}"
+      puts "  created=#{result.created} updated=#{result.updated} unchanged=#{result.unchanged} " \
+           "linked=#{result.linked}"
       puts "  collisions=#{result.collisions} quarantined=#{result.quarantined} " \
            "failed=#{result.failed} skipped=#{result.skipped} out_of_scope=#{result.out_of_scope}"
       puts "  created ids: #{result.created_ids.join(", ")}" if result.created_ids.any?
+      if result.linked_ids.any?
+        puts "  linked ids (editorial records confirmed as filed in CRZ): #{result.linked_ids.join(", ")}"
+      end
       puts "  collision ids: #{result.collision_ids.join(", ")}" if result.collision_ids.any?
       puts "  quarantined source ids: #{result.quarantined_ids.compact.join(", ")}" if result.quarantined_ids.any?
       puts "  failed ids: #{result.failed_ids.compact.join(", ")}" if result.failed_ids.any?

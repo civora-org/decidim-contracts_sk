@@ -40,6 +40,10 @@ end
 # holder exercised via context[:contract].
 SpecContract = Struct.new(:state)
 
+# Filing-confirmation stand-in (civora-org/civora-platform#125): the
+# :confirm_crz_filing rule reads the record's state, source and filed flag.
+FilingContract = Struct.new(:state, :source, :crz_filed_at)
+
 # Four-eyes stand-ins (civora-org/civora-platform#123): a user carrying an id
 # (the rule compares it with the record's submitter stamp) and a contract
 # carrying that stamp. Both stay duck-typed, DB-free.
@@ -244,6 +248,65 @@ RSpec.describe Decidim::ContractsSk::Permissions do
         expect(via_state.allowed?).to eq(expected), "String state diverged for :update on #{state}"
         expect(via_contract.allowed?).to eq(expected), "String state diverged for :update on #{state} (contract)"
       end
+    end
+  end
+
+  describe "admin scope — confirm_crz_filing (civora-org/civora-platform#125)" do
+    def filing_user_with_roles(*roles)
+      SpecUser.new(engine_roles: roles)
+    end
+
+    def filing_action(user, contract)
+      action_for(user, scope: :admin, action: :confirm_crz_filing, contract: contract)
+    end
+
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "is allowed for an editor on a published, unfiled editorial record (String or Symbol state)" do
+      [:published, "published"].each do |state|
+        expect(filing_action(filing_user_with_roles(:editor), FilingContract.new(state, "editorial", nil)).allowed?)
+          .to be(true)
+      end
+    end
+
+    it "is denied on every other lifecycle state" do
+      (lifecycle::STATES - [:published]).each do |state|
+        outcome = filing_action(filing_user_with_roles(:editor), FilingContract.new(state, "editorial", nil))
+
+        expect(outcome.allowed?).to be(false), "must not allow filing on #{state}"
+      end
+    end
+
+    it "is denied for a record already confirmed as filed and for a CRZ mirror" do
+      editor = filing_user_with_roles(:editor)
+
+      expect(filing_action(editor, FilingContract.new(:published, "editorial", Time.current)).allowed?).to be(false)
+      expect(filing_action(editor, FilingContract.new(:published, "crz", nil)).allowed?).to be(false)
+    end
+
+    it "is denied for a reviewer and for a roleless user" do
+      record = FilingContract.new(:published, "editorial", nil)
+
+      expect(filing_action(filing_user_with_roles(:reviewer), record).allowed?).to be(false)
+      expect(filing_action(filing_user_with_roles, record).allowed?).to be(false)
+    end
+
+    it "is disallowed (not unset) without a record — a bare state cannot prove source or filed flag" do
+      outcome = action_for(filing_user_with_roles(:editor), scope: :admin, action: :confirm_crz_filing,
+                                                            state: :published)
+
+      expect(outcome.allowed?).to be(false)
+    end
+
+    it "leaves the public-scope action unset (fail-closed)" do
+      expect(unset?(filing_user_with_roles(:editor), scope: :public, action: :confirm_crz_filing,
+                                                     contract: FilingContract.new(:published, "editorial", nil)))
+        .to be(true)
     end
   end
 

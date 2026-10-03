@@ -293,6 +293,30 @@ module LocaleContract
     }
   }.freeze
 
+  # The CRZ filing-confirmation labels per locale (civora-org/civora-platform
+  # #125): the entry link, the lag-aware not-found wording and the public
+  # "published in CRZ on" line (the date placeholder is part of the pin).
+  CRZ_FILING_LABELS = {
+    en: {
+      "admin.contracts.crz_filing.link" => "Record CRZ filing",
+      "admin.contracts.crz_filing.refusals.not_found" =>
+        "No CRZ contract with id %{crz_id} was found. The data source may lag the CRZ by about a day — " \
+        "try again later.",
+      "contract.crz_filed_on" => "Published in CRZ on %{date}",
+      "contract.crz_filed_confirmed" => "Publication in CRZ confirmed",
+      "admin.audit_events.actions.crz_filed_override" => "CRZ filing confirmed despite differences"
+    },
+    sk: {
+      "admin.contracts.crz_filing.link" => "Zaznamenať zverejnenie v CRZ",
+      "admin.contracts.crz_filing.refusals.not_found" =>
+        "Zmluva s ID %{crz_id} nebola v CRZ nájdená. Zdroj údajov môže za CRZ zaostávať približne o deň — " \
+        "skúste to neskôr.",
+      "contract.crz_filed_on" => "Zverejnené v CRZ dňa %{date}",
+      "contract.crz_filed_confirmed" => "Zverejnenie v CRZ potvrdené",
+      "admin.audit_events.actions.crz_filed_override" => "Zverejnenie v CRZ potvrdené napriek rozdielom"
+    }
+  }.freeze
+
   # The admin privacy-redaction confirmation labels per locale (ADR-007,
   # civora-org/civora-platform#91). The checklist items and the checkbox
   # affirmation are pinned verbatim — the confirmation's wording is the
@@ -530,8 +554,11 @@ module LocaleContract
     "admin.amendments.update.success",
     "admin.audit_events.actions.amendment_publish",
     "admin.audit_events.actions.approve_self",
+    "admin.audit_events.actions.crz_filed",
+    "admin.audit_events.actions.crz_filed_override",
     "admin.audit_events.actions.crz_import_create",
     "admin.audit_events.actions.crz_import_update",
+    "admin.audit_events.actions.crz_mirror_absorbed",
     "admin.audit_events.actions.redaction_confirmed",
     "admin.audit_events.actions.reject_self",
     "admin.audit_events.actions.return_self",
@@ -560,6 +587,46 @@ module LocaleContract
     "admin.contracts.confirm_redaction.title",
     "admin.contracts.create.error",
     "admin.contracts.create.success",
+    "admin.contracts.crz_filing.back",
+    "admin.contracts.crz_filing.comparison.crz",
+    "admin.contracts.crz_filing.comparison.editorial",
+    "admin.contracts.crz_filing.comparison.field",
+    "admin.contracts.crz_filing.comparison.fields.amount",
+    "admin.contracts.crz_filing.comparison.fields.reference",
+    "admin.contracts.crz_filing.comparison.fields.supplier_ico",
+    "admin.contracts.crz_filing.comparison.official_record",
+    "admin.contracts.crz_filing.comparison.published_on",
+    "admin.contracts.crz_filing.comparison.published_on_unknown",
+    "admin.contracts.crz_filing.comparison.result",
+    "admin.contracts.crz_filing.comparison.statuses.match",
+    "admin.contracts.crz_filing.comparison.statuses.mismatch",
+    "admin.contracts.crz_filing.comparison.statuses.unverifiable",
+    "admin.contracts.crz_filing.comparison.title",
+    "admin.contracts.crz_filing.confirm",
+    "admin.contracts.crz_filing.confirm_prompt",
+    "admin.contracts.crz_filing.crz_id_label",
+    "admin.contracts.crz_filing.description",
+    "admin.contracts.crz_filing.filed",
+    "admin.contracts.crz_filing.filed_override",
+    "admin.contracts.crz_filing.invalid_id",
+    "admin.contracts.crz_filing.lag_hint",
+    "admin.contracts.crz_filing.link",
+    "admin.contracts.crz_filing.lookup",
+    "admin.contracts.crz_filing.override.label",
+    "admin.contracts.crz_filing.override.placeholder",
+    "admin.contracts.crz_filing.override.warning",
+    "admin.contracts.crz_filing.refusals.already_filed",
+    "admin.contracts.crz_filing.refusals.already_linked",
+    "admin.contracts.crz_filing.refusals.failed",
+    "admin.contracts.crz_filing.refusals.not_configured",
+    "admin.contracts.crz_filing.refusals.not_fileable",
+    "admin.contracts.crz_filing.refusals.not_found",
+    "admin.contracts.crz_filing.refusals.out_of_scope",
+    "admin.contracts.crz_filing.refusals.reason_rejected",
+    "admin.contracts.crz_filing.refusals.reason_required",
+    "admin.contracts.crz_filing.refusals.stale",
+    "admin.contracts.crz_filing.refusals.withdrawn",
+    "admin.contracts.crz_filing.title",
     "admin.contracts.deadline.badge.overdue",
     "admin.contracts.deadline.badge.today",
     "admin.contracts.deadline.badge.unknown",
@@ -589,6 +656,7 @@ module LocaleContract
     "admin.contracts.import_crz.hint",
     "admin.contracts.import_crz.label",
     "admin.contracts.import_crz.lifecycle_guard",
+    "admin.contracts.import_crz.linked",
     "admin.contracts.import_crz.not_configured",
     "admin.contracts.import_crz.not_found",
     "admin.contracts.import_crz.out_of_scope",
@@ -709,6 +777,9 @@ module LocaleContract
     "admin.parties.update.error",
     "admin.parties.update.success",
     "contract.amount",
+    "contract.crz_filed",
+    "contract.crz_filed_confirmed",
+    "contract.crz_filed_on",
     "contract.crz_url",
     "contract.currency",
     "contract.document.annex",
@@ -998,6 +1069,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the public detail page's document section labels in both locales (civora-org/civora-platform#73)" do
       LocaleContract::DOCUMENT_VIEW_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the CRZ filing-confirmation labels in both locales (civora-org/civora-platform#125)" do
+      LocaleContract::CRZ_FILING_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

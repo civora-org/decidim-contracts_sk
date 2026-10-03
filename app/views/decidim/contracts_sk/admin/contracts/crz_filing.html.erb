@@ -1,0 +1,99 @@
+<%# CRZ filing confirmation page (civora-org/civora-platform#125): the
+    editor names the CRZ id of the record they filed by hand; with ?crz_id=
+    the controller has fetched the official record (read-only) and the page
+    shows it side by side with this one. Nothing is written by this page.
+    Ivars: @contract, @crz_id, and — when the fetch succeeded —
+    @crz_record (the mapped record) and @comparison (FilingComparison).
+    The confirm form carries the preview's checksum token and the CRZ id as
+    hidden fields; the command re-verifies the token, the comparison and the
+    reason rule inside the row lock, so nothing here is the gate. Plain
+    form_with tag helpers (the import_crz form precedent). %>
+<% scope = "decidim.contracts_sk.admin.contracts.crz_filing" %>
+<div class="item_show__header">
+  <h1 class="item_show__header-title">
+    <%= t("#{scope}.title") %>
+  </h1>
+</div>
+
+<p><strong><%= @contract.title %></strong> (<%= @contract.reference %>)</p>
+<p><%= t("#{scope}.description") %></p>
+
+<div class="card">
+  <div class="card-section">
+    <%= form_with url: crz_filing_admin_contract_path(@contract), method: :get, local: true do %>
+      <div class="row column">
+        <%= label_tag :crz_id, t("#{scope}.crz_id_label") %>
+        <%= text_field_tag :crz_id, @crz_id, placeholder: "12345678", inputmode: "numeric" %>
+      </div>
+      <%= submit_tag t("#{scope}.lookup"), name: nil, class: "button button__sm button__secondary" %>
+      <p><em><%= t("#{scope}.lag_hint") %></em></p>
+    <% end %>
+  </div>
+</div>
+
+<% if @comparison %>
+  <div class="card">
+    <div class="card-divider">
+      <h2 class="card-title"><%= t("#{scope}.comparison.title") %></h2>
+    </div>
+    <div class="card-section">
+      <div class="table-scroll">
+        <table class="table-list">
+          <thead>
+            <tr>
+              <th><%= t("#{scope}.comparison.field") %></th>
+              <th><%= t("#{scope}.comparison.editorial") %></th>
+              <th><%= t("#{scope}.comparison.crz") %></th>
+              <th><%= t("#{scope}.comparison.result") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @comparison.rows.each do |row| %>
+              <% label_class = { match: "success", mismatch: "alert", unverifiable: "warning" }.fetch(row.status) %>
+              <tr>
+                <td><%= t("#{scope}.comparison.fields.#{row.field}") %></td>
+                <td><%= Array(row.editorial).join(", ").presence || "—" %></td>
+                <td><%= Array(row.crz).join(", ").presence || "—" %></td>
+                <td><span class="label <%= label_class %>"><%= t("#{scope}.comparison.statuses.#{row.status}") %></span></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        <%= t("#{scope}.comparison.published_on") %>:
+        <%= @crz_record[:published_on] ? format_date(@crz_record[:published_on]) : t("#{scope}.comparison.published_on_unknown") %>
+        —
+        <%= link_to t("#{scope}.comparison.official_record"),
+                    format(Decidim::ContractsSk::CrzImport::Mapper::CRZ_URL_TEMPLATE, @crz_record[:source_id]) %>
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-section">
+      <%= form_with url: confirm_crz_filing_admin_contract_path(@contract), method: :post, local: true do %>
+        <%= hidden_field_tag :crz_id, @crz_record[:source_id] %>
+        <%= hidden_field_tag :checksum, @crz_record[:checksum] %>
+
+        <% if @comparison.needs_reason? %>
+          <p><strong><%= t("#{scope}.override.warning") %></strong></p>
+          <div class="row column">
+            <%= label_tag :reason, t("#{scope}.override.label") %>
+            <%= text_area_tag :reason, nil,
+                              placeholder: t("#{scope}.override.placeholder"),
+                              maxlength: Decidim::ContractsSk::Admin::ConfirmCrzFiling::MAX_REASON_LENGTH,
+                              required: true %>
+          </div>
+        <% end %>
+
+        <%= submit_tag t("#{scope}.confirm"),
+                       class: "button button__sm button__secondary",
+                       data: { confirm: t("#{scope}.confirm_prompt") } %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<p><%= link_to t("#{scope}.back"), admin_contracts_path %></p>

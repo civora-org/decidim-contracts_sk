@@ -20,7 +20,7 @@
 
 require "spec_helper"
 
-# rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
+# rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, Metrics/AbcSize
 RSpec.describe Decidim::ContractsSk::CrzImport::UpsertContract, :db do
   before { migrate_engine_schema! }
 
@@ -188,6 +188,87 @@ RSpec.describe Decidim::ContractsSk::CrzImport::UpsertContract, :db do
     end
   end
 
+  describe "linked path (editorial record confirmed as filed, civora-org/civora-platform#125)" do
+    let!(:filed) do
+      Decidim::ContractsSk::Contract.create!(
+        contract_attributes(reference: "ZP-2026-808", state: "published", source_id: "2142424",
+                            crz_filed_at: Time.zone.parse("2026-09-01T10:00:00Z"))
+      )
+    end
+
+    def expect_linked_without_writes(events)
+      before = filed.updated_at
+
+      expect(events).to have_key(:ok)
+      expect(events[:ok][:outcome]).to eq(:linked)
+      expect(events[:ok][:contract].id).to eq(filed.id)
+      expect(filed.reload.updated_at).to eq(before)
+      expect(filed.source).to eq("editorial")
+      expect(Decidim::ContractsSk::Contract.count).to eq(1)
+      expect(Decidim::ContractsSk::AuditEvent.count).to eq(0)
+    end
+
+    it "writes nothing and reports :linked — neither a mirror nor a collision" do
+      expect_linked_without_writes(call_command(mapped_crz_record("2142424")))
+    end
+
+    it "stays a no-op however the payload changes (the filed record is canonical)" do
+      call_command(mapped_crz_record("2142424"))
+
+      expect_linked_without_writes(call_command(mapped_crz_record("2142424", "subject" => "Zmenený predmet")))
+      expect(filed.reload.title).to eq("Road reconstruction")
+    end
+
+    it "honours a filing confirmed after the pre-read (create-edge reroute)" do
+      original = Decidim::ContractsSk::Contract.method(:find_by)
+      calls = 0
+      allow(Decidim::ContractsSk::Contract).to receive(:find_by) do |**kwargs|
+        calls += 1
+        calls == 1 ? nil : original.call(**kwargs)
+      end
+
+      expect_linked_without_writes(call_command(mapped_crz_record("2142424")))
+    end
+
+    it "reroutes a lost unique-index race to :linked as well" do
+      original = Decidim::ContractsSk::Contract.method(:find_by)
+      lookups = 0
+      allow(Decidim::ContractsSk::Contract).to receive(:find_by) do |**kwargs|
+        lookups += 1
+        lookups <= 2 ? nil : original.call(**kwargs)
+      end
+      allow(Decidim::ContractsSk::Contract).to receive(:create!)
+        .and_raise(ActiveRecord::RecordNotUnique.new("idx_contracts_sk_contracts_on_org_and_source_id_unique"))
+
+      expect_linked_without_writes(call_command(mapped_crz_record("2142424")))
+    end
+
+    it "ends :linked when the mirror row was absorbed between the pre-read and the lock (L-1)" do
+      filed.update_columns(source_id: nil)
+      mirror = create_imported_record("2142424")
+      stale = Decidim::ContractsSk::Contract.find(mirror.id)
+      mirror.destroy!
+      filed.update_columns(source_id: "2142424")
+
+      original = Decidim::ContractsSk::Contract.method(:find_by)
+      calls = 0
+      allow(Decidim::ContractsSk::Contract).to receive(:find_by) do |**kwargs|
+        calls += 1
+        calls == 1 ? stale : original.call(**kwargs)
+      end
+
+      expect_linked_without_writes(call_command(mapped_crz_record("2142424")))
+    end
+
+    it "still reports :collision for an UNFILED editorial record holding the id" do
+      filed.update_columns(crz_filed_at: nil)
+
+      events = call_command(mapped_crz_record("2142424"))
+
+      expect(events[:invalid][:reason]).to eq(:collision)
+    end
+  end
+
   describe "lifecycle guard" do
     it "never updates an imported record that left the published state (archived stays archived)" do
       contract = create_imported_record("2142424", state: "archived")
@@ -282,4 +363,4 @@ RSpec.describe Decidim::ContractsSk::CrzImport::UpsertContract, :db do
     end
   end
 end
-# rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
+# rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength, Metrics/AbcSize

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "active_support/time"
 require "bigdecimal"
 require "date"
 require "digest"
@@ -28,6 +29,12 @@ module Decidim
       # order, so the upsert's checksum gate is stable across runs.
       # `changed_at` drives nothing in the upsert except being part of the
       # checksummed payload.
+      #
+      # Cop note: the module is the single, pure payload→record mapping
+      # (field correspondence plus its tolerant parsers); splitting the
+      # parsers off would scatter the spike-verified correspondence rather
+      # than simplify it.
+      # rubocop:disable Metrics/ModuleLength, Metrics/ClassLength
       module Mapper
         class Error < Decidim::ContractsSk::Error; end
 
@@ -45,7 +52,15 @@ module Decidim
 
         class << self
           # Maps one raw payload Hash into the upsert record:
-          #   { source_id:, attributes: {...}, parties: [...], checksum: }
+          #   { source_id:, attributes: {...}, parties: [...], checksum:,
+          #     status_id:, published_on: }
+          #
+          # status_id (CRZ status code, Integer or nil) and published_on
+          # (Date or nil) are read by the filing confirmation
+          # (civora-org/civora-platform#125) ONLY. They deliberately sit
+          # beside — never inside — :attributes, so the import's written
+          # columns and the checksum (a digest of the raw payload) are
+          # unchanged by them.
           # Raises Mapper::Error on structural invalidity.
           def map(payload)
             raise Error, "CRZ record is not a JSON object" unless payload.is_a?(Hash)
@@ -58,7 +73,7 @@ module Decidim
               attributes: contract_attributes(payload, source_id),
               parties: parties_for(payload),
               checksum: checksum(payload)
-            }
+            }.merge(filing_fields(payload))
           end
 
           # SHA-256 hex of the canonical JSON of the raw payload.
@@ -175,6 +190,30 @@ module Decidim
             nil
           end
 
+          # The filing-confirmation fields (see .map): the CRZ status code
+          # (an Integer or digit string, else nil) and the publication date
+          # (sentinel/blank/garbage → nil) — tolerant like every field.
+          def filing_fields(payload)
+            status = text(payload["status_id"])
+            { status_id: status.match?(/\A\d+\z/) ? status.to_i : nil,
+              published_on: parse_published_on(payload["published_at"]) }
+          end
+
+          # published_at is documented only as "publication date in CRZ"
+          # (spike, verified field) — a plain date today, but a timestamp is
+          # tolerated: it is converted to Europe/Bratislava before taking
+          # the date, so a near-midnight UTC instant lands on the Slovak
+          # calendar day. Sentinel, blank and garbage → nil.
+          def parse_published_on(raw)
+            value = text(raw)
+            return parse_date(value) if value.match?(/\A\d{4}-\d{2}-\d{2}\z/)
+            return nil if value.blank?
+
+            Time.find_zone!("Europe/Bratislava").parse(value)&.to_date
+          rescue ArgumentError
+            nil
+          end
+
           def text(raw)
             raw.to_s.strip
           end
@@ -194,6 +233,7 @@ module Decidim
           end
         end
       end
+      # rubocop:enable Metrics/ModuleLength, Metrics/ClassLength
     end
   end
 end

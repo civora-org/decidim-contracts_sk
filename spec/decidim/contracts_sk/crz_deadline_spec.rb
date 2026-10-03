@@ -102,8 +102,8 @@ RSpec.describe Decidim::ContractsSk::CrzDeadline do
   end
 
   describe ".tracked?" do
-    def tracked?(source: "editorial", state: "draft", crz_url: nil)
-      described_class.tracked?(source: source, state: state, crz_url: crz_url)
+    def tracked?(source: "editorial", state: "draft", crz_filed_at: nil)
+      described_class.tracked?(source: source, state: state, crz_filed_at: crz_filed_at)
     end
 
     it "tracks unfiled editorial records in every non-terminal state" do
@@ -114,10 +114,9 @@ RSpec.describe Decidim::ContractsSk::CrzDeadline do
         .to eq(%i[draft in_review returned approved published])
     end
 
-    it "treats NULL and '' crz_url as not filed, any other value as filed" do
-      expect(tracked?(crz_url: nil)).to be(true)
-      expect(tracked?(crz_url: "")).to be(true)
-      expect(tracked?(crz_url: "https://crz.gov.sk/zmluva/1/")).to be(false)
+    it "treats only a NULL crz_filed_at as not filed (hard switch from the crz_url proxy, #125)" do
+      expect(tracked?(crz_filed_at: nil)).to be(true)
+      expect(tracked?(crz_filed_at: Time.zone.now)).to be(false)
     end
 
     it "excludes CRZ mirrors and terminal states" do

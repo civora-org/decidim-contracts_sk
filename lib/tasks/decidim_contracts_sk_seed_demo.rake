@@ -154,7 +154,12 @@ namespace :decidim_contracts_sk do
       subject_matter: "Zber a odvoz komunálneho odpadu na území mesta",
       amount: BigDecimal("96800.00"), signed_on: Date.new(2025, 12, 15),
       effective_from: Date.new(2026, 1, 1),
-      crz_url: "https://crz.gov.sk/demo-ukazkovy-zaznam"
+      crz_url: "https://crz.gov.sk/zmluva/900000003/", source_id: "900000003",
+      # Confirmed as filed in CRZ (civora-org/civora-platform#125): the
+      # demo record that carries no deadline badge, and the public
+      # "Zverejnené v CRZ dňa" line. Constant values keep re-seeds
+      # idempotent.
+      crz_filed_at: Time.zone.local(2026, 1, 10, 12), crz_published_on: Date.new(2026, 1, 10)
     )
 
     seed.call(

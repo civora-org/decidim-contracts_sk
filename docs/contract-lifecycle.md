@@ -90,7 +90,7 @@ Role→user mapping and permission checks (M02-01-B): [roles-and-permissions.md]
 A contract that must be published in the CRZ and is not published within
 three months of its conclusion is deemed never concluded (§ 47a of Act No.
 211/2000 Coll., OZ). The engine shows the days left for every editorial
-record that is not yet recorded as filed in CRZ, so an overdue or at-risk
+record that is not yet confirmed as filed in CRZ, so an overdue or at-risk
 contract cannot be missed.
 
 - **Rule.** Deadline = `signed_on` + `Decidim::ContractsSk.crz_deadline`
@@ -104,12 +104,17 @@ contract cannot be missed.
   (`draft`, `in_review`, `returned`, `approved`, `published`). A signed draft
   is tracked: the clock runs from the signature, not from our workflow.
   `rejected` and `archived` are never tracked.
-- **"Filed" is a proxy.** A record counts as recorded as filed when `crz_url`
-  is present (NOT NULL and not `''`). Until real filing confirmation lands
-  (civora-org/civora-platform#125) the UI says "not recorded as filed in CRZ",
-  never "not published". Caveat: `crz_url` is only writable in the editable
-  states (`draft`, `returned`), so a record that has moved past `returned`
-  without a CRZ link cannot clear the flag until #125 ships.
+- **"Filed" is a verified confirmation (#125).** A record counts as filed
+  when `crz_filed_at` is present — stamped only by the filing confirmation
+  (`Admin::ConfirmCrzFiling`: the editor names the CRZ id, the engine verifies
+  the official record read-only and, on a match or an explained override,
+  records the filing; see [crz-import.md](crz-import.md)). The UI says "not
+  confirmed as filed in CRZ", never "not published". This is a **hard switch**
+  from the interim `crz_url` proxy of #124: a typed CRZ link alone no longer
+  stops tracking, and nothing is backfilled — records the editors considered
+  filed before the confirmation shipped stay tracked until they are confirmed
+  (a published record is confirmed from its index row; the editable-state
+  limit of the `crz_url` field no longer matters).
 - **Where it shows.** Admin index: a badge per tracked row (alert "po termíne"
   when overdue, warning for 0–14 days left, plain beyond; muted dash when
   `signed_on` is unknown), the `deadline=due_soon|overdue` filter and two
@@ -130,7 +135,7 @@ contract cannot be missed.
   conservative (earlier) one. The feature is an aid for editors, **not legal
   advice**.
 - **Follow-ups.** Notifications on approaching deadlines: civora-org/civora-platform#94.
-  Real filing confirmation replacing the `crz_url` proxy: #125.
+  (Real filing confirmation replacing the `crz_url` proxy: shipped in #125.)
 
 ## Public API
 

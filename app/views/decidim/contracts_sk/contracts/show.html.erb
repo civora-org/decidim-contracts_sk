@@ -75,7 +75,25 @@
           <%# The originally guarded field: a link to a blank URL would
               render href="". The full URL stays visible (it is the
               citation) and breaks anywhere, so it cannot overflow. %>
-          <% if @contract.crz_url.present? %>
+          <%# A record CONFIRMED as filed (crz_filed_at, civora-org/civora-platform
+              #125) says so, with the CRZ publication date when CRZ carried one,
+              and links the official record; the guarded plain-URL row below
+              stays for every other record. %>
+          <% if @contract.crz_filed_at.present? %>
+            <div>
+              <dt><%= t("decidim.contracts_sk.contract.crz_filed") %></dt>
+              <dd>
+                <% if @contract.crz_published_on.present? %>
+                  <%= t("decidim.contracts_sk.contract.crz_filed_on", date: format_date(@contract.crz_published_on)) %>
+                <% else %>
+                  <%= t("decidim.contracts_sk.contract.crz_filed_confirmed") %>
+                <% end %>
+                <% if @contract.crz_url.present? %>
+                  <br><%= link_to @contract.crz_url, @contract.crz_url %>
+                <% end %>
+              </dd>
+            </div>
+          <% elsif @contract.crz_url.present? %>
             <div>
               <dt><%= t("decidim.contracts_sk.contract.crz_url") %></dt>
               <dd><%= link_to @contract.crz_url, @contract.crz_url %></dd>

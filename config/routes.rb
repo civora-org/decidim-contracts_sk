@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# The route table is one declarative list (each block documents its own
+# reason to exist), so the block-length budget does not apply.
+# rubocop:disable Metrics/BlockLength
 Decidim::ContractsSk::Engine.routes.draw do
   # Admin routes (declared before the public /:id catch-all so that the
   # admin namespace is matched first). Contract records have no :show — they
@@ -43,6 +46,16 @@ Decidim::ContractsSk::Engine.routes.draw do
       # Declared explicitly — NOT a lifecycle event, so deliberately outside
       # the derivation above (same reasoning as the CRZ-handoff pair).
       member { post :confirm_redaction }
+
+      # CRZ filing confirmation (civora-org/civora-platform#125): a GET
+      # form + read-only side-by-side preview (?crz_id=, writes nothing) and
+      # a POST that verifies and stamps the filing. Declared explicitly —
+      # NOT a lifecycle event, so outside the derivation above (the
+      # crz_handoff pair's precedent): same path, two verbs, two actions.
+      member do
+        get :crz_filing, action: :crz_filing, as: :crz_filing
+        post :crz_filing, action: :confirm_crz_filing, as: :confirm_crz_filing
+      end
 
       # Per-contract party management (civora-org/civora-platform#76):
       # dedicated nested pages (index/new/edit + destroy), deliberately no
@@ -94,3 +107,4 @@ Decidim::ContractsSk::Engine.routes.draw do
   root to: "contracts#index", as: :contracts
   get "/:id", to: "contracts#show", as: :contract
 end
+# rubocop:enable Metrics/BlockLength
