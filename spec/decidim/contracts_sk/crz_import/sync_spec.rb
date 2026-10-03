@@ -17,6 +17,8 @@ require "spec_helper"
 
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
 RSpec.describe Decidim::ContractsSk::CrzImport::Sync, :db do
+  include_context "with the CRZ scope configured"
+
   before { migrate_engine_schema! }
 
   let(:client) { instance_double(Decidim::ContractsSk::CrzImport::Client) }
@@ -207,6 +209,56 @@ RSpec.describe Decidim::ContractsSk::CrzImport::Sync, :db do
     end
   end
 
+  describe ".run (organization scope, civora-org/civora-platform#145)" do
+    it "imports only records carrying the organization's IČO on either party" do
+      records = [
+        crz_payload("500"), # authority side
+        crz_payload("501", "contracting_authority_cin" => "00 000 009",
+                           "supplier_cin" => "00 000 001"), # supplier side
+        crz_payload("502", "contracting_authority_cin" => "00 000 009"), # another municipality
+        crz_payload("503", "contracting_authority_cin" => nil, "supplier_cin" => nil)
+      ]
+      allow(client).to receive(:sync).and_return(page(records))
+
+      result = run_sync
+
+      aggregate_failures do
+        expect(result.created).to eq(2)
+        expect(result.out_of_scope).to eq(2)
+        expect(result.quarantined).to eq(0)
+        expect(result.error).to be_nil
+        expect(Decidim::ContractsSk::Contract.pluck(:source_id)).to contain_exactly("500", "501")
+      end
+    end
+
+    it "never updates an existing mirror once its record is out of scope" do
+      existing = create_imported_record("504")
+      allow(client).to receive(:sync).and_return(
+        page([crz_payload("504", "contracting_authority_cin" => "00 000 009", "subject" => "Cudzí predmet")])
+      )
+
+      result = run_sync
+
+      aggregate_failures do
+        expect(result.out_of_scope).to eq(1)
+        expect(existing.reload.title).to eq("Importovaný záznam (demo)")
+      end
+    end
+
+    it "refuses to run without a configured IČO and never calls the source" do
+      Decidim::ContractsSk.crz_organization_ico_resolver = ->(_organization) {}
+      allow(client).to receive(:sync)
+
+      result = run_sync
+
+      aggregate_failures do
+        expect(result.error).to eq(described_class::NOT_CONFIGURED_MESSAGE)
+        expect(result.created).to eq(0)
+        expect(client).not_to have_received(:sync)
+      end
+    end
+  end
+
   describe ".import_one" do
     it "creates the mirror for a fresh CRZ id" do
       allow(client).to receive(:contract).with("2142424").and_return(crz_payload("2142424"))
@@ -246,6 +298,32 @@ RSpec.describe Decidim::ContractsSk::CrzImport::Sync, :db do
         existing.reload
         expect(existing.import_status).to eq("failed")
         expect(existing.title).to eq("Importovaný záznam (demo)") # prior data intact
+      end
+    end
+
+    it "answers :out_of_scope without persisting another organization's contract" do
+      allow(client).to receive(:contract).with("505")
+                                         .and_return(crz_payload("505", "contracting_authority_cin" => "00 000 009"))
+
+      outcome = described_class.import_one(source_id: "505", organization: organization,
+                                           actor: author, client: client)
+
+      aggregate_failures do
+        expect(outcome).to eq(:out_of_scope)
+        expect(Decidim::ContractsSk::Contract.count).to eq(0)
+      end
+    end
+
+    it "answers :not_configured without calling the source when no IČO is configured" do
+      Decidim::ContractsSk.crz_organization_ico_resolver = ->(_organization) {}
+      allow(client).to receive(:contract)
+
+      outcome = described_class.import_one(source_id: "506", organization: organization,
+                                           actor: author, client: client)
+
+      aggregate_failures do
+        expect(outcome).to eq(:not_configured)
+        expect(client).not_to have_received(:contract)
       end
     end
   end

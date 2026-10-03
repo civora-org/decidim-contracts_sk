@@ -24,6 +24,16 @@
   dodávateľ → `contractor`). **Not mirrored:** documents (link-only via
   `crz_url`), currency and the VAT flag (absent upstream — manual fields),
   amendment linkage hints (structurally unreliable per the spike).
+- **Organization scope (civora-org/civora-platform#145):** the ekosystem
+  feed carries every contract published anywhere in Slovakia. Only
+  records whose parties carry the organization's IČO (as objednávateľ or
+  dodávateľ, matched on ekosystem's normalized `*_cin` fields) are
+  mirrored; everything else is counted as `out_of_scope` and never
+  written. The host supplies the IČO through
+  `Decidim::ContractsSk.crz_organization_ico_resolver` (README §
+  Configuration). **Fail closed:** without a configured IČO the rake task
+  refuses to run (exit 1) and the admin action answers "not configured" —
+  nothing is ever imported unscoped.
 
 ## Write semantics (ADR-008 decision 3)
 
@@ -86,8 +96,35 @@ bin/rails "decidim_contracts_sk:crz_import:sync[<organization_id>,2026-09-08T00:
   unreachable), so a scheduler can alert. Partial pages already applied
   stay applied; re-running is always safe (idempotent upsert).
 - Summary counters (created/updated/unchanged/collisions/quarantined/
-  failed/skipped + ids) print at the end; collisions and quarantined ids
-  need human follow-up (below).
+  failed/skipped/out_of_scope + ids) print at the end; collisions and
+  quarantined ids need human follow-up (below). `out_of_scope` is a count
+  only (other organizations' contracts), never a follow-up item.
+
+#### Pruning mirrors from before the scoping
+
+Stacks that synced before the organization scope existed hold other
+organizations' contracts. The prune task lists them (dry run) and deletes
+them only when confirmed; it considers `source="crz"` mirrors only, so
+editorial records are never candidates:
+
+```bash
+bin/rails "decidim_contracts_sk:crz_import:prune_out_of_scope[<organization_id>]"            # dry run: count
+CONFIRM=1 bin/rails "decidim_contracts_sk:crz_import:prune_out_of_scope[<organization_id>]"  # delete
+```
+
+Deleting a mirror removes its parties, documents, amendments and links;
+the audit trail survives, as for any contract deletion. Take a backup
+first.
+
+**Caveat — IČOs mirrored before v1.4.0.** ekosystem serves `*_cin` as an
+integer, and earlier versions dropped any IČO that had lost its leading
+zeros — which is most municipalities' (`00323560` arrived as `323560`).
+Mirrors imported before the fix therefore carry no IČO for such a party,
+so the prune task counts even the organization's *own* old mirrors as
+out of scope, and the checksum gate never refreshes their parties (the
+payload did not change). On a stack with real pre-v1.4.0 mirrors, run the
+dry run, check the count, and after pruning re-sync from the go-live
+`SINCE` to restore the organization's own contracts with correct IČOs.
 
 ### 2. Admin action (single record, interactive)
 
@@ -131,6 +168,8 @@ engine never fabricates synthetic users.
 | Source unreachable mid-run (retries exhausted) | The run stops gracefully; pages already applied stand; the task reports the error and exits non-zero. **Prior catalogue data is never degraded.** | Re-run later — the sync is idempotent. |
 | One record in a batch is malformed (missing id, unparseable, mapper failure) | The record is **quarantined** (skipped + counted); the batch continues. If a mirror row already exists for that id it is stamped `import_status="failed"` — its data stays intact (stale fallback). | Check the logged source ids; usually source-side drift — wait for the next sync, or import that id via the admin action. |
 | A changed payload fails validation on update | No write; the existing mirror is stamped `import_status="failed"`, data intact. | Inspect the record; the next clean payload clears the stamp on the next successful update. |
+| No IČO configured for the organization | The rake task prints the refusal and exits non-zero without calling the source; the admin action flashes "not configured". Nothing is written. | Configure `crz_organization_ico_resolver` in the host (README § Configuration). |
+| Record belongs to another organization | Counted `out_of_scope`, not written; an existing mirror of it is left untouched (remove it with the prune task). The admin action flashes "does not involve this organization". | None — expected for every other organization's contract in the national feed. |
 | Unknown source id (admin action) | Localized "not found" flash; nothing written. | Verify the numeric CRZ id on crz.gov.sk. |
 | Timeouts | The transport uses explicit timeouts (5s connection / 60s read — the live 2026-09-09 run observed ~50s server-side response times under throttling); timeouts are retried like other transient failures. | None — the run reports itself. |
 | Old mirror, dead `crz_url` | The public CRZ portal serves records only while they are within its publication window; ekosystem keeps its historical harvest indefinitely. A mirror of an old record (e.g. a 2015 contract) can therefore point at a `crz.gov.sk/zmluva/<id>/` URL that now 404s, while the ekosystem payload still says `status_id: 2` (published). Verified live 2026-09-09 (id 2142424). | Expected behaviour, not a bug — keep the canonical URL per ADR-008 attribution; the freshness indicator already signals mirror age. |

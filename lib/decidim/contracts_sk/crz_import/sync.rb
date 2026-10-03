@@ -27,9 +27,18 @@ module Decidim
       #   touched; resolved manually (docs/crz-import.md).
       # - skipped — imported records that left the published state: the
       #   lifecycle guard refuses the update, data untouched.
+      # - out_of_scope — a record whose parties do not carry the
+      #   organization's IČO (civora-org/civora-platform#145): another
+      #   organization's contract from the national feed. Not written, not
+      #   logged per id; counted only.
       # - error — the message of the Client error that stopped pagination
-      #   (prior pages stand; later pages were never attempted). Nil on a
-      #   clean run.
+      #   (prior pages stand; later pages were never attempted), or the
+      #   refusal to run when the organization has no IČO configured. Nil
+      #   on a clean run.
+      #
+      # Scope (civora-org/civora-platform#145): the sync fails closed — an
+      # organization without a configured IČO
+      # (Decidim::ContractsSk.crz_organization_ico) imports nothing.
       #
       # Privacy guardrail (#86): only ids, statuses and counts are logged —
       # NEVER payloads or party names.
@@ -44,7 +53,7 @@ module Decidim
         # Summary of one run/import: counts + the ids behind them + the
         # stopping error (nil on a clean run).
         Result = Struct.new(:created, :updated, :unchanged, :collisions, :quarantined,
-                            :failed, :skipped, :created_ids, :collision_ids,
+                            :failed, :skipped, :out_of_scope, :created_ids, :collision_ids,
                             :quarantined_ids, :failed_ids, :error, keyword_init: true)
 
         class << self
@@ -59,24 +68,32 @@ module Decidim
           # Single-record import by CRZ id (the admin action's path).
           # Returns an outcome symbol for the controller's flash mapping:
           # :created/:updated/:unchanged/:collision/:lifecycle_guard/
-          # :record_invalid/:quarantined/:not_found/:failed.
+          # :record_invalid/:quarantined/:not_found/:failed/:out_of_scope/
+          # :not_configured.
           def import_one(source_id:, organization:, actor:, client: nil)
             new(organization: organization, actor: actor,
                 client: client || Client.new).import_one(source_id)
           end
         end
 
+        # The refusal message when the organization has no IČO configured.
+        NOT_CONFIGURED_MESSAGE = "no IČO configured for this organization " \
+                                 "(Decidim::ContractsSk.crz_organization_ico_resolver) — nothing imported"
+
         def initialize(organization:, actor:, client:)
           @organization = organization
           @actor = actor
           @client = client
+          @ico = ContractsSk.crz_organization_ico(organization)
           @result = Result.new(created: 0, updated: 0, unchanged: 0, collisions: 0,
-                               quarantined: 0, failed: 0, skipped: 0,
+                               quarantined: 0, failed: 0, skipped: 0, out_of_scope: 0,
                                created_ids: [], collision_ids: [], quarantined_ids: [],
                                failed_ids: [], error: nil)
         end
 
         def run(since)
+          return not_configured! unless @ico
+
           page = @client.sync(since: since)
           process_page(page)
           run_cursor_pages(page)
@@ -100,6 +117,8 @@ module Decidim
         end
 
         def import_one(source_id)
+          return :not_configured unless @ico
+
           payload = @client.contract(source_id)
           upsert_record!(payload)[:status]
         rescue Client::NotFoundError
@@ -123,6 +142,8 @@ module Decidim
         # summary. Per-record failures never abort the batch.
         def upsert_record!(payload)
           record = Mapper.map(payload)
+          return out_of_scope! unless in_scope?(record)
+
           events = UpsertContract.call(record, organization: @organization, actor: @actor)
 
           events.key?(:ok) ? apply_ok(events[:ok], record) : apply_invalid(events[:invalid], record)
@@ -130,6 +151,23 @@ module Decidim
           quarantine!(payload, e.message)
         rescue StandardError => e
           record_error!(payload, e)
+        end
+
+        # In scope when the organization's IČO is on either mirrored party.
+        # The party IČOs are the mapper's normalized ekosystem *_cin values.
+        def in_scope?(record)
+          record[:parties].any? { |party| party[:ico] == @ico }
+        end
+
+        def out_of_scope!
+          result.out_of_scope += 1
+          { status: :out_of_scope }
+        end
+
+        def not_configured!
+          result.error = NOT_CONFIGURED_MESSAGE
+          log(:warn, "sync refused: #{NOT_CONFIGURED_MESSAGE}")
+          result
         end
 
         def apply_ok(event, record)

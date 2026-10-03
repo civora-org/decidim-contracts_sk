@@ -152,6 +152,23 @@ RSpec.describe Decidim::ContractsSk::CrzImport::Mapper do
       end
     end
 
+    it "restores the leading zeros of an Integer CIN, as ekosystem serves it (civora-org/civora-platform#145)" do
+      record = described_class.map(crz_payload("contracting_authority_cin" => 323_560,
+                                               "supplier_cin" => 31_942_547))
+
+      aggregate_failures do
+        expect(record[:parties].find { |p| p[:role] == "object" }[:ico]).to eq("00323560")
+        expect(record[:parties].find { |p| p[:role] == "contractor" }[:ico]).to eq("31942547")
+      end
+    end
+
+    it "maps an Integer CIN outside the 8-digit range to nil" do
+      record = described_class.map(crz_payload("contracting_authority_cin" => 0,
+                                               "supplier_cin" => 123_456_789))
+
+      expect(record[:parties].map { |p| p[:ico] }).to eq([nil, nil])
+    end
+
     it "maps a malformed CIN to nil and keeps a well-formed one normalized" do
       record = described_class.map(crz_payload("contracting_authority_cin" => "bez ičo",
                                                "supplier_cin" => "00 000 002 "))

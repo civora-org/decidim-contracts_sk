@@ -168,6 +168,8 @@ en:
             not_found: "No CRZ contract with id %{source_id} was found."
             failed: "Import of contract %{source_id} failed (source unavailable). No existing record was changed."
             quarantined: "Contract %{source_id} could not be read from the source; it was skipped."
+            out_of_scope: "Contract %{source_id} does not involve this organization (its IČO is on neither party); it was not imported."
+            not_configured: "The CRZ import is not configured for this organization (no IČO set). Nothing was imported."
         audit_events:
           index:
             title: "Audit trail"

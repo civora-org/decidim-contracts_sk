@@ -135,6 +135,8 @@ RSpec.describe "admin CRZ import", type: :request do
       Decidim::ContractsSk.role_resolver = original
     end
 
+    include_context "with the CRZ scope configured"
+
     before do
       migrate_engine_schema!
 
@@ -174,6 +176,19 @@ RSpec.describe "admin CRZ import", type: :request do
         expect(record.import_status).to eq("succeeded")
         expect(record.author).to eq(author)
         expect(record.organization).to eq(organization)
+      end
+    end
+
+    it "flashes the out-of-scope alert and imports nothing for another organization's contract" do
+      stub_transport(response_with(200, body: crz_payload("505", "contracting_authority_cin" => "00 000 009").to_json))
+
+      post "/admin/contracts/import_crz", params: { source_id: "505" }
+
+      aggregate_failures do
+        expect(response).to redirect_to("/admin/contracts")
+        expect(flash[:alert]).to eq("Contract 505 does not involve this organization " \
+                                    "(its IČO is on neither party); it was not imported.")
+        expect(Decidim::ContractsSk::Contract.count).to eq(0)
       end
     end
 
