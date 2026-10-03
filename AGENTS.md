@@ -135,6 +135,8 @@ Current lessons:
 
 - **A per-person rule rewrites the walkthroughs, not just the code.** Any guard keyed on *who* acted (four-eyes, #123) breaks every spec, checklist and manual scenario where one signed-in admin plays both parts. Grep request specs, `docs/pilot-operations.md` §8, `docs/manual-test-scenarios.md`, `docs/qa-checklist.md` and the demo seed for single-actor sequences in the plan, and name the seeded second actor (`contracts-admin@` vs `contracts-editor@example.org`) where the docs need one (proven in the #123 arc: two request specs and four doc walkthroughs, plus a re-seed leaving a stale submitter stamp).
 
+- **A spec named after a guard must fail without it.** For every new defensive branch, run a one-off mutation check (comment the line out, see the spec go red, restore). An earlier validation layer can satisfy the spec on its own: in the #124 arc the failed-update spec passed without `restore_attributes`, because the form rejected the input before the record was touched. Only a model-only rejection (duplicate reference) exercised it. The reviewer caught it.
+
 *Archived lessons (tracker & issue hygiene; engine mount-design; tooling & verification hygiene; host-app & ops; engine implementation mechanics; release-please; Decidim view & asset mechanics; live-source operations; issue & planning hygiene; agent-review session tooling clusters) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
 
 ## Testing Expectations
