@@ -29,6 +29,12 @@ module Decidim
     # civora-org/civora-platform#123): TransitionContract stamps the acting
     # user on every submit, the rule forbids that person to return, approve
     # or reject the record, and no form or the CRZ upsert ever writes it.
+    # The column has no index and was introduced as read per record; since
+    # the admin dashboard (civora-org/civora-platform#126) it IS also queried
+    # as a set — the submitter scopes below back the review queue, the
+    # returned-to-me list and the index submitter filter — always on the
+    # small, tenant-scoped, state-narrowed relation, so the original
+    # no-index decision stands.
     #
     # The source/source_id/imported_at/import_status columns are
     # CRZ-mirror provenance metadata (docs/contracts-domain-notes.md);
@@ -153,6 +159,35 @@ module Decidim
       # deprecated and removed in Rails 8). The getter returns Strings, which
       # ContractState and the permissions layer normalize via #to_sym.
       enum :state, STATE_VALUES, default: "draft"
+
+      # Submitter scopes (civora-org/civora-platform#126), shared by the admin
+      # dashboard and the contracts index submitter filter so both always
+      # agree. The stamp is nullable (legacy/never-submitted records), so the
+      # negative form is spelled out as "NULL OR <> id" — a bare where.not
+      # would silently drop the NULL rows (SQL three-valued logic).
+      # A nil user matches nothing (never the NULL stamps: "me" is nobody).
+      scope :submitted_by_user, lambda { |user|
+        user ? where(decidim_submitted_by_id: user.id) : none
+      }
+      scope :not_submitted_by_user, lambda { |user|
+        where(decidim_submitted_by_id: nil).or(where.not(decidim_submitted_by_id: user&.id))
+      }
+
+      # The reviewer's queue: in_review records the user may judge. The set
+      # twin of Decidim::ContractsSk.self_review_blocked?(contract, user,
+      # :approve) (the four-eyes rule, #123): a record is in the queue
+      # exactly when that predicate is false. With the allow_self_review
+      # seam on the submitter clause drops, as the predicate then never
+      # blocks. Note the predicate reads the CONFIG seam; +allow_self+
+      # defaults to it and is a keyword only so specs can pin both modes.
+      scope :awaiting_review_by, lambda { |user, allow_self: Decidim::ContractsSk.allow_self_review|
+        queue = in_review
+        allow_self ? queue : queue.merge(not_submitted_by_user(user))
+      }
+
+      # Records the user submitted that a reviewer sent back: the submitter's
+      # "returned to me" list (the resubmit edge is theirs).
+      scope :returned_to, ->(user) { returned.merge(submitted_by_user(user)) }
 
       # CRZ publication deadline tracking (§ 47a OZ, civora-org/civora-platform
       # #124). The deadline is computed from signed_on and the config seam

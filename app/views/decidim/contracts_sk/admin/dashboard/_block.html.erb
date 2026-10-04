@@ -1,0 +1,71 @@
+<%# One contract list block of the admin overview (civora-org/civora-platform
+    #126). Locals:
+      key     - the locale/DOM key under admin.dashboard.blocks.<key>
+      block   - DashboardController::Block (capped records, full total, the
+                filtered-index path)
+      hint    - optional locale key of the hint line (default "hint")
+      columns - the extra columns to render, from: submitter, updated,
+                reviewed, reason, redaction, state, deadline
+    The title links to the edit page only when the user may edit the record;
+    otherwise (in review, approved, ...) to the index narrowed to the
+    record, where its transition controls live. %>
+<div class="card-section" id="dashboard-<%= key.dasherize %>">
+  <h2 class="h4"><%= t("decidim.contracts_sk.admin.dashboard.blocks.#{key}.title", days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS) %></h2>
+  <p><em><%= t("decidim.contracts_sk.admin.dashboard.blocks.#{key}.#{local_assigns.fetch(:hint, "hint")}", days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS) %></em></p>
+  <% if block.records.empty? %>
+    <p><%= t("decidim.contracts_sk.admin.dashboard.blocks.#{key}.empty") %></p>
+  <% else %>
+    <div class="table-scroll">
+      <table class="table-list table-list--selectable">
+        <thead>
+          <tr>
+            <th><%= t("decidim.contracts_sk.contract.title") %></th>
+            <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
+            <% columns.each do |column| %>
+              <th><%= t("decidim.contracts_sk.admin.dashboard.columns.#{column}") %></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% block.records.each do |contract| %>
+            <tr>
+              <td>
+                <% if allowed_to?(:update, :contract, contract: contract) %>
+                  <%= link_to contract.title, edit_admin_contract_path(contract) %>
+                <% else %>
+                  <%= link_to contract.title, admin_contracts_path(q: contract.reference, state: contract.state) %>
+                <% end %>
+              </td>
+              <td><%= contract.reference %></td>
+              <% columns.each do |column| %>
+                <td>
+                  <% if column == :submitter %>
+                    <%= contract.submitted_by&.name.presence || t("decidim.contracts_sk.admin.dashboard.unknown_submitter") %>
+                  <% elsif column == :updated %>
+                    <%= format_datetime(contract.updated_at) %>
+                  <% elsif column == :reviewed %>
+                    <%= format_datetime(contract.reviewed_at) %>
+                  <% elsif column == :reason %>
+                    <%= contract.review_reason.presence || "—" %>
+                  <% elsif column == :redaction %>
+                    <% if contract.redaction_confirmed_at.blank? %>
+                      <span class="label warning"><%= t("decidim.contracts_sk.admin.dashboard.redaction_missing") %></span>
+                    <% else %>
+                      <%= format_datetime(contract.redaction_confirmed_at) %>
+                    <% end %>
+                  <% elsif column == :state %>
+                    <%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %>
+                  <% elsif column == :deadline %>
+                    <%= crz_deadline_badge(contract, today: dashboard_today) %>
+                  <% end %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <p class="cs-admin-more"><%= link_to t("decidim.contracts_sk.admin.dashboard.show_all", count: block.total), block.path,
+                   class: "button button__sm button__secondary" %></p>
+  <% end %>
+</div>

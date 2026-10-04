@@ -1,0 +1,47 @@
+<%# Engine-owned layout classes for the admin pages (admin overview, contracts
+    index, audit trail), scoped under the .cs- prefix like the public
+    catalogue's stylesheet (shared/_public_styles).
+
+    Why not Tailwind utilities or inline styles: the host compiles its CSS
+    once, at image build time, from whatever classes its content scan saw
+    then, and Decidim's admin views carry no flex-wrap / gap-y classes — so
+    the button rows these pages need cannot be built from the host bundle
+    (docs/public-ui.md). Named classes keep the markup free of inline styles
+    and let anyone restyle them.
+
+    Delivery: the admin layout has no :css_content slot (that is the public
+    layout's); it displays Decidim's :head snippets, so the block is added
+    there — once per request, however many partials nest. Where no snippet
+    registry exists (the dummy harness) the block renders in place.
+
+    Override points:
+      1. Host or other modules can target the classes from their own CSS.
+         Selectors are single classes (no ids, no !important), so any plain
+         rule of equal or later order wins.
+      2. A host app can replace this whole partial by placing a file at the
+         same view path (app/views/decidim/contracts_sk/shared/
+         _admin_styles.html.erb) — Rails prefers host views over engine
+         views.
+
+    Classes:
+      .cs-admin-actions  header action buttons (side by side, never wrapping,
+                         pushed right, no shrinking inside .item_show__header)
+      .cs-admin-chips    wrapping rows of chip/filter buttons with a gap
+      .cs-admin-more     breathing room above a "show all" button
+      .cs-admin-hint     small top margin for a hint line under a button row %>
+<% unless @cs_admin_styles_rendered %>
+  <% @cs_admin_styles_rendered = true %>
+  <% css = capture do %>
+<style>
+  .cs-admin-actions { display: flex; flex-wrap: nowrap; flex-shrink: 0; margin-left: auto; gap: .5rem; align-items: center; }
+  .cs-admin-chips { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .cs-admin-more { margin-top: 1rem; }
+  .cs-admin-hint { margin-top: .5rem; }
+</style>
+  <% end %>
+  <% if respond_to?(:snippets) %>
+    <% snippets.add(:head, css) %>
+  <% else %>
+    <%= css %>
+  <% end %>
+<% end %>

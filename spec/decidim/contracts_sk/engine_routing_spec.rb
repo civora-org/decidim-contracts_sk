@@ -20,6 +20,7 @@ module EngineRoutingContract
   AMENDMENTS_CONTROLLER = "decidim/contracts_sk/admin/amendments"
   LINKS_CONTROLLER = "decidim/contracts_sk/admin/links"
   AUDIT_EVENTS_CONTROLLER = "decidim/contracts_sk/admin/audit_events"
+  DASHBOARD_CONTROLLER = "decidim/contracts_sk/admin/dashboard"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -52,7 +53,10 @@ module EngineRoutingContract
   # create/destroy surface — links have no editable content — so 2 route
   # entries. The audit-trail viewer (civora-org/civora-platform#92) is one
   # org-level index route outside the contracts resource (the contract is
-  # only a GET-param filter, not a nesting).
+  # only a GET-param filter, not a nesting). The admin dashboard
+  # (civora-org/civora-platform#126) is the namespace's root: GET /admin
+  # (unlike the public root it keeps the optional format segment),
+  # declared before the public /:id catch-all.
   # Note: Rails' `root` helper adds NO optional format segment (path is
   # exactly "/", not "/(.:format)" - unlike a plain `get`), and it maps the
   # `resources` update action to BOTH a PATCH and a PUT route entry, so the
@@ -64,6 +68,7 @@ module EngineRoutingContract
 
   EXPECTED_ROUTES = [
     ["GET", "/", "#{PUBLIC_CONTROLLER}#index"],
+    ["GET", "/admin(.:format)", "#{DASHBOARD_CONTROLLER}#show"],
     ["GET", "/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
@@ -175,6 +180,10 @@ RSpec.describe Decidim::ContractsSk::Engine do
 
   describe "admin URL helpers" do
     let(:url_helpers) { described_class.routes.url_helpers }
+
+    it "generates /admin for admin_root_path (the dashboard, civora-org/civora-platform#126)" do
+      expect(url_helpers.admin_root_path).to eq("/admin")
+    end
 
     it "generates /admin/contracts for admin_contracts_path" do
       expect(url_helpers.admin_contracts_path).to eq("/admin/contracts")
@@ -613,11 +622,11 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's seven controllers, distinct by the admin/ segment" do
+    it "routes only the engine's eight controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
-        decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/documents
-        decidim/contracts_sk/admin/links decidim/contracts_sk/admin/parties
+        decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/dashboard
+        decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links decidim/contracts_sk/admin/parties
         decidim/contracts_sk/contracts
       ].sort
 
@@ -635,7 +644,8 @@ RSpec.describe Decidim::ContractsSk::Engine do
     end
 
     it "maps no non-admin path to the admin controllers" do
-      non_admin = route_triples.reject { |_, path, _| path.start_with?("/admin/") }
+      # The dashboard root (/admin(.:format)) is the one admin route without a trailing slash.
+      non_admin = route_triples.reject { |_, path, _| path.start_with?("/admin(") || path.start_with?("/admin/") }
 
       expect(controllers_of(non_admin)).to eq(["decidim/contracts_sk/contracts"])
     end

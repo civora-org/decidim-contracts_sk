@@ -31,6 +31,10 @@ module Decidim
       # and an unknown value falls back to the default instead of erroring.
       # The deadline filter (civora-org/civora-platform#124) narrows to the
       # tracked records due within 14 days or overdue for filing in CRZ.
+      # The submitter filter (civora-org/civora-platform#126) narrows to
+      # records the signed-in user submitted (me) or everyone else's, NULL
+      # stamps included (others) — the filter the admin dashboard's review
+      # queue and returned-to-me links point at.
       #
       # Cop note: the class stays deliberately cohesive — the six transition
       # shells exist so the derived routes map onto readable actions, and
@@ -52,7 +56,8 @@ module Decidim
                       :index_counter_label, :index_counter_path, :index_counter_classes,
                       :index_deadline_options, :index_deadline_counts,
                       :index_deadline_counter_label, :index_deadline_counter_path,
-                      :index_deadline_counter_classes, :index_today
+                      :index_deadline_counter_classes, :index_today,
+                      :index_submitter_options
 
         # Case-insensitive free-text match for the index :q filter over the
         # two editorial identity fields; :pattern is always pre-escaped with
@@ -70,11 +75,15 @@ module Decidim
         # :crz / :editorial or nil ("all sources"), q is the stripped search
         # term. Carries request-derived values only — never persisted.
         # deadline (civora-org/civora-platform#124) is :due_soon / :overdue
-        # or nil ("any deadline").
-        IndexFilters = Struct.new(:state, :source, :q, :deadline, keyword_init: true)
+        # or nil ("any deadline"). submitter (civora-org/civora-platform#126)
+        # is :me / :others or nil ("any submitter").
+        IndexFilters = Struct.new(:state, :source, :q, :deadline, :submitter, keyword_init: true)
 
         # The deadline filter vocabulary (civora-org/civora-platform#124).
         DEADLINE_FILTERS = %i[due_soon overdue].freeze
+
+        # The submitter filter vocabulary (civora-org/civora-platform#126).
+        SUBMITTER_FILTERS = %i[me others].freeze
 
         def index
           enforce_permission_to :read, :contract
@@ -539,7 +548,19 @@ module Decidim
         # never to a 500.
         def filtered_contracts
           scope = contracts_scope.order(INDEX_ORDER)
-          apply_deadline_filter(apply_q_filter(apply_source_filter(apply_state_filter(scope))))
+          apply_deadline_filter(apply_q_filter(apply_source_filter(apply_submitter_filter(apply_state_filter(scope)))))
+        end
+
+        # Submitter filter (civora-org/civora-platform#126): "me" is the
+        # signed-in user's own submissions, "others" everyone else's AND
+        # records with no submitter stamp (the shared Contract scopes, so the
+        # dashboard's queue counts and this filter always agree).
+        def apply_submitter_filter(scope)
+          case index_filters.submitter
+          when :me then scope.submitted_by_user(current_user)
+          when :others then scope.not_submitted_by_user(current_user)
+          else scope
+          end
         end
 
         # CRZ deadline filter (civora-org/civora-platform#124): composes on
@@ -587,8 +608,14 @@ module Decidim
             state: index_state_param,
             source: index_source_param,
             q: params[:q].to_s.strip,
-            deadline: index_deadline_param
+            deadline: index_deadline_param,
+            submitter: index_submitter_param
           )
+        end
+
+        def index_submitter_param
+          candidate = params[:submitter].to_s.presence&.to_sym
+          candidate if SUBMITTER_FILTERS.include?(candidate)
         end
 
         def index_deadline_param
@@ -632,6 +659,13 @@ module Decidim
             end
         end
 
+        def index_submitter_options
+          [[t("decidim.contracts_sk.admin.contracts.index.filters.submitters.any"), ""]] +
+            SUBMITTER_FILTERS.map do |submitter|
+              [t("decidim.contracts_sk.admin.contracts.index.filters.submitters.#{submitter}"), submitter]
+            end
+        end
+
         def index_source_options
           [[t("decidim.contracts_sk.admin.contracts.index.filters.sources.all"), ""]] +
             %i[crz editorial].map do |source|
@@ -663,7 +697,8 @@ module Decidim
         # the filtered wording over the true-empty one.
         def index_filters_active?
           index_filters.state.present? || index_filters.source.present? ||
-            index_filters.q.present? || index_filters.deadline.present?
+            index_filters.q.present? || index_filters.deadline.present? ||
+            index_filters.submitter.present?
         end
 
         # CRZ deadline counters (civora-org/civora-platform#124): due-soon
@@ -698,7 +733,8 @@ module Decidim
         # The normalized, ACTIVE filters as link params (never raw params).
         def index_filter_params
           { state: index_filters.state, source: index_filters.source,
-            q: index_filters.q.presence, deadline: index_filters.deadline }.compact
+            q: index_filters.q.presence, deadline: index_filters.deadline,
+            submitter: index_filters.submitter }.compact
         end
 
         # Chip label: the localized state label (the shared contract_states.*

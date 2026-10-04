@@ -94,6 +94,11 @@ sk:
                 all: "Všetky zdroje"
                 crz: "Import z CRZ"
                 editorial: "Redakčná"
+              submitter: "Odosielateľ"
+              submitters:
+                any: "Ľubovoľný odosielateľ"
+                me: "Odoslané mnou"
+                others: "Odoslané inými"
               deadline: "Lehota CRZ (nepotvrdené ako zverejnené)"
               deadlines:
                 any: "Ľubovoľná lehota"
@@ -245,6 +250,52 @@ sk:
             quarantined: "Zmluvu %{source_id} sa nepodarilo načítať zo zdroja; bola preskočená."
             out_of_scope: "Zmluva %{source_id} sa netýka tejto organizácie (jej IČO nie je ani pri jednej zmluvnej strane); neimportovala sa."
             not_configured: "Import z CRZ nie je pre túto organizáciu nastavený (chýba IČO). Nič sa neimportovalo."
+        dashboard:
+          title: "Prehľad"
+          overview_link: "Prehľad"
+          all_contracts: "Všetky zmluvy"
+          audit_trail: "Auditná stopa"
+          show_all: "Zobraziť všetky (%{count})"
+          unknown_submitter: "Neznámy používateľ"
+          redaction_missing: "Skrytie údajov nepotvrdené"
+          columns:
+            submitter: "Odosielateľ"
+            updated: "Posledná zmena"
+            reviewed: "Vrátené dňa"
+            reason: "Dôvod recenzenta"
+            redaction: "Skrytie údajov"
+            state: "Stav"
+            deadline: "Lehota CRZ"
+          blocks:
+            review_queue:
+              title: "Čakajú na moje posúdenie"
+              hint: "Zmluvy v recenzii, ktoré môžete vrátiť, schváliť alebo zamietnuť — najstaršie prvé. Vaše vlastné odoslané zmluvy sa nezobrazujú (pravidlo štyroch očí)."
+              hint_self_review: "Zmluvy v recenzii, ktoré môžete vrátiť, schváliť alebo zamietnuť — najstaršie prvé. Vlastné posudzovanie je povolené, preto sa zobrazujú aj vaše vlastné odoslané zmluvy."
+              empty: "Na vaše posúdenie nič nečaká."
+            returned:
+              title: "Vrátené mne na úpravu"
+              hint: "Zmluvy, ktoré ste odoslali a recenzent ich vrátil na doplnenie — naposledy vrátené prvé."
+              empty: "Žiadna z vašich odoslaných zmlúv nebola vrátená."
+            approved:
+              title: "Schválené, pripravené na zverejnenie"
+              hint: "Schválené zmluvy čakajúce na zverejnenie — najdlhšie čakajúce prvé. Zverejnenie vyžaduje potvrdenie skrytia osobných údajov."
+              empty: "Na zverejnenie nečakajú žiadne schválené zmluvy."
+            overdue:
+              title: "Lehota CRZ po termíne"
+              hint: "Zmluvy nepotvrdené ako zverejnené v CRZ, ktorým lehota uplynula — najskôr podpísané prvé."
+              empty: "Žiadna lehota CRZ nie je po termíne."
+            due_soon:
+              title: "Lehota CRZ do %{days} dní"
+              hint: "Zmluvy nepotvrdené ako zverejnené v CRZ, ktorým lehota uplynie do %{days} dní — pomôcka, nie právna rada."
+              empty: "Žiadna lehota CRZ sa nekončí v najbližšom čase."
+          counts:
+            title: "Zmluvy podľa stavu"
+            all: "Všetky"
+            empty: "Zatiaľ nebola vytvorená žiadna zmluva."
+          recent_activity:
+            title: "Posledná aktivita"
+            show_all: "Zobraziť celú auditnú stopu"
+            empty: "Zatiaľ nebola zaznamenaná žiadna udalosť."
         audit_events:
           index:
             title: "Auditná stopa"

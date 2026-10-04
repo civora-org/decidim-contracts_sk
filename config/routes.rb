@@ -10,6 +10,13 @@ Decidim::ContractsSk::Engine.routes.draw do
   # the workflow yet. Parties are managed per contract through the nested
   # resource below, which carries the full add/edit/remove surface.
   namespace :admin do
+    # Admin landing page (civora-org/civora-platform#126): the role holder's
+    # overview — what waits for them, the state counts, the CRZ deadline
+    # watch and the last audit events. `root` inside the namespace gives
+    # GET /admin (helper admin_root_path); it must precede the public
+    # /:id catch-all like the rest of the namespace.
+    root to: "dashboard#show"
+
     resources :contracts, only: %i[index new create edit update] do
       # CRZ single-record import (ADR-008, civora-org/civora-platform#86):
       # one collection POST taking a :source_id (CRZ numeric id) param —

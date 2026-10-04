@@ -50,6 +50,21 @@ Rules that hold across both pages:
 
 `admin/audit_events/index` stays on Decidim admin's own classes. `table-list--selectable` is the admin modifier that left-aligns the second column (the record titles); plain `table-list` centres every column after the first. Rows show date **and** time (`format_datetime`, application time zone), and an empty decision reason renders as a muted `—`.
 
+## Admin overview
+
+`admin/dashboard/show` (civora-org/civora-platform#126) is built from Decidim admin's own classes only: `card` / `card-section`, `item_show__header`, `table-list table-list--selectable`, `label warning` (redaction not confirmed) and `button button__sm button__secondary` links. Every block is one `card-section` with a heading, a one-line hint, either the table or its own empty state, and a "Show all (N)" link; the audit block reuses the audit trail's table partial (`admin/audit_events/_table`). No engine-only Tailwind utilities, per the build-time rule above.
+
+### Admin layout classes
+
+The admin pages (overview, contracts index, audit trail) lay out their button rows with engine-owned classes from `shared/_admin_styles` (the admin counterpart of the public stylesheet; the admin layout has no `:css_content` slot, so the block is added to Decidim's `:head` snippets once per request):
+
+- `.cs-admin-actions` — header actions: side by side, no wrap, pushed right, never shrunk by `.item_show__header`;
+- `.cs-admin-chips` — wrapping chip/filter button rows with a gap;
+- `.cs-admin-more` — space above a "show all" button;
+- `.cs-admin-hint` — small top margin for a hint line under a button row.
+
+Override points: (1) host or other modules can restyle the classes from their own CSS — selectors are single classes, no ids, no `!important`; (2) a host app can replace the whole partial by placing a file at `app/views/decidim/contracts_sk/shared/_admin_styles.html.erb` (host views win over engine views).
+
 ## Admin CRZ deadline badges
 
 The admin index's CRZ deadline badges (civora-org/civora-platform#124) use Decidim's own `label` modifiers (`label`, `label warning`, `label alert`) — the same build-time rule applies to admin views: no engine-only Tailwind utilities, the host bundle would silently drop them.

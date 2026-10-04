@@ -18,7 +18,7 @@ This repository is a focused Decidim engine, not the full Civora platform. Agent
 Current route-level scope in the repository:
 
 - Public routes: `contracts#index`, `contracts#show`.
-- Admin routes: `admin/contracts` CRUD namespace.
+- Admin routes (namespace `admin`): the root dashboard (`admin/dashboard#show`, the role holder's overview); `contracts` CRUD plus member routes (lifecycle transitions, CRZ handoff, redaction confirmation, CRZ filing) and a CRZ import collection POST; nested `parties`, `documents`, `amendments` and `links` managers; and the read-only `audit_events` index.
 
 ## Project Conventions
 
