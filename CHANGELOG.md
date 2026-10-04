@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [1.5.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.4.0...v1.5.0) (2026-10-04)
+
+
+### Features
+
+* **admin:** add the admin home with my tasks, states and deadlines (civora-org/civora-platform[#126](https://github.com/civora-org/decidim-contracts_sk/issues/126)) ([491c62c](https://github.com/civora-org/decidim-contracts_sk/commit/491c62cf7e7e7bd149d0abbc4fad26b3915e56d7))
+* **admin:** track the CRZ publication deadline (civora-org/civora-platform[#124](https://github.com/civora-org/decidim-contracts_sk/issues/124)) ([9b8d542](https://github.com/civora-org/decidim-contracts_sk/commit/9b8d542eb9ae3cc273c2f8e68c800795fcc8348a))
+* **crz-filing:** confirm the CRZ filing and link the official record (civora-org/civora-platform[#125](https://github.com/civora-org/decidim-contracts_sk/issues/125)) ([c349811](https://github.com/civora-org/decidim-contracts_sk/commit/c34981147e9420354b899f42e0c40565ceaf7017))
+* **transitions:** enforce per-person four-eyes review (civora-org/civora-platform[#123](https://github.com/civora-org/decidim-contracts_sk/issues/123)) ([4315388](https://github.com/civora-org/decidim-contracts_sk/commit/4315388d31a09679b0c18878a55d6420818442ab))
+
+
+### Bug Fixes
+
+* **admin:** fold review findings into CRZ deadline tracking (civora-org/civora-platform[#124](https://github.com/civora-org/decidim-contracts_sk/issues/124)) ([6b67501](https://github.com/civora-org/decidim-contracts_sk/commit/6b675012203ff99dbec035484fc99aacc12fca95))
+
 ## [1.4.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.3.0...v1.4.0) (2026-10-03)
 
 
