@@ -2,14 +2,17 @@
     index, public catalogue). Locals:
       collection  - a Kaminari-paginated collection
       filter_keys - the GET param names the caller owns (admin index:
-                    [:state, :source, :q]; the public catalogue passes [],
-                    it has no filters).
+                    [:state, :source, :q]; the public catalogue passes
+                    CatalogueQuery::PARAM_KEYS).
+      carried_params - optional, already-normalized params to carry instead of
+                    the raw request ones (the public catalogue passes
+                    CatalogueQuery#to_params; the admin index omits it).
     Links carry ONLY the allowlisted keys over: raw request params never
     reach url_for, so a spoofed controller/action (or any routing-significant
     key) can neither break nor re-route the pagination links.
     Rendered only when it matters: the callers skip this partial for
     total_pages <= 1. Styling reuses the existing Decidim button classes. %>
-<% carried_params = request.query_parameters.slice(*filter_keys) %>
+<% carried_params = local_assigns[:carried_params] || request.query_parameters.slice(*filter_keys) %>
 <nav class="pagination" aria-label="<%= t("decidim.contracts_sk.pagination.aria_label") %>">
   <div class="flex items-center justify-between gap-2 py-4">
     <% if collection.prev_page %>

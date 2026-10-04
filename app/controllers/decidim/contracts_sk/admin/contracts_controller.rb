@@ -60,9 +60,10 @@ module Decidim
                       :index_submitter_options
 
         # Case-insensitive free-text match for the index :q filter over the
-        # two editorial identity fields; :pattern is always pre-escaped with
-        # sanitize_sql_like, so user-supplied % and _ stay literal.
-        SEARCH_CONDITION = "LOWER(title) LIKE :pattern OR LOWER(reference) LIKE :pattern"
+        # two editorial identity fields — the engine's shared TextSearch
+        # (down-cased term, explicit ESCAPE, so user-supplied % and _ stay
+        # literal on every database; civora-org/civora-platform#116).
+        SEARCH_CONDITION = TextSearch::CONTRACT_CONDITION
 
         # Deterministic index ordering: newest records first, with the id as
         # the tiebreaker — a total order, so a page can never repeat or drop
@@ -607,7 +608,7 @@ module Decidim
           IndexFilters.new(
             state: index_state_param,
             source: index_source_param,
-            q: params[:q].to_s.strip,
+            q: TextSearch.clean(params[:q]).strip,
             deadline: index_deadline_param,
             submitter: index_submitter_param
           )
@@ -637,7 +638,7 @@ module Decidim
         # blank, so an empty search box contributes no WHERE clause.
         def index_search_pattern
           term = index_filters.q
-          "%#{ActiveRecord::Base.sanitize_sql_like(term)}%" if term.present?
+          TextSearch.pattern(term) if term.present?
         end
 
         # Filter-form option lists: the "any" default first, then the real

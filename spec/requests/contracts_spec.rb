@@ -77,6 +77,11 @@ class PaginableStub
 
   attr_reader :total_pages
 
+  # The catalogue query orders the (stubbed) scope; the stub ignores it.
+  def reorder(*)
+    self
+  end
+
   def page(_num)
     self
   end
@@ -106,7 +111,7 @@ end
 
 # Recording twin of PaginableStub for the catalogue's :q search (mirrors the
 # admin specs' RecordingIndexScope): the controller applies its search with
-# `where(SEARCH_CONDITION, pattern: ...)` on the stubbed scope, so the where
+# `where(TextSearch::CONTRACT_CONDITION, pattern: ...)` on the stubbed scope, so the where
 # args/kwargs land in #applied and the offline group can pin the condition
 # and the escaped pattern without a connection.
 class SearchablePaginableStub < PaginableStub
@@ -221,16 +226,14 @@ RSpec.describe "public contracts catalogue", type: :request do
       expect(response.body).not_to include("evil")
     end
 
-    it "pins the deterministic catalogue order values" do
-      expect(Decidim::ContractsSk::ContractsController::CATALOGUE_ORDER)
-        .to eq(published_at: :desc, id: :desc)
-    end
-
-    it "pins the search condition identical to the admin index's" do
-      # One vocabulary, never a second one: the public search and the admin
-      # filter must stay in lockstep by construction.
-      expect(Decidim::ContractsSk::ContractsController::SEARCH_CONDITION)
-        .to eq(Decidim::ContractsSk::Admin::ContractsController::SEARCH_CONDITION)
+    it "pins the shared search condition: down-cased column and an explicit ESCAPE clause" do
+      # One vocabulary for the public q and the admin q (civora-org/civora-platform#116).
+      expect(Decidim::ContractsSk::Admin::ContractsController::SEARCH_CONDITION)
+        .to eq(Decidim::ContractsSk::TextSearch::CONTRACT_CONDITION)
+      expect(Decidim::ContractsSk::TextSearch::CONTRACT_CONDITION).to eq(
+        "LOWER(decidim_contracts_sk_contracts.title) LIKE :pattern ESCAPE '\\' OR " \
+        "LOWER(decidim_contracts_sk_contracts.reference) LIKE :pattern ESCAPE '\\'"
+      )
     end
 
     it "renders the free-text search form above the results" do
@@ -267,9 +270,7 @@ RSpec.describe "public contracts catalogue", type: :request do
       expect(response).to have_http_status(:ok)
       q_filter = scope.applied.find { |(_args, kwargs)| kwargs.key?(:pattern) }
       aggregate_failures do
-        expect(q_filter[0].first).to eq(
-          "LOWER(title) LIKE :pattern OR LOWER(reference) LIKE :pattern"
-        )
+        expect(q_filter[0].first).to eq(Decidim::ContractsSk::TextSearch::CONTRACT_CONDITION)
         expect(q_filter[1][:pattern]).to eq("%road%")
       end
     end
@@ -297,7 +298,7 @@ RSpec.describe "public contracts catalogue", type: :request do
       aggregate_failures do
         expect(scope.applied).to eq([])
         expect(response.body).to include("No published contracts yet.")
-        expect(response.body).not_to include("No contracts match your search.")
+        expect(response.body).not_to include("No contracts match your search or filters.")
       end
     end
 
@@ -308,7 +309,7 @@ RSpec.describe "public contracts catalogue", type: :request do
 
       expect(response).to have_http_status(:ok)
       aggregate_failures do
-        expect(response.body).to include("No contracts match your search.")
+        expect(response.body).to include("No contracts match your search or filters.")
         # The search-miss state is distinct from the empty-catalogue one.
         expect(response.body).not_to include("No published contracts yet.")
       end
@@ -327,6 +328,192 @@ RSpec.describe "public contracts catalogue", type: :request do
         # filter key over, so paging never drops the search state.
         expect(response.body).to include("q=road")
         expect(response.body).to include("page=2")
+      end
+    end
+
+    # Catalogue filters and sorting (civora-org/civora-platform#116). The
+    # offline group pins the form and the normalization seam through the
+    # recording stub (party filters need a real connection: :db group).
+    describe "filters (civora-org/civora-platform#116)" do
+      let(:scope) { SearchablePaginableStub.new([published_contract_double]) }
+
+      before { stub_published_contracts(scope) }
+
+      it "renders the filter form: native details, labelled fields, grouped ranges and a party hint" do
+        get "/"
+
+        expect(response).to have_http_status(:ok)
+        body = response.body
+        aggregate_failures do
+          expect(body).to include(%(class="cs-filters"))
+          expect(body).to include("<summary")
+          expect(body).to include("More filters")
+          expect(body.scan("<fieldset").size).to eq(3)
+          expect(body).to include("Amount (EUR)").and include("Published in the catalogue").and include("Signing date")
+          %w[amount_min amount_max published_from published_to signed_from signed_to party source sort].each do |name|
+            expect(body).to include(%(name="#{name}"))
+            expect(body).to include(%(for="#{name}"))
+          end
+          expect(body).to include(%(inputmode="decimal"))
+          expect(body).to include(%(type="date"))
+          expect(body).to include(%(aria-describedby="party-hint"))
+          expect(body).to include(%(id="party-hint")).and include("Name or 8-digit IČO")
+          expect(body).to include("Any").and include("Organisation&#39;s own records").and include("Mirrored from CRZ")
+          expect(body).to include("Newest first").and include("Lowest amount first")
+        end
+      end
+
+      it "keeps the filters collapsed and shows no summary or clear link without filters" do
+        get "/"
+
+        aggregate_failures do
+          expect(response.body).not_to include(%(class="cs-filters" open))
+          expect(response.body).not_to include("Active filters")
+          expect(response.body).not_to include("Clear filters")
+        end
+      end
+
+      it "keeps the filters collapsed when only q is active" do
+        get "/", params: { q: "road" }
+
+        expect(response.body).not_to include(%(class="cs-filters" open))
+        expect(response.body).to include("Clear filters")
+      end
+
+      it "opens the filters and prefills NORMALIZED values when filters are active" do
+        get "/", params: { amount_min: "10 000,50", published_from: "1.9.2026", signed_to: "2026-09-30",
+                           party: "  Obec   Ukážková ", source: "CRZ", sort: "amount_asc" }
+
+        expect(response).to have_http_status(:ok)
+        body = response.body
+        aggregate_failures do
+          expect(body).to include(%(class="cs-filters" open))
+          expect(body).to include(%(value="10000.5"))
+          expect(body).to include(%(value="2026-09-01"))
+          expect(body).to include(%(value="2026-09-30"))
+          expect(body).to include(%(value="Obec Ukážková"))
+          expect(body).to include(%(<option selected="selected" value="crz">))
+          expect(body).to include(%(<option selected="selected" value="amount_asc">))
+        end
+      end
+
+      it "summarises the active filters and links to the unfiltered catalogue" do
+        get "/", params: { q: "road", amount_max: "500", source: "crz", sort: "published_asc" }
+
+        body = response.body
+        aggregate_failures do
+          expect(body).to include("Active filters")
+          expect(body).to include("Search: road")
+          expect(body).to include("Amount to: 500.0 EUR")
+          expect(body).to include("Source: Mirrored from CRZ")
+          expect(body).to include("Sort: Oldest first")
+          expect(body).to include(%(<a class="cs-link" href="/">Clear filters</a>))
+        end
+      end
+
+      it "shows a swapped range swapped in the form" do
+        get "/", params: { amount_min: "500", amount_max: "100",
+                           published_from: "2026-09-10", published_to: "2026-09-01" }
+
+        page = Nokogiri::HTML.parse(response.body)
+        aggregate_failures do
+          expect(page.at_css("#amount_min")["value"]).to eq("100")
+          expect(page.at_css("#amount_max")["value"]).to eq("500")
+          expect(page.at_css("#published_from")["value"]).to eq("2026-09-01")
+          expect(page.at_css("#published_to")["value"]).to eq("2026-09-10")
+        end
+      end
+
+      it "ignores every invalid value: 200, no filter applied, no summary" do
+        get "/", params: { amount_min: "10.000", amount_max: "-5", published_from: "2026-02-30",
+                           published_to: "garbage", signed_from: "32.1.2026", signed_to: "x",
+                           party: "   ", source: "bogus", sort: "bogus; DROP TABLE" }
+
+        aggregate_failures do
+          expect(response).to have_http_status(:ok)
+          expect(scope.applied).to eq([])
+          expect(response.body).not_to include("Active filters")
+          expect(response.body).not_to include(%(class="cs-filters" open))
+        end
+      end
+
+      it "answers 200 for array and hash params instead of raising" do
+        get "/?q[]=a&amount_min[x]=1&party[]=b&sort[]=amount_asc&source[a]=crz&published_from[]=2026-01-01"
+
+        expect(response).to have_http_status(:ok)
+        expect(scope.applied).to eq([])
+      end
+
+      it "hands normalized ranges to the scope (amount, signed, published instants)" do
+        get "/", params: { amount_min: "100", amount_max: "200,5", signed_from: "1.5.2026", signed_to: "2026-05-31",
+                           published_from: "2026-09-01", published_to: "2026-09-30" }
+
+        ranges = scope.applied.filter_map { |(_args, kwargs)| kwargs }.reduce({}, :merge)
+        aggregate_failures do
+          expect(ranges[:amount]).to eq(BigDecimal(100)..BigDecimal("200.5"))
+          expect(ranges[:signed_on]).to eq(Date.new(2026, 5, 1)..Date.new(2026, 5, 31))
+          expect(ranges[:published_at]).to be_a(Range)
+          expect(ranges[:published_at].exclude_end?).to be(true)
+        end
+      end
+
+      it "splits sources on the stubbed scope" do
+        get "/", params: { source: "crz" }
+
+        expect(scope.applied.last[1]).to eq(source: "crz")
+      end
+
+      it "renders the no-results variant, not the empty-catalogue one, for a filter-only miss" do
+        stub_published_contracts(SearchablePaginableStub.new([]))
+
+        get "/", params: { source: "crz" }
+
+        aggregate_failures do
+          expect(response.body).to include("No contracts match your search or filters.")
+          expect(response.body).not_to include("No published contracts yet.")
+        end
+      end
+
+      it "carries every filter key over the pagination links" do
+        stub_published_contracts(SearchablePaginableStub.new([published_contract_double], total_pages: 2))
+        params = { q: "road", amount_min: "1", amount_max: "9", published_from: "2026-01-01",
+                   published_to: "2026-12-31", signed_from: "2026-02-01", signed_to: "2026-03-01",
+                   party: "Obec", source: "crz", sort: "amount_desc" }
+
+        get "/", params: params
+
+        link = response.body[/href="([^"]*page=2[^"]*)"/, 1].to_s.gsub("&amp;", "&")
+        carried = Rack::Utils.parse_query(URI(link).query)
+        expect(carried.keys).to match_array(params.keys.map(&:to_s) + ["page"])
+        params.each { |key, value| expect(carried[key.to_s]).to eq(value) }
+      end
+
+      it "carries normalized values only: invalid and empty params never reach the page links" do
+        stub_published_contracts(SearchablePaginableStub.new([published_contract_double], total_pages: 2))
+
+        get "/", params: { q: "road", amount_min: "10 000,50", amount_max: "garbage", signed_from: "",
+                           published_from: "1.9.2026", source: "bogus", sort: "nope" }
+
+        link = response.body[/href="([^"]*page=2[^"]*)"/, 1].to_s.gsub("&amp;", "&")
+        carried = Rack::Utils.parse_query(URI(link).query)
+        expect(carried).to eq("q" => "road", "amount_min" => "10000.5", "published_from" => "2026-09-01",
+                              "page" => "2")
+      end
+
+      it "survives a NUL byte in q and party without raising (PostgreSQL rejects NUL binds)" do
+        get "/?q=ro%00ad&party=ab%00"
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("%00")
+        expect(scope.applied.first[1][:pattern]).to eq("%ro ad%")
+      end
+
+      it "never carries foreign params over the pagination links" do
+        stub_published_contracts(SearchablePaginableStub.new([published_contract_double], total_pages: 2))
+
+        get "/", params: { q: "road", evil: "1", controller: "evil" }
+
+        expect(response.body).not_to include("evil")
       end
     end
 
@@ -1213,8 +1400,167 @@ RSpec.describe "public contracts catalogue", type: :request do
 
       expect(response).to have_http_status(:ok)
       aggregate_failures do
-        expect(response.body).to include("No contracts match your search.")
+        expect(response.body).to include("No contracts match your search or filters.")
         expect(response.body).not_to include("No published contracts yet.")
+      end
+    end
+
+    # Catalogue filters and sorting end to end (civora-org/civora-platform#116).
+    describe "filters and sorting" do
+      def filter_refs(params = {})
+        get "/", params: params
+        expect(response).to have_http_status(:ok)
+        response.body.scan(/ZP-F-\d+/).uniq
+      end
+
+      def add_party!(contract, name, ico = nil)
+        Decidim::ContractsSk::Party.create!(contract: contract, role: "contractor", name: name, ico: ico)
+      end
+
+      def count_queries(&block)
+        count = 0
+        counter = lambda do |_name, _start, _finish, _id, payload|
+          next if %w[SCHEMA TRANSACTION].include?(payload[:name])
+          next if payload[:sql].match?(/\A\s*(?:SAVEPOINT|RELEASE|BEGIN|COMMIT)/i)
+
+          count += 1
+        end
+        ActiveSupport::Notifications.subscribed(counter, "sql.active_record", &block)
+        count
+      end
+
+      before do
+        create_contract!(reference: "ZP-F-001", title: "Alpha road", amount: 100, signed_on: Date.new(2026, 3, 1),
+                         published_at: Time.utc(2026, 4, 1, 10))
+        create_contract!(reference: "ZP-F-002", title: "Beta bridge", amount: 5000, signed_on: Date.new(2026, 5, 1),
+                         published_at: Time.utc(2026, 5, 1, 10))
+        create_contract!(reference: "ZP-F-003", title: "Gamma school", amount: nil, signed_on: nil,
+                         published_at: Time.utc(2026, 6, 1, 10), source: "crz", source_id: "77")
+        add_party!(Decidim::ContractsSk::Contract.find_by!(reference: "ZP-F-001"), "Obec Ukážková", "00123456")
+        add_party!(Decidim::ContractsSk::Contract.find_by!(reference: "ZP-F-002"), "Stavby s.r.o.", "36396567")
+      end
+
+      it "sorts newest first by default and honours every sort option" do
+        expect(filter_refs).to eq(%w[ZP-F-003 ZP-F-002 ZP-F-001])
+        expect(filter_refs(sort: "published_asc")).to eq(%w[ZP-F-001 ZP-F-002 ZP-F-003])
+        expect(filter_refs(sort: "amount_desc")).to eq(%w[ZP-F-002 ZP-F-001 ZP-F-003])
+        expect(filter_refs(sort: "amount_asc")).to eq(%w[ZP-F-001 ZP-F-002 ZP-F-003])
+        expect(filter_refs(sort: "nonsense")).to eq(%w[ZP-F-003 ZP-F-002 ZP-F-001])
+      end
+
+      it "filters by amount (stored amount, inclusive) and drops amount-less records only then" do
+        expect(filter_refs(amount_min: "100", amount_max: "5000")).to eq(%w[ZP-F-002 ZP-F-001])
+        expect(filter_refs(amount_min: "101")).to eq(%w[ZP-F-002])
+        expect(filter_refs(amount_min: "5 000,00")).to eq(%w[ZP-F-002])
+        expect(filter_refs(amount_min: "10.000")).to eq(%w[ZP-F-003 ZP-F-002 ZP-F-001])
+        expect(filter_refs(amount_min: "-1", amount_max: "abc")).to eq(%w[ZP-F-003 ZP-F-002 ZP-F-001])
+      end
+
+      it "filters by publication and signing dates, ISO or Slovak format, swapping reversed ranges" do
+        expect(filter_refs(published_from: "2026-05-01", published_to: "2026-05-01")).to eq(%w[ZP-F-002])
+        expect(filter_refs(published_from: "1.6.2026")).to eq(%w[ZP-F-003])
+        expect(filter_refs(published_from: "2026-06-30", published_to: "2026-05-01")).to eq(%w[ZP-F-003 ZP-F-002])
+        expect(filter_refs(signed_from: "1.3.2026", signed_to: "1.3.2026")).to eq(%w[ZP-F-001])
+        expect(filter_refs(signed_from: "2026-01-01")).to eq(%w[ZP-F-002 ZP-F-001])
+        expect(filter_refs(signed_from: "2026-02-30", published_to: "nope")).to eq(%w[ZP-F-003 ZP-F-002 ZP-F-001])
+      end
+
+      it "filters by party IČO or name" do
+        expect(filter_refs(party: "00123456")).to eq(%w[ZP-F-001])
+        expect(filter_refs(party: "0012 3456")).to eq(%w[ZP-F-001])
+        expect(filter_refs(party: "stavby")).to eq(%w[ZP-F-002])
+        expect(filter_refs(party: "OBEC")).to eq(%w[ZP-F-001])
+        expect(filter_refs(party: "nobody")).to eq([])
+      end
+
+      it "filters by source" do
+        expect(filter_refs(source: "crz")).to eq(%w[ZP-F-003])
+        expect(filter_refs(source: "editorial")).to eq(%w[ZP-F-002 ZP-F-001])
+        expect(filter_refs(source: "bogus")).to eq(%w[ZP-F-003 ZP-F-002 ZP-F-001])
+      end
+
+      it "combines filters with q and sort" do
+        expect(filter_refs(q: "ALPHA", amount_max: "200", source: "editorial", sort: "amount_asc")).to eq(%w[ZP-F-001])
+        expect(filter_refs(q: "road", party: "stavby")).to eq([])
+        expect(filter_refs(q: "a", signed_from: "2026-01-01", sort: "amount_desc")).to eq(%w[ZP-F-002 ZP-F-001])
+      end
+
+      it "keeps published-only and organization scoping under every filter" do
+        create_contract!(reference: "ZP-F-900", title: "Hidden draft", state: "draft", published_at: nil, amount: 100)
+        create_contract!(reference: "ZP-F-901", title: "Foreign", amount: 100,
+                         organization: Decidim::Organization.create!)
+
+        expect(filter_refs(amount_min: "0")).to eq(%w[ZP-F-002 ZP-F-001])
+        expect(filter_refs(source: "editorial", sort: "amount_asc")).to eq(%w[ZP-F-001 ZP-F-002])
+      end
+
+      it "shows the swapped range and the summary, and the clear link resets the page to everything" do
+        get "/", params: { amount_min: "9000", amount_max: "100", party: "stavby" }
+
+        expect(response.body).to include("Amount from: 100.0 EUR").and include("Party: stavby")
+        expect(response.body).to include(%(<a class="cs-link" href="/">Clear filters</a>))
+        expect(filter_refs).to eq(%w[ZP-F-003 ZP-F-002 ZP-F-001])
+      end
+
+      it "renders the no-results message on a filter miss, not the empty-catalogue one" do
+        get "/", params: { amount_min: "999999" }
+
+        expect(response.body).to include("No contracts match your search or filters.")
+        expect(response.body).not_to include("No published contracts yet.")
+      end
+
+      it "paginates a filtered listing with every active filter carried" do
+        26.times do |i|
+          create_contract!(reference: format("ZP-F-%03d", 100 + i), title: "Bulk #{i}", amount: 700 + i,
+                           source: "crz", source_id: format("b%d", i))
+        end
+        params = { source: "crz", amount_min: "700", sort: "amount_asc" }
+
+        get "/", params: params
+
+        expect(response.body).to include("Page 1 of 2")
+        link = response.body[/href="([^"]*page=2[^"]*)"/, 1].to_s.gsub("&amp;", "&")
+        carried = Rack::Utils.parse_query(URI(link).query)
+        expect(carried).to include("source" => "crz", "amount_min" => "700", "sort" => "amount_asc", "page" => "2")
+
+        get link
+        expect(response.body.scan(/ZP-F-\d+/).uniq.size).to eq(1)
+        expect(response.body).to include("ZP-F-125")
+      end
+
+      it "runs a constant number of queries whatever the row count, with a party filter" do
+        add_all = lambda do |count, offset|
+          count.times do |i|
+            contract = create_contract!(reference: format("ZP-F-%03d", 300 + offset + i), title: "Perf #{offset + i}",
+                                        amount: 10)
+            add_party!(contract, "Perf party", "00000001")
+          end
+        end
+
+        add_all.call(2, 0)
+        get "/", params: { party: "perf" } # warm-up: first-request schema work is not under test
+        with_few = count_queries { get "/", params: { party: "perf" } }
+
+        add_all.call(18, 10)
+        with_many = count_queries { get "/", params: { party: "perf" } }
+
+        expect(response.body.scan(/ZP-F-3\d+/).uniq.size).to eq(20)
+        expect(with_many).to eq(with_few)
+      end
+
+      it "matches q upper-case terms and treats % and _ literally (search-bug regression)" do
+        create_contract!(reference: "ZP-F-800", title: "Rate 5% off")
+        create_contract!(reference: "ZP-F-801", title: "Rate 5X off")
+        create_contract!(reference: "ZP-F-802", title: "Under_score")
+
+        expect(filter_refs(q: "ALPHA ROAD")).to eq(%w[ZP-F-001])
+        expect(filter_refs(q: "5%")).to eq(%w[ZP-F-800])
+        expect(filter_refs(q: "5_")).to eq([])
+        expect(filter_refs(q: "e_5")).to eq([])
+        expect(filter_refs(q: "UNDER_")).to eq(%w[ZP-F-802])
+
+        create_contract!(reference: "ZP-F-803", title: "Oprava štúrovej ulice")
+        expect(filter_refs(q: "ŠTÚR")).to eq(%w[ZP-F-803])
       end
     end
   end

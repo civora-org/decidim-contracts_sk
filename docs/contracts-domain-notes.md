@@ -407,6 +407,28 @@ the current version):
 - **Permission:** `:confirm_crz_filing` — editor, editorial, published,
   unfiled ([roles-and-permissions.md](roles-and-permissions.md)).
 
+## Catalogue filters and sorting landed in #116
+
+`Decidim::ContractsSk::CatalogueQuery` (`app/queries/`) is the one query object behind the public catalogue's filters and sort; the supplier pages (#117), statistics (#118), exports (#119) and feeds (#120) are meant to reuse it, not to grow a second vocabulary.
+
+**Reuse contract**
+
+- `CatalogueQuery.new(scope:, params:, time_zone: Time.zone)`: `scope` is the caller's already-scoped relation (the controller passes the published, organization-scoped one); the query only narrows it, so published-only and tenant scoping survive every combination.
+- `#filters` (normalized, frozen), `#relation` (filtered, **unordered**: for counts, aggregates, exports), `#results` (relation plus the sort), `#active?`, `#active_filter_keys`, `#to_params` (normalized strings, round-trips), `#with(**overrides)` (a new query over the same scope; `nil` removes a key; e.g. a supplier page is `query.with(party: ico)`). `#with` is strict: an unknown key, or a non-nil value that does not normalize, raises `ArgumentError` instead of silently widening the result to the whole catalogue. #117 must therefore pass a valid 8-digit IČO (spaces allowed) to get the exact match; any other string would be a name substring search, and `PARAM_KEYS` (controller slice, pagination `filter_keys`, specs).
+- Pagination links carry the normalized params (`CatalogueQuery#to_params`, via the partial's `carried_params:` local), never the raw request. `#results` uses `reorder`, so a pre-ordered scope cannot break the deterministic sort. The search conditions are table-qualified. Everything lives in `catalogue_query/normalizer.rb` (params to filters) and `catalogue_query/conditions.rb` (filters to SQL).
+
+**Normalization** (only String values; arrays and hashes are ignored; an invalid value is ignored, never an error)
+
+- Amounts: spaces (incl. U+00A0/U+202F) removed; `\A\d+([.,]\d{1,2})?\z`, so "10 000,50", "10000.5" and "10000" pass while the ambiguous "10.000", negatives and anything above `Contract::MAX_AMOUNT` do not. Compared against the stored `amount`, whatever the currency (only EUR exists: `Contract::SUPPORTED_CURRENCIES`). Records without an amount drop out only while an amount filter is active.
+- Dates: ISO `yyyy-mm-dd` and Slovak `d.m.yyyy` through strict regexes plus `Date.valid_date?`, years 1900 to 2100, never `Date.parse`. `signed_on` is an inclusive date range. Publication dates are calendar days in the supplied time zone (the public controller runs inside Decidim's organization time zone), applied as `[from 00:00, day after "to" 00:00)` on `published_at`.
+- A reversed range (from after to) is **swapped silently** and the form shows the swapped values.
+- `party`: control characters replaced by spaces, squished, capped at 255 (`q` shares the cap and the control-character cleaning; a NUL byte would otherwise make PostgreSQL raise on bind); exactly 8 digits (spaces removed) is an exact `ico` match (a string: leading zeros count), anything else a case-insensitive name substring. Both go through an `IN (SELECT contract_id FROM parties ...)` subquery: any role, no DISTINCT, no N+1.
+- `source`: `editorial` (everything not `crz`, as in the admin index) or `crz`. `sort`: `published_desc` (default), `published_asc`, `amount_desc`, `amount_asc`; always tie-broken by `id` in the same direction; amount sorts put missing amounts last (`NULLS LAST`, emitted explicitly, since PostgreSQL's default for DESC is the opposite).
+
+**Publication date caveat.** "Published in the catalogue" filters `published_at`, the moment the record entered the catalogue. For a CRZ mirror that is its import time, **not** the real CRZ publication date. Storing the real CRZ date is a follow-up; until then the label says what the field means.
+
+**Search fix (public and admin).** The earlier condition lower-cased the column but not the pattern (case-sensitive on PostgreSQL: an upper-case term found nothing), and `sanitize_sql_like`'s backslash escaping did nothing on SQLite without an `ESCAPE` clause. `TextSearch` (`app/queries/`) now down-cases the term in Ruby and every condition carries `ESCAPE '\'`; the public `q`, the `party` name match and the admin index `q` share it. Known limit: SQLite's `LOWER()` folds ASCII only, so a stored diacritic capital ("Š") is not folded there; PostgreSQL folds per its collation (production).
+
 ## Known gaps / drift (flagged, unowned)
 
 - ~~The data dictionary does not exist anywhere yet~~ — **resolved 2026-09-03

@@ -21,6 +21,16 @@
         renders its own label around each field); label_tag +
         text_field_tag is the safe pairing here. Label above; field and
         button share one row, the field takes the slack. %>
+    <%# One GET form: the search state lives in the URL and survives the
+        pagination links. q is always visible; every other filter and the
+        sort sit in a native <details> (keyboard and screen-reader friendly
+        without JS), open whenever one of them is active. Fields are
+        prefilled from the NORMALIZED query (a swapped range shows swapped).
+        Labels above fields; fieldset + legend group each from/to pair. %>
+    <% query = catalogue_query %>
+    <% values = query.to_params %>
+    <% more_open = (query.active_filter_keys - [:q]).any? || query.non_default_sort? %>
+    <% filters_t = "decidim.contracts_sk.contracts.index.filters" %>
     <div class="cs-search">
       <%= form_tag contracts_path, method: :get, class: "form-defaults", role: "search" do %>
         <%= label_tag :q, t("decidim.contracts_sk.contracts.index.search_label") %>
@@ -30,6 +40,91 @@
             <%= contracts_icon(:search) %>
             <span><%= t("decidim.contracts_sk.contracts.index.search_submit") %></span>
           <% end %>
+        </div>
+
+        <details class="cs-filters"<%= " open".html_safe if more_open %>>
+          <summary class="cs-filters__summary"><%= t("#{filters_t}.more") %></summary>
+          <div class="cs-filters__grid">
+            <fieldset class="cs-filters__group">
+              <legend><%= t("#{filters_t}.amount") %></legend>
+              <div class="cs-filters__pair">
+                <div>
+                  <%= label_tag :amount_min, t("#{filters_t}.amount_min") %>
+                  <%= text_field_tag :amount_min, values["amount_min"], inputmode: "decimal", autocomplete: "off" %>
+                </div>
+                <div>
+                  <%= label_tag :amount_max, t("#{filters_t}.amount_max") %>
+                  <%= text_field_tag :amount_max, values["amount_max"], inputmode: "decimal", autocomplete: "off" %>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="cs-filters__group">
+              <legend><%= t("#{filters_t}.published") %></legend>
+              <div class="cs-filters__pair">
+                <div>
+                  <%= label_tag :published_from, t("#{filters_t}.published_from") %>
+                  <%= date_field_tag :published_from, values["published_from"] %>
+                </div>
+                <div>
+                  <%= label_tag :published_to, t("#{filters_t}.published_to") %>
+                  <%= date_field_tag :published_to, values["published_to"] %>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="cs-filters__group">
+              <legend><%= t("#{filters_t}.signed") %></legend>
+              <div class="cs-filters__pair">
+                <div>
+                  <%= label_tag :signed_from, t("#{filters_t}.signed_from") %>
+                  <%= date_field_tag :signed_from, values["signed_from"] %>
+                </div>
+                <div>
+                  <%= label_tag :signed_to, t("#{filters_t}.signed_to") %>
+                  <%= date_field_tag :signed_to, values["signed_to"] %>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="cs-filters__field">
+              <%= label_tag :party, t("#{filters_t}.party") %>
+              <%= text_field_tag :party, values["party"], autocomplete: "off",
+                                 maxlength: Decidim::ContractsSk::CatalogueQuery::Normalizer::TEXT_MAX_LENGTH,
+                                 "aria-describedby": "party-hint" %>
+              <p class="cs-small" id="party-hint"><%= t("#{filters_t}.party_hint") %></p>
+            </div>
+
+            <div class="cs-filters__field">
+              <%= label_tag :source, t("#{filters_t}.source") %>
+              <%= select_tag :source,
+                             options_for_select([[t("#{filters_t}.sources.any"), ""]] +
+                                                Decidim::ContractsSk::CatalogueQuery::SOURCES.map { |s| [t("#{filters_t}.sources.#{s}"), s] },
+                                                values["source"].to_s) %>
+            </div>
+
+            <div class="cs-filters__field">
+              <%= label_tag :sort, t("#{filters_t}.sort") %>
+              <%= select_tag :sort,
+                             options_for_select(Decidim::ContractsSk::CatalogueQuery::SORTS.map { |s| [t("#{filters_t}.sorts.#{s}"), s] },
+                                                query.filters.sort) %>
+            </div>
+          </div>
+          <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary cs-filters__apply" do %>
+            <span><%= t("#{filters_t}.apply") %></span>
+          <% end %>
+        </details>
+      <% end %>
+
+      <% if query.active? || query.non_default_sort? %>
+        <div class="cs-filters-active">
+          <h2 class="cs-filters-active__title"><%= t("#{filters_t}.active_heading") %></h2>
+          <ul class="cs-filters-active__list">
+            <% catalogue_active_filters(query).each do |label, text| %>
+              <li><span class="label"><%= label %>: <%= text %></span></li>
+            <% end %>
+          </ul>
+          <%= link_to t("#{filters_t}.clear"), contracts_path, class: "cs-link" %>
         </div>
       <% end %>
     </div>
@@ -79,17 +174,19 @@
 
       <%# Catalogue pagination (civora-org/civora-platform#86b): the shared
           engine partial, page controls only from two pages up; the
-          catalogue carries its single filter (:q) over the page links. %>
+          catalogue carries every filter key (CatalogueQuery::PARAM_KEYS) over
+          the page links. %>
       <% if @contracts.total_pages > 1 %>
         <%= render "decidim/contracts_sk/shared/pagination",
                    collection: @contracts,
-                   filter_keys: [:q] %>
+                   filter_keys: Decidim::ContractsSk::CatalogueQuery::PARAM_KEYS,
+                   carried_params: query.to_params.symbolize_keys %>
       <% end %>
     <% else %>
       <%# Two distinct empty states: a search that finds nothing is a
           different situation from an empty catalogue — the record exists,
           it just does not match the query. %>
-      <% if search_term.present? %>
+      <% if query.active? %>
         <p class="cs-empty"><%= t("decidim.contracts_sk.contracts.index.no_search_results") %></p>
       <% else %>
         <p class="cs-empty"><%= t("decidim.contracts_sk.contracts.index.empty") %></p>

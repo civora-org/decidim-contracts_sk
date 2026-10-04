@@ -26,6 +26,25 @@
   .cs-search__row input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; }
   .cs-search__row .button { justify-content: center; white-space: nowrap; }
 
+  /* Catalogue filters (#116): one column on phones, two from 640px, four
+     from 1024px; fields never overflow their cell. */
+  .cs-filters { margin-top: 1rem; max-width: 100%; }
+  .cs-filters__summary { display: inline-block; padding: .25rem 0; font-weight: 600; color: var(--secondary); cursor: pointer; }
+  .cs-filters__summary:focus-visible { outline: 3px solid var(--secondary); outline-offset: 2px; }
+  .cs-filters__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin: 1rem 0; }
+  .cs-filters__group { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .cs-filters__group legend { padding: 0; margin-bottom: .5rem; font-weight: 600; color: #020203; }
+  .cs-filters__pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+  .cs-filters__pair > div, .cs-filters__field { min-width: 0; }
+  .cs-filters label { display: block; margin-bottom: .25rem; font-weight: 400; color: #3e4c5c; }
+  .cs-filters input, .cs-filters select { width: 100%; min-width: 0; }
+  .cs-filters__field > label { font-weight: 600; color: #020203; }
+  .cs-filters__field .cs-small { margin-top: .25rem; }
+  .cs-filters-active { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: 1rem; }
+  .cs-filters-active__title { margin: 0; font-size: .875rem; font-weight: 600; color: #3e4c5c; }
+  .cs-filters-active__list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+  .cs-filters-active .label { white-space: normal; overflow-wrap: anywhere; }
+
   .cs-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; }
   .cs-list > li + li { border-top: 1px solid #e1e5ef; }
 
@@ -85,6 +104,7 @@
 
   @media (min-width: 640px) {
     .cs-search__row { flex-direction: row; }
+    .cs-filters__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cs-party { grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; align-items: start; }
     .cs-party__side { justify-content: flex-end; }
   }
@@ -96,11 +116,12 @@
     .cs-dl__wide { grid-column: 1 / -1; }
   }
   @media (min-width: 1024px) {
+    .cs-filters__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .cs-detail { grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr); gap: 3rem; align-items: start; }
     .cs-facts { order: 2; }
   }
   @media print {
-    .cs-search { display: none; }
+    .cs-search form, .cs-filters { display: none; }
     .cs-detail { grid-template-columns: 1fr; }
     .cs-facts { order: 0; background: none; }
   }
