@@ -1,0 +1,60 @@
+<%# The audit-event table (civora-org/civora-platform#92), shared by the
+    audit-trail viewer and the admin dashboard's recent-activity block
+    (civora-org/civora-platform#126). Local: events - the rows to render. The
+    label/actor/target/reason helpers come from the including controller
+    (Admin::AuditEventPresentation). %>
+<%# table-list--selectable is Decidim admin's own modifier that
+    left-aligns the second column (the table-list default centres every
+    column after the first, which floated the record titles mid-cell). %>
+<div class="table-scroll">
+  <table class="table-list table-list--selectable">
+    <thead>
+      <tr>
+        <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.action") %></th>
+        <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.record") %></th>
+        <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.user") %></th>
+        <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.when") %></th>
+        <th><%= t("decidim.contracts_sk.admin.contracts.transition.review_reason.label") %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% events.each do |event| %>
+        <% target_info = audit_target_info(event) %>
+        <% reason = audit_reason_for(event) %>
+        <tr>
+          <td><%= audit_action_label(event.action) %></td>
+          <td>
+            <%# Dangling target (row gone or class unloadable): the
+                localized label in place of the title link — graceful,
+                no internals leaked (fail-closed at the helper). %>
+            <% if target_info %>
+              <% if target_info[:url].present? %>
+                <%= link_to target_info[:label], target_info[:url] %>
+              <% else %>
+                <%= target_info[:label] %>
+              <% end %>
+            <% else %>
+              <span class="text-warning"><%= t("decidim.contracts_sk.admin.audit_events.deleted_target") %></span>
+            <% end %>
+          </td>
+          <td><%= audit_actor_name(event) %></td>
+          <%# The row timestamp renders through the shared locale-aware
+              helpers (civora-org/civora-platform#81) directly in the
+              view — the helper chain is the view's, not the
+              controller's. Date AND time: several events per contract
+              share a day, and the trail must be readable in order. %>
+          <td style="white-space: nowrap"><%= format_datetime(event.created_at) %></td>
+          <%# No reason recorded: an explicit muted dash, so the column
+              reads as "none" rather than as missing data. %>
+          <td>
+            <% if reason.present? %>
+              <%= reason %>
+            <% else %>
+              <span aria-hidden="true">—</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

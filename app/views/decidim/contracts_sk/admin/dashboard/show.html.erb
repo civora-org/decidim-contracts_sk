@@ -1,0 +1,70 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<%# Admin overview (civora-org/civora-platform#126). Decidim admin classes
+    only (card, card-section, item_show__header, table-list, label,
+    button): the host stylesheet is compiled at image build and silently
+    drops engine-only Tailwind utilities (docs/public-ui.md). Role-specific
+    blocks render only when the permission layer lets the user perform the
+    event they are about; every rendered block has its own empty state and
+    a link to the filtered contracts index. %>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t("decidim.contracts_sk.admin.dashboard.title") %>
+    </h1>
+    <div class="cs-admin-actions">
+      <%= link_to t("decidim.contracts_sk.admin.dashboard.all_contracts"), admin_contracts_path,
+                  class: "button button__sm button__secondary" %>
+      <% if audit_trail_visible? %>
+        <%= link_to t("decidim.contracts_sk.admin.dashboard.audit_trail"), admin_audit_events_path,
+                    class: "button button__sm button__secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if review_queue_visible? %>
+    <%= render "block", key: "review_queue", block: review_queue, columns: %i[submitter updated],
+                        hint: (Decidim::ContractsSk.allow_self_review ? "hint_self_review" : "hint") %>
+  <% end %>
+
+  <% if returned_visible? %>
+    <%= render "block", key: "returned", block: returned_list, columns: %i[reviewed reason] %>
+  <% end %>
+
+  <% if approved_visible? %>
+    <%= render "block", key: "approved", block: approved_list, columns: %i[redaction updated] %>
+  <% end %>
+
+  <%= render "block", key: "overdue", block: overdue_list, columns: %i[state deadline] %>
+  <%= render "block", key: "due_soon", block: due_soon_list, columns: %i[state deadline] %>
+
+  <%# Counts per state: one grouped query, the lifecycle vocabulary in its
+      own order (zeros included), each chip a filtered-index link. %>
+  <div class="card-section">
+    <h2 class="h4"><%= t("decidim.contracts_sk.admin.dashboard.counts.title") %></h2>
+    <% if total_count.zero? %>
+      <p><%= t("decidim.contracts_sk.admin.dashboard.counts.empty") %></p>
+    <% else %>
+      <div class="cs-admin-chips">
+        <%= link_to "#{t("decidim.contracts_sk.admin.dashboard.counts.all")} (#{total_count})",
+                    admin_contracts_path, class: "button button__sm button__secondary" %>
+        <% state_counts.each do |state, count| %>
+          <%= link_to "#{t(state, scope: "decidim.contracts_sk.contract_states")} (#{count})",
+                      admin_contracts_path(state: state), class: "button button__sm button__secondary" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if audit_trail_visible? %>
+    <div class="card-section">
+      <h2 class="h4"><%= t("decidim.contracts_sk.admin.dashboard.recent_activity.title") %></h2>
+      <% if recent_events.any? %>
+        <%= render "decidim/contracts_sk/admin/audit_events/table", events: recent_events %>
+        <p class="cs-admin-more"><%= link_to t("decidim.contracts_sk.admin.dashboard.recent_activity.show_all"),
+                       admin_audit_events_path, class: "button button__sm button__secondary" %></p>
+      <% else %>
+        <p><%= t("decidim.contracts_sk.admin.dashboard.recent_activity.empty") %></p>
+      <% end %>
+    </div>
+  <% end %>
+</div>

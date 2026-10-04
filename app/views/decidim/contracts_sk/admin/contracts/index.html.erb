@@ -1,8 +1,14 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
 <div class="card">
   <div class="item_show__header">
     <h1 class="item_show__header-title">
       <%= t("decidim.contracts_sk.admin.contracts.index.title") %>
     </h1>
+    <%# Admin overview (civora-org/civora-platform#126). %>
+    <div class="cs-admin-actions">
+      <%= link_to t("decidim.contracts_sk.admin.dashboard.overview_link"), admin_root_path,
+                  class: "button button__sm button__secondary" %>
+    </div>
   </div>
 
   <%# Per-state lifecycle counters (civora-org/civora-platform#93): ONE
@@ -14,10 +20,12 @@
       state= while preserving the active source/q filters; the active
       state's chip carries the --active marker class. %>
   <div class="card-section">
-    <%= link_to index_counter_label(nil), index_counter_path(nil), class: index_counter_classes(nil) %>
-    <% Decidim::ContractsSk::ContractLifecycle::STATES.each do |state| %>
-      <%= link_to index_counter_label(state), index_counter_path(state), class: index_counter_classes(state) %>
-    <% end %>
+    <div class="cs-admin-chips">
+      <%= link_to index_counter_label(nil), index_counter_path(nil), class: index_counter_classes(nil) %>
+      <% Decidim::ContractsSk::ContractLifecycle::STATES.each do |state| %>
+        <%= link_to index_counter_label(state), index_counter_path(state), class: index_counter_classes(state) %>
+      <% end %>
+    </div>
   </div>
 
   <%# CRZ publication deadline counters (§ 47a OZ, civora-org/
@@ -27,11 +35,13 @@
       filter while preserving the other normalized filters. Aid only, not
       legal advice (see the hint). %>
   <div class="card-section">
-    <% %i[due_soon overdue].each do |deadline| %>
-      <%= link_to index_deadline_counter_label(deadline), index_deadline_counter_path(deadline),
-                  class: index_deadline_counter_classes(deadline) %>
-    <% end %>
-    <p><em><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></em></p>
+    <div class="cs-admin-chips">
+      <% %i[due_soon overdue].each do |deadline| %>
+        <%= link_to index_deadline_counter_label(deadline), index_deadline_counter_path(deadline),
+                    class: index_deadline_counter_classes(deadline) %>
+      <% end %>
+    </div>
+    <p class="cs-admin-hint"><em><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></em></p>
   </div>
 
   <% if allowed_to?(:create, :contract) %>
@@ -77,6 +87,10 @@
       <div class="row column">
         <%= label_tag :deadline, t("decidim.contracts_sk.admin.contracts.index.filters.deadline") %>
         <%= select_tag :deadline, options_for_select(index_deadline_options, selected: index_filters.deadline) %>
+      </div>
+      <div class="row column">
+        <%= label_tag :submitter, t("decidim.contracts_sk.admin.contracts.index.filters.submitter") %>
+        <%= select_tag :submitter, options_for_select(index_submitter_options, selected: index_filters.submitter) %>
       </div>
       <div class="row column">
         <%= label_tag :q, t("decidim.contracts_sk.admin.contracts.index.filters.q") %>
@@ -176,7 +190,7 @@
     <% if @contracts.total_pages > 1 %>
       <%= render "decidim/contracts_sk/shared/pagination",
                  collection: @contracts,
-                 filter_keys: %i[state source q deadline] %>
+                 filter_keys: %i[state source q deadline submitter] %>
     <% end %>
   <% else %>
     <div class="card-section">

@@ -226,6 +226,40 @@ module LocaleContract
     }
   }.freeze
 
+  # The admin dashboard's pinned labels per locale (civora-org/civora-platform
+  # #126): block titles (the role vocabulary of the page), the submitter
+  # filter options and the shared chrome. Slovak carries diacritics.
+  # rubocop:disable Style/FormatStringToken
+  ADMIN_DASHBOARD_LABELS = {
+    en: {
+      "admin.dashboard.title" => "Overview",
+      "admin.dashboard.blocks.review_queue.title" => "Waiting for my review",
+      "admin.dashboard.blocks.returned.title" => "Returned to me",
+      "admin.dashboard.blocks.approved.title" => "Approved, ready to publish",
+      "admin.dashboard.blocks.overdue.title" => "CRZ deadline overdue",
+      "admin.dashboard.show_all" => "Show all (%{count})",
+      "admin.dashboard.counts.title" => "Contracts by state",
+      "admin.dashboard.recent_activity.title" => "Recent activity",
+      "admin.contracts.index.filters.submitters.any" => "Any submitter",
+      "admin.contracts.index.filters.submitters.me" => "Submitted by me",
+      "admin.contracts.index.filters.submitters.others" => "Submitted by others"
+    },
+    sk: {
+      "admin.dashboard.title" => "Prehľad",
+      "admin.dashboard.blocks.review_queue.title" => "Čakajú na moje posúdenie",
+      "admin.dashboard.blocks.returned.title" => "Vrátené mne na úpravu",
+      "admin.dashboard.blocks.approved.title" => "Schválené, pripravené na zverejnenie",
+      "admin.dashboard.blocks.overdue.title" => "Lehota CRZ po termíne",
+      "admin.dashboard.show_all" => "Zobraziť všetky (%{count})",
+      "admin.dashboard.counts.title" => "Zmluvy podľa stavu",
+      "admin.dashboard.recent_activity.title" => "Posledná aktivita",
+      "admin.contracts.index.filters.submitters.any" => "Ľubovoľný odosielateľ",
+      "admin.contracts.index.filters.submitters.me" => "Odoslané mnou",
+      "admin.contracts.index.filters.submitters.others" => "Odoslané inými"
+    }
+  }.freeze
+  # rubocop:enable Style/FormatStringToken
+
   # The admin audit-trail viewer labels per locale (civora-org/civora-platform
   # #92). The six lifecycle-event rows reuse the transition.* vocabulary
   # verbatim (pinned by TRANSITION_EVENT_LABELS — never a second vocabulary);
@@ -684,6 +718,10 @@ module LocaleContract
     "admin.contracts.index.filters.state",
     "admin.contracts.index.filters.states.any",
     "admin.contracts.index.filters.submit",
+    "admin.contracts.index.filters.submitter",
+    "admin.contracts.index.filters.submitters.any",
+    "admin.contracts.index.filters.submitters.me",
+    "admin.contracts.index.filters.submitters.others",
     "admin.contracts.index.headers.crz_deadline",
     "admin.contracts.index.no_matches.body",
     "admin.contracts.index.no_matches.clear",
@@ -723,6 +761,42 @@ module LocaleContract
     "admin.crz_handoff.generate",
     "admin.crz_handoff.replace",
     "admin.crz_handoff.title",
+    "admin.dashboard.all_contracts",
+    "admin.dashboard.audit_trail",
+    "admin.dashboard.blocks.approved.empty",
+    "admin.dashboard.blocks.approved.hint",
+    "admin.dashboard.blocks.approved.title",
+    "admin.dashboard.blocks.due_soon.empty",
+    "admin.dashboard.blocks.due_soon.hint",
+    "admin.dashboard.blocks.due_soon.title",
+    "admin.dashboard.blocks.overdue.empty",
+    "admin.dashboard.blocks.overdue.hint",
+    "admin.dashboard.blocks.overdue.title",
+    "admin.dashboard.blocks.returned.empty",
+    "admin.dashboard.blocks.returned.hint",
+    "admin.dashboard.blocks.returned.title",
+    "admin.dashboard.blocks.review_queue.empty",
+    "admin.dashboard.blocks.review_queue.hint",
+    "admin.dashboard.blocks.review_queue.hint_self_review",
+    "admin.dashboard.blocks.review_queue.title",
+    "admin.dashboard.columns.deadline",
+    "admin.dashboard.columns.reason",
+    "admin.dashboard.columns.redaction",
+    "admin.dashboard.columns.reviewed",
+    "admin.dashboard.columns.state",
+    "admin.dashboard.columns.submitter",
+    "admin.dashboard.columns.updated",
+    "admin.dashboard.counts.all",
+    "admin.dashboard.counts.empty",
+    "admin.dashboard.counts.title",
+    "admin.dashboard.overview_link",
+    "admin.dashboard.recent_activity.empty",
+    "admin.dashboard.recent_activity.show_all",
+    "admin.dashboard.recent_activity.title",
+    "admin.dashboard.redaction_missing",
+    "admin.dashboard.show_all",
+    "admin.dashboard.title",
+    "admin.dashboard.unknown_submitter",
     "admin.documents.back_to_contract",
     "admin.documents.create.error",
     "admin.documents.create.success",
@@ -1262,6 +1336,14 @@ RSpec.describe Decidim::ContractsSk do
       LocaleContract::ADMIN_AUDIT_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the admin dashboard labels in both locales (civora-org/civora-platform#126)" do
+      LocaleContract::ADMIN_DASHBOARD_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}", count: 7)).to eq(value.sub("%{count}", "7")) # rubocop:disable Style/FormatStringToken
         end
       end
     end

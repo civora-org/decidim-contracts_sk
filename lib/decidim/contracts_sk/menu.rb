@@ -53,6 +53,12 @@ module Decidim
       end
       private_class_method :register_catalogue_item_in
 
+      # The sidebar entry points at the admin overview (dashboard, civora-org/
+      # civora-platform#126); with active: :inclusive (a path-prefix match) it
+      # stays highlighted on every engine admin page (contracts, parties,
+      # amendments, audit trail, ...), since they all live under the same
+      # /admin prefix.
+      #
       # Decidim admin sidebar — the "modules" section (:admin_menu_modules
       # registry, rendered by Decidim::Admin::MenuHelper#main_menu_modules),
       # the same registry every Decidim content module registers into.
@@ -71,7 +77,7 @@ module Decidim
 
           menu.add_item :contracts_sk,
                         I18n.t("menu.admin_contracts", scope: "decidim.contracts_sk"),
-                        decidim_contracts_sk.admin_contracts_path,
+                        decidim_contracts_sk.admin_root_path,
                         icon_name: "scales-2-line",
                         position: POSITION,
                         active: :inclusive,

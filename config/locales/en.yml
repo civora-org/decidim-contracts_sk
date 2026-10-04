@@ -94,6 +94,11 @@ en:
                 all: "All sources"
                 crz: "CRZ import"
                 editorial: "Editorial"
+              submitter: "Submitted by"
+              submitters:
+                any: "Any submitter"
+                me: "Submitted by me"
+                others: "Submitted by others"
               deadline: "CRZ deadline (not confirmed as filed)"
               deadlines:
                 any: "Any deadline"
@@ -245,6 +250,52 @@ en:
             quarantined: "Contract %{source_id} could not be read from the source; it was skipped."
             out_of_scope: "Contract %{source_id} does not involve this organization (its IČO is on neither party); it was not imported."
             not_configured: "The CRZ import is not configured for this organization (no IČO set). Nothing was imported."
+        dashboard:
+          title: "Overview"
+          overview_link: "Overview"
+          all_contracts: "All contracts"
+          audit_trail: "Audit trail"
+          show_all: "Show all (%{count})"
+          unknown_submitter: "Unknown user"
+          redaction_missing: "Redaction not confirmed"
+          columns:
+            submitter: "Submitted by"
+            updated: "Last change"
+            reviewed: "Returned on"
+            reason: "Reviewer's reason"
+            redaction: "Redaction"
+            state: "State"
+            deadline: "CRZ deadline"
+          blocks:
+            review_queue:
+              title: "Waiting for my review"
+              hint: "Records in review that you may return, approve or reject — oldest first. Your own submissions are not listed (four-eyes rule)."
+              hint_self_review: "Records in review that you may return, approve or reject — oldest first. Self-review is enabled, so your own submissions are listed too."
+              empty: "Nothing is waiting for your review."
+            returned:
+              title: "Returned to me"
+              hint: "Records you submitted that a reviewer sent back for changes — most recently returned first."
+              empty: "None of your submissions has been returned."
+            approved:
+              title: "Approved, ready to publish"
+              hint: "Approved records waiting to be published — longest waiting first. Publishing needs the redaction confirmation."
+              empty: "No approved records are waiting to be published."
+            overdue:
+              title: "CRZ deadline overdue"
+              hint: "Records not confirmed as filed in CRZ whose deadline has passed — earliest signed first."
+              empty: "No CRZ deadlines are overdue."
+            due_soon:
+              title: "CRZ deadline within %{days} days"
+              hint: "Records not confirmed as filed in CRZ whose deadline falls within %{days} days — an aid, not legal advice."
+              empty: "No CRZ deadlines are due soon."
+          counts:
+            title: "Contracts by state"
+            all: "All"
+            empty: "No contracts have been created yet."
+          recent_activity:
+            title: "Recent activity"
+            show_all: "Show the full audit trail"
+            empty: "No audit events have been recorded yet."
         audit_events:
           index:
             title: "Audit trail"

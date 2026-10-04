@@ -136,6 +136,36 @@ table itself stays untouched. The union gives one admin both roles, which is
 why the per-person [four-eyes rule](#four-eyes-rule-per-person-segregation-123)
 below exists: roles alone never separated duties between two *people*.
 
+## Admin overview: block visibility (#126)
+
+The admin overview (`/admin`) is gated by the contracts index's own
+permission (`:read :contract` — any engine role; a roleless user is redirected
+with the permission alert). It adds **no role logic**: each role-specific
+block asks the permission layer whether the user may perform the event the
+block is about, with a bare-state context, so the page can never drift from
+the permission table above.
+
+| Block | Shown when (`allowed_to?`) | Editor only | Reviewer only | Both |
+|---|---|---|---|---|
+| Waiting for my review | `:approve :contract, state: :in_review` | hidden | shown | shown |
+| Returned to me | `:submit :contract, state: :returned` | shown | hidden | shown |
+| Approved, ready to publish | `:publish :contract, state: :approved` | shown | hidden | shown |
+| CRZ deadline overdue / due within 14 days | any engine role (`:read :contract`) | shown | shown | shown |
+| Counts per state | any engine role | shown | shown | shown |
+| Recent activity (last 10 audit events) | `:read :audit_event` | shown | shown | shown |
+
+The review queue is the set twin of the four-eyes predicate: it lists
+`in_review` records for which `self_review_blocked?(record, user, :approve)`
+is false — the user's own submissions are excluded (records with no submitter
+stamp are included), unless `allow_self_review` is on. Everything is scoped to
+the current organization. The contracts index gained the matching
+`submitter=me|others` filter so every list's "Show all (N)" link lands on the
+same set.
+
+Cost note: the dashboard calls `allowed_to?(:update, …)` once per listed row
+(to pick the title link), so a host `role_resolver` that hits the database
+costs one query per row (at most 10 per list).
+
 ## Four-eyes rule (per-person segregation, #123)
 
 ([civora-org/civora-platform#123]) The person who last **submitted** a

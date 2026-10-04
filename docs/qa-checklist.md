@@ -22,6 +22,16 @@ ideally in both `en` and `sk` where noted.
 - [ ] CRZ link absent (not a blank `href`) when the record has no `crz_url`.
 - [ ] Document links download with attachment disposition (no in-browser surprise rendering).
 
+## Admin overview (#126)
+
+- [ ] `/admin` is the sidebar entry's target; the entry stays highlighted on every engine admin page; "Overview" links on the contracts index and the audit trail lead back.
+- [ ] Role matrix: editor-only sees returned / approved / deadlines / counts / recent activity but no review queue; reviewer-only sees the review queue (own submissions excluded, no-stamp records included), deadlines, counts, recent activity but no returned/approved; both roles see every block; a roleless user gets the permission alert, an anonymous visitor the sign-in redirect.
+- [ ] Each rendered block: localized title and hint (en + sk, proper diacritics), at most 10 rows, a "Show all (N)" link whose index shows exactly N rows (`?state=in_review&submitter=others`, `?state=returned&submitter=me`, `?state=approved`, `?deadline=overdue|due_soon`), and its own empty state.
+- [ ] Approved rows without a redaction confirmation carry the "Redaction not confirmed" warning label; deadline rows carry the deadline badge.
+- [ ] State counts list every lifecycle state in lifecycle order (zeros included), each linking to its state filter; "All" links to the bare index.
+- [ ] Recent activity shows the last 10 audit events of this organization only, same labels as the audit trail; another organization's records never appear.
+- [ ] One `h1`; `h2` per block; no horizontal scroll at 375px.
+
 ## Admin contracts (new / edit / index / transitions)
 
 - [ ] **New**: one `h1`; every input has a `label` with a unique `id`; back-to-index link present.

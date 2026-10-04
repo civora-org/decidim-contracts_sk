@@ -181,8 +181,8 @@ RSpec.describe Decidim::ContractsSk::Menu do
       expect(item.label).to eq("Contracts")
     end
 
-    it "points at the admin contracts index" do
-      expect(item.url).to eq(routes.admin_contracts_path)
+    it "points at the admin overview (dashboard, civora-org/civora-platform#126)" do
+      expect(item.url).to eq(routes.admin_root_path)
     end
 
     it "sits next to the other content modules" do
