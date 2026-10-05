@@ -41,7 +41,7 @@
   "mcp": {
     "slov-lex": {
       "type": "local",
-      "command": ["node", "/Users/denyskozlov/.local/share/slov-lex-mcp/dist/index.js"],
+      "command": ["node", "{env:HOME}/.local/share/slov-lex-mcp/dist/index.js"],
       "enabled": true,
       "environment": {}
     },
