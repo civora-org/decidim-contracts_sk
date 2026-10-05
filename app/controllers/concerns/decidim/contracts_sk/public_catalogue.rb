@@ -26,7 +26,7 @@ module Decidim
       extend ActiveSupport::Concern
 
       included do
-        helper_method :catalogue_query
+        helper_method :catalogue_query, :current_organization
       end
 
       private

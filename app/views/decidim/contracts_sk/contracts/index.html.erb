@@ -28,6 +28,11 @@
         prefilled from the NORMALIZED query (a swapped range shows swapped).
         Labels above fields; fieldset + legend group each from/to pair. %>
     <% query = catalogue_query %>
+    <%# Feed auto-discovery (civora-org/civora-platform#120): readers pick the
+        feed up from the page head (decidim-core's _head partial yields
+        :header_snippets). Same filters as the page, no sort; absent for the
+        source=crz filter, whose own-records feed would be empty. %>
+    <% content_for :header_snippets, feed_discovery_link(query) unless query.filters.source == "crz" %>
     <% values = query.to_params %>
     <% more_open = (query.active_filter_keys - [:q]).any? || query.non_default_sort? %>
     <% filters_t = "decidim.contracts_sk.contracts.index.filters" %>
@@ -151,6 +156,8 @@
                       class: "button button__sm button__secondary", type: "text/csv" %>
           <%= link_to t("#{open_data_t}.json"), export_path(export_params.merge(format: :json)),
                       class: "button button__sm button__secondary", type: "application/json" %>
+          <%= link_to t("#{open_data_t}.atom"), feed_path(feed_link_params(query)),
+                      class: "button button__sm button__secondary", type: "application/atom+xml" %>
         </div>
       <% end %>
     </section>

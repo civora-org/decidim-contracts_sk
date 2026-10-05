@@ -439,6 +439,17 @@ the current version):
 - **Streaming without `ActionController::Live`.** The body is an `Enumerator` (no second thread). An explicit `ETag` from `stale?` keeps `Rack::ETag` from buffering the stream to digest it (rack 2.2 `skip_caching?`); `Contract.uncached { }` keeps the request's query cache from retaining every batch.
 - **`csv` is a declared dependency** (`csv >= 3.0` in the gemspec): it is a bundled, not default, gem from Ruby 3.4.
 
+## Atom feed landed in #120
+
+`GET /feed.atom` (`FeedsController`, `feeds/show.atom.builder`) reuses `PublicCatalogue#open_data_scope` and `CatalogueQuery` (`with(sort: "published_desc")`, `results.limit(50)`), so it can never list a mirror, a draft or another organization's record. Full contract in [open-data.md](open-data.md#atom-feed-of-new-contracts); decisions worth knowing:
+
+- **Editorial only, like the export** (ADR-008 decision 6, #83).
+- **The reader's sort is overridden**, not honoured: a feed is newest first, so the self link and the feed id carry no sort.
+- **`FeedHelper` holds the vocabulary** (organization name resolved from its translatable hash without Decidim's `translated_attribute`, tag-URI ids, summary, the head link), so the builder template stays declarative and the head link is spec-pinned offline (the harness has no Decidim layout). `current_organization` is exposed to views through `PublicCatalogue` (Decidim already does so; harmless there).
+- **Entry `updated` = `published_at`** by design; tag ids are minted from the id and host only, so edits and filter spelling never change them.
+- **No explicit caching** (the export sets an ETag only to avoid buffering a stream; the feed is small, `Rack::ETag` suffices).
+- Pre-existing and out of scope: on the host `/feed.rss` and other non-HTML unknown formats hit the catch-all `/:id` and 500, because Decidim has no xml/rss error template.
+
 ## Known gaps / drift (flagged, unowned)
 
 - ~~The data dictionary does not exist anywhere yet~~ — **resolved 2026-09-03

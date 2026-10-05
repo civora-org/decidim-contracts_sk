@@ -40,7 +40,7 @@ One GET form (`role="search"`) above the register; the state lives in the URL an
 
 ## Open-data download block (civora-org/civora-platform#119)
 
-A `<section class="cs-opendata">` between the filter form and the register: heading "Stiahnuť dáta", one sentence, and three `button button__sm button__secondary` links (CSV, CSV pre Excel, JSON). Each link carries the active filters (`query.to_params` minus `sort`). When the source filter is `crz` the links are replaced by a note and a link to crz.gov.sk, because mirrored records are never exported (see [open-data.md](open-data.md)). `.cs-opendata*` lives in `shared/_public_styles`; hidden in print. The downloads themselves are not HTML pages.
+A `<section class="cs-opendata">` between the filter form and the register: heading "Stiahnuť dáta", one sentence, and four `button button__sm button__secondary` links (CSV, CSV pre Excel, JSON, Atom kanál). Each link carries the active filters (`query.to_params` minus `sort`). When the source filter is `crz` the links are replaced by a note and a link to crz.gov.sk, because mirrored records are never exported (see [open-data.md](open-data.md)). `.cs-opendata*` lives in `shared/_public_styles`; hidden in print. The downloads themselves are not HTML pages. The same filters (no sort) feed the page head's `<link rel="alternate" type="application/atom+xml">` (civora-org/civora-platform#120), emitted through `content_for :header_snippets` (decidim-core's `_head` yields it) and omitted for `source=crz`, whose own-records feed would be empty.
 
 ## Heading decorators need room below
 

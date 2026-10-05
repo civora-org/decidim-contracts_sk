@@ -108,6 +108,7 @@ en:
             json: "JSON"
             crz_note: "Records taken from CRZ are not offered as downloads. Find the originals in the Central Register of Contracts."
             crz_link: "crz.gov.sk"
+            atom: "Atom feed"
         show:
           facts: "Contract details"
           parties: "Parties"
@@ -119,6 +120,12 @@ en:
           current_version: "Current version"
           version_label: "Version %{version}"
           versions_empty: "No amendments have been published for this contract."
+      feeds:
+        show:
+          title: "Contracts — %{organization}"
+          subtitle: "Newly published contracts"
+          subtitle_filtered: "Newly published contracts. Filters: %{filters}"
+          summary_signed: "signed %{date}"
       admin:
         contracts:
           back_to_index: "Back to contracts"

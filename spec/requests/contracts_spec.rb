@@ -131,6 +131,11 @@ RSpec.describe "public contracts catalogue", type: :request do
   def stub_published_contracts(scope)
     allow_any_instance_of(Decidim::ContractsSk::ContractsController)
       .to receive(:published_contracts).and_return(scope)
+    # The index also builds the feed auto-discovery link (#120), which names
+    # the organization; the harness has no Decidim organization middleware.
+    allow_any_instance_of(Decidim::ContractsSk::ContractsController)
+      .to receive(:current_organization)
+      .and_return(double(name: { "en" => "Test Org" }, host: "example.org", default_locale: "en"))
   end
 
   def published_contract_double(overrides = {})
@@ -165,6 +170,9 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(body).to include(%(href="/export.csv?amount_min=100&amp;profile=excel&amp;q=road"))
         expect(body).to include(%(href="/export.json?amount_min=100&amp;q=road"))
         expect(body).not_to include("export.csv?amount_min=100&amp;q=road&amp;sort")
+        expect(body).to include(%(href="/feed.atom?amount_min=100&amp;locale=en&amp;q=road"),
+                                %(type="application/atom+xml"))
+        expect(body).not_to include("feed.atom?amount_min=100&amp;locale=en&amp;q=road&amp;sort")
         expect(body).to include(%(type="text/csv"), %(type="application/json"))
         expect(body).to include("records taken from CRZ are not included")
       end
@@ -183,6 +191,7 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response.body).to include("crz.gov.sk")
         expect(response.body).to include("not offered as downloads")
         expect(response.body).not_to include("/export.")
+        expect(response.body).not_to include("/feed.")
       end
     end
   end
