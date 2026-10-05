@@ -23,7 +23,7 @@ module Decidim
                        inclusion: { in: ROLES }
       validates :name, presence: true, length: { maximum: 255 }
       validates :ico, length: { is: 8 },
-                      format: { with: /\A\d{8}\z/ },
+                      format: { with: Decidim::ContractsSk::ICO_FORMAT },
                       allow_blank: true
       validates :address, length: { maximum: 255 }, allow_nil: true
 

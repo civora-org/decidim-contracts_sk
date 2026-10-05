@@ -28,6 +28,16 @@ ideally in both `en` and `sk` where noted.
 - [ ] CRZ link absent (not a blank `href`) when the record has no `crz_url`.
 - [ ] Document links download with attachment disposition (no in-browser surprise rendering).
 
+## Supplier pages (#117)
+
+- [ ] On a contract detail page, a contractor with an 8-digit IČO is a link to `/suppliers/<IČO>`; a contractor without an IČO, a malformed stored IČO and the object party are plain text (no link, no error).
+- [ ] The supplier page shows one `h1` (name), the IČO, the contract count, the total value per currency, the per-year tally ("Date unknown" last) and the contracts newest first; view source shows `<meta name="robots" content="noindex">`.
+- [ ] CRZ mirrors of the supplier appear with the "Externally confirmed" badge; the note about double counting is visible.
+- [ ] More than 25 contracts paginate; the figures still cover all of them. `?page=abc`, `?page[]=2` and `?page=%00` render page 1.
+- [ ] 404: an IČO with only drafts, another organization's contracts, only the object role, or no contract at all. `/suppliers/1234567`, `/suppliers/123456789` and `/suppliers/abcdefgh` are not found either.
+- [ ] 375px wide: no horizontal scroll; the facts stack in one column; en and sk both render.
+- [ ] Privacy: the page shows only names and IČOs the register already publishes; for a sole trader (SZČO) confirm the organization accepts the page before linking to it widely.
+
 ## Admin overview (#126)
 
 - [ ] `/admin` is the sidebar entry's target; the entry stays highlighted on every engine admin page; "Overview" links on the contracts index and the audit trail lead back.

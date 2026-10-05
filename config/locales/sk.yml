@@ -120,6 +120,18 @@ sk:
           current_version: "Aktuálna verzia"
           version_label: "Verzia %{version}"
           versions_empty: "K tejto zmluve nebola zverejnená žiadna zmena."
+      suppliers:
+        show:
+          back: "Späť na katalóg"
+          summary: "Prehľad"
+          count: "Zverejnené zmluvy"
+          totals: "Celková hodnota"
+          by_year: "Podľa roka podpisu"
+          year_unknown: "Dátum podpisu neznámy"
+          page_empty: "Na tejto stránke nie sú žiadne zmluvy."
+          first_page: "Späť na prvú stránku"
+          contracts: "Zmluvy"
+          note: "Údaje zahŕňajú všetky zverejnené záznamy tohto dodávateľa v katalógu. Zmluva zverejnená aj organizáciou, aj ako záznam prevzatý z CRZ, sa počíta dvakrát."
       feeds:
         show:
           title: "Zmluvy — %{organization}"

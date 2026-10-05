@@ -1,0 +1,37 @@
+<%# One register row of a contract list (catalogue index and supplier page).
+    Local: contract. Title and identity on the left; the amount, the figure
+    a reader compares down the list, right-aligned in tabular numerals on
+    md+ and below the title on narrow screens. %>
+<li class="cs-row">
+  <div>
+    <%= link_to contract.title, contract_path(contract), class: "cs-row__title" %>
+    <div class="cs-meta">
+      <span><%= contract.reference %></span>
+      <%# Locale-aware date rendering (civora-org/civora-platform#81):
+          the format string ships with the engine, so no host-app
+          locale data is required. %>
+      <% if contract.published_at.present? %>
+        <span><%= format_date(contract.published_at) %></span>
+      <% end %>
+    </div>
+    <%# CRZ-mirror provenance (civora-org/civora-platform#88, ADR-002
+        rule 1): imported records are labelled externally
+        confirmed, with the mirror date — never presented as
+        engine-published content. Editorial records render nothing
+        extra. The stale indicator is deliberately detail-only to
+        keep rows lean. %>
+    <% if imported_contract?(contract) %>
+      <div class="cs-tags">
+        <span class="label">
+          <%= t("decidim.contracts_sk.provenance.badge") %>
+          <% if contract.imported_at.present? %>
+            · <%= format_date(contract.imported_at) %>
+          <% end %>
+        </span>
+      </div>
+    <% end %>
+  </div>
+  <% if contract.amount.present? %>
+    <div class="cs-amount"><%= format_amount(contract.amount, contract.currency) %></div>
+  <% end %>
+</li>
