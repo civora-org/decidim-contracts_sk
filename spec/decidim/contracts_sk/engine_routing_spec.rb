@@ -23,6 +23,7 @@ module EngineRoutingContract
   DASHBOARD_CONTROLLER = "decidim/contracts_sk/admin/dashboard"
   OPEN_DATA_CONTROLLER = "decidim/contracts_sk/open_data"
   FEEDS_CONTROLLER = "decidim/contracts_sk/feeds"
+  SUPPLIERS_CONTROLLER = "decidim/contracts_sk/suppliers"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -74,6 +75,7 @@ module EngineRoutingContract
     ["GET", "/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
     ["GET", "/export.:format", "#{OPEN_DATA_CONTROLLER}#export"],
     ["GET", "/feed.:format", "#{FEEDS_CONTROLLER}#show"],
+    ["GET", "/suppliers/:ico", "#{SUPPLIERS_CONTROLLER}#show"],
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
@@ -247,6 +249,51 @@ RSpec.describe Decidim::ContractsSk::Engine do
       expect(recognized).to eq([EngineRoutingContract::PUBLIC_CONTROLLER, EngineRoutingContract::PUBLIC_CONTROLLER, []])
     end
     # rubocop:enable RSpec/ExampleLength
+  end
+
+  describe "supplier page routes (civora-org/civora-platform#117)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    def recognize(path)
+      request = ActionDispatch::Request.new(Rack::MockRequest.env_for(path))
+      described_class.routes.router.recognize(request) { |route, _| break route.defaults[:controller] }
+    end
+
+    # rubocop:disable RSpec/ExampleLength
+    it "names supplier_path, keeps leading zeros and refuses anything but eight digits" do
+      aggregate_failures do
+        expect(url_helpers.supplier_path(ico: "00123456")).to eq("/suppliers/00123456")
+        expect { url_helpers.supplier_path(ico: "1234567") }.to raise_error(ActionController::UrlGenerationError)
+        expect { url_helpers.supplier_path(ico: "123456789") }.to raise_error(ActionController::UrlGenerationError)
+        expect { url_helpers.supplier_path(ico: "abcdefgh") }.to raise_error(ActionController::UrlGenerationError)
+        expect { url_helpers.supplier_path }.to raise_error(ActionController::UrlGenerationError)
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+
+    it "derives the anchored IČO format from the route's unanchored pattern" do
+      expect(Decidim::ContractsSk::ICO_FORMAT.source).to eq("\\A#{Decidim::ContractsSk::ICO_PATTERN.source}\\z")
+    end
+
+    it "is declared before the /:id catch-all" do
+      table = described_class.routes.routes.map { |route| route.path.spec.to_s }
+
+      expect(table.index("/suppliers/:ico")).to be < table.index("/:id(.:format)")
+    end
+
+    it "has no format segment: /suppliers/12345678.json is not a supplier page" do
+      expect(recognize("/suppliers/12345678.json")).to eq([])
+    end
+
+    it "recognizes only eight-digit IČOs; /suppliers falls to the /:id catch-all, the rest nowhere" do
+      recognized = %w[/suppliers/12345678 /suppliers /suppliers/1234567 /suppliers/123456789
+                      /suppliers/abcdefgh].map { |path| recognize(path) }
+
+      expect(recognized).to eq([EngineRoutingContract::SUPPLIERS_CONTROLLER, EngineRoutingContract::PUBLIC_CONTROLLER,
+                                [], [], []])
+    end
   end
 
   describe "admin URL helpers" do
@@ -693,12 +740,13 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's ten controllers, distinct by the admin/ segment" do
+    it "routes only the engine's eleven controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
         decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/dashboard
         decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links decidim/contracts_sk/admin/parties
         decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
+        decidim/contracts_sk/suppliers
       ].sort
 
       expect(controllers_of(route_triples)).to eq(controllers)
@@ -719,7 +767,8 @@ RSpec.describe Decidim::ContractsSk::Engine do
       non_admin = route_triples.reject { |_, path, _| path.start_with?("/admin(") || path.start_with?("/admin/") }
 
       expect(controllers_of(non_admin))
-        .to eq(["decidim/contracts_sk/contracts", "decidim/contracts_sk/feeds", "decidim/contracts_sk/open_data"])
+        .to eq(["decidim/contracts_sk/contracts", "decidim/contracts_sk/feeds", "decidim/contracts_sk/open_data",
+                "decidim/contracts_sk/suppliers"])
     end
   end
 end

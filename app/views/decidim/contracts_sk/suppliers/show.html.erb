@@ -1,0 +1,65 @@
+<%# Supplier page (civora-org/civora-platform#117): one counterparty's
+    published contracts. Same container and engine stylesheet as the
+    catalogue. Counterparties may be sole traders (SZČO): the page is kept
+    out of search engines (noindex) and shows only what the register already
+    publishes (docs/contracts-domain-notes.md, "Supplier pages"). %>
+<% content_for :header_snippets, tag.meta(name: "robots", content: "noindex") %>
+<% t_s = "decidim.contracts_sk.suppliers.show" %>
+<%= render "decidim/contracts_sk/shared/public_styles" %>
+<main class="layout-1col cols-10">
+  <div class="cs-page">
+    <p class="cs-small"><%= link_to t("#{t_s}.back"), contracts_path, class: "cs-link" %></p>
+    <h1 class="title-decorator"><%= supplier_name %></h1>
+    <p class="cs-lead">
+      <%= t("decidim.contracts_sk.admin.parties.form.ico") %>: <span class="cs-num"><%= supplier_ico %></span>
+    </p>
+
+    <section class="cs-supplier" aria-labelledby="cs-supplier-summary">
+      <h2 class="cs-opendata__title" id="cs-supplier-summary"><%= t("#{t_s}.summary") %></h2>
+      <dl class="cs-dl cs-supplier__facts">
+        <div>
+          <dt><%= t("#{t_s}.count") %></dt>
+          <dd class="cs-dl__figure"><%= supplier_count %></dd>
+        </div>
+        <% if supplier_totals.any? %>
+          <div>
+            <dt><%= t("#{t_s}.totals") %></dt>
+            <% supplier_totals.each do |currency, total| %>
+              <dd class="cs-dl__figure"><%= format_amount(total, currency) %></dd>
+            <% end %>
+          </div>
+        <% end %>
+        <div>
+          <dt><%= t("#{t_s}.by_year") %></dt>
+          <dd>
+            <ul class="cs-years">
+              <% supplier_years.each do |year, count| %>
+                <li><%= year || t("#{t_s}.year_unknown") %>: <span class="cs-num"><%= count %></span></li>
+              <% end %>
+            </ul>
+          </dd>
+        </div>
+      </dl>
+      <p class="cs-small"><%= t("#{t_s}.note") %></p>
+    </section>
+
+    <h2 class="cs-opendata__title cs-supplier__list-title"><%= t("#{t_s}.contracts") %></h2>
+    <% if @contracts.any? %>
+      <ol class="cs-list">
+        <% @contracts.each do |contract| %>
+          <%= render "decidim/contracts_sk/contracts/row", contract: contract %>
+        <% end %>
+      </ol>
+    <% else %>
+      <%# Only reachable with a page number past the last page (the supplier
+          has contracts, or the page would have been a 404). %>
+      <p class="cs-empty"><%= t("#{t_s}.page_empty") %>
+        <%= link_to t("#{t_s}.first_page"), supplier_path(ico: supplier_ico), class: "cs-link" %></p>
+    <% end %>
+
+    <% if @contracts.total_pages > 1 %>
+      <%= render "decidim/contracts_sk/shared/pagination",
+                 collection: @contracts, filter_keys: [], carried_params: {} %>
+    <% end %>
+  </div>
+</main>

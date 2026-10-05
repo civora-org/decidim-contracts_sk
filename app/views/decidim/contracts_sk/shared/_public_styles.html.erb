@@ -51,6 +51,14 @@
   .cs-opendata .cs-small { margin: 0 0 .75rem; max-width: 42rem; }
   .cs-opendata__links { display: flex; flex-wrap: wrap; gap: .5rem; }
 
+  /* Supplier page (#117): summary facts above the register. */
+  .cs-supplier { margin: 0 0 2rem; }
+  .cs-supplier__facts { margin: 0 0 .75rem; }
+  .cs-supplier__facts dd + dd { margin-top: .25rem; }
+  .cs-supplier__list-title { margin: 0 0 .75rem; }
+  .cs-years { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin: 0; padding: 0; list-style: none; }
+  .cs-num { font-variant-numeric: tabular-nums; }
+
   .cs-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; }
   .cs-list > li + li { border-top: 1px solid #e1e5ef; }
 
@@ -113,6 +121,7 @@
     .cs-filters__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cs-party { grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; align-items: start; }
     .cs-party__side { justify-content: flex-end; }
+    .cs-supplier__facts { grid-template-columns: repeat(3, minmax(0, auto)); column-gap: 3rem; }
   }
   @media (min-width: 768px) {
     .cs-page { padding-top: 4rem; }

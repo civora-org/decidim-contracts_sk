@@ -123,6 +123,15 @@ Decidim::ContractsSk::Engine.routes.draw do
   get "/feed", to: "feeds#show", as: :feed, format: true,
                constraints: { format: "atom" }
 
+  # Supplier page (civora-org/civora-platform#117): every published contract
+  # of one counterparty, keyed by its 8-digit IČO. No format segment and the
+  # IČO is constrained to exactly eight ASCII digits, so /suppliers/abc and
+  # 7- or 9-digit values never reach the controller (a routing 404), and the
+  # leading zeros survive (the segment is a string, never an integer).
+  # Declared before the /:id catch-all (/suppliers alone still falls to it).
+  get "/suppliers/:ico", to: "suppliers#show", as: :supplier, format: false,
+                         constraints: { ico: Decidim::ContractsSk::ICO_PATTERN }
+
   # Public routes — the mount point is the catalogue itself
   root to: "contracts#index", as: :contracts
   get "/:id", to: "contracts#show", as: :contract

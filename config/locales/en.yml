@@ -120,6 +120,18 @@ en:
           current_version: "Current version"
           version_label: "Version %{version}"
           versions_empty: "No amendments have been published for this contract."
+      suppliers:
+        show:
+          back: "Back to the catalogue"
+          summary: "Summary"
+          count: "Published contracts"
+          totals: "Total value"
+          by_year: "By year of signing"
+          year_unknown: "Signing date unknown"
+          page_empty: "There are no contracts on this page."
+          first_page: "Back to the first page"
+          contracts: "Contracts"
+          note: "Figures cover every published record of this contractor in the catalogue. A contract published both by the organisation and as a record taken from CRZ is counted twice."
       feeds:
         show:
           title: "Contracts — %{organization}"

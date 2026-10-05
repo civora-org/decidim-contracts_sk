@@ -92,6 +92,19 @@ and re-run the seed task to re-demo the fresh path.
 | P12 | detail for DEMO-2026-006 (editorial) | **no** provenance content anywhere — badge, mirror date, attribution and stale lines all absent |
 | P13 | switch the host locale to `sk` | P9–P12 render the Slovak wording ("Externe potvrdené údaje", "Zrkadlené z registra CRZ dňa", …) |
 
+### 2c. Supplier pages walkthrough (civora-org/civora-platform#117)
+
+Seed IČOs: `00000003` (Odpadové služby Demo a.s., DEMO-2026-006, published), `00000005` (Svetlá Demo, s.r.o., DEMO-2026-008, a CRZ mirror), `00000002` (DEMO-2026-001, draft only), `00000001` (object party only).
+
+| # | Request | Expected |
+|---|---------|----------|
+| P25 | detail for DEMO-2026-006, click "Odpadové služby Demo a.s." | `GET /zmluvy/suppliers/00000003`: name, IČO, 1 contract, total value, per-year tally, the contract row; head has `noindex` |
+| P26 | `GET /zmluvy/suppliers/00000005` | the mirrored record is listed with its "Externally confirmed" badge |
+| P27 | `GET /zmluvy/suppliers/00000002` and `/zmluvy/suppliers/00000001` and `/zmluvy/suppliers/99999999` | **404** (draft only, object role only, unknown) on the freshly seeded data, before section 3 publishes DEMO-2026-001 |
+| P28 | `GET /zmluvy/suppliers/1234567`, `/123456789`, `/abcdefgh` | not routed (404 / routing error) |
+| P29 | `GET /zmluvy/suppliers/00000003?page=abc&q=x` | page 1; the filter param is ignored |
+| P30 | detail for DEMO-2026-006, the object party "Mesto Demo" | plain text, no link |
+
 ## 3. Admin scenarios
 
 Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.

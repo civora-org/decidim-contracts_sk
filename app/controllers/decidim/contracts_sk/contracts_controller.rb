@@ -41,12 +41,12 @@ module Decidim
       # #116); the view prefills its form from the NORMALIZED values.
       helper Decidim::ContractsSk::CatalogueHelper
       helper Decidim::ContractsSk::FeedHelper
+      # The detail page links a contractor to its supplier page (#117).
+      helper Decidim::ContractsSk::SuppliersHelper
       helper_method :search_term
 
       def index
-        # The page param reaches Kaminari only as a string: an array
-        # (page[]=2) would raise inside Kaminari's Integer coercion.
-        @contracts = catalogue_query.results.page(params[:page].to_s)
+        @contracts = catalogue_query.results.page(public_page)
                                     .per(Decidim::ContractsSk::CONTRACTS_PER_PAGE)
       end
 

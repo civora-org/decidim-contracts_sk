@@ -10,6 +10,13 @@ module Decidim
     # catalogue). A constant, not config: the listings render the same
     # pagination surface everywhere, so there is nothing to tune yet.
     CONTRACTS_PER_PAGE = 25
+
+    # The 8-digit IČO, defined once (party validation, the supplier route
+    # constraint, the supplier controller and helper). The unanchored
+    # pattern is what a route constraint needs (Rails refuses anchors
+    # there); the anchored format is what everything else matches against.
+    ICO_PATTERN = /\d{8}/
+    ICO_FORMAT = /\A\d{8}\z/ # the same pattern, anchored (kept literal: Party's spec pins it)
   end
 end
 

@@ -954,7 +954,17 @@ module LocaleContract
     "provenance.badge",
     "provenance.imported_on",
     "provenance.note",
-    "provenance.stale"
+    "provenance.stale",
+    "suppliers.show.back",
+    "suppliers.show.by_year",
+    "suppliers.show.contracts",
+    "suppliers.show.count",
+    "suppliers.show.first_page",
+    "suppliers.show.note",
+    "suppliers.show.page_empty",
+    "suppliers.show.summary",
+    "suppliers.show.totals",
+    "suppliers.show.year_unknown"
   ].freeze
 
   def locale_file(locale)
@@ -1020,6 +1030,10 @@ module PublicCatalogueLabels
       "contracts.index.open_data.csv_excel" => "CSV for Excel",
       "contracts.index.open_data.json" => "JSON",
       "contracts.index.open_data.atom" => "Atom feed",
+      "suppliers.show.count" => "Published contracts",
+      "suppliers.show.totals" => "Total value",
+      "suppliers.show.year_unknown" => "Signing date unknown",
+      "suppliers.show.page_empty" => "There are no contracts on this page.",
       # rubocop:disable Style/FormatStringToken
       "feeds.show.title" => "Contracts — %{organization}",
       "feeds.show.subtitle" => "Newly published contracts",
@@ -1079,6 +1093,10 @@ module PublicCatalogueLabels
       "contracts.index.open_data.csv_excel" => "CSV pre Excel",
       "contracts.index.open_data.json" => "JSON",
       "contracts.index.open_data.atom" => "Atom kanál",
+      "suppliers.show.count" => "Zverejnené zmluvy",
+      "suppliers.show.totals" => "Celková hodnota",
+      "suppliers.show.year_unknown" => "Dátum podpisu neznámy",
+      "suppliers.show.page_empty" => "Na tejto stránke nie sú žiadne zmluvy.",
       # rubocop:disable Style/FormatStringToken
       "feeds.show.title" => "Zmluvy — %{organization}",
       "feeds.show.subtitle" => "Novozverejnené zmluvy",

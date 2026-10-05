@@ -986,6 +986,17 @@ RSpec.describe "public contracts catalogue", type: :request do
       end
     end
 
+    it "survives hostile page values (huge, non-numeric, NUL, array, negative) by clamping" do
+      create_contract!
+
+      ["999999999999999999999", "abc", "%00", "-1", "0"].each do |page|
+        get "/?page=#{page}"
+        expect(response).to have_http_status(:ok)
+      end
+      get "/", params: { page: ["2"] }
+      expect(response).to have_http_status(:ok)
+    end
+
     it "paginates the catalogue at 25 per page, oldest publications last (civora-org/civora-platform#86b)" do
       30.times do |i|
         create_contract!(

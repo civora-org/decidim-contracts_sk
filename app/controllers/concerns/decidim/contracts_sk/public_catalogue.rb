@@ -4,9 +4,9 @@ module Decidim
   module ContractsSk
     # The public catalogue's read surface, shared by the public controllers
     # (the catalogue itself and, since civora-org/civora-platform#119, the
-    # open-data export; the Atom feed and the supplier pages build on it
-    # next). One place decides what the public may read, so no controller can
-    # widen it by accident.
+    # open-data export, the Atom feed and the supplier pages). One place
+    # decides what the public may read, so no controller can widen it by
+    # accident.
     #
     # * #published_contracts: the current organization's lifecycle-published
     #   records, UNORDERED (the CatalogueQuery owns the sort). The Gate-1
@@ -29,7 +29,18 @@ module Decidim
         helper_method :catalogue_query, :current_organization
       end
 
+      # Upper bound of the page number: an absurd value would overflow the
+      # database's integer OFFSET (PostgreSQL raises, SQLite mismatches).
+      MAX_PAGE = 100_000
+
       private
+
+      # The page param, read as a String (page[]=2 would raise inside
+      # Kaminari's Integer coercion) and clamped into 1..MAX_PAGE, so no
+      # hostile value can reach the OFFSET.
+      def public_page
+        params[:page].to_s.to_i.clamp(1, MAX_PAGE)
+      end
 
       def catalogue_query
         @catalogue_query ||= build_catalogue_query(published_contracts)

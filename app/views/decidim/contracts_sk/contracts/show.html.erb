@@ -155,7 +155,7 @@
               <% parties.each do |party| %>
                 <li class="cs-party">
                   <div>
-                    <p class="cs-party__name"><%= party.name %></p>
+                    <p class="cs-party__name"><%= supplier_link_or_name(party, class: "cs-link") %></p>
                     <% if party.address.present? %>
                       <p class="cs-small"><%= party.address %></p>
                     <% end %>
