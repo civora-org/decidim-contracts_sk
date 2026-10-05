@@ -12,6 +12,11 @@ ideally in both `en` and `sk` where noted.
 - [ ] Only published records of the current organization are listed.
 - [ ] Localized empty state renders when nothing is published (en + sk).
 - [ ] Links are keyboard-reachable in DOM order.
+- [ ] Filter form (#116): `q` field visible; "More filters" is a native `<details>`, collapsed by default and open when a non-`q` filter or a non-default sort is active; every field has a label above it (en + sk); each from/to pair sits in a fieldset with a legend; the party field announces its hint ("Name or 8-digit IČO").
+- [ ] At 375px the form is one column with no horizontal scroll; at 640px two columns; at 1440px four; the focus ring on "More filters" is visible by keyboard.
+- [ ] Each filter and sort narrows/orders the list as expected; an invalid value (e.g. `amount_min=abc`, `published_from=2026-02-30`) is ignored with a normal 200 page; a reversed range is swapped and the form shows the swapped values.
+- [ ] Active filters are summarised; "Clear filters" returns to the bare catalogue (search cleared too); page 2 keeps every active filter; a miss shows the "no match" message, not the empty-catalogue one.
+- [ ] Records without an amount stay listed until an amount filter is used; amount sorts list them last.
 
 ## Public detail
 

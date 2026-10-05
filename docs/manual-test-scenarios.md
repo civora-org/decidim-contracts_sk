@@ -58,6 +58,24 @@ curl -s -o /dev/null -w "%{http_code}\n" "$BASE/"                       # P1 →
 curl -s -o /dev/null -w "%{http_code}\n" "$BASE/999999"                 # P7 → 404
 ```
 
+### 2b. Filters and sorting walkthrough (civora-org/civora-platform#116)
+
+Run against the demo seed (published: DEMO-2026-006, the CRZ mirrors DEMO-2026-008/009, plus anything you published in section 3).
+
+| # | Request | Expected |
+|---|---------|----------|
+| P14 | `GET /zmluvy/?source=crz` | only the two mirrored records; "More filters" is open; summary chip "Source: Mirrored from CRZ" |
+| P15 | `GET /zmluvy/?source=editorial` | only editorial records |
+| P16 | `GET /zmluvy/?amount_min=1000` and `?amount_min=10.000` | the first lists records with a stored amount of at least 1000 (records without amount disappear); the second value is ambiguous, so it is ignored and everything is listed |
+| P17 | `GET /zmluvy/?published_from=2026-09-10&published_to=2026-09-01` | reversed range swapped; the form fields show 2026-09-01 and 2026-09-10 |
+| P18 | `GET /zmluvy/?signed_from=1.9.2026` (Slovak date) | accepted; the date field shows 2026-09-01 |
+| P19 | `GET /zmluvy/?party=<8-digit IČO of a seeded party>` and `?party=<part of a party name in CAPITALS>` | exact IČO match; case-insensitive name match |
+| P20 | `GET /zmluvy/?sort=amount_desc` and `?sort=amount_asc` | by amount, records without amount last in both; `?sort=bogus` behaves like the default (newest first) |
+| P21 | `GET /zmluvy/?q=ZMLUVA&source=crz&sort=amount_asc`, then follow "Next" if there is a second page | all params survive in the page link |
+| P22 | "Clear filters" link | back to `/zmluvy/`, search cleared, all records listed |
+| P23 | filter combination matching nothing | "No contracts match your search or filters." (not the empty-catalogue text) |
+| P24 | admin index search with an upper-case term (`?q=BRIDGE`) and a literal `%` | admin and public searches agree: case-insensitive, `%` and `_` literal |
+
 ### 2a. Provenance and freshness walkthrough (civora-org/civora-platform#88)
 
 CRZ-mirrored demo records (all fictional — no real CRZ ids, companies or

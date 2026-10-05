@@ -27,13 +27,24 @@ curl -s http://localhost:3000/contracts | grep -o '/decidim-packs/css/decidim_co
 curl -s http://localhost:3000/decidim-packs/css/decidim_core-<hash>.css | grep -c '\.label\.warning'
 ```
 
+## Catalogue filter form (civora-org/civora-platform#116)
+
+One GET form (`role="search"`) above the register; the state lives in the URL and every pagination link carries every active filter (`CatalogueQuery::PARAM_KEYS` is the `filter_keys` of `shared/_pagination`).
+
+- **Always visible:** the `q` search field and its button.
+- **Behind a native `<details class="cs-filters">` ("More filters"):** amount from/to (EUR), publication date from/to ("Published in the catalogue"), signing date from/to, party (name or 8-digit IČO, with a hint tied via `aria-describedby`), source (any / the organisation's own records / mirrored from CRZ) and the sort. The block is open whenever a non-`q` filter or a non-default sort is active. No JavaScript: `<details>` is keyboard- and screen-reader-operable.
+- **Labels above fields**, each from/to pair in a `<fieldset>` with a `<legend>`. Amounts are `type="text" inputmode="decimal"` (so "10 000,50" works on a Slovak keyboard); dates are `type="date"` and the server also accepts `d.m.yyyy`.
+- **Prefilled from the normalized query**, not the raw params: a swapped range shows swapped, an invalid value shows empty.
+- **Active-filters summary and "Clear filters"** (links to the bare catalogue, clearing `q` too) appear when anything is active. The empty state turns into the "no match" variant.
+- **CSS:** `.cs-filters*` in `shared/_public_styles`: one column below 640px, two from 640px, four from 1024px; inputs `width:100%; min-width:0`; a visible focus ring on the summary; the form and the details block are hidden in print (the active-filters summary prints).
+
 ## Heading decorators need room below
 
 `.title-decorator` and `.decorator` draw a 0.25rem bar at `top: calc(100% + 0.25rem)`, below the heading's box. The bar takes no space in the layout, so the next element must keep at least ~0.75rem of clearance or the bar strikes through it. The engine stylesheet gives decorated headings their own bottom margin (`.cs-page .title-decorator`, `.cs-main .decorator`). Never place a meta line directly under a decorated heading without that margin.
 
 ## Page structure
 
-**Catalogue** (`cols-10`): title, one-line intro, search (label above; field and button in one row from 640px), then the register. One row per contract: title link, `reference · date`, the CRZ provenance label for mirrored records, and the amount right-aligned in tabular numerals from 768px.
+**Catalogue** (`cols-10`): title, one-line intro, search (label above; field and button in one row from 640px), the filter form (see below), then the register. One row per contract: title link, `reference · date`, the CRZ provenance label for mirrored records, and the amount right-aligned in tabular numerals from 768px.
 
 **Detail** (`cols-10`): title and identity line (reference, publication date). Below it, a two-column grid from 1024px: the main column (subject matter, CRZ provenance notice, parties, documents, links, version history) and the "Údaje o zmluve" facts panel on the right (amount as the headline figure, reference, dates, CRZ link). The facts panel comes first in the DOM, so phones read it before the long sections.
 

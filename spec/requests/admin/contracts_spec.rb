@@ -374,6 +374,17 @@ RSpec.describe "admin contracts CRUD", type: :request do
       expect(q_filter[2][:pattern]).to eq("%road%")
     end
 
+    it "strips control characters (NUL) from q before building the pattern" do
+      scope = stubbed_index
+      sign_in(roles: %i[editor])
+
+      get "/admin/contracts", params: { q: "ro\u0000ad" }
+
+      expect(response).to have_http_status(:ok)
+      q_filter = scope.applied.find { |entry| entry.first == :where && entry[2].key?(:pattern) }
+      expect(q_filter[2][:pattern]).to eq("%ro ad%")
+    end
+
     it "preserves the active filters and page controls in the pagination links" do
       record = FakeIndexContract.new("Road reconstruction", "ZP-2026-001", "published")
       stubbed_index(records: [record], total_pages: 2)
@@ -896,6 +907,43 @@ RSpec.describe "admin contracts CRUD", type: :request do
       get "/admin/contracts", params: { q: "zp-filt-005" }
       expect(response).to have_http_status(:ok)
       expect(references_in(response.body)).to eq([road.reference])
+    end
+
+    # Search regression (civora-org/civora-platform#116): the pattern is now
+    # down-cased in Ruby (PostgreSQL's LIKE is case-sensitive) and carries an
+    # explicit ESCAPE clause (SQLite has no default escape character).
+    it "down-cases the term in Ruby: an upper-case diacritic term matches a lower-case title" do
+      match = create_contract!(title: "Oprava štúrovej ulice", reference: "ZP-FILT-007")
+      create_contract!(title: "Bridge repair", reference: "ZP-FILT-008")
+
+      get "/admin/contracts", params: { q: "ŠTÚR" }
+
+      expect(response).to have_http_status(:ok)
+      expect(references_in(response.body)).to eq([match.reference])
+    end
+
+    it "strips control characters (NUL) from q before binding" do
+      match = create_contract!(title: "Road reconstruction", reference: "ZP-FILT-012")
+
+      get "/admin/contracts", params: { q: "road\u0000" }
+
+      expect(response).to have_http_status(:ok)
+      expect(references_in(response.body)).to eq([match.reference])
+    end
+
+    it "treats % and _ in q as literal characters" do
+      percent = create_contract!(title: "Discount 100% off", reference: "ZP-FILT-009")
+      create_contract!(title: "Discount 100X off", reference: "ZP-FILT-010")
+      underscore = create_contract!(title: "Under_score", reference: "ZP-FILT-011")
+
+      get "/admin/contracts", params: { q: "100%" }
+      expect(references_in(response.body)).to eq([percent.reference])
+
+      get "/admin/contracts", params: { q: "r_s" }
+      expect(references_in(response.body)).to eq([underscore.reference])
+
+      get "/admin/contracts", params: { q: "t_1" }
+      expect(references_in(response.body)).to eq([])
     end
 
     it "paginates at 25 per page with disjoint, complete pages" do
