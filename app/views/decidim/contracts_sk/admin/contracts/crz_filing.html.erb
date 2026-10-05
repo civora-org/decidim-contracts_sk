@@ -20,8 +20,8 @@
 
 <div class="card">
   <div class="card-section">
-    <%= form_with url: crz_filing_admin_contract_path(@contract), method: :get, local: true do %>
-      <div class="row column">
+    <%= form_with url: crz_filing_admin_contract_path(@contract), method: :get, local: true, html: { class: "form form-defaults" } do %>
+      <div class="form__wrapper">
         <%= label_tag :crz_id, t("#{scope}.crz_id_label") %>
         <%= text_field_tag :crz_id, @crz_id, placeholder: "12345678", inputmode: "numeric" %>
       </div>
@@ -73,13 +73,13 @@
 
   <div class="card">
     <div class="card-section">
-      <%= form_with url: confirm_crz_filing_admin_contract_path(@contract), method: :post, local: true do %>
+      <%= form_with url: confirm_crz_filing_admin_contract_path(@contract), method: :post, local: true, html: { class: "form form-defaults" } do %>
         <%= hidden_field_tag :crz_id, @crz_record[:source_id] %>
         <%= hidden_field_tag :checksum, @crz_record[:checksum] %>
 
         <% if @comparison.needs_reason? %>
           <p><strong><%= t("#{scope}.override.warning") %></strong></p>
-          <div class="row column">
+          <div class="form__wrapper">
             <%= label_tag :reason, t("#{scope}.override.label") %>
             <%= text_area_tag :reason, nil,
                               placeholder: t("#{scope}.override.placeholder"),

@@ -123,6 +123,13 @@ RSpec.describe "admin CRZ filing confirmation", :db, type: :request do
   describe "GET preview" do
     before { sign_in_as }
 
+    it "renders the CRZ id field inside a Decidim form-defaults form with the label above" do
+      get path
+
+      html = Nokogiri::HTML(response.body)
+      expect(html.css("form.form-defaults .form__wrapper > label[for='crz_id'] + input#crz_id")).not_to be_empty
+    end
+
     it "renders the CRZ id form without any network call when no id is given" do
       get path
 
@@ -284,6 +291,14 @@ RSpec.describe "admin CRZ filing confirmation", :db, type: :request do
       get "/admin/contracts"
       expect(response.body).to include("Record CRZ filing")
       expect(response.body).to include("/admin/contracts/#{contract.id}/crz_filing")
+
+      # A GET button_to (a form control, <button> or submit input), never an <a class="button">:
+      # decidim-admin's `.table-list td a` colour rule makes link text in a
+      # table cell invisible on a secondary-background button.
+      html = Nokogiri::HTML(response.body)
+      expect(html.css("td.table-list__actions form[action$='/crz_filing'][method='get'] .button")).not_to be_empty
+      expect(html.css("td.table-list__actions a.button")).to be_empty
+      expect(html.css("form.form-defaults .form__wrapper > label[for='source_id'] + input#source_id")).not_to be_empty
 
       contract.update_columns(crz_filed_at: Time.current)
       get "/admin/contracts"
