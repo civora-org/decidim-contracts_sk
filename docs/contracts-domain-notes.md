@@ -429,6 +429,16 @@ the current version):
 
 **Search fix (public and admin).** The earlier condition lower-cased the column but not the pattern (case-sensitive on PostgreSQL: an upper-case term found nothing), and `sanitize_sql_like`'s backslash escaping did nothing on SQLite without an `ESCAPE` clause. `TextSearch` (`app/queries/`) now down-cases the term in Ruby and every condition carries `ESCAPE '\'`; the public `q`, the `party` name match and the admin index `q` share it. Known limit: SQLite's `LOWER()` folds ASCII only, so a stored diacritic capital ("Š") is not folded there; PostgreSQL folds per its collation (production).
 
+## Open-data export landed in #119
+
+`GET /export.csv|json` (`OpenDataController`) exports the organization's published **editorial** records through the same `CatalogueQuery` (`#relation`, unordered; the export orders by id). Full contract in [open-data.md](open-data.md); the design decisions worth knowing:
+
+- **Shared read surface.** `PublicCatalogue` (a controller concern) owns `published_contracts`, `catalogue_query` / `build_catalogue_query(scope)` and `open_data_scope` (`published_contracts.where.not(source: "crz")`). The catalogue controller uses it; so will the feed (#120) and the supplier pages (#117). No controller reads `Contract` for the public directly.
+- **Mirrors are excluded** (ADR-008 decision 6, #83: no CRZ reuse licence). `?source=crz` is an honest empty export.
+- **One whitelist.** `OpenData::ContractRecord::FIELDS` is the only place that names exportable attributes; CSV and JSON both derive from it. It uses no I18n and no `Time.zone`, because the body streams after Decidim's locale and time-zone `around_action`s have returned: dates are ISO, `published_at` is UTC, detail URLs and the file name are computed in the action.
+- **Streaming without `ActionController::Live`.** The body is an `Enumerator` (no second thread). An explicit `ETag` from `stale?` keeps `Rack::ETag` from buffering the stream to digest it (rack 2.2 `skip_caching?`); `Contract.uncached { }` keeps the request's query cache from retaining every batch.
+- **`csv` is a declared dependency** (`csv >= 3.0` in the gemspec): it is a bundled, not default, gem from Ruby 3.4.
+
 ## Known gaps / drift (flagged, unowned)
 
 - ~~The data dictionary does not exist anywhere yet~~ — **resolved 2026-09-03

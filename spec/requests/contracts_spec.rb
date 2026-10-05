@@ -152,6 +152,41 @@ RSpec.describe "public contracts catalogue", type: :request do
     )
   end
 
+  describe "open-data download block (civora-org/civora-platform#119)" do
+    before { stub_published_contracts(SearchablePaginableStub.new([published_contract_double])) }
+
+    it "links the three downloads carrying the active filters but never the sort" do
+      get "/", params: { q: "road", amount_min: "100", sort: "amount_asc" }
+
+      body = response.body
+      aggregate_failures do
+        expect(body).to include("Download data")
+        expect(body).to include(%(href="/export.csv?amount_min=100&amp;q=road"))
+        expect(body).to include(%(href="/export.csv?amount_min=100&amp;profile=excel&amp;q=road"))
+        expect(body).to include(%(href="/export.json?amount_min=100&amp;q=road"))
+        expect(body).not_to include("export.csv?amount_min=100&amp;q=road&amp;sort")
+        expect(body).to include(%(type="text/csv"), %(type="application/json"))
+        expect(body).to include("records taken from CRZ are not included")
+      end
+    end
+
+    it "offers the plain downloads on the unfiltered catalogue" do
+      get "/"
+
+      expect(response.body).to include(%(href="/export.json"))
+    end
+
+    it "swaps the links for a pointer to crz.gov.sk when the source filter is crz" do
+      get "/", params: { source: "crz" }
+
+      aggregate_failures do
+        expect(response.body).to include("crz.gov.sk")
+        expect(response.body).to include("not offered as downloads")
+        expect(response.body).not_to include("/export.")
+      end
+    end
+  end
+
   describe "catalogue index (civora-org/civora-platform#62)" do
     it "shows the amount with its currency in the register row" do
       stub_published_contracts(PaginableStub.new([published_contract_double]))

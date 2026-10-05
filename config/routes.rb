@@ -110,6 +110,13 @@ Decidim::ContractsSk::Engine.routes.draw do
     resources :audit_events, only: :index
   end
 
+  # Open-data export (civora-org/civora-platform#119): the format segment is
+  # REQUIRED and limited to csv|json, so /export, /export.xml and friends
+  # never match here and fall through to the /:id catch-all below (a plain
+  # 404, like any unknown id). Declared before the catch-all for that reason.
+  get "/export", to: "open_data#export", as: :export, format: true,
+                 constraints: { format: /csv|json/ }
+
   # Public routes — the mount point is the catalogue itself
   root to: "contracts#index", as: :contracts
   get "/:id", to: "contracts#show", as: :contract

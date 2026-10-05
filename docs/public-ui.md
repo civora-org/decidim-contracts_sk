@@ -38,6 +38,10 @@ One GET form (`role="search"`) above the register; the state lives in the URL an
 - **Active-filters summary and "Clear filters"** (links to the bare catalogue, clearing `q` too) appear when anything is active. The empty state turns into the "no match" variant.
 - **CSS:** `.cs-filters*` in `shared/_public_styles`: one column below 640px, two from 640px, four from 1024px; inputs `width:100%; min-width:0`; a visible focus ring on the summary; the form and the details block are hidden in print (the active-filters summary prints).
 
+## Open-data download block (civora-org/civora-platform#119)
+
+A `<section class="cs-opendata">` between the filter form and the register: heading "Stiahnuť dáta", one sentence, and three `button button__sm button__secondary` links (CSV, CSV pre Excel, JSON). Each link carries the active filters (`query.to_params` minus `sort`). When the source filter is `crz` the links are replaced by a note and a link to crz.gov.sk, because mirrored records are never exported (see [open-data.md](open-data.md)). `.cs-opendata*` lives in `shared/_public_styles`; hidden in print. The downloads themselves are not HTML pages.
+
 ## Heading decorators need room below
 
 `.title-decorator` and `.decorator` draw a 0.25rem bar at `top: calc(100% + 0.25rem)`, below the heading's box. The bar takes no space in the layout, so the next element must keep at least ~0.75rem of clearance or the bar strikes through it. The engine stylesheet gives decorated headings their own bottom margin (`.cs-page .title-decorator`, `.cs-main .decorator`). Never place a meta line directly under a decorated heading without that margin.

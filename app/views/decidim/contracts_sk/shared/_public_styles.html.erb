@@ -45,6 +45,12 @@
   .cs-filters-active__list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
   .cs-filters-active .label { white-space: normal; overflow-wrap: anywhere; }
 
+  /* Open-data download block (#119): sits between the filters and the list. */
+  .cs-opendata { margin: 0 0 1.5rem; }
+  .cs-opendata__title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; color: #020203; }
+  .cs-opendata .cs-small { margin: 0 0 .75rem; max-width: 42rem; }
+  .cs-opendata__links { display: flex; flex-wrap: wrap; gap: .5rem; }
+
   .cs-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; }
   .cs-list > li + li { border-top: 1px solid #e1e5ef; }
 
@@ -121,7 +127,7 @@
     .cs-facts { order: 2; }
   }
   @media print {
-    .cs-search form, .cs-filters { display: none; }
+    .cs-search form, .cs-filters, .cs-opendata { display: none; }
     .cs-detail { grid-template-columns: 1fr; }
     .cs-facts { order: 0; background: none; }
   }

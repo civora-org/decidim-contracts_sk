@@ -129,6 +129,32 @@
       <% end %>
     </div>
 
+    <%# Open-data download block (civora-org/civora-platform#119): the same
+        filters as the list above, minus the sort (the export is ordered by
+        id). Mirrored CRZ records are never exported, so a source=crz filter
+        swaps the links for a pointer to the original register. %>
+    <% open_data_t = "decidim.contracts_sk.contracts.index.open_data" %>
+    <section class="cs-opendata" aria-labelledby="cs-opendata-title">
+      <h2 class="cs-opendata__title" id="cs-opendata-title"><%= t("#{open_data_t}.heading") %></h2>
+      <% if query.filters.source == "crz" %>
+        <p class="cs-small">
+          <%= t("#{open_data_t}.crz_note") %>
+          <%= link_to t("#{open_data_t}.crz_link"), "https://www.crz.gov.sk/", class: "cs-link" %>
+        </p>
+      <% else %>
+        <p class="cs-small"><%= t("#{open_data_t}.intro") %> <%= t("#{open_data_t}.own_only") %></p>
+        <% export_params = query.to_params.except("sort").symbolize_keys %>
+        <div class="cs-opendata__links">
+          <%= link_to t("#{open_data_t}.csv"), export_path(export_params.merge(format: :csv)),
+                      class: "button button__sm button__secondary", type: "text/csv" %>
+          <%= link_to t("#{open_data_t}.csv_excel"), export_path(export_params.merge(format: :csv, profile: "excel")),
+                      class: "button button__sm button__secondary", type: "text/csv" %>
+          <%= link_to t("#{open_data_t}.json"), export_path(export_params.merge(format: :json)),
+                      class: "button button__sm button__secondary", type: "application/json" %>
+        </div>
+      <% end %>
+    </section>
+
     <% if @contracts.any? %>
       <%# The register: one row per contract, hairline-separated. Title and
           identity on the left; the amount — the figure a reader compares
