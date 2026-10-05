@@ -56,8 +56,8 @@
   <% if allowed_to?(:import_crz, :contract) %>
     <div class="card-section">
       <p><%= t("decidim.contracts_sk.admin.contracts.import_crz.description") %></p>
-      <%= form_with url: import_crz_admin_contracts_path, method: :post, local: true do %>
-        <div class="row column">
+      <%= form_with url: import_crz_admin_contracts_path, method: :post, local: true, html: { class: "form form-defaults" } do %>
+        <div class="form__wrapper">
           <%= label_tag :source_id, t("decidim.contracts_sk.admin.contracts.import_crz.label") %>
           <%= text_field_tag :source_id, nil, placeholder: "12345678" %>
         </div>
@@ -160,9 +160,15 @@
                     published, unfiled editorial record — the :confirm_crz_filing
                     permission). The flow itself lives on its own page. %>
                 <% if allowed_to?(:confirm_crz_filing, :contract, contract: contract) %>
-                  <%= link_to t("decidim.contracts_sk.admin.contracts.crz_filing.link"),
-                              crz_filing_admin_contract_path(contract),
-                              class: "button button__sm button__secondary" %>
+                  <%# A GET button_to, not a link styled as a button: decidim-admin's
+                      `.table-list td a` colour rule (compiled with its `:not(.button)`
+                      exclusion mangled) paints any <a> in a table cell the secondary
+                      colour — on a secondary-background button that is invisible text.
+                      A <button> in a form, like the sibling actions, is untouched. %>
+                  <%= button_to t("decidim.contracts_sk.admin.contracts.crz_filing.link"),
+                                crz_filing_admin_contract_path(contract),
+                                method: :get,
+                                class: "button button__sm button__secondary" %>
                 <% end %>
                 <%# Reviewer decision on the row (civora-org/civora-platform#90):
                     a record sitting in a decision state with a captured
