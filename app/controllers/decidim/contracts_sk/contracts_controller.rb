@@ -40,6 +40,7 @@ module Decidim
       # The filter/sort object behind the index (civora-org/civora-platform
       # #116); the view prefills its form from the NORMALIZED values.
       helper Decidim::ContractsSk::CatalogueHelper
+      helper Decidim::ContractsSk::FeedHelper
       helper_method :search_term
 
       def index

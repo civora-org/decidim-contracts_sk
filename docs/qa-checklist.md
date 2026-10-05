@@ -17,6 +17,7 @@ ideally in both `en` and `sk` where noted.
 - [ ] Each filter and sort narrows/orders the list as expected; an invalid value (e.g. `amount_min=abc`, `published_from=2026-02-30`) is ignored with a normal 200 page; a reversed range is swapped and the form shows the swapped values.
 - [ ] Active filters are summarised; "Clear filters" returns to the bare catalogue (search cleared too); page 2 keeps every active filter; a miss shows the "no match" message, not the empty-catalogue one.
 - [ ] Records without an amount stay listed until an amount filter is used; amount sorts list them last.
+- [ ] Open data (#119, #120): the "Download data" block offers CSV, CSV for Excel, JSON and Atom feed, each carrying the active filters but never the sort; with `source=crz` the block shows the crz.gov.sk note and no links. `/feed.atom` opens in a feed reader (or `xmllint --noout`) as a valid feed: 50 entries at most, newest first, no CRZ mirror, no draft; the page head has the Atom alternate link (view source); `/feed` is a plain 404 Switch the page to English: the Atom button, the head alternate link and the feed's `rel=self` all carry the same `locale=en` (feed texts in English, ids unchanged). (`/feed.rss` and other non-HTML unknown formats currently 500 on the host, a known pre-existing gap).
 
 ## Public detail
 

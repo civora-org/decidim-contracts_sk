@@ -914,6 +914,7 @@ module LocaleContract
     "contracts.index.filters.sources.editorial",
     "contracts.index.intro",
     "contracts.index.no_search_results",
+    "contracts.index.open_data.atom",
     "contracts.index.open_data.crz_link",
     "contracts.index.open_data.crz_note",
     "contracts.index.open_data.csv",
@@ -940,6 +941,10 @@ module LocaleContract
     "crz_handoff_pdf.heading",
     "date_formats.datetime",
     "date_formats.default",
+    "feeds.show.subtitle",
+    "feeds.show.subtitle_filtered",
+    "feeds.show.summary_signed",
+    "feeds.show.title",
     "menu.admin_contracts",
     "menu.contracts",
     "pagination.aria_label",
@@ -1014,6 +1019,13 @@ module PublicCatalogueLabels
       "contracts.index.open_data.csv" => "CSV",
       "contracts.index.open_data.csv_excel" => "CSV for Excel",
       "contracts.index.open_data.json" => "JSON",
+      "contracts.index.open_data.atom" => "Atom feed",
+      # rubocop:disable Style/FormatStringToken
+      "feeds.show.title" => "Contracts — %{organization}",
+      "feeds.show.subtitle" => "Newly published contracts",
+      "feeds.show.subtitle_filtered" => "Newly published contracts. Filters: %{filters}",
+      "feeds.show.summary_signed" => "signed %{date}",
+      # rubocop:enable Style/FormatStringToken
       "contracts.index.open_data.own_only" =>
         "Only the organisation's own records; records taken from CRZ are not included.",
       "contracts.index.open_data.crz_link" => "crz.gov.sk",
@@ -1066,6 +1078,13 @@ module PublicCatalogueLabels
       "contracts.index.open_data.csv" => "CSV",
       "contracts.index.open_data.csv_excel" => "CSV pre Excel",
       "contracts.index.open_data.json" => "JSON",
+      "contracts.index.open_data.atom" => "Atom kanál",
+      # rubocop:disable Style/FormatStringToken
+      "feeds.show.title" => "Zmluvy — %{organization}",
+      "feeds.show.subtitle" => "Novozverejnené zmluvy",
+      "feeds.show.subtitle_filtered" => "Novozverejnené zmluvy. Filtre: %{filters}",
+      "feeds.show.summary_signed" => "podpísaná %{date}",
+      # rubocop:enable Style/FormatStringToken
       "contracts.index.open_data.own_only" =>
         "Len vlastné záznamy organizácie; záznamy prevzaté z CRZ nie sú zahrnuté.",
       "contracts.index.open_data.crz_link" => "crz.gov.sk",

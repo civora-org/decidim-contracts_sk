@@ -22,6 +22,7 @@ module EngineRoutingContract
   AUDIT_EVENTS_CONTROLLER = "decidim/contracts_sk/admin/audit_events"
   DASHBOARD_CONTROLLER = "decidim/contracts_sk/admin/dashboard"
   OPEN_DATA_CONTROLLER = "decidim/contracts_sk/open_data"
+  FEEDS_CONTROLLER = "decidim/contracts_sk/feeds"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -72,6 +73,7 @@ module EngineRoutingContract
     ["GET", "/admin(.:format)", "#{DASHBOARD_CONTROLLER}#show"],
     ["GET", "/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
     ["GET", "/export.:format", "#{OPEN_DATA_CONTROLLER}#export"],
+    ["GET", "/feed.:format", "#{FEEDS_CONTROLLER}#show"],
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
@@ -206,6 +208,38 @@ RSpec.describe Decidim::ContractsSk::Engine do
     it "sends /export and /export.xml to the /:id catch-all (no export) and /export.csv.bak nowhere" do
       journey = described_class.routes.router
       recognized = %w[/export /export.xml /export.csv.bak].map do |path|
+        request = ActionDispatch::Request.new(Rack::MockRequest.env_for(path))
+        journey.recognize(request) { |route, _| break route.defaults[:controller] }
+      end
+
+      expect(recognized).to eq([EngineRoutingContract::PUBLIC_CONTROLLER, EngineRoutingContract::PUBLIC_CONTROLLER, []])
+    end
+    # rubocop:enable RSpec/ExampleLength
+  end
+
+  describe "Atom feed routes (civora-org/civora-platform#120)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    it "requires the atom format segment and names the helper feed_path" do
+      aggregate_failures do
+        expect(url_helpers.feed_path(format: "atom")).to eq("/feed.atom")
+        expect { url_helpers.feed_path(format: "rss") }.to raise_error(ActionController::UrlGenerationError)
+        expect { url_helpers.feed_path }.to raise_error(ActionController::UrlGenerationError)
+      end
+    end
+
+    it "is declared before the /:id catch-all" do
+      table = described_class.routes.routes.map { |route| route.path.spec.to_s }
+
+      expect(table.index("/feed.:format")).to be < table.index("/:id(.:format)")
+    end
+
+    # rubocop:disable RSpec/ExampleLength
+    it "sends /feed and /feed.rss to the /:id catch-all (no feed) and /feed.atom.bak nowhere" do
+      journey = described_class.routes.router
+      recognized = %w[/feed /feed.rss /feed.atom.bak].map do |path|
         request = ActionDispatch::Request.new(Rack::MockRequest.env_for(path))
         journey.recognize(request) { |route, _| break route.defaults[:controller] }
       end
@@ -659,12 +693,12 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's nine controllers, distinct by the admin/ segment" do
+    it "routes only the engine's ten controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
         decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/dashboard
         decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links decidim/contracts_sk/admin/parties
-        decidim/contracts_sk/contracts decidim/contracts_sk/open_data
+        decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
       ].sort
 
       expect(controllers_of(route_triples)).to eq(controllers)
@@ -684,7 +718,8 @@ RSpec.describe Decidim::ContractsSk::Engine do
       # The dashboard root (/admin(.:format)) is the one admin route without a trailing slash.
       non_admin = route_triples.reject { |_, path, _| path.start_with?("/admin(") || path.start_with?("/admin/") }
 
-      expect(controllers_of(non_admin)).to eq(["decidim/contracts_sk/contracts", "decidim/contracts_sk/open_data"])
+      expect(controllers_of(non_admin))
+        .to eq(["decidim/contracts_sk/contracts", "decidim/contracts_sk/feeds", "decidim/contracts_sk/open_data"])
     end
   end
 end

@@ -1,4 +1,4 @@
-# Open data: CSV and JSON export of published contracts
+# Open data: CSV and JSON export and Atom feed of published contracts
 
 Landed in civora-org/civora-platform#119. Machine-readable downloads of the organization's published contracts, honouring the same filters as the catalogue. With the engine mounted at `/zmluvy`:
 
@@ -58,6 +58,18 @@ Missing values are an empty CSV cell and `null` in JSON. Dates never depend on t
 - If the database fails mid-download the response has already started: the connection is aborted (no clean end), so a client sees a truncated file or invalid JSON. The export logs the exception class and the last record id only; the re-raised exception itself still reaches the server and any error tracker with its message.
 - The response carries an `ETag` derived from the organization, format, profile, the normalized filters, the record count and the newest `updated_at`; `If-None-Match` is answered with `304`. There is no `Last-Modified`.
 - Decidim's `rack_attack` throttling (production) applies to these URLs like to any other; consumers should cache and respect `304`.
+
+## Atom feed of new contracts
+
+Landed in civora-org/civora-platform#120. `GET /zmluvy/feed.atom` is an Atom (RFC 4287) feed of the newest published contracts, for readers, journalists and watchdog tools. It is announced on the catalogue page by a `<link rel="alternate" type="application/atom+xml">` in the page head, and by an "Atom feed" button in the download block.
+
+- **Same scope as the export.** The organization's own lifecycle-published records only; CRZ mirrors are never listed (see above), so `?source=crz` gives a valid, empty feed (the catalogue then omits the head link and the button). The filters are the catalogue's (`q`, `amount_*`, `published_*`, `signed_*`, `party`, `source`); the filters are echoed in the feed's subtitle, its `self` link and its id.
+- **Always newest first, 50 entries at most.** `sort` and `page` are ignored: `published_at` descending, then id descending. A feed is "what is new"; use the export for the whole set. `/feed` is the catalogue's ordinary 404 (a non-HTML unknown format such as `/feed.rss` is a known pre-existing host gap: Decidim has no xml error template, so it answers 500).
+- **Feed.** `title` "Zmluvy — <organization name>" (the organization's name in the reader's locale, falling back to its default locale, then any translation, then its host), `subtitle`, `author` (the organization name), `updated` (the newest entry's `published_at`; for an empty feed the organization's creation date, so the value is stable), `link rel=self` (filters plus the request locale, identical to the catalogue's Atom button and head link, so subscribing from the English page gives the English feed; the ids ignore the locale), `link rel=alternate` (the catalogue), `id`. `xml:lang` is the request locale.
+- **Entry.** `title` (the contract title), `link rel=alternate` (the detail page), `summary` (plain text: reference, amount, signing date, whichever are known), `published` and `updated` (both the record's `published_at`: the feed announces publication, not later edits), `id`.
+- **Stable ids.** Tag URIs (RFC 4151), minted once and never changed: entry `tag:<host>,2026:contracts_sk/contract/<id>`, feed `tag:<host>,2026:contracts_sk/feed` plus `?<normalized filters, sorted by key>` when filtered. `<host>` is the organization's host (the request host when it has none). Readers therefore see an unchanged id however the filters were ordered or their numbers and dates spelled (the search term `q` is case-sensitive: `Cesta` and `cesta` are different feeds), and a record never turns into a new entry because it was edited.
+- **Well-formed by construction.** All text goes through the XML builder's escaping; markup characters are escaped and characters XML 1.0 forbids (control characters, NUL) are replaced, so a hostile title cannot break the feed.
+- **Caching.** No explicit headers; the host's `Rack::ETag` digests the small body, so `If-None-Match` is answered with `304`. Decidim's `rack_attack` throttling (production) applies; readers should poll at a modest rate.
 
 ## Licence
 

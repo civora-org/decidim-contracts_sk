@@ -108,6 +108,7 @@ sk:
             json: "JSON"
             crz_note: "Záznamy prevzaté z CRZ sa na stiahnutie neponúkajú. Originály nájdete v Centrálnom registri zmlúv."
             crz_link: "crz.gov.sk"
+            atom: "Atom kanál"
         show:
           facts: "Údaje o zmluve"
           parties: "Zmluvné strany"
@@ -119,6 +120,12 @@ sk:
           current_version: "Aktuálna verzia"
           version_label: "Verzia %{version}"
           versions_empty: "K tejto zmluve nebola zverejnená žiadna zmena."
+      feeds:
+        show:
+          title: "Zmluvy — %{organization}"
+          subtitle: "Novozverejnené zmluvy"
+          subtitle_filtered: "Novozverejnené zmluvy. Filtre: %{filters}"
+          summary_signed: "podpísaná %{date}"
       admin:
         contracts:
           back_to_index: "Späť na zmluvy"

@@ -117,6 +117,12 @@ Decidim::ContractsSk::Engine.routes.draw do
   get "/export", to: "open_data#export", as: :export, format: true,
                  constraints: { format: /csv|json/ }
 
+  # Atom feed of newly published contracts (civora-org/civora-platform#120):
+  # the format segment is REQUIRED and limited to atom, so /feed, /feed.rss
+  # and friends fall through to the /:id catch-all below (a plain 404).
+  get "/feed", to: "feeds#show", as: :feed, format: true,
+               constraints: { format: "atom" }
+
   # Public routes — the mount point is the catalogue itself
   root to: "contracts#index", as: :contracts
   get "/:id", to: "contracts#show", as: :contract
