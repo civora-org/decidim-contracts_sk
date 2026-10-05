@@ -1,5 +1,21 @@
 ## [Unreleased]
 
+## [1.6.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.5.0...v1.6.0) (2026-10-05)
+
+
+### Features
+
+* **catalogue:** filter and sort the public register (civora-org/civora-platform[#116](https://github.com/civora-org/decidim-contracts_sk/issues/116)) ([ebe6477](https://github.com/civora-org/decidim-contracts_sk/commit/ebe6477522154760ec485a0949eaa40386675736))
+* **feed:** Atom feed of newly published contracts (civora-org/civora-platform[#120](https://github.com/civora-org/decidim-contracts_sk/issues/120)) ([737d517](https://github.com/civora-org/decidim-contracts_sk/commit/737d5172b14c98eda0ad52efc3147807b6752df1))
+* **open-data:** export published contracts as CSV and JSON (civora-org/civora-platform[#119](https://github.com/civora-org/decidim-contracts_sk/issues/119)) ([a834f31](https://github.com/civora-org/decidim-contracts_sk/commit/a834f31c25eb6da9881c2186882f70085d799bbb))
+* **statistics:** public statistics page and view switch (civora-org/civora-platform[#118](https://github.com/civora-org/decidim-contracts_sk/issues/118)) ([4586bdb](https://github.com/civora-org/decidim-contracts_sk/commit/4586bdb59ede7c42ed054cc795cf73840c066e7b))
+* **suppliers:** public page per contractor IČO (civora-org/civora-platform[#117](https://github.com/civora-org/decidim-contracts_sk/issues/117)) ([49060e6](https://github.com/civora-org/decidim-contracts_sk/commit/49060e6b52828d27a00b85ac2931e0c08395bdcd))
+
+
+### Bug Fixes
+
+* **admin:** make the CRZ filing action and CRZ id fields visible (civora-org/civora-platform[#125](https://github.com/civora-org/decidim-contracts_sk/issues/125)) ([3c2f5e0](https://github.com/civora-org/decidim-contracts_sk/commit/3c2f5e06a126b003060cfd3111ffbc19b0f4d82e))
+
 ## [1.5.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.4.0...v1.5.0) (2026-10-04)
 
 
