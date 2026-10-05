@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.name = "decidim-contracts_sk"
   spec.version = Decidim::ContractsSk::VERSION
   spec.authors = ["Denys Kozlov"]
-  spec.email = ["denys.kozlov.work@gmail.com"]
+  spec.email = ["denys@civora.sk"]
 
   spec.summary = "Decidim engine for Slovak public contracts workflow and catalogue."
   spec.description = "A Decidim module that provides a structured workflow for drafting, reviewing " \
