@@ -12,6 +12,9 @@ module Decidim
     # standard handling renders it as 404; nothing about the response may
     # hint at hidden records).
     #
+    # The read scope (#published_contracts) and the filter object live in
+    # the PublicCatalogue concern, shared with the open-data export.
+    #
     # Tenancy: the catalogue is scoped to the current organization (Gate-1
     # fold-in, mirroring the admin side's contracts_scope). A published
     # record of ANOTHER organization is as invisible as an unpublished one:
@@ -32,10 +35,12 @@ module Decidim
     # strictly ON TOP of #published_contracts, so the published-only +
     # organization scoping survives every query.
     class ContractsController < Decidim::ContractsSk::ApplicationController
+      include Decidim::ContractsSk::PublicCatalogue
+
       # The filter/sort object behind the index (civora-org/civora-platform
       # #116); the view prefills its form from the NORMALIZED values.
       helper Decidim::ContractsSk::CatalogueHelper
-      helper_method :catalogue_query, :search_term
+      helper_method :search_term
 
       def index
         # The page param reaches Kaminari only as a string: an array
@@ -57,32 +62,9 @@ module Decidim
 
       private
 
-      # Filters and sort over #published_contracts: applied strictly ON TOP
-      # of it, so the published-only + organization scoping survives every
-      # query. Only the catalogue's own keys are ever read from the request.
-      def catalogue_query
-        @catalogue_query ||= CatalogueQuery.new(
-          scope: published_contracts,
-          params: request.query_parameters.slice(*CatalogueQuery::PARAM_KEYS),
-          time_zone: Time.zone
-        )
-      end
-
       # The normalized free-text term (the search field's prefill).
       def search_term
         catalogue_query.filters.q.to_s
-      end
-
-      # The catalogue's entire public read surface: the current
-      # organization's lifecycle-published records only, UNORDERED (the
-      # CatalogueQuery owns the sort). The Gate-1 scope for #62/#63 pins
-      # `state == "published"` (archived visibility is a separate, later decision), so the plain
-      # enum scope is used instead of the broader
-      # ContractState#publicly_visible?; the organization filter is the
-      # tenant boundary, same rule as the admin side.
-      def published_contracts
-        Contract.where(organization: current_organization)
-                .published
       end
     end
   end

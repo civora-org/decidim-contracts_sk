@@ -914,6 +914,14 @@ module LocaleContract
     "contracts.index.filters.sources.editorial",
     "contracts.index.intro",
     "contracts.index.no_search_results",
+    "contracts.index.open_data.crz_link",
+    "contracts.index.open_data.crz_note",
+    "contracts.index.open_data.csv",
+    "contracts.index.open_data.csv_excel",
+    "contracts.index.open_data.heading",
+    "contracts.index.open_data.intro",
+    "contracts.index.open_data.json",
+    "contracts.index.open_data.own_only",
     "contracts.index.search_label",
     "contracts.index.search_submit",
     "contracts.index.title",
@@ -993,6 +1001,8 @@ end
 # The public catalogue's own vocabulary (civora-org/civora-platform#62, #63),
 # kept in its own module so that LocaleContract stays within its length
 # budget and the public surface stays visually separate from the admin one.
+# The public vocabulary pins grow with the catalogue's surface, not with logic.
+# rubocop:disable Metrics/ModuleLength
 module PublicCatalogueLabels
   # View labels per locale, keyed by their path under decidim.contracts_sk.
   VIEW_LABELS = {
@@ -1000,6 +1010,13 @@ module PublicCatalogueLabels
       "contract.published_on" => "Published on",
       "contracts.index.empty" => "No published contracts yet.",
       "contracts.index.no_search_results" => "No contracts match your search or filters.",
+      "contracts.index.open_data.heading" => "Download data",
+      "contracts.index.open_data.csv" => "CSV",
+      "contracts.index.open_data.csv_excel" => "CSV for Excel",
+      "contracts.index.open_data.json" => "JSON",
+      "contracts.index.open_data.own_only" =>
+        "Only the organisation's own records; records taken from CRZ are not included.",
+      "contracts.index.open_data.crz_link" => "crz.gov.sk",
       "contracts.index.search_label" => "Search contracts",
       "contracts.index.search_submit" => "Search",
       "contracts.index.intro" => "Published contracts of the organisation, with their documents and change history.",
@@ -1045,6 +1062,13 @@ module PublicCatalogueLabels
       "contract.published_on" => "Dátum zverejnenia",
       "contracts.index.empty" => "Zatiaľ nie je zverejnená žiadna zmluva.",
       "contracts.index.no_search_results" => "Žiadna zmluva nezodpovedá vášmu hľadaniu ani filtrom.",
+      "contracts.index.open_data.heading" => "Stiahnuť dáta",
+      "contracts.index.open_data.csv" => "CSV",
+      "contracts.index.open_data.csv_excel" => "CSV pre Excel",
+      "contracts.index.open_data.json" => "JSON",
+      "contracts.index.open_data.own_only" =>
+        "Len vlastné záznamy organizácie; záznamy prevzaté z CRZ nie sú zahrnuté.",
+      "contracts.index.open_data.crz_link" => "crz.gov.sk",
       "contracts.index.search_label" => "Hľadať zmluvy",
       "contracts.index.search_submit" => "Hľadať",
       "contracts.index.intro" => "Zverejnené zmluvy organizácie s dokumentmi a históriou zmien.",
@@ -1096,6 +1120,7 @@ module PublicCatalogueLabels
     sk: { object: "Objednávateľ", contractor: "Dodávateľ" }
   }.freeze
 end
+# rubocop:enable Metrics/ModuleLength
 
 # The CRZ deadline-tracking vocabulary (civora-org/civora-platform#124),
 # kept in its own module like the public catalogue's. The days keys are

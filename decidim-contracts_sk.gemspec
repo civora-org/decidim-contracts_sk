@@ -43,6 +43,12 @@ Gem::Specification.new do |spec|
   # current stable line (2.5.0 verified installable offline).
   spec.add_dependency "prawn", "~> 2.5.0"
 
+  # csv left the default gems in Ruby 3.4 (a bundled gem: not loadable under
+  # Bundler unless declared) and the open-data export requires it
+  # (civora-org/civora-platform#119). 3.0 is the first release with the
+  # generate_line / col_sep API the export uses on every supported Ruby.
+  spec.add_dependency "csv", "~> 3.0"
+
   spec.add_dependency "decidim-admin", "~> 0.31.5"
   spec.add_dependency "decidim-core", "~> 0.31.5"
 

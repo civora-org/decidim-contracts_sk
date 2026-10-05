@@ -99,6 +99,15 @@ sk:
               party: "Zmluvná strana"
               source: "Zdroj"
               sort: "Zoradenie"
+          open_data:
+            heading: "Stiahnuť dáta"
+            intro: "Zverejnené zmluvy ako otvorené dáta, s filtrami, ktoré ste nastavili. Podmienky ďalšieho použitia určuje organizácia."
+            own_only: "Len vlastné záznamy organizácie; záznamy prevzaté z CRZ nie sú zahrnuté."
+            csv: "CSV"
+            csv_excel: "CSV pre Excel"
+            json: "JSON"
+            crz_note: "Záznamy prevzaté z CRZ sa na stiahnutie neponúkajú. Originály nájdete v Centrálnom registri zmlúv."
+            crz_link: "crz.gov.sk"
         show:
           facts: "Údaje o zmluve"
           parties: "Zmluvné strany"

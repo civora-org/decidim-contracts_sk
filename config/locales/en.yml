@@ -99,6 +99,15 @@ en:
               party: "Party"
               source: "Source"
               sort: "Sort"
+          open_data:
+            heading: "Download data"
+            intro: "The published contracts as open data, with the filters you have set. Reuse terms are set by the organisation."
+            own_only: "Only the organisation's own records; records taken from CRZ are not included."
+            csv: "CSV"
+            csv_excel: "CSV for Excel"
+            json: "JSON"
+            crz_note: "Records taken from CRZ are not offered as downloads. Find the originals in the Central Register of Contracts."
+            crz_link: "crz.gov.sk"
         show:
           facts: "Contract details"
           parties: "Parties"
