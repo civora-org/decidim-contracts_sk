@@ -20,6 +20,40 @@
   .cs-page .title-decorator { margin-bottom: 2.25rem; overflow-wrap: anywhere; }
   .cs-lead { margin: 0; max-width: 42rem; font-size: 1.125rem; line-height: 1.6; color: #3e4c5c; }
 
+  /* The register's shared header and view switch (catalogue / statistics),
+     set in the civora.sk register: Source Sans, ink #0e1b2e, one blue
+     #0b5cad, 1px rules. The active tab's ink line is a real element with a
+     view-transition-name: between the two pages (both opt in below) the
+     browser slides it from tab to tab and cross-fades the content. No JS;
+     browsers without cross-document View Transitions just navigate. */
+  .cs-switch { display: flex; gap: clamp(1.5rem, 4vw, 2.5rem); margin: 0 0 clamp(2rem, 4vw, 3rem); border-bottom: 1px solid #d5dce6; }
+  .cs-switch .cs-switch__link { position: relative; display: inline-flex; align-items: center; gap: .5rem; padding: .875rem 0 .75rem; font-size: 1.0625rem; font-weight: 600; line-height: 1.2; color: #44546a; text-decoration: none; transition: color .15s ease; }
+  .cs-switch .cs-switch__link:hover { text-decoration: none; }
+  .cs-switch .cs-switch__link:hover { color: #0e1b2e; }
+  .cs-switch .cs-switch__link:hover::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #d5dce6; }
+  .cs-switch .cs-switch__link[aria-current="page"] { color: #0e1b2e; }
+  .cs-switch .cs-switch__link[aria-current="page"]:hover::after { content: none; }
+  .cs-switch .cs-switch__link:focus-visible { outline: 3px solid #0b5cad; outline-offset: 3px; border-radius: 2px; }
+  .cs-switch__icon { flex: none; width: 1.125rem; height: 1.125rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .cs-switch .cs-switch__link[aria-current="page"] .cs-switch__icon { color: #0b5cad; }
+  .cs-switch__ink { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: #0b5cad; view-transition-name: cs-switch-ink; }
+  .cs-head { padding-bottom: clamp(2rem, 4vw, 3rem); }
+  .cs-head__title { margin: 0; font-size: clamp(2.25rem, 1.4rem + 3vw, 3.5rem); font-weight: 700; line-height: 1.08; letter-spacing: -.02em; color: #0e1b2e; text-wrap: balance; overflow-wrap: anywhere; view-transition-name: cs-head-title; }
+  .cs-head__lead { max-width: 44ch; margin: 1.25rem 0 0; font-size: 1.25rem; line-height: 1.5; color: #44546a; text-wrap: pretty; }
+  .cs-head + .cs-search { margin-top: 0; }
+
+  @view-transition { navigation: auto; }
+  ::view-transition-group(cs-switch-ink) { animation-duration: .42s; animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
+  ::view-transition-old(cs-head-title), ::view-transition-new(cs-head-title) { animation-duration: .28s; animation-timing-function: cubic-bezier(.16, 1, .3, 1); height: 100%; object-fit: none; object-position: left top; }
+  ::view-transition-old(root) { animation: .18s cubic-bezier(.4, 0, 1, 1) both cs-vt-out; }
+  ::view-transition-new(root) { animation: .32s cubic-bezier(.16, 1, .3, 1) .06s both cs-vt-in; }
+  @keyframes cs-vt-out { to { opacity: 0; } }
+  @keyframes cs-vt-in { from { opacity: 0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+    .cs-switch .cs-switch__link { transition: none; }
+  }
+
   .cs-search { margin: 2rem 0 1.5rem; }
   .cs-search label { display: block; margin-bottom: .5rem; font-weight: 600; color: #020203; }
   .cs-search__row { display: flex; flex-direction: column; gap: .5rem; max-width: 42rem; }
@@ -58,6 +92,67 @@
   .cs-supplier__list-title { margin: 0 0 .75rem; }
   .cs-years { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin: 0; padding: 0; list-style: none; }
   .cs-num { font-variant-numeric: tabular-nums; }
+
+  /* Statistics page (#118), set as a statistical yearbook in the civora.sk
+     register: white ground, ink and blue, sections opened by a 2px ink rule,
+     rows parted by 1px rules, tabular lining figures, flat bars inside the
+     table (decoration, aria-hidden: the number beside each bar is the data;
+     width from --cs-bar). Tokens are scoped to .cs-yb so the rest of the
+     catalogue keeps Decidim's palette. */
+  .cs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .cs-yb { --yb-ink: #0e1b2e; --yb-muted: #44546a; --yb-blue: #0b5cad; --yb-blue-dark: #084782; --yb-rule: #d5dce6; --yb-tint: #f1f4f8; --yb-crz: #8f9db0; color: var(--yb-ink); font-variant-numeric: lining-nums; }
+  .cs-yb ::selection { background: #bcd7f2; color: var(--yb-ink); }
+  .cs-yb a { color: var(--yb-blue); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  .cs-yb a:hover { color: var(--yb-blue-dark); text-decoration-thickness: 2px; }
+  .cs-yb a:focus-visible { outline: 3px solid var(--yb-blue); outline-offset: 3px; border-radius: 2px; }
+  .cs-yb__head { padding-bottom: clamp(2rem, 4vw, 3rem); }
+  .cs-yb__asof { margin: .75rem 0 0; font-size: .9375rem; color: var(--yb-muted); }
+
+  .cs-yb__summary { margin: 0 0 clamp(3rem, 6vw, 4.5rem); }
+  .cs-yb__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 2px solid var(--yb-ink); border-bottom: 1px solid var(--yb-rule); }
+  .cs-yb__fact { min-width: 0; padding: 1.25rem 0 1.375rem 1rem; border-left: 1px solid var(--yb-rule); }
+  .cs-yb__fact:nth-child(odd) { padding-left: 0; border-left: 0; }
+  .cs-yb__fact:nth-child(n+3) { border-top: 1px solid var(--yb-rule); }
+  .cs-yb__fact dt { font-size: .9375rem; font-weight: 600; line-height: 1.3; color: var(--yb-muted); }
+  .cs-yb__figure { margin: .5rem 0 0; font-size: clamp(2.25rem, 1.6rem + 2.2vw, 3.25rem); font-weight: 700; line-height: 1; letter-spacing: -.025em; color: var(--yb-ink); font-variant-numeric: tabular-nums lining-nums; overflow-wrap: anywhere; }
+  .cs-yb__amount { margin: .625rem 0 0; font-size: 1.0625rem; font-weight: 600; color: var(--yb-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .cs-yb__aside { display: block; margin: .25rem 0 0; font-size: .875rem; font-weight: 400; line-height: 1.4; color: var(--yb-muted); }
+
+  .cs-yb__tab { margin: 0 0 clamp(3rem, 6vw, 4.5rem); }
+  .cs-yb__tab-title { margin: 0; padding-top: 1rem; border-top: 2px solid var(--yb-ink); font-size: clamp(1.375rem, 1.1rem + .9vw, 1.75rem); font-weight: 700; line-height: 1.2; letter-spacing: -.015em; color: var(--yb-ink); text-wrap: balance; }
+  .cs-yb__no { margin-right: .5em; color: var(--yb-blue); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cs-yb__unit { max-width: 72ch; margin: .5rem 0 1.25rem; font-size: 1rem; color: var(--yb-muted); }
+  .cs-yb__table { width: 100%; border-collapse: collapse; font-size: 1.0625rem; font-variant-numeric: tabular-nums lining-nums; }
+  .cs-yb__table thead th { padding: 0 1rem .5rem 0; border-bottom: 1px solid var(--yb-ink); font-size: .875rem; font-weight: 600; text-align: left; vertical-align: bottom; white-space: nowrap; color: var(--yb-muted); }
+  .cs-yb__table tbody th, .cs-yb__table tbody td { padding: .75rem 1rem .75rem 0; border-bottom: 1px solid var(--yb-rule); text-align: left; vertical-align: baseline; }
+  .cs-yb__table tbody th { font-weight: 600; color: var(--yb-ink); overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto; }
+  .cs-yb__table tr > :last-child { padding-right: 0; }
+  .cs-yb__table .cs-yb__num { text-align: right; white-space: nowrap; }
+  .cs-yb__table .cs-yb__num + .cs-yb__num { padding-left: 2rem; }
+  .cs-yb__table--rank tbody th { -webkit-hyphens: manual; hyphens: manual; }
+  .cs-yb__table td:has(.cs-yb__cell) { width: 46%; }
+  .cs-yb__table--rank td:has(.cs-yb__cell) { width: 32%; }
+  .cs-yb__zero th, .cs-yb__zero td, .cs-yb__zero .cs-yb__count { color: var(--yb-muted); font-weight: 400; }
+  .cs-yb__flag { margin-left: .375rem; font-weight: 400; color: var(--yb-muted); white-space: nowrap; -webkit-hyphens: none; hyphens: none; }
+  .cs-yb__cell { display: flex; align-items: center; justify-content: flex-end; gap: .75rem; }
+  .cs-yb__bar { flex: 1 1 auto; min-width: 2.5rem; height: .625rem; background: var(--yb-tint); }
+  .cs-yb__bar > span { display: block; width: var(--cs-bar, 0%); height: 100%; background: var(--yb-blue); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cs-yb__count { min-width: 3ch; font-weight: 600; text-align: right; color: var(--yb-ink); }
+  .cs-yb__amt { display: block; font-weight: 600; white-space: nowrap; color: var(--yb-ink); }
+  .cs-yb__none { color: var(--yb-muted); }
+  .cs-yb__table .cs-yb__rank { width: 3.5rem; }
+  .cs-yb__table tbody td.cs-yb__rank { font-size: 1.25rem; font-weight: 700; line-height: 1.2; color: var(--yb-blue); }
+  .cs-yb__ico { display: block; margin-top: .125rem; font-size: .875rem; font-weight: 400; color: var(--yb-muted); }
+  .cs-yb__split { display: flex; height: .875rem; margin: 0 0 1.25rem; background: var(--yb-crz); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cs-yb__split-own { display: block; width: var(--cs-bar, 0%); background: var(--yb-blue); }
+  .cs-yb__share-inline { display: none; }
+  .cs-yb__keyed { display: inline-flex; align-items: baseline; gap: .5rem; }
+  .cs-yb__key { display: inline-block; flex: none; width: .75rem; height: .75rem; background: var(--yb-blue); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cs-yb__key--crz { background: var(--yb-crz); }
+  .cs-yb__src { max-width: 72ch; margin: .75rem 0 0; font-size: .875rem; line-height: 1.5; color: var(--yb-muted); }
+  .cs-yb__next { display: flex; flex-wrap: wrap; gap: .75rem 2rem; margin: 2rem 0 0; padding-top: 1.25rem; border-top: 2px solid var(--yb-ink); font-size: 1.0625rem; font-weight: 600; }
+  .cs-yb__note { max-width: 72ch; margin: 0; padding-top: 1.25rem; border-top: 1px solid var(--yb-rule); font-size: .9375rem; line-height: 1.55; color: var(--yb-muted); }
+  .cs-yb__empty { margin: 0; padding: 2.5rem 0; border-top: 2px solid var(--yb-ink); border-bottom: 1px solid var(--yb-rule); font-size: 1.125rem; color: var(--yb-muted); }
 
   .cs-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; }
   .cs-list > li + li { border-top: 1px solid #e1e5ef; }
@@ -135,8 +230,33 @@
     .cs-detail { grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr); gap: 3rem; align-items: start; }
     .cs-facts { order: 2; }
   }
+  @media (max-width: 639px) {
+    .cs-yb__table { font-size: 1rem; }
+    .cs-yb__cell { flex-direction: column-reverse; align-items: stretch; gap: .375rem; }
+    .cs-yb__bar { min-width: 0; }
+    .cs-yb__table td:has(.cs-yb__cell) { width: 4.5rem; min-width: 4.5rem; }
+    .cs-yb__table .cs-yb__num + .cs-yb__num { padding-left: .75rem; }
+    .cs-yb__table--rank .cs-yb__amt { font-size: .875rem; }
+    .cs-yb__table--rank td:has(.cs-yb__cell) { width: 3.5rem; min-width: 3.5rem; }
+    .cs-yb__table--sources tbody th { min-width: 5.25rem; -webkit-hyphens: manual; hyphens: manual; }
+    .cs-yb__table--sources { font-size: .875rem; }
+    .cs-yb__table--sources .cs-yb__share-col { display: none; }
+    .cs-yb__table--sources .cs-yb__share-inline { display: block; font-size: .8125rem; font-weight: 400; color: var(--yb-muted); }
+    .cs-yb__keyed { gap: .375rem; }
+    .cs-yb__table--sources .cs-yb__amt { font-size: .875rem; }
+    .cs-yb__table .cs-yb__amt { font-size: .9375rem; }
+    .cs-yb__rank-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+    .cs-yb__table .cs-yb__rank { width: 2rem; }
+  }
+  @media (min-width: 900px) {
+    .cs-yb__facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .cs-yb__fact:nth-child(odd) { padding-left: 1.25rem; border-left: 1px solid var(--yb-rule); }
+    .cs-yb__fact:nth-child(n+2) { padding-left: 1.25rem; }
+    .cs-yb__fact:first-child { padding-left: 0; border-left: 0; }
+    .cs-yb__fact:nth-child(n+3) { border-top: 0; }
+  }
   @media print {
-    .cs-search form, .cs-filters, .cs-opendata { display: none; }
+    .cs-search form, .cs-filters, .cs-opendata, .cs-switch { display: none; }
     .cs-detail { grid-template-columns: 1fr; }
     .cs-facts { order: 0; background: none; }
   }

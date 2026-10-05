@@ -1,0 +1,278 @@
+<%# Public statistics page (civora-org/civora-platform#118), set as the
+    municipality's statistical yearbook for its contracts: a summary record,
+    then numbered tables that each state their unit, basis and source.
+    Unlike the supplier pages it is INDEXABLE (no noindex). Trade-off: the
+    top-10 tables do rank individual suppliers, possibly sole traders; the
+    owner accepted indexing because only the top ten appear, every name is
+    already on the public detail pages, and parties without an IČO never
+    appear. Every bar is decoration (aria-hidden) next to the figure it
+    draws; the data lives in real tables with captions. Layout comes from
+    the engine-owned .cs-yb rules in shared/_public_styles. %>
+<% t_s = "decidim.contracts_sk.statistics.show" %>
+<% stats = statistics %>
+<% source_line = t("#{t_s}.source") %>
+<%= render "decidim/contracts_sk/shared/public_styles" %>
+<main class="layout-1col cols-10">
+  <div class="cs-page cs-yb">
+    <%= render "decidim/contracts_sk/shared/section_switch", current: :statistics %>
+    <header class="cs-head cs-yb__head">
+      <h1 class="cs-head__title"><%= t("#{t_s}.title") %></h1>
+      <% unless stats.all_time.count.zero? %>
+        <p class="cs-head__lead"><%= t("#{t_s}.lead") %></p>
+        <p class="cs-yb__asof"><%= t("#{t_s}.as_of", time: format_datetime(stats.computed_at)) %></p>
+      <% end %>
+    </header>
+
+    <% if stats.all_time.count.zero? %>
+      <p class="cs-yb__empty"><%= t("#{t_s}.empty") %>
+        <%= link_to t("#{t_s}.catalogue_link"), contracts_path %></p>
+    <% else %>
+      <%# Summary record: three periods plus the share of the organisation's own records. %>
+      <section class="cs-yb__summary" aria-labelledby="cs-yb-summary">
+        <h2 class="cs-sr" id="cs-yb-summary"><%= t("#{t_s}.summary") %></h2>
+        <% kpis = [[:this_month, stats.this_month], [:this_year, stats.this_year], [:all_time, stats.all_time]] %>
+        <dl class="cs-yb__facts">
+          <% kpis.each do |key, totals| %>
+            <div class="cs-yb__fact">
+              <dt><%= t("#{t_s}.kpi.#{key}") %></dt>
+              <dd class="cs-yb__figure"><%= totals.count %></dd>
+              <% totals.amounts.each do |currency, sum| %>
+                <dd class="cs-yb__amount"><%= format_amount(sum, currency) %></dd>
+              <% end %>
+              <% if totals.without_amount.positive? %>
+                <dd class="cs-yb__aside"><%= t("#{t_s}.without_amount", count: totals.without_amount) %></dd>
+              <% end %>
+            </div>
+          <% end %>
+          <div class="cs-yb__fact">
+            <dt><%= t("#{t_s}.kpi.own") %></dt>
+            <dd class="cs-yb__figure"><%= share_percent(stats.own.count, stats.all_time.count) %></dd>
+            <dd class="cs-yb__aside"><%= t("#{t_s}.kpi.own_detail", own: stats.own.count, total: stats.all_time.count) %></dd>
+          </div>
+        </dl>
+      </section>
+
+      <%# Tab. 1: the last twelve months. %>
+      <% month_max = stats.months.map(&:count).max %>
+      <section class="cs-yb__tab" aria-labelledby="cs-yb-months">
+        <h2 class="cs-yb__tab-title" id="cs-yb-months">
+          <span class="cs-yb__no"><%= t("#{t_s}.table", number: 1) %></span>
+          <%= t("#{t_s}.months.title") %>
+        </h2>
+        <p class="cs-yb__unit"><%= t("#{t_s}.months.unit") %></p>
+        <table class="cs-yb__table">
+          <caption class="cs-sr"><%= t("#{t_s}.months.caption") %></caption>
+          <thead>
+            <tr>
+              <th scope="col"><%= t("#{t_s}.months.month") %></th>
+              <th scope="col" class="cs-yb__num"><%= t("#{t_s}.contracts") %></th>
+              <th scope="col" class="cs-yb__num"><%= t("#{t_s}.value") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% stats.months.each do |row| %>
+              <tr<%= ' class="cs-yb__zero"'.html_safe if row.count.zero? %>>
+                <th scope="row">
+                  <%= month_label(row.key) %>
+                  <% if row.partial %><span class="cs-yb__flag"><%= t("#{t_s}.months.so_far") %></span><% end %>
+                </th>
+                <td class="cs-yb__num">
+                  <span class="cs-yb__cell">
+                    <span class="cs-yb__bar" aria-hidden="true"><span style="--cs-bar: <%= bar_percent(row.count, month_max) %>%"></span></span>
+                    <span class="cs-yb__count"><%= row.count %></span>
+                  </span>
+                </td>
+                <td class="cs-yb__num">
+                  <%= render "decidim/contracts_sk/statistics/amounts", totals: row, t_s: t_s %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p class="cs-yb__src"><%= source_line %></p>
+      </section>
+
+      <%# Tab. 2: per year of signing. %>
+      <% year_max = stats.years.map(&:count).max %>
+      <section class="cs-yb__tab" aria-labelledby="cs-yb-years">
+        <h2 class="cs-yb__tab-title" id="cs-yb-years">
+          <span class="cs-yb__no"><%= t("#{t_s}.table", number: 2) %></span>
+          <%= t("#{t_s}.years.title") %>
+        </h2>
+        <p class="cs-yb__unit"><%= t("#{t_s}.years.unit") %></p>
+        <table class="cs-yb__table">
+          <caption class="cs-sr"><%= t("#{t_s}.years.caption") %></caption>
+          <thead>
+            <tr>
+              <th scope="col"><%= t("#{t_s}.years.year") %></th>
+              <th scope="col" class="cs-yb__num"><%= t("#{t_s}.contracts") %></th>
+              <th scope="col" class="cs-yb__num"><%= t("#{t_s}.value") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% stats.years.each do |row| %>
+              <tr<%= ' class="cs-yb__zero"'.html_safe if row.count.zero? %>>
+                <th scope="row"><%= row.key || t("#{t_s}.years.unknown") %></th>
+                <td class="cs-yb__num">
+                  <span class="cs-yb__cell">
+                    <span class="cs-yb__bar" aria-hidden="true"><span style="--cs-bar: <%= bar_percent(row.count, year_max) %>%"></span></span>
+                    <span class="cs-yb__count"><%= row.count %></span>
+                  </span>
+                </td>
+                <td class="cs-yb__num">
+                  <%= render "decidim/contracts_sk/statistics/amounts", totals: row, t_s: t_s %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p class="cs-yb__src"><%= source_line %></p>
+      </section>
+
+      <%# Tab. 3 and 4: top suppliers by value (one table per currency, sums
+          are never mixed), then by number of contracts. The rank column is
+          the order the reader cites. %>
+      <% if stats.top_by_count.any? %>
+        <% number = 3 %>
+        <% stats.top_by_amount.each do |currency, suppliers| %>
+          <% value_max = suppliers.map { |supplier| supplier.amounts.fetch(currency) }.max %>
+          <section class="cs-yb__tab" aria-labelledby="cs-yb-value-<%= currency.to_s.downcase %>">
+            <h2 class="cs-yb__tab-title" id="cs-yb-value-<%= currency.to_s.downcase %>">
+              <span class="cs-yb__no"><%= t("#{t_s}.table", number: number) %></span>
+              <%= currency.present? ? t("#{t_s}.suppliers.by_value_in", currency: currency) : t("#{t_s}.suppliers.by_value") %>
+            </h2>
+            <p class="cs-yb__unit"><%= t("#{t_s}.suppliers.unit_value") %></p>
+            <table class="cs-yb__table cs-yb__table--rank">
+              <caption class="cs-sr"><%= currency.present? ? t("#{t_s}.suppliers.by_value_in", currency: currency) : t("#{t_s}.suppliers.by_value") %></caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="cs-yb__rank"><span class="cs-yb__rank-label"><%= t("#{t_s}.suppliers.rank") %></span></th>
+                  <th scope="col"><%= t("#{t_s}.suppliers.supplier") %></th>
+                  <th scope="col" class="cs-yb__num"><%= t("#{t_s}.contracts") %></th>
+                  <th scope="col" class="cs-yb__num"><%= t("#{t_s}.value") %></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% suppliers.each_with_index do |supplier, index| %>
+                  <tr>
+                    <td class="cs-yb__rank"><%= index + 1 %></td>
+                    <th scope="row">
+                      <%= link_to supplier_display_name(supplier.name), supplier_path(ico: supplier.ico) %>
+                      <span class="cs-yb__ico"><%= t("decidim.contracts_sk.admin.parties.form.ico") %> <%= supplier.ico %></span>
+                    </th>
+                    <td class="cs-yb__num"><%= supplier.count %></td>
+                    <td class="cs-yb__num">
+                      <span class="cs-yb__cell">
+                        <span class="cs-yb__bar" aria-hidden="true"><span style="--cs-bar: <%= bar_percent(supplier.amounts.fetch(currency), value_max) %>%"></span></span>
+                        <span class="cs-yb__amt"><%= format_amount(supplier.amounts.fetch(currency), currency) %></span>
+                      </span>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+            <p class="cs-yb__src"><%= source_line %></p>
+          </section>
+          <% number += 1 %>
+        <% end %>
+
+        <% supplier_max = stats.top_by_count.map(&:count).max %>
+        <section class="cs-yb__tab" aria-labelledby="cs-yb-count">
+          <h2 class="cs-yb__tab-title" id="cs-yb-count">
+            <span class="cs-yb__no"><%= t("#{t_s}.table", number: number) %></span>
+            <%= t("#{t_s}.suppliers.by_count") %>
+          </h2>
+          <p class="cs-yb__unit"><%= t("#{t_s}.suppliers.unit_count") %></p>
+          <table class="cs-yb__table cs-yb__table--rank">
+            <caption class="cs-sr"><%= t("#{t_s}.suppliers.by_count") %></caption>
+            <thead>
+              <tr>
+                <th scope="col" class="cs-yb__rank"><span class="cs-yb__rank-label"><%= t("#{t_s}.suppliers.rank") %></span></th>
+                <th scope="col"><%= t("#{t_s}.suppliers.supplier") %></th>
+                <th scope="col" class="cs-yb__num"><%= t("#{t_s}.contracts") %></th>
+                <th scope="col" class="cs-yb__num"><%= t("#{t_s}.value") %></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% stats.top_by_count.each_with_index do |supplier, index| %>
+                <tr>
+                  <td class="cs-yb__rank"><%= index + 1 %></td>
+                  <th scope="row">
+                    <%= link_to supplier_display_name(supplier.name), supplier_path(ico: supplier.ico) %>
+                    <span class="cs-yb__ico"><%= t("decidim.contracts_sk.admin.parties.form.ico") %> <%= supplier.ico %></span>
+                  </th>
+                  <td class="cs-yb__num">
+                    <span class="cs-yb__cell">
+                      <span class="cs-yb__bar" aria-hidden="true"><span style="--cs-bar: <%= bar_percent(supplier.count, supplier_max) %>%"></span></span>
+                      <span class="cs-yb__count"><%= supplier.count %></span>
+                    </span>
+                  </td>
+                  <td class="cs-yb__num">
+                    <% if supplier.amounts.any? %>
+                      <% supplier.amounts.each do |currency, sum| %>
+                        <span class="cs-yb__amt"><%= format_amount(sum, currency) %></span>
+                      <% end %>
+                    <% else %>
+                      <span class="cs-yb__aside"><%= t("#{t_s}.without_amount", count: supplier.count) %></span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <p class="cs-yb__src"><%= source_line %></p>
+        </section>
+        <% number += 1 %>
+      <% else %>
+        <% number = 3 %>
+      <% end %>
+
+      <%# Own records versus records taken from CRZ: only when mirrors exist.
+          The split band above the table is decoration; the shares are in the
+          table. %>
+      <% if stats.crz.count.positive? %>
+        <section class="cs-yb__tab" aria-labelledby="cs-yb-sources">
+          <h2 class="cs-yb__tab-title" id="cs-yb-sources">
+            <span class="cs-yb__no"><%= t("#{t_s}.table", number: number) %></span>
+            <%= t("#{t_s}.sources.title") %>
+          </h2>
+          <p class="cs-yb__unit"><%= t("#{t_s}.sources.unit") %></p>
+          <% own_share = bar_percent(stats.own.count, stats.all_time.count) %>
+          <div class="cs-yb__split" aria-hidden="true">
+            <span class="cs-yb__split-own" style="--cs-bar: <%= own_share %>%"></span>
+          </div>
+          <table class="cs-yb__table cs-yb__table--sources">
+            <caption class="cs-sr"><%= t("#{t_s}.sources.caption") %></caption>
+            <thead>
+              <tr>
+                <th scope="col"><%= t("#{t_s}.sources.source") %></th>
+                <th scope="col" class="cs-yb__num"><%= t("#{t_s}.contracts") %></th>
+                <th scope="col" class="cs-yb__num cs-yb__share-col"><%= t("#{t_s}.sources.share") %></th>
+                <th scope="col" class="cs-yb__num"><%= t("#{t_s}.value") %></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% [[:own, stats.own], [:crz, stats.crz]].each do |key, totals| %>
+                <tr>
+                  <th scope="row"><span class="cs-yb__keyed"><span class="cs-yb__key cs-yb__key--<%= key %>" aria-hidden="true"></span><span><%= t("#{t_s}.sources.#{key}") %></span></span></th>
+                  <td class="cs-yb__num"><%= totals.count %><span class="cs-yb__share-inline"><%= share_percent(totals.count, stats.all_time.count) %></span></td>
+                  <td class="cs-yb__num cs-yb__share-col"><%= share_percent(totals.count, stats.all_time.count) %></td>
+                  <td class="cs-yb__num">
+                    <%= render "decidim/contracts_sk/statistics/amounts", totals: totals, t_s: t_s %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <p class="cs-yb__src"><%= source_line %></p>
+        </section>
+      <% end %>
+
+      <p class="cs-yb__note"><%= t("#{t_s}.provenance_html", crz_link: link_to("crz.gov.sk", "https://www.crz.gov.sk/")) %> <%= t("#{t_s}.note") %></p>
+      <nav class="cs-yb__next" aria-label="<%= t("#{t_s}.next") %>">
+        <%= link_to t("#{t_s}.catalogue_link"), contracts_path %>
+        <%= link_to t("#{t_s}.download_csv"), export_path(format: :csv) %>
+      </nav>
+    <% end %>
+  </div>
+</main>

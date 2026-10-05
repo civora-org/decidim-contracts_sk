@@ -8,11 +8,13 @@
 <%= render "decidim/contracts_sk/shared/public_styles" %>
 <main class="layout-1col cols-10">
   <div class="cs-page">
-    <%# The heading decorator draws its bar BELOW the heading box, so the
-        heading carries its own bottom margin (.cs-page .title-decorator)
-        and the bar can never strike through the line that follows. %>
-    <h1 class="title-decorator"><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
-    <p class="cs-lead"><%= t("decidim.contracts_sk.contracts.index.intro") %></p>
+    <%# The register's two views share one switch and one header style, so
+        moving to the statistics changes the content, not the page. %>
+    <%= render "decidim/contracts_sk/shared/section_switch", current: :catalogue %>
+    <header class="cs-head">
+      <h1 class="cs-head__title"><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
+      <p class="cs-head__lead"><%= t("decidim.contracts_sk.contracts.index.intro") %></p>
+    </header>
 
     <%# Free-text catalogue search (the public twin of the admin index's :q
         filter): a compact GET form, so the search state lives in the URL

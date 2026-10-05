@@ -132,6 +132,11 @@ Decidim::ContractsSk::Engine.routes.draw do
   get "/suppliers/:ico", to: "suppliers#show", as: :supplier, format: false,
                          constraints: { ico: Decidim::ContractsSk::ICO_PATTERN }
 
+  # Public statistics page (civora-org/civora-platform#118): aggregates over
+  # the published records. No format segment, no params. Declared before the
+  # /:id catch-all, which would otherwise treat "statistics" as a contract id.
+  get "/statistics", to: "statistics#show", as: :statistics, format: false
+
   # Public routes — the mount point is the catalogue itself
   root to: "contracts#index", as: :contracts
   get "/:id", to: "contracts#show", as: :contract

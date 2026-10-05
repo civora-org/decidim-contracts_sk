@@ -24,6 +24,7 @@ What you get (idempotent — safe to re-run):
 | DEMO-2026-007    | archived    | redaction-stamped (was published); publicly visible, not editable |
 | DEMO-2026-008    | published   | **CRZ import** (fictional): fresh mirror — provenance badge, no stale line; unstamped by design (ADR-008); 2 parties |
 | DEMO-2026-009    | published   | **CRZ import** (fictional): stale mirror — `imported_at` 60 days back, stale line expected; unstamped by design (ADR-008) |
+| DEMO-2026-010 … 033 | published | **statistics demo** (#118): 24 fictional published records spread over the last 12 months relative to the seeding day (re-seed to slide them), 7 repeat contractors (`00000003`, `00000005`, `00000011` … `00000015`), 2 without an amount (-019, -029), 3 CRZ mirrors (-014, -022, -027); -010 is the play-equipment contract the participation demo links to and is never overwritten when it already exists (its parties are matched by role); editorial ones are redaction-stamped and CRZ-filed (so the admin deadline chips are untouched) |
 | DEMO-OTHER-001   | published   | **another organization** — must be invisible |
 
 Users: `contracts-admin@example.org`, `contracts-editor@example.org` — both
@@ -43,7 +44,7 @@ catalogue index is the mount root; detail is `/:id`.
 
 | # | Request | Expected |
 |---|---------|----------|
-| P1 | `GET /zmluvy/` | index lists the published records (DEMO-2026-006 plus the two imported records DEMO-2026-008/009 — three cards out of the box — and anything you publish in section 3); localized empty state if no published rows |
+| P1 | `GET /zmluvy/` | index lists the published records (DEMO-2026-006, the two imported records DEMO-2026-008/009 and the 24 statistics-demo records — 27 out of the box, so two pages of 25 — and anything you publish in section 3); localized empty state if no published rows |
 | P2 | `GET /zmluvy/` as JSON-less browser without JS | same, server-rendered |
 | P3 | detail for DEMO-2026-006 | content fields, parties, downloadable documents render |
 | P4 | detail for DEMO-2026-007 | **404** — the catalogue scope pins `published` only; archived visibility is a deferred decision (`app/controllers/decidim/contracts_sk/contracts_controller.rb`) |
@@ -98,12 +99,24 @@ Seed IČOs: `00000003` (Odpadové služby Demo a.s., DEMO-2026-006, published), 
 
 | # | Request | Expected |
 |---|---------|----------|
-| P25 | detail for DEMO-2026-006, click "Odpadové služby Demo a.s." | `GET /zmluvy/suppliers/00000003`: name, IČO, 1 contract, total value, per-year tally, the contract row; head has `noindex` |
-| P26 | `GET /zmluvy/suppliers/00000005` | the mirrored record is listed with its "Externally confirmed" badge |
+| P25 | detail for DEMO-2026-006, click "Odpadové služby Demo a.s." | `GET /zmluvy/suppliers/00000003`: name, IČO, 4 contracts (DEMO-2026-006, -016, -022, -026), total value, per-year tally, the contract rows; head has `noindex` |
+| P26 | `GET /zmluvy/suppliers/00000005` | the two mirrored records (DEMO-2026-008, -014) are listed with their "Externally confirmed" badge |
 | P27 | `GET /zmluvy/suppliers/00000002` and `/zmluvy/suppliers/00000001` and `/zmluvy/suppliers/99999999` | **404** (draft only, object role only, unknown) on the freshly seeded data, before section 3 publishes DEMO-2026-001 |
 | P28 | `GET /zmluvy/suppliers/1234567`, `/123456789`, `/abcdefgh` | not routed (404 / routing error) |
 | P29 | `GET /zmluvy/suppliers/00000003?page=abc&q=x` | page 1; the filter param is ignored |
 | P30 | detail for DEMO-2026-006, the object party "Mesto Demo" | plain text, no link |
+
+### 2d. Statistics page walkthrough (civora-org/civora-platform#118)
+
+On the freshly seeded data (the page is built from the 27 published records; run the seed on the day you demo, the 24 statistics records are dated relative to it).
+
+| # | Request | Expected |
+|---|---------|----------|
+| P31 | `GET /zmluvy/statistics`, or the "Štatistiky" tab above the catalogue heading | 200; KPI strip (this month, this year, all time with the EUR total and "2 without an amount", own-records share 81,5 % / 81.5%); twelve month rows, the current one flagged "so far", every month non-zero; by-year table with a "Signing date unknown" row (DEMO-2026-009 has no signing date); the page is indexable (no `noindex` in the head) |
+| P32 | top suppliers | by value: `00000011` Stavebná Ukážka first; by count: `00000013` Digitálne Riešenia first (6); names link to `/zmluvy/suppliers/<IČO>` and the counts agree with the supplier pages (a CRZ mirror counts, so `00000003` shows 4) |
+| P33 | "Own records and records from CRZ" block | 22 own (81,5 %) and 5 CRZ (18,5 %); the block disappears on an organization with no mirrors |
+| P34 | publish a record (A8), reload | the page shows it at once (the cache key follows the data); an empty organization shows the empty state (200, message, catalogue link) |
+| P35 | `GET /zmluvy/statistics?q=x&page=999999999999` | 200 (the page reads no parameters) |
 
 ## 3. Admin scenarios
 
@@ -112,7 +125,7 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 | # | Action | Expected |
 |---|--------|----------|
 | A1 | `GET /zmluvy/admin/contracts` unauthenticated | redirect to sign-in |
-| A2 | index as admin | all org contracts, states shown (9 seeded + any created in A3) |
+| A2 | index as admin | all org contracts, states shown (33 seeded + any created in A3) |
 | A3 | create (POST `new`) with title+reference | lands in `draft` |
 | A4 | edit DEMO-2026-001 (draft) | editable; state/author/organization not form-writable |
 | A5 | edit DEMO-2026-006 (published) | update refused — not editable |

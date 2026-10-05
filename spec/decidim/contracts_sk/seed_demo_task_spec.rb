@@ -40,8 +40,9 @@ RSpec.describe "decidim_contracts_sk:seed_demo demo seed task", :db do
 
   it "creates the imported demo records with full provenance and parties" do
     # The two imported records on top of the seven lifecycle states plus
-    # the cross-tenant control record.
-    expect { run_seed! }.to change(Decidim::ContractsSk::Contract, :count).by(10)
+    # the cross-tenant control record, plus the 24 statistics-demo records
+    # (#118).
+    expect { run_seed! }.to change(Decidim::ContractsSk::Contract, :count).by(34)
 
     fresh = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-008")
     stale = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-009")
@@ -61,6 +62,98 @@ RSpec.describe "decidim_contracts_sk:seed_demo demo seed task", :db do
       expect(stale.source_id).to eq("900000002")
       expect(stale.import_status).to eq("succeeded")
       expect(stale.imported_at).to be < 48.hours.ago
+    end
+  end
+
+  # Statistics demo (civora-org/civora-platform#118): the page must look real
+  # on the seeded organization, and re-seeding must not duplicate anything.
+  describe "the statistics demo records (civora-org/civora-platform#118)" do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let(:stats_refs) { (10..33).map { |n| format("DEMO-2026-%03d", n) } }
+    let(:records) { Decidim::ContractsSk::Contract.where(reference: stats_refs) }
+
+    around { |example| travel_to(Time.zone.local(2026, 10, 15, 12)) { example.run } }
+
+    it "seeds 24 published records, none dated in the future, with the intended mix" do
+      run_seed!
+
+      expect(records.count).to eq(24)
+      expect(records.map(&:state).uniq).to eq(["published"])
+      expect(records.map(&:signed_on).max).to be <= Date.new(2026, 10, 15)
+      expect(records.where(amount: nil).count).to eq(2)
+      expect(records.where(source: "crz").count).to eq(3)
+      expect(records.where(source: "crz").pluck(:import_status).uniq).to eq(["succeeded"])
+      expect(records.where.not(source: "crz").pluck(:redaction_confirmed_at)).to all(be_present)
+      expect(records.where.not(source: "crz").pluck(:crz_filed_at)).to all(be_present)
+    end
+
+    it "gives the statistics page a populated twelve-month trend and repeat suppliers with valid IČOs" do
+      run_seed!
+      stats = Decidim::ContractsSk::CatalogueStatistics.new(
+        scope: Decidim::ContractsSk::Contract.where(organization: organization).published,
+        time_zone: Time.zone, today: Date.new(2026, 10, 15)
+      ).call
+
+      expect(stats.months.size).to eq(12)
+      expect(stats.months.count { |row| row.count.positive? }).to eq(12)
+      expect(stats.crz.count).to be >= 3
+      expect(stats.top_by_count.size).to eq(7)
+      expect(stats.top_by_count.map(&:ico)).to all(match(Decidim::ContractsSk::ICO_FORMAT))
+      expect(stats.top_by_count.map(&:count).max).to be > 3
+      expect(stats.top_by_amount.fetch("EUR").first.ico).not_to eq(stats.top_by_count.first.ico)
+    end
+
+    it "seeds DEMO-2026-010 as the play-equipment contract" do
+      run_seed!
+
+      record = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-010")
+      expect(record.title).to eq("Dodávka a montáž herných prvkov na detské ihriská")
+      expect(record.amount).to eq(BigDecimal("23600.00"))
+      expect([record.state, record.source]).to eq(%w[published editorial])
+      expect(record.parties.where(role: "contractor").count).to eq(1)
+    end
+
+    it "leaves an existing DEMO-2026-010 and its contractor untouched on a re-seed" do
+      run_seed!
+      record = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-010")
+      record.update_columns(amount: BigDecimal("1.00"), signed_on: Date.new(2026, 1, 2))
+      record.parties.find_by!(role: "contractor").update_columns(name: "Hostiteľský dodávateľ s.r.o.")
+
+      run_seed!
+
+      record.reload
+      expect([record.title, record.amount, record.signed_on]).to eq(
+        ["Dodávka a montáž herných prvkov na detské ihriská", BigDecimal("1.00"), Date.new(2026, 1, 2)]
+      )
+      expect(record.parties.where(role: "contractor").pluck(:name)).to eq(["Hostiteľský dodávateľ s.r.o."])
+      expect(record.parties.count).to eq(2)
+    end
+
+    it "is idempotent: a second run adds no contracts or parties" do
+      run_seed!
+
+      counts = -> { [Decidim::ContractsSk::Contract.count, Decidim::ContractsSk::Party.count] }
+
+      expect { run_seed! }.not_to(change { counts.call })
+    end
+
+    it "keeps the admin CRZ deadline chips untouched (the new records are filed or mirrors)" do
+      run_seed!
+
+      statuses = records.map(&:crz_deadline_status).uniq
+
+      expect(statuses).to eq([:untracked])
+    end
+
+    it "keeps the same references when re-seeded on a later day, sliding the dates" do
+      run_seed!
+      first = records.order(:reference).pluck(:reference, :signed_on)
+      travel_to(Time.zone.local(2026, 11, 20, 12))
+      run_seed!
+
+      expect(records.order(:reference).pluck(:reference)).to eq(first.map(&:first))
+      expect(records.order(:reference).pluck(:signed_on)).not_to eq(first.map(&:last))
     end
   end
 

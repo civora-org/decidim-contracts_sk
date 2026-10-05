@@ -24,6 +24,7 @@ module EngineRoutingContract
   OPEN_DATA_CONTROLLER = "decidim/contracts_sk/open_data"
   FEEDS_CONTROLLER = "decidim/contracts_sk/feeds"
   SUPPLIERS_CONTROLLER = "decidim/contracts_sk/suppliers"
+  STATISTICS_CONTROLLER = "decidim/contracts_sk/statistics"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -76,6 +77,7 @@ module EngineRoutingContract
     ["GET", "/export.:format", "#{OPEN_DATA_CONTROLLER}#export"],
     ["GET", "/feed.:format", "#{FEEDS_CONTROLLER}#show"],
     ["GET", "/suppliers/:ico", "#{SUPPLIERS_CONTROLLER}#show"],
+    ["GET", "/statistics", "#{STATISTICS_CONTROLLER}#show"],
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
@@ -293,6 +295,29 @@ RSpec.describe Decidim::ContractsSk::Engine do
 
       expect(recognized).to eq([EngineRoutingContract::SUPPLIERS_CONTROLLER, EngineRoutingContract::PUBLIC_CONTROLLER,
                                 [], [], []])
+    end
+  end
+
+  describe "the statistics route (civora-org/civora-platform#118)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    it "names statistics_path with no format segment" do
+      expect(url_helpers.statistics_path).to eq("/statistics")
+    end
+
+    it "is declared before the /:id catch-all" do
+      table = described_class.routes.routes.map { |route| route.path.spec.to_s }
+
+      expect(table.index("/statistics")).to be < table.index("/:id(.:format)")
+    end
+
+    it "does not recognize /statistics.json (no format segment) as the statistics page" do
+      request = ActionDispatch::Request.new(Rack::MockRequest.env_for("/statistics.json"))
+      found = described_class.routes.router.recognize(request) { |route, _| break route.defaults[:controller] }
+
+      expect(found).not_to eq(EngineRoutingContract::STATISTICS_CONTROLLER)
     end
   end
 
@@ -740,13 +765,13 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's eleven controllers, distinct by the admin/ segment" do
+    it "routes only the engine's twelve controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
         decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/dashboard
         decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links decidim/contracts_sk/admin/parties
         decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
-        decidim/contracts_sk/suppliers
+        decidim/contracts_sk/statistics decidim/contracts_sk/suppliers
       ].sort
 
       expect(controllers_of(route_triples)).to eq(controllers)
@@ -768,7 +793,7 @@ RSpec.describe Decidim::ContractsSk::Engine do
 
       expect(controllers_of(non_admin))
         .to eq(["decidim/contracts_sk/contracts", "decidim/contracts_sk/feeds", "decidim/contracts_sk/open_data",
-                "decidim/contracts_sk/suppliers"])
+                "decidim/contracts_sk/statistics", "decidim/contracts_sk/suppliers"])
     end
   end
 end
