@@ -1,0 +1,14 @@
+<%# The per-currency sums of one period row, plus the count of records that
+    have no amount (never silently dropped). An empty period shows a muted
+    dash (decoration: the zero count beside it carries the meaning).
+    locals: totals, t_s %>
+<% if totals.amounts.any? %>
+  <% totals.amounts.each do |currency, sum| %>
+    <span class="cs-yb__amt"><%= format_amount(sum, currency) %></span>
+  <% end %>
+<% elsif totals.count.zero? %>
+  <span class="cs-yb__none" aria-hidden="true">&mdash;</span>
+<% end %>
+<% if totals.without_amount.positive? %>
+  <span class="cs-yb__aside"><%= t("#{t_s}.without_amount", count: totals.without_amount) %></span>
+<% end %>

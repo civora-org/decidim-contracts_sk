@@ -28,6 +28,15 @@ ideally in both `en` and `sk` where noted.
 - [ ] CRZ link absent (not a blank `href`) when the record has no `crz_url`.
 - [ ] Document links download with attachment disposition (no in-browser surprise rendering).
 
+## Statistics page (#118)
+
+- [ ] `/statistics` opens from the "Štatistiky" / "Statistics" tab of the view switch above the catalogue heading (en and sk; the active tab carries the blue line, and in Chrome, Edge or Safari 18.2+ the line slides between the tabs — nothing animates with reduced motion); one `h1`, the freshness line ("Data as of" / "Údaje k"), the KPI strip, the 12-month table (current month marked "so far" / "zatiaľ"), the per-year table, the two top-supplier tables and, when CRZ mirrors exist, the own-versus-CRZ table.
+- [ ] Every table has a caption (read aloud by a screen reader) and row headers; the bars are decoration only: with CSS off or a screen reader the numbers carry the whole page.
+- [ ] Amounts are shown per currency, never mixed; records without an amount are counted and reported as "N without an amount".
+- [ ] The head has no `noindex` (the page is meant to be found); supplier names link to the supplier pages and the counts agree with them.
+- [ ] 1440px and 375px: no horizontal scroll; at 375px the summary shows two columns and the bars sit under the numbers.
+- [ ] Publishing or editing a contract shows up on the next load; an organization without published contracts gets the empty state with a catalogue link.
+
 ## Supplier pages (#117)
 
 - [ ] On a contract detail page, a contractor with an 8-digit IČO is a link to `/suppliers/<IČO>`; a contractor without an IČO, a malformed stored IČO and the object party are plain text (no link, no error).

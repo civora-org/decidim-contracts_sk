@@ -389,7 +389,7 @@ docs/qa-checklist.md; demo dáta seed-neš podľa § 2.8.
 
 - [ ] Lehota CRZ (#124): admin index má stĺpec „Lehota CRZ"; na demo dátach má DEMO-2026-003 oranžový štítok „7 dní" (po novom seede), DEMO-2026-002 a -004 červený „Po termíne", DEMO-2026-001 tlmenú pomlčku (neznámy dátum podpisu), mirror/zamietnuté/archivované záznamy a DEMO-2026-006 žiadny (publikované redakčné záznamy sa sledujú; DEMO-2026-006 nemá štítok len preto, že je potvrdený ako zverejnený v CRZ (`crz_filed_at`, #125)); čipy „CRZ po termíne" / „CRZ do 14 dní" majú správne počty a filter `?deadline=overdue` / `?deadline=due_soon` zúži zoznam; edit DEMO-2026-003 ukazuje riadok s lehotou — **pass:** #124 (pomôcka, nie právne poradenstvo; štítky starnú, na obnovu spusti seed znova).
 
-- [ ] `GET /zmluvy/` → 200; vidno publikované demo záznamy (DEMO-2026-006, 008, 009) — **pass:** tri karty, lokalizované.
+- [ ] `GET /zmluvy/` → 200; vidno publikované demo záznamy (DEMO-2026-006, 008, 009 a 24 štatistických DEMO-2026-010..033) — **pass:** 27 kariet na dvoch stránkach, lokalizované.
 - [ ] Prihlásenie adminom; `GET /zmluvy/admin/contracts` bez prihlásenia → redirect na sign-in — **pass:** A1.
 - [ ] Vytvor záznam (title + reference) → stav `draft` — **pass:** A3.
 - [ ] Uprav DEMO-2026-001: state/author/organization nie sú form-writable — **pass:** A4.

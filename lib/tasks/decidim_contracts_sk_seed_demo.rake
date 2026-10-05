@@ -15,6 +15,11 @@
 #     exercise the public catalogue's provenance labelling: DEMO-2026-008
 #     (fresh mirror) and DEMO-2026-009 (deliberately stale mirror —
 #     imported_at 60 days back, beyond the default 48 h threshold);
+#   - 24 more published records (DEMO-2026-010..033) spread over the last
+#     twelve months relative to the seeding day, with repeat contractors,
+#     varied amounts, two without an amount and three CRZ mirrors, so the
+#     public statistics page (#118) looks real (re-seed to slide them);
+#     DEMO-2026-010 (play equipment) is left untouched when it already exists;
 #   - object/contractor parties, documents (metadata + attached demo files
 #     from the engine's spec/fixtures/files), and numbered amendments;
 #   - ADR-007 redaction stamps (#91) on every editorial record that is or
@@ -202,6 +207,106 @@ namespace :decidim_contracts_sk do
       checksum: Digest::SHA256.hexdigest("demo-900000002")
     )
 
+    # Statistics demo (civora-org/civora-platform#118): 24 more published,
+    # fictional contracts spread over the last twelve months RELATIVE to the
+    # seeding day, so the public statistics page (trend, per-year counts,
+    # top suppliers, own-versus-CRZ split) looks real in a demo. Repeat
+    # contractors with different volumes (so the by-value and by-count
+    # rankings differ), varied amounts, two records without an amount and
+    # three CRZ mirrors. Idempotent per reference like everything above:
+    # signing and publication dates are recomputed on each run (the whole
+    # picture slides with the seeding day, like DEMO-2026-003), so re-seed to
+    # refresh it. Editorial records are stamped redacted and carry a CRZ
+    # filing (so the admin deadline chips and counts stay untouched); the
+    # mirrors follow the CRZ ETL's shape.
+    today = Date.current
+    stat_suppliers = {
+      3 => ["Odpadové služby Demo a.s.", "Skládková 9, 821 04 Bratislava"],
+      5 => ["Svetlá Demo, s.r.o.", "Priemyselná 12, 831 02 Bratislava"],
+      11 => ["Stavebná Ukážka s.r.o.", "Murárska 7, 811 02 Bratislava"],
+      12 => ["Zelená Údržba Demo, s.r.o.", "Parková 3, 821 05 Bratislava"],
+      13 => ["Digitálne Riešenia Demo a.s.", "Technologická 21, 841 04 Bratislava"],
+      14 => ["Catering Demo s.r.o.", "Jedlá 4, 811 03 Bratislava"],
+      15 => ["Poradenstvo Vzor, s.r.o.", "Právnická 15, 811 01 Bratislava"]
+    }
+    # [reference number, months back, day of month, title, supplier, amount, CRZ mirror?]
+    stat_rows = [
+      [10, 0, 3, "Dodávka a montáž herných prvkov na detské ihriská", 11, "23600.00", false],
+      [11, 0, 8, "Rekonštrukcia chodníka Školská ulica", 11, "142300.00", false],
+      [12, 0, 12, "Údržba verejnej zelene — jesenná kosba", 12, "9650.00", false],
+      [13, 1, 5, "Poradenstvo pri verejnom obstarávaní", 15, "6200.00", false],
+      [14, 1, 14, "Zimná údržba komunikácií — import z CRZ", 5, "45000.00", true],
+      [15, 2, 2, "Licencie a podpora informačného systému", 13, "24800.00", false],
+      [16, 2, 11, "Zber a odvoz bioodpadu", 3, "38200.00", false],
+      [17, 2, 20, "Oprava strechy materskej školy", 11, "87600.00", false],
+      [18, 3, 7, "Catering pre mestské slávnosti", 14, "7400.00", false],
+      [19, 3, 19, "Rámcová dohoda — drobné opravy", 14, nil, false],
+      [20, 4, 4, "Správa webového sídla mesta", 13, "12900.00", false],
+      [21, 4, 16, "Výsadba stromoradia", 12, "21500.00", false],
+      [22, 4, 25, "Odvoz odpadu z cintorínov — import z CRZ", 3, "12800.00", true],
+      [23, 5, 9, "Rekonštrukcia telocvične", 11, "213000.00", false],
+      [24, 6, 6, "Právne služby — rámcová zmluva", 15, "15600.00", false],
+      [25, 6, 21, "Modernizácia školskej počítačovej učebne", 13, "31200.00", false],
+      [26, 7, 13, "Zber a odvoz komunálneho odpadu — dodatok", 3, "54000.00", false],
+      [27, 8, 3, "Oprava mostíka — import z CRZ", 11, "64500.00", true],
+      [28, 8, 17, "Údržba detských ihrísk", 12, "17300.00", false],
+      [29, 9, 10, "Údržba zelene — rámcová dohoda", 12, nil, false],
+      [30, 10, 5, "Čistenie a údržba mestských fontán", 12, "5200.00", false],
+      [31, 11, 8, "Dodávka lavičiek a smetných košov", 13, "9800.00", false],
+      [32, 11, 22, "Prevádzka verejného WiFi", 13, "14900.00", false],
+      [33, 0, 5, "Dodávka a montáž kamerového systému", 13, "18400.00", false]
+    ]
+    # Rows whose record may already exist on a host with a hand-curated
+    # version (DEMO-2026-010 is the play-equipment contract the
+    # participation demo links to and the public screenshots show): an
+    # existing one is left exactly as it is (title, amount, dates, state)
+    # and only gets the missing parties, matched by role alone so the
+    # host's own contractor name never grows a second contractor party.
+    stat_preserved = [10]
+    stat_rows.each do |row|
+      number, back, day, title, supplier, amount, mirror = row
+      month_start = today.beginning_of_month << back
+      signed = [month_start + (day - 1), month_start.end_of_month, today].min
+      published_at = [signed.in_time_zone.change(hour: 12) + 1.day, Time.current].min
+      ref = format("DEMO-2026-%03d", number)
+      kept = nil
+      if stat_preserved.include?(number)
+        kept = Decidim::ContractsSk::Contract.find_by(organization: organization, reference: ref)
+      end
+      crz_id = 900_000_000 + (mirror ? 200 : 100) + number
+      content = {
+        subject_matter: "Fiktívna ukážková zmluva pre demonštráciu štatistík",
+        amount: amount && BigDecimal(amount), signed_on: signed, effective_from: signed + 1,
+        published_at: published_at, crz_url: "https://crz.gov.sk/zmluva/#{crz_id}/", source_id: crz_id
+      }
+      if kept
+        contracts[ref] = kept
+      elsif mirror
+        seed.call(
+          ref: ref, title: title, state: "published", **content,
+          source: "crz", import_status: "succeeded", imported_at: Time.current,
+          checksum: Digest::SHA256.hexdigest("demo-#{crz_id}")
+        )
+      else
+        filed_on = [signed + 3, today].min
+        seed.call(
+          ref: ref, title: title, state: "published", redaction_confirmed: true, **content,
+          crz_published_on: filed_on, crz_filed_at: [filed_on.in_time_zone.change(hour: 8), Time.current].min
+        )
+      end
+      name, address = stat_suppliers.fetch(supplier)
+      parties = [["object", "Mesto Demo (objekt zmluvy)", "00000001", "Hlavná 1, 811 01 Bratislava"],
+                 ["contractor", name, format("%08d", supplier), address]]
+      parties.each do |role, party_name, ico, party_address|
+        match = kept ? { role: role } : { role: role, name: party_name }
+        contracts.fetch(ref).parties.find_or_create_by!(match) do |p|
+          p.name = party_name
+          p.ico = ico
+          p.address = party_address
+        end
+      end
+    end
+
     # Cross-tenant control record: must be invisible (404) from the seeded org.
     Decidim::ContractsSk::Contract.find_or_create_by!(organization: other_org, reference: "DEMO-OTHER-001") do |c|
       c.title = "Zmluva inej organizácie"
@@ -279,6 +384,8 @@ namespace :decidim_contracts_sk do
     contracts.each_value { |c| puts "  [#{c.state}] #{c.reference} — #{c.title}" }
     puts "  imported (CRZ mirrors, provenance-labelled in the catalogue): " \
          "DEMO-2026-008 (fresh), DEMO-2026-009 (stale — imported 60 days ago)"
+    puts "  statistics demo (#118): DEMO-2026-010..033 — published, spread over the last 12 months, " \
+         "7 repeat contractors, 2 without an amount, 3 CRZ mirrors"
     puts "  users: #{admin.email} (admin), #{editor.email} (editor persona)"
     puts "Public catalogue: /<mount>/ — published-only; DEMO-OTHER-001 must 404."
   end

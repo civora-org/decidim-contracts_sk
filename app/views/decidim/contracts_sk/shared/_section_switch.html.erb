@@ -1,0 +1,23 @@
+<%# The switch between the two views of the public register: the contract
+    list and its statistics (civora-org/civora-platform#118). Rendered in
+    the same place on both pages so the page reads as one publication with
+    two views. The active view carries aria-current and the ink line; the
+    line is a real element with a view-transition-name, so a cross-document
+    View Transition (shared/_public_styles) slides it from one tab to the
+    other with no JavaScript. Icons are authored SVG, decorative.
+    locals: current (:catalogue | :statistics) %>
+<% t_s = "decidim.contracts_sk.shared.switch" %>
+<nav class="cs-switch" aria-label="<%= t("#{t_s}.label") %>">
+  <% [[:catalogue, contracts_path], [:statistics, statistics_path]].each do |key, path| %>
+    <% active = key == current %>
+    <%= link_to path, class: "cs-switch__link", aria: { current: (active ? "page" : nil) } do %>
+      <% if key == :catalogue %>
+        <svg class="cs-switch__icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M4 5h12M4 10h12M4 15h8"/></svg>
+      <% else %>
+        <svg class="cs-switch__icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M4 16V9M10 16V4M16 16v-5M2.5 16.5h15"/></svg>
+      <% end %>
+      <span><%= t("#{t_s}.#{key}") %></span>
+      <% if active %><span class="cs-switch__ink" aria-hidden="true"></span><% end %>
+    <% end %>
+  <% end %>
+</nav>
