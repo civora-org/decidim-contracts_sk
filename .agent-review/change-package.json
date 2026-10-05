@@ -1,782 +1,119 @@
 {
   "schemaVersion": "agent-review/v1",
   "session": {
-    "id": "3475ce5c-5efe-491e-b0c8-096df82cca8e",
-    "startedAt": "2026-10-03T16:51:14.148Z",
-    "endedAt": "2026-10-03T17:29:00.695Z",
+    "id": "55ab7a8b-12ce-4172-8d89-af2191e27d9f",
+    "startedAt": "2026-10-04T19:20:07.531Z",
+    "endedAt": "2026-10-04T20:25:38.102Z",
     "status": "ended"
   },
-  "task": "civora-org/civora-platform#125: CRZ round-trip — confirm the filing and link the official record",
-  "branch": "feat/crz-filing-confirmation",
-  "commits": [
-    {
-      "hash": "c34981147e9420354b899f42e0c40565ceaf7017",
-      "subject": "feat(crz-filing): confirm the CRZ filing and link the official record (civora-org/civora-platform#125)",
-      "author": "Denys Kozlov",
-      "date": "2026-10-03T19:28:40+02:00"
-    }
-  ],
+  "task": "civora-org/civora-platform#116: Catalogue filters (amount, dates, party, source) and sorting",
+  "branch": "fix/admin-crz-link-and-input-styling",
+  "commits": [],
   "changedFiles": [
     {
-      "path": "app/commands/decidim/contracts_sk/admin/confirm_crz_filing.rb",
+      "path": ".agent-review/change-package.json",
       "kind": "modified",
-      "language": "ruby",
-      "insertions": 242,
-      "deletions": 0,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "Admin",
-        "ConfirmCrzFiling",
-        "Refusal",
-        "initialize",
-        "call",
-        "verified_record",
-        "editor?",
-        "normalized_reason"
-      ]
+      "language": "json",
+      "insertions": 218,
+      "deletions": 521
     },
     {
-      "path": "app/commands/decidim/contracts_sk/crz_import/upsert_contract.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 40,
-      "deletions": 6,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "CrzImport",
-        "UpsertContract",
-        "initialize",
-        "call",
-        "perform",
-        "create_transactional",
-        "lost_create_race",
-        "create_or_reroute!"
-      ]
-    },
-    {
-      "path": "app/controllers/decidim/contracts_sk/admin/audit_events_controller.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 13,
-      "deletions": 2,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "Admin",
-        "AuditEventsController",
-        "index",
-        "filtered_events",
-        "audit_events_scope",
-        "filtered_contract",
-        "contracts_scope",
-        "audit_action_label"
-      ]
-    },
-    {
-      "path": "app/controllers/decidim/contracts_sk/admin/contracts_controller.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 93,
-      "deletions": 2,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "Admin",
-        "ContractsController",
-        "index",
-        "new",
-        "create",
-        "edit",
-        "update",
-        "download_crz_handoff"
-      ]
-    },
-    {
-      "path": "app/models/decidim/contracts_sk/contract.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 6,
-      "deletions": 5,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "Contract",
-        "crz_deadline",
-        "crz_days_left",
-        "crz_deadline_tracked?",
-        "crz_deadline_status"
-      ]
-    },
-    {
-      "path": "app/permissions/decidim/contracts_sk/permissions.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 27,
-      "deletions": 1,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "Permissions",
-        "permissions",
-        "admin_action",
-        "audit_event_action",
-        "contract_action",
-        "self_review_blocked?",
-        "child_record_action",
-        "amendment_action"
-      ]
-    },
-    {
-      "path": "app/views/decidim/contracts_sk/admin/contracts/crz_filing.html.erb",
-      "kind": "modified",
-      "language": "unknown",
-      "insertions": 99,
-      "deletions": 0
-    },
-    {
-      "path": "app/views/decidim/contracts_sk/admin/contracts/index.html.erb",
-      "kind": "modified",
-      "language": "unknown",
-      "insertions": 11,
-      "deletions": 2
-    },
-    {
-      "path": "app/views/decidim/contracts_sk/contracts/show.html.erb",
-      "kind": "modified",
-      "language": "unknown",
-      "insertions": 19,
-      "deletions": 1
-    },
-    {
-      "path": "config/locales/en.yml",
-      "kind": "modified",
-      "language": "yaml",
-      "insertions": 55,
-      "deletions": 2
-    },
-    {
-      "path": "config/locales/sk.yml",
-      "kind": "modified",
-      "language": "yaml",
-      "insertions": 55,
-      "deletions": 2
-    },
-    {
-      "path": "config/routes.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 14,
-      "deletions": 0
-    },
-    {
-      "path": "db/migrate/20261003000002_add_crz_filing_to_decidim_contracts_sk_contracts.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 37,
-      "deletions": 0,
-      "symbols": [
-        "AddCrzFilingToDecidimContractsSkContracts",
-        "change"
-      ]
-    },
-    {
-      "path": "docs/contract-lifecycle.md",
+      "path": ".agent-review/review.md",
       "kind": "modified",
       "language": "markdown",
-      "insertions": 13,
-      "deletions": 8
-    },
-    {
-      "path": "docs/contracts-domain-notes.md",
-      "kind": "modified",
-      "language": "markdown",
-      "insertions": 39,
-      "deletions": 3
-    },
-    {
-      "path": "docs/crz-import.md",
-      "kind": "modified",
-      "language": "markdown",
-      "insertions": 70,
-      "deletions": 7
-    },
-    {
-      "path": "docs/manual-test-scenarios.md",
-      "kind": "modified",
-      "language": "markdown",
-      "insertions": 14,
-      "deletions": 0
-    },
-    {
-      "path": "docs/pilot-operations.md",
-      "kind": "modified",
-      "language": "markdown",
-      "insertions": 1,
-      "deletions": 1
-    },
-    {
-      "path": "docs/qa-checklist.md",
-      "kind": "modified",
-      "language": "markdown",
-      "insertions": 10,
-      "deletions": 1
-    },
-    {
-      "path": "docs/roles-and-permissions.md",
-      "kind": "modified",
-      "language": "markdown",
-      "insertions": 1,
-      "deletions": 0
-    },
-    {
-      "path": "lib/decidim/contracts_sk.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 2,
-      "deletions": 0,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "Error"
-      ]
-    },
-    {
-      "path": "lib/decidim/contracts_sk/crz_deadline.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 8,
-      "deletions": 7,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "crz_deadline=",
-        "CrzDeadline",
-        "ThresholdError",
-        "deadline_for",
-        "days_left",
-        "threshold",
-        "status",
-        "tracked?"
-      ]
-    },
-    {
-      "path": "lib/decidim/contracts_sk/crz_import/filing_comparison.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 124,
-      "deletions": 0,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "CrzImport",
-        "FilingComparison",
-        "self",
-        "initialize",
-        "rows",
-        "all_match?",
-        "needs_reason?",
-        "reference_row"
-      ]
-    },
-    {
-      "path": "lib/decidim/contracts_sk/crz_import/filing_lookup.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 84,
-      "deletions": 0,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "CrzImport",
-        "FilingLookup",
-        "ok?",
-        "self",
-        "initialize",
-        "call",
-        "client",
-        "fetch"
-      ]
-    },
-    {
-      "path": "lib/decidim/contracts_sk/crz_import/mapper.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 42,
-      "deletions": 2,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "CrzImport",
-        "Mapper",
-        "Error",
-        "map",
-        "checksum",
-        "contract_attributes",
-        "title_from",
-        "reference_from"
-      ]
-    },
-    {
-      "path": "lib/decidim/contracts_sk/crz_import/sync.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 54,
-      "deletions": 24,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "CrzImport",
-        "Sync",
-        "run",
-        "import_one",
-        "initialize",
-        "run_cursor_pages",
-        "process_page",
-        "upsert_record!"
-      ]
-    },
-    {
-      "path": "lib/decidim/contracts_sk/crz_scope.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 19,
-      "deletions": 0,
-      "symbols": [
-        "Decidim",
-        "ContractsSk",
-        "self",
-        "CrzScope",
-        "in_scope?"
-      ]
-    },
-    {
-      "path": "lib/tasks/decidim_contracts_sk_crz_import.rake",
-      "kind": "modified",
-      "language": "unknown",
-      "insertions": 5,
-      "deletions": 1
-    },
-    {
-      "path": "lib/tasks/decidim_contracts_sk_seed_demo.rake",
-      "kind": "modified",
-      "language": "unknown",
-      "insertions": 6,
-      "deletions": 1
-    },
-    {
-      "path": "README.md",
-      "kind": "modified",
-      "language": "markdown",
-      "insertions": 2,
-      "deletions": 2
-    },
-    {
-      "path": "spec/db/migrate/add_crz_filing_to_decidim_contracts_sk_contracts_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 121,
-      "deletions": 0,
-      "symbols": [
-        "migration_files",
-        "migration_path",
-        "migration_class_name",
-        "base_migration_path",
-        "table_name",
-        "stripped_lines",
-        "column_line",
-        "column_by_name"
-      ]
-    },
-    {
-      "path": "spec/db/migrate/add_submitted_by_to_decidim_contracts_sk_contracts_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 5,
-      "deletions": 4,
-      "symbols": [
-        "migration_files",
-        "migration_path",
-        "migration_class_name",
-        "migration_path_for",
-        "table_name",
-        "stripped_lines",
-        "prerequisite_migrations!",
-        "column_by_name",
-        "sql_value",
-        "insert_contract"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk_crz_scope_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 19,
-      "deletions": 0
-    },
-    {
-      "path": "spec/decidim/contracts_sk_locales_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 79,
-      "deletions": 0,
-      "symbols": [
-        "LocaleContract",
-        "locale_file",
-        "translations",
-        "module_tree",
-        "leaf_paths",
-        "leaf_values",
-        "fresh_backend",
-        "PublicCatalogueLabels",
-        "CrzDeadlineLabels"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/admin/audit_events_controller_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 4,
-      "deletions": 3,
-      "symbols": [
-        "Decidim",
-        "ContractsSk"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/admin/confirm_crz_filing_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 335,
-      "deletions": 0,
-      "symbols": [
-        "create_editorial",
-        "call_command",
-        "expect_untouched"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/admin/contracts_controller_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 6,
-      "deletions": 3,
-      "symbols": [
-        "Decidim",
-        "ContractsSk"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/contract_crz_deadline_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 7,
-      "deletions": 7,
-      "symbols": [
-        "create_contract!",
-        "references"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/crz_deadline_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 5,
-      "deletions": 6,
-      "symbols": [
-        "date",
-        "tracked?"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/crz_import/filing_comparison_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 158,
-      "deletions": 0,
-      "symbols": [
-        "crz_payload",
-        "record",
-        "contract",
-        "statuses",
-        "compare"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/crz_import/filing_lookup_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 88,
-      "deletions": 0,
-      "symbols": [
-        "lookup"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/crz_import/mapper_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 42,
-      "deletions": 0,
-      "symbols": [
-        "crz_payload"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/crz_import/sync_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 92,
-      "deletions": 0,
-      "symbols": [
-        "page",
-        "run_sync"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/crz_import/upsert_contract_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 83,
-      "deletions": 2,
-      "symbols": [
-        "call_command",
-        "expect_linked_without_writes"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/engine_routing_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 48,
-      "deletions": 8,
-      "symbols": [
-        "EngineRoutingContract",
-        "route_triples",
-        "public_routes",
-        "admin_routes",
-        "party_routes",
-        "document_routes",
-        "amendment_routes",
-        "link_routes",
-        "audit_event_routes",
-        "controllers_of"
-      ]
-    },
-    {
-      "path": "spec/decidim/contracts_sk/permissions_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 63,
-      "deletions": 0,
-      "symbols": [
-        "admin?",
-        "admin_terms_accepted?",
-        "action_for",
-        "unset?",
-        "resolver_of",
-        "swap_resolver",
-        "user_with_roles",
-        "filing_user_with_roles",
-        "filing_action",
-        "redaction_user_with_roles"
-      ]
-    },
-    {
-      "path": "spec/requests/admin/audit_events_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 15,
-      "deletions": 0,
-      "symbols": [
-        "sign_in",
-        "create_contract!",
-        "create_event!"
-      ]
-    },
-    {
-      "path": "spec/requests/admin/contracts_crz_deadline_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 8,
-      "deletions": 7,
-      "symbols": [
-        "create_contract!",
-        "references_in",
-        "with_slovak",
-        "seed_deadline_set!"
-      ]
-    },
-    {
-      "path": "spec/requests/admin/contracts_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 10,
-      "deletions": 0,
-      "symbols": [
-        "RecordingIndexScope",
-        "initialize",
-        "where",
-        "not",
-        "order",
-        "group",
-        "count",
-        "crz_overdue",
-        "crz_due_soon",
-        "CountingView"
-      ]
-    },
-    {
-      "path": "spec/requests/admin/crz_filing_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 303,
-      "deletions": 0,
-      "symbols": [
-        "sign_in_as"
-      ]
-    },
-    {
-      "path": "spec/requests/admin/crz_import_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 20,
-      "deletions": 0,
-      "symbols": [
-        "sign_in",
-        "stub_transport",
-        "response_with"
-      ]
-    },
-    {
-      "path": "spec/requests/contracts_spec.rb",
-      "kind": "modified",
-      "language": "ruby",
-      "insertions": 41,
-      "deletions": 0,
-      "symbols": [
-        "PublishedContractFixture",
-        "PaginableStub",
-        "initialize",
-        "page",
-        "per",
-        "each",
-        "any?",
-        "current_page",
-        "prev_page",
-        "next_page"
-      ]
+      "insertions": 2967,
+      "deletions": 4405
     }
   ],
   "logicalChanges": [
     {
-      "id": "1a77f7ce-a784-4832-9c60-3e9c8df9cb4c",
-      "sessionId": "3475ce5c-5efe-491e-b0c8-096df82cca8e",
-      "recordedAt": "2026-10-03T17:06:39.454Z",
-      "entity": "CRZ filing columns migration",
+      "id": "1cda3be3-ec2d-4a0c-900e-aa84f6eca9af",
+      "sessionId": "55ab7a8b-12ce-4172-8d89-af2191e27d9f",
+      "recordedAt": "2026-10-04T19:25:08.818Z",
+      "entity": "Catalogue filter form, locales, styles",
       "files": [
-        "db/migrate/20261003000002_add_crz_filing_to_decidim_contracts_sk_contracts.rb",
-        "spec/db/migrate/add_crz_filing_to_decidim_contracts_sk_contracts_spec.rb"
-      ],
-      "changeKind": "added",
-      "reason": "civora-platform#125: store the verified CRZ filing confirmation (filed_at, published_on, override reason) as nullable system columns.",
-      "expectedBehavior": "Additive reversible migration, no backfill, no defaults/indexes.",
-      "risk": "low",
-      "alternatives": [],
-      "limitations": []
-    },
-    {
-      "id": "77e75c1a-89f9-4f75-8b46-230e9df03f7f",
-      "sessionId": "3475ce5c-5efe-491e-b0c8-096df82cca8e",
-      "recordedAt": "2026-10-03T17:06:42.120Z",
-      "entity": "Admin::ConfirmCrzFiling command, FilingLookup, FilingComparison, Mapper/CrzScope extensions",
-      "files": [
-        "app/commands/decidim/contracts_sk/admin/confirm_crz_filing.rb",
-        "lib/decidim/contracts_sk/crz_import/filing_lookup.rb",
-        "lib/decidim/contracts_sk/crz_import/filing_comparison.rb",
-        "lib/decidim/contracts_sk/crz_import/mapper.rb",
-        "lib/decidim/contracts_sk/crz_scope.rb"
-      ],
-      "changeKind": "added",
-      "reason": "Verify a hand-filed editorial contract against the official CRZ record and stamp the filing under the row lock, with mirror absorption.",
-      "expectedBehavior": "Fetch outside lock; in-lock re-check of source/state/filed/checksum/comparison/reason/id; one transaction with audit row; refusals broadcast as symbols.",
-      "risk": "medium",
-      "alternatives": [
-        "Audit absorbed-mirror row targeting the destroyed mirror (rejected: dangling target)"
-      ],
-      "limitations": []
-    },
-    {
-      "id": "4b9e4cab-db76-4056-931b-84626813c29e",
-      "sessionId": "3475ce5c-5efe-491e-b0c8-096df82cca8e",
-      "recordedAt": "2026-10-03T17:06:44.428Z",
-      "entity": "Sync linked rule, G4 fix, deadline hard switch",
-      "files": [
-        "app/commands/decidim/contracts_sk/crz_import/upsert_contract.rb",
-        "lib/decidim/contracts_sk/crz_import/sync.rb",
-        "lib/decidim/contracts_sk/crz_deadline.rb",
-        "app/models/decidim/contracts_sk/contract.rb",
-        "lib/tasks/decidim_contracts_sk_crz_import.rake"
+        "app/views/decidim/contracts_sk/contracts/index.html.erb",
+        "app/views/decidim/contracts_sk/shared/_public_styles.html.erb",
+        "app/views/decidim/contracts_sk/shared/_pagination.html.erb",
+        "app/helpers/decidim/contracts_sk/catalogue_helper.rb",
+        "config/locales/en.yml",
+        "config/locales/sk.yml"
       ],
       "changeKind": "modified",
-      "reason": "A filing-confirmed editorial record is the canonical linked record of its CRZ id; sync must not duplicate or flag it. Failure stamps must never touch editorial rows. Deadline tracking keys on crz_filed_at.",
-      "expectedBehavior": ":linked outcome with zero writes at all decision points; linked counters; find_mirror/mark_failed scoped to source crz; tracked? uses crz_filed_at.",
-      "risk": "medium",
+      "reason": "Render the filter form (details/fieldsets, normalized prefill), active-filter summary, clear link, no-results variant; pagination carries all PARAM_KEYS; en+sk strings; engine-owned .cs-filters CSS",
+      "expectedBehavior": "Accessible GET form, 1/2/4 column grid, filters hidden in print",
+      "risk": "low",
       "alternatives": [],
       "limitations": []
     },
     {
-      "id": "6009392a-aba6-4c87-a7d8-a9ba633d95e4",
-      "sessionId": "3475ce5c-5efe-491e-b0c8-096df82cca8e",
-      "recordedAt": "2026-10-03T17:06:46.615Z",
-      "entity": "Admin filing UI, permission, routes, public detail, locales, audit labels, docs",
+      "id": "9fe876b8-0a79-41a0-89df-1d3e362d1977",
+      "sessionId": "55ab7a8b-12ce-4172-8d89-af2191e27d9f",
+      "recordedAt": "2026-10-04T19:25:12.320Z",
+      "entity": "CatalogueQuery, TextSearch (shared search)",
       "files": [
+        "app/queries/decidim/contracts_sk/catalogue_query.rb",
+        "app/queries/decidim/contracts_sk/catalogue_query/normalizer.rb",
+        "app/queries/decidim/contracts_sk/catalogue_query/conditions.rb",
+        "app/queries/decidim/contracts_sk/text_search.rb",
         "app/controllers/decidim/contracts_sk/admin/contracts_controller.rb",
-        "app/permissions/decidim/contracts_sk/permissions.rb",
-        "config/routes.rb",
-        "app/views/decidim/contracts_sk/admin/contracts/crz_filing.html.erb",
-        "app/views/decidim/contracts_sk/contracts/show.html.erb",
-        "config/locales/en.yml",
-        "config/locales/sk.yml",
-        "docs/crz-import.md"
+        "app/controllers/decidim/contracts_sk/contracts_controller.rb"
       ],
       "changeKind": "added",
-      "reason": "Editor-facing round trip: preview comparison page, confirm POST, index entry link, public CRZ publication line.",
-      "expectedBehavior": "GET preview writes nothing; POST runs the command; en/sk parity; editor-only permission on published unfiled editorial records.",
-      "risk": "low",
+      "reason": "civora-platform#116: public catalogue filters and sorting as one reusable query object; fix case-sensitive q on PostgreSQL and ineffective LIKE escaping on SQLite for public and admin q via shared TextSearch",
+      "expectedBehavior": "Invalid params ignored, reversed ranges swapped, deterministic sorts with NULL amounts last, party via IN-subquery, q case-insensitive with literal % and _",
+      "risk": "medium",
       "alternatives": [],
-      "limitations": []
+      "limitations": [
+        "SQLite LOWER folds ASCII only",
+        "CRZ mirror published_at is import time"
+      ]
     }
   ],
   "tests": [
     {
-      "command": "bundle exec rubocop",
-      "startedAt": "2026-10-03T17:06:47.256Z",
-      "finishedAt": "2026-10-03T17:06:48.870Z",
-      "durationMs": 1613,
+      "command": "bundle exec rspec",
+      "startedAt": "2026-10-04T19:48:36.506Z",
+      "finishedAt": "2026-10-04T19:48:40.574Z",
+      "durationMs": 4068,
       "exitCode": 0,
       "status": "passed",
-      "stdoutSummary": "Inspecting 174 files\n..............................................................................................................................................................................\n\n174 files inspected, no offenses detected\n",
+      "stdoutSummary": "Run options: exclude {:db=>true}\n\ndb/migrate/*_add_amendment_lifecycle_to_decidim_contracts_sk_amendments.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the five lifecycle columns\n    pins state as NOT NULL defaulting to draft (the pre-lifecycle semantic)\n    keeps the system, tenancy and snapshot columns nullable\n    puts real FKs on the tenancy and actor references\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n\ndb/migrate/*_add_content_fields_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the seven content columns\n    pins the amount as decimal(12,2)\n    pins currency as NOT NULL defaulting to EUR (D1)\n    keeps the remaining content columns nullable\n  published_at backfill (D3)\n    backfills published rows from updated_at inside the up arm of a reversible block\n    guards the backfill against re-stamping (idempotent WHERE clause)\n\ndb/migrate/*_add_crz_filing_to_decidim_contracts_sk_contracts.rb\n  file surface and class shape\n    has exactly one migration file whose class name matches\n    is a single reversible `def change` on ActiveRecord::Migration[7.2]\n  columns\n    adds exactly the three nullable system columns, with no default, backfill or index\n\ndb/migrate/*_add_import_provenance_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds the checksum column as a nullable string\n  indexes\n    indexes (organization, source, source_id) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n\ndb/migrate/*_add_redaction_confirmation_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds only the redaction_confirmed_at column, as a plain nullable datetime\n    attaches no default and no backfill (a fabricated stamp would defeat the gate)\n    adds no index (the stamp is read per-record, never queried as a set)\n\ndb/migrate/*_add_review_decision_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    adds exactly the review_reason and reviewed_at columns\n    adds review_reason as a plain nullable string capped at 1000 characters\n    adds reviewed_at as a plain nullable datetime\n    attaches no default and no backfill (a fabricated judgment would defeat the gate)\n    adds no index (the decision is read per-record, never queried as a set)\n\ndb/migrate/*_add_source_id_unique_index_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  index\n    uniquely indexes (organization, source_id) under the explicit unique name\n    keeps the index name within PostgreSQL's 63-byte limit\n\ndb/migrate/*_add_submitted_by_to_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n    sorts after the migrations it reads (the contracts and audit-trail tables)\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split at the method level\n    runs the backfill only in the up direction of a reversible block\n  column\n    adds exactly one nullable reference column, decidim_submitted_by\n    attaches no default and no foreign key (the decidim_author_id precedent)\n    adds no index (the stamp is read per-record, never queried as a set)\n  backfill SQL\n    reads the latest contract.submit audit row's actor per contract, deterministically\n\ndb/migrate/*_create_decidim_contracts_sk_amendments.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes version a NOT NULL integer\n    makes summary a NOT NULL string\n  indexes\n    uniquely indexes (contract_id, version) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_audit_events.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the tenant reference NOT NULL with a real FK to the organizations table\n    makes the actor reference NOT NULL with a real FK to the users table\n    makes the target a NOT NULL polymorphic reference\n    makes action a NOT NULL string\n  indexes\n    indexes every reference and created_at under explicit names\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_contract_links.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes the target a NOT NULL polymorphic reference with no index of its own\n  indexes\n    uniquely indexes (contract_id, target_type, target_id) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_contracts.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the tenant and author references NOT NULL\n    makes title and reference NOT NULL strings\n    pins state as NOT NULL defaulting to draft\n    pins source as NOT NULL defaulting to editorial\n    keeps the provenance columns nullable\n  indexes\n    indexes the organization reference under an explicit name\n    indexes the author reference\n    uniquely indexes (organization, reference) under an explicit name\n    indexes (organization, state) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_documents.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL with a real FK to the contracts table\n    makes title NOT NULL\n    pins kind as NOT NULL defaulting to contract\n    keeps the file metadata columns nullable\n  indexes\n    indexes the contract reference under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\ndb/migrate/*_create_decidim_contracts_sk_parties.rb\n  file surface\n    has exactly one matching migration file\n    keeps the class name in sync with the file name\n  class shape\n    subclasses ActiveRecord::Migration[7.2]\n    defines exactly one `def change` and no up/down split\n  columns\n    declares the table with all expected columns\n    makes the contract reference NOT NULL and suppresses its single-column index\n    puts a real FK on the contract reference, targeting the contracts table\n    makes role and name NOT NULL strings\n    keeps ico as a nullable string with the 8-character limit\n    keeps address nullable\n  indexes\n    compositely indexes (contract_id, role) under an explicit name\n    keeps every explicit index name within PostgreSQL's 63-byte limit\n  reversibility proxy\n    uses no raw SQL\n    relies only on DSL that ActiveRecord can reverse\n\nDecidim::ContractsSk::Admin::AmendmentForm\n  accepts a complete amendment form\n  rejects a blank summary\n  rejects a missing summary\n  caps the summary at 255 characters\n\nDecidim::ContractsSk::Admin::AuditEventsController\n  inherits from the engine's admin base controller\n  implements exactly the index action (read-only viewer)\n  does not sit on the engine's public base controller chain\n  pins the audit action vocabulary actually written by the commands\n  derives the six lifecycle-action ",
+      "stderrSummary": "",
+      "workingDirectory": "/Users/denyskozlov/Code/decidim-contracts_sk",
+      "commandTruncated": false
+    },
+    {
+      "command": "bundle exec rubocop",
+      "startedAt": "2026-10-04T19:48:40.585Z",
+      "finishedAt": "2026-10-04T19:48:41.986Z",
+      "durationMs": 1401,
+      "exitCode": 1,
+      "status": "failed",
+      "stdoutSummary": "Inspecting 185 files\n......................................................................................................................................C..................................................\n\nOffenses:\n\nspec/decidim/contracts_sk/catalogue_query_spec.rb:90:33: C: RSpec/MessageSpies: Prefer have_received for setting message expectations. Setup normalizer as a spy using allow or instance_spy.\n      expect(normalizer).not_to receive(:BigDecimal)\n                                ^^^^^^^\n\n185 files inspected, 1 offense detected\n",
       "stderrSummary": "The following cops were added to RuboCop, but are not configured. Please set Enabled to either `true` or `false` in your `.rubocop.yml` file.\n\nPlease also note that you can opt-in to new cops by default by adding this to your config:\n  AllCops:\n    NewCops: enable\nGemspec/AddRuntimeDependency: # new in 1.65\n  Enabled: true\nGemspec/AttributeAssignment: # new in 1.77\n  Enabled: true\nGemspec/DeprecatedAttributeAssignment: # new in 1.30\n  Enabled: true\nGemspec/DevelopmentDependencies: # new in 1.44\n  Enabled: true\nGemspec/RequireMFA: # new in 1.23\n  Enabled: true\nLayout/EmptyLinesAfterModuleInclusion: # new in 1.79\n  Enabled: true\nLayout/LineContinuationLeadingSpace: # new in 1.31\n  Enabled: true\nLayout/LineContinuationSpacing: # new in 1.31\n  Enabled: true\nLayout/LineEndStringConcatenationIndentation: # new in 1.18\n  Enabled: true\nLayout/SpaceBeforeBrackets: # new in 1.7\n  Enabled: true\nLint/AmbiguousAssignment: # new in 1.7\n  Enabled: true\nLint/AmbiguousOperatorPrecedence: # new in 1.21\n  Enabled: true\nLint/AmbiguousRange: # new in 1.19\n  Enabled: true\nLint/ArgumentMismatch: # new in 1.90\n  Enabled: true\nLint/ArrayLiteralInRegexp: # new in 1.71\n  Enabled: true\nLint/ConstantOverwrittenInRescue: # new in 1.31\n  Enabled: true\nLint/ConstantReassignment: # new in 1.70\n  Enabled: true\nLint/DataDefineOverride: # new in 1.85\n  Enabled: true\nLint/DeprecatedConstants: # new in 1.8\n  Enabled: true\nLint/DeprecatedReference: # new in 1.89\n  Enabled: true\nLint/DuplicateBranch: # new in 1.3\n  Enabled: true\nLint/DuplicateMagicComment: # new in 1.37\n  Enabled: true\nLint/DuplicateMatchPattern: # new in 1.50\n  Enabled: true\nLint/DuplicateRegexpCharacterClassElement: # new in 1.1\n  Enabled: true\nLint/DuplicateSetElement: # new in 1.67\n  Enabled: true\nLint/EmptyBlock: # new in 1.1\n  Enabled: true\nLint/EmptyClass: # new in 1.3\n  Enabled: true\nLint/EmptyInPattern: # new in 1.16\n  Enabled: true\nLint/HashNewWithKeywordArgumentsAsDefault: # new in 1.69\n  Enabled: true\nLint/IncompatibleIoSelectWithFiberScheduler: # new in 1.21\n  Enabled: true\nLint/ItWithoutArgumentsInBlock: # new in 1.59\n  Enabled: true\nLint/LambdaWithoutLiteralBlock: # new in 1.8\n  Enabled: true\nLint/LiteralAssignmentInCondition: # new in 1.58\n  Enabled: true\nLint/MisplacedMagicComment: # new in 1.91\n  Enabled: true\nLint/MixedCaseRange: # new in 1.53\n  Enabled: true\nLint/NameTypo: # new in 1.89\n  Enabled: true\nLint/NoReturnInBeginEndBlocks: # new in 1.2\n  Enabled: true\nLint/NonAtomicFileOperation: # new in 1.31\n  Enabled: true\nLint/NumberedParameterAssignment: # new in 1.9\n  Enabled: true\nLint/NumericOperationWithConstantResult: # new in 1.69\n  Enabled: true\nLint/OrAssignmentToConstant: # new in 1.9\n  Enabled: true\nLint/RedundantDirGlobSort: # new in 1.8\n  Enabled: true\nLint/RedundantRegexpQuantifiers: # new in 1.53\n  Enabled: true\nLint/RedundantTypeConversion: # new in 1.72\n  Enabled: true\nLint/RefinementImportMethods: # new in 1.27\n  Enabled: true\nLint/RequireRangeParentheses: # new in 1.32\n  Enabled: true\nLint/RequireRelativeSelfPath: # new in 1.22\n  Enabled: true\nLint/SharedMutableDefault: # new in 1.70\n  Enabled: true\nLint/SuperArgumentMismatch: # new in 1.90\n  Enabled: true\nLint/SuppressedExceptionInNumberConversion: # new in 1.72\n  Enabled: true\nLint/SymbolConversion: # new in 1.9\n  Enabled: true\nLint/ToEnumArguments: # new in 1.1\n  Enabled: true\nLint/TripleQuotes: # new in 1.9\n  Enabled: true\nLint/UnescapedBracketInRegexp: # new in 1.68\n  Enabled: true\nLint/UnexpectedBlockArity: # new in 1.5\n  Enabled: true\nLint/UnmodifiedReduceAccumulator: # new in 1.1\n  Enabled: true\nLint/UnreachablePatternBranch: # new in 1.85\n  Enabled: true\nLint/UselessConstantScoping: # new in 1.72\n  Enabled: true\nLint/UselessDefaultValueArgument: # new in 1.76\n  Enabled: true\nLint/UselessDefined: # new in 1.69\n  Enabled: true\nLint/UselessNumericOperation: # new in 1.66\n  Enabled: true\nLint/UselessOr: # new in 1.76\n  Enabled: true\nLint/UselessRescue: # new in 1.43\n  Enabled: true\nLint/UselessRuby2Keywords: # new in 1.23\n  Enabled: true\nMetrics/CollectionLiteralLength: # new in 1.47\n  Enabled: true\nNaming/BlockForwarding: # new in 1.24\n  Enabled: true\nNaming/PredicateMethod: # new in 1.76\n  Enabled: true\nSecurity/CompoundHash: # new in 1.28\n  Enabled: true\nSecurity/IoMethods: # new in 1.22\n  Enabled: true\nStyle/AmbiguousEndlessMethodDefinition: # new in 1.68\n  Enabled: true\nStyle/ArgumentsForwarding: # new in 1.1\n  Enabled: true\nStyle/ArrayIntersect: # new in 1.40\n  Enabled: true\nStyle/ArrayIntersectWithSingleElement: # new in 1.81\n  Enabled: true\nStyle/BitwisePredicate: # new in 1.68\n  Enabled: true\nStyle/CollectionCompact: # new in 1.2\n  Enabled: true\nStyle/CollectionQuerying: # new in 1.77\n  Enabled: true\nStyle/CombinableDefined: # new in 1.68\n  Enabled: true\nStyle/ComparableBetween: # new in 1.74\n  Enabled: true\nStyle/ComparableClamp: # new in 1.44\n  Enabled: true\nStyle/ConcatArrayLiterals: # new in 1.41\n  Enabled: true\nStyle/DataInheritance: # new in 1.49\n  Enabled: true\nStyle/DigChain: # new in 1.69\n  Enabled: true\nStyle/DirEmpty: # new in 1.48\n  Enabled: true\nStyle/DirectiveScope: # new in 1.90\n  Enabled: true\nStyle/DocumentDynamicEvalDefinition: # new in 1.1\n  Enabled: true\nStyle/EmptyClassDefinition: # new in 1.84\n  Enabled: true\nStyle/EmptyHeredoc: # new in 1.32\n  Enabled: true\nStyle/EmptyStringInsideInterpolation: # new in 1.76\n  Enabled: true\nStyle/EndlessMethod: # new in 1.8\n  Enabled: true\nStyle/EnvHome: # new in 1.29\n  Enabled: true\nStyle/ExactRegexpMatch: # new in 1.51\n  Enabled: true\nStyle/FetchEnvVar: # new in 1.28\n  Enabled: true\nStyle/FileEmpty: # new in 1.48\n  Enabled: true\nStyle/FileNull: # new in 1.69\n  Enabled: true\nStyle/FileOpen: # new in 1.85\n  Enabled: true\nStyle/FileRead: # new in 1.24\n  Enabled: true\nStyle/FileTouch: # new in 1.69\n  Enabled: true\nStyle/FileWrite: # new in 1.24\n  Enabled: true\nStyle/HashConversion: # new in 1.10\n  Enabled: true\nStyle/HashExcept: # new in 1.7\n  Enabled: true\nStyle/HashFetchChain: # new in 1.75\n  Enabled: true\nStyle/HashSlice: # new in 1.71\n  Enabled: true\nStyle/IfWithBooleanLiteralBranches: # new in 1.9\n  Enabled: true\nStyle/InPatternThen: # new in 1.16\n  Enabled: true\nStyle/ItAssignment: # new in 1.70\n  Enabled: true\nStyle/ItBlockParameter: # new in 1.75\n  Enabled: true\nStyle/KeywordArgumentsMerging: # new in 1.68\n  Enabled: true\nStyle/MagicCommentFormat: # new in 1.35\n  Enabled: true\nStyle/MapCompactWithConditionalBlock: # new in 1.30\n  Enabled: true\nStyle/MapIntoArray: # new in 1.63\n  Enabled: true\nStyle/MapJoin: # new in 1.85\n  Enabled: true\nStyle/MapToHash: # new in 1.24\n  Enabled: true\nStyle/MapToSet: # new in 1.42\n  Enabled: true\nStyle/MinMaxComparison: # new in 1.42\n  Enabled: true\nStyle/ModuleMemberExistenceCheck: # new in 1.82\n  Enabled: true\nStyle/MultilineInPatternThen: # new in 1.16\n  Enabled: true\nStyle/NegatedIfElseCondition: # new in 1.2\n  Enabled: true\nStyle/NegativeArrayIndex: # new in 1.84\n  Enabled: true\nStyle/NestedFileDirname: # new in 1.26\n  Enabled: true\nStyle/NilLambda: # new in 1.3\n  Enabled: true\nStyle/NumberedParameters: # new in 1.22\n  Enabled: true\nStyle/NumberedParametersLimit: # new in 1.22\n  Enabled: true\nStyle/ObjectThen: # new in 1.28\n  Enabled: true\nStyle/OneClassPerFile: # new in 1.85\n  Enabled: true\nStyle/OpenStructUse: # new in 1.23\n  Enabled: true\nStyle/OperatorMethodCall: # new in 1.37\n  Enabled: true\nStyle/PartitionInsteadOfDoubleSelect: # new in 1.85\n  Enabled: true\nStyle/PredicateWithKind: # new in 1.85\n  Enabled: true\nStyle/QuotedSymbols: # new in 1.16\n  Enabled: true\nStyle/ReduceToHash: # new in 1.85\n  Enabled: true\nStyle/RedundantArgument: # new in 1.4\n  Enabled: true\nStyle/RedundantArrayConstructor: # new in 1.52\n  Enabled: true\nStyle/RedundantArrayFlatten: # new in 1.76\n  Enabled: true\nStyle/RedundantConstantBase: # new in 1.40\n  Enabled: true\nStyle/RedundantCurrentDirectoryInPath: # new in 1.53\n  Enabled: true\nStyle/RedundantDoubleSplatHashBraces: # new in 1.41\n  Enabled: true\nStyle/RedundantEach: # new in 1.38\n  Enabled: true\nStyle/RedundantFilterChain: # new in 1.52\n  Enabled: true\nStyle/RedundantFormat: # new in 1.72\n  Enabled: true\nStyle/RedundantHeredocDelimiterQuotes: # new in 1.45\n  Enabled: true\nStyle/RedundantInitialize: # new in 1.27\n  Enabled: true\nStyle/RedundantInterpolationUnfreeze: # new in 1.66\n  Enabled: true\nStyle/RedundantLineContinuation: # new in 1.49\n  Enabled: true\nStyle/RedundantMinMaxBy: # new in 1.85\n  Enabled: true\nStyle/RedundantRegexpArgument: # new in 1.53\n  Enabled: true\nStyle/RedundantRegexpConstructor: # new in 1.52\n  Enabled: true\nStyle/RedundantSelfAssignmentBranch: # new in 1.19\n  Enabled: true\nStyle/RedundantStringEscape: # new in 1.37\n  Enabled: true\nStyle/ReturnNilInPredicateMethodDefinition: # new in 1.53\n  Enabled: true\nStyle/ReverseFind: # new in 1.84\n  Enabled: true\nStyle/SafeNavigationChainLength: # new in 1.68\n  Enabled: true\nStyle/SelectByKind: # new in 1.85\n  Enabled: true\nStyle/SelectByRange: # new in 1.85\n  Enabled: true\nStyle/SelectByRegexp: # new in 1.22\n  Enabled: true\nStyle/SendWithLiteralMethodName: # new in 1.64\n  Enabled: true\nStyle/SingleLineDoEndBlock: # new in 1.57\n  Enabled: true\nStyle/StringChars: # new in 1.12\n  Enabled: true\nStyle/SuperArguments: # new in 1.64\n  Enabled: true\nStyle/SuperWithArgsParentheses: # new in 1.58\n  Enabled: true\nStyle/SwapValues: # new in 1.1\n  Enabled: true\nStyle/TallyMethod: # new in 1.85\n  Enabled: true\nStyle/TimeNow: # new in 1.90\n  Enabled: true\nStyle/YAMLFileRead: # new in 1.53\n  Enabled: true\nRSpec/DiscardedMatcher: # new in 3.10\n  Enabled: true\nRSpec/IncludeExamples: # new in 3.6\n  Enabled: true\nRSpec/LeakyLocalVariable: # new in 3.8\n  Enabled: true\nRSpec/MatchWithSimpleRegex: # new in 3.10\n  Enabled: true\nRSpec/Output: # new in 3.9\n  Enabled: true\nFor more information: https://docs.rubocop.org/rubocop/versioning.html\n",
       "workingDirectory": "/Users/denyskozlov/Code/decidim-contracts_sk",
       "commandTruncated": false
     }
   ],
   "risks": [
-    "Large diff: 2757 insertions across 52 files."
+    "Working tree was dirty at session start (2 entries) — pre-existing changes may be mixed into the diff.",
+    "1 test run(s) did not pass (exit codes: 1).",
+    "Large diff: 3185 insertions across 2 files."
   ],
   "limitations": [
     "Snapshots cover only files that were changed at checkpoint time.",
     "Symbol extraction is regex-based, not AST-based.",
-    "Only observed facts are recorded — private model reasoning is not captured."
+    "Only observed facts are recorded — private model reasoning is not captured.",
+    "SQLite LOWER folds ASCII only",
+    "CRZ mirror published_at is import time"
   ],
   "agentMetadata": {
     "toolCalls": 0,
     "commands": 0,
     "checkpoints": 1,
-    "tests": 1,
-    "events": 3951
+    "tests": 2,
+    "events": 4234
   },
-  "generatedAt": "2026-10-03T17:29:00.669Z"
+  "generatedAt": "2026-10-04T20:25:38.085Z"
 }
