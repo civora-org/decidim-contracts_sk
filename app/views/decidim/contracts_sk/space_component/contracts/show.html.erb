@@ -1,0 +1,8 @@
+<%# The in-space contract detail page (civora-org/civora-platform#89): the
+    standalone catalogue's detail view, rendered as is. One view stack for
+    both surfaces, so the in-space page can never drift from the public one
+    (published amendments, documents, provenance, linked results). The
+    controller sets the same @contract and @amendments; the shared view
+    routes its only standalone-only link (the supplier page) through a
+    helper that degrades to plain text when the route is absent. %>
+<%= render template: "decidim/contracts_sk/contracts/show" %>

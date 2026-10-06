@@ -118,6 +118,56 @@ module Decidim
   end
 end
 
+# The component registry (civora-org/civora-platform#89): the engine's
+# `decidim_contracts_sk.component` initializer calls Decidim.register_component
+# at boot, so the harness provides the registry. The manifest, its settings
+# DSL and the registry are the REAL pinned-gem classes (pure Ruby over
+# ActiveModel/ActiveRecord types, required pin-point in dependency order);
+# only the module methods that delegate to the registry are mirrored, verbatim
+# from decidim-core 0.31.7 lib/decidim/core.rb:841-843 (register_component),
+# :893-895 (component_manifests), :910-912 (find_component_manifest) and
+# :935-937 (component_registry). The specs thereby validate the registered
+# manifest against Decidim's own validations (name presence, settings DSL).
+require "active_record"
+require File.join(decidim_core, "lib/decidim/attribute_object")
+require File.join(decidim_core, "lib/decidim/manifest_messages")
+require File.join(decidim_core, "lib/decidim/manifest_registry")
+require File.join(decidim_core, "lib/decidim/settings_manifest")
+require File.join(decidim_core, "lib/decidim/exporters/export_manifest")
+require File.join(decidim_core, "lib/decidim/importers/import_manifest")
+require File.join(decidim_core, "lib/decidim/component_manifest")
+
+module Decidim
+  class << self
+    def register_component(name, &)
+      component_registry.register(name, &)
+    end
+
+    def component_manifests
+      component_registry.manifests.sort_by(&:name)
+    end
+
+    def find_component_manifest(name)
+      component_registry.find(name.to_sym)
+    end
+
+    def component_registry
+      @component_registry ||= ManifestRegistry.new(:components)
+    end
+
+    # The translated settings attributes (the announcement) build one field
+    # per locale; a host's value comes from its decidim initializer, the
+    # harness pins the engine's two shipped locales.
+    def available_locales
+      %w[en sk]
+    end
+
+    def default_locale
+      "en"
+    end
+  end
+end
+
 # Pagination parity for the paginated index listings (#86b): a real Decidim
 # host loads Kaminari through decidim-core's gem dependency (a normal app's
 # Bundler.require picks up the railties), which teaches ActiveRecord
@@ -171,6 +221,107 @@ unless defined?(Decidim::ApplicationController)
       def permission_class_chain
         [DummyPublicPermissions]
       end
+    end
+  end
+end
+
+# Minimal stand-in for decidim-core's Decidim::Components::BaseController
+# (civora-org/civora-platform#89), the base of every component engine's
+# controllers. Mirrors the parts the engine's in-space controllers use,
+# from decidim-core 0.31.7 app/controllers/decidim/components/
+# base_controller.rb: the REAL Settings concern (component_settings /
+# current_settings) and NeedsPermission, the component/space readers off the
+# request env (the real CurrentComponent constraint sets
+# "decidim.current_component"; see DummySpaceHarness), and a public
+# permission chain that STARTS with the manifest's permissions class
+# (base_controller.rb:56-63). What stays host-only: the space-visibility
+# gate (authorize_participatory_space, redirect_unless_feature_private), the
+# component-read check of Decidim::Permissions, the space layout and
+# breadcrumbs, and the core announcement partial.
+require File.join(decidim_core, "app/controllers/concerns/decidim/settings.rb")
+
+module DummyTranslationsHelper
+  include Decidim::TranslatableAttributes
+
+  # Machine translation is a host feature (it reads organization settings the
+  # AR stand-in does not carry); the harness always takes the human value.
+  def machine_translation_value(*)
+    nil
+  end
+end
+
+module Decidim
+  module Components
+    class BaseController < Decidim::ApplicationController
+      include Decidim::Settings
+      include Decidim::NeedsPermission
+
+      helper DummyTranslationsHelper
+      helper_method :current_component, :current_participatory_space, :current_manifest
+
+      # Devise-ish seam, nil like the admin stand-in.
+      def current_user
+        nil
+      end
+
+      def user_signed_in?
+        false
+      end
+
+      def current_participatory_space
+        request.env["decidim.current_participatory_space"]
+      end
+
+      def current_component
+        request.env["decidim.current_component"]
+      end
+
+      def current_manifest
+        current_component.manifest
+      end
+
+      def user_has_no_permission_path
+        "/"
+      end
+
+      def permission_scope
+        :public
+      end
+
+      def permission_class_chain
+        [current_component.manifest.permissions_class, DummyPublicPermissions]
+      end
+    end
+  end
+end
+
+# The in-space harness: what Decidim's CurrentComponent constraint and a real
+# Decidim::Component provide to a component engine (see the dummy routes.rb
+# for the mount). The manifest is the REGISTERED one (the engine's
+# initializer registered it at boot) and the settings objects are built from
+# its real settings schema, so a settings DSL regression fails the specs.
+module DummySpaceHarness
+  Component = Struct.new(:id, :manifest, :name, :settings, :current_settings, keyword_init: true)
+
+  COMPONENT_NAME = { "en" => "Town contracts" }.freeze
+
+  module_function
+
+  def component(id, announcement: nil)
+    manifest = Decidim.find_component_manifest(:contracts_sk)
+    Component.new(
+      id: id, manifest: manifest, name: COMPONENT_NAME,
+      settings: manifest.settings(:global).schema.new(announcement: announcement),
+      current_settings: manifest.settings(:step).schema.new({})
+    )
+  end
+
+  # The CurrentComponent stand-in: a routing constraint that always matches
+  # and exposes the component, like the real one exposes it to the engine.
+  def constraint
+    lambda do |request|
+      request.env["decidim.current_component"] = component(request.path_parameters[:component_id].to_i)
+      true
     end
   end
 end

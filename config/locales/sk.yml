@@ -792,3 +792,15 @@ sk:
           email_intro: "Zmluva %{resource_title} (%{reference}) bola zverejnená."
           email_outro: "Túto notifikáciu ste dostali, pretože v tejto organizácii zastávate rolu v module zmlúv."
           notification_title: "Zmluva <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) bola zverejnená."
+    # Komponent zmlúv (civora-org/civora-platform#89): kľúče, ktoré administrácia
+    # Decidimu hľadá podľa názvu manifestu (components_controller.rb,
+    # _component_row.html.erb, _settings_fields.html.erb), preto ležia pod
+    # decidim.components, a nie pod decidim.contracts_sk.
+    components:
+      contracts_sk:
+        name: "Zmluvy"
+        settings:
+          global:
+            announcement: "Oznam"
+          step:
+            announcement: "Oznam"

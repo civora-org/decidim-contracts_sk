@@ -54,3 +54,8 @@ require_relative "contracts_sk/spreadsheet_import/row_builder"
 require_relative "contracts_sk/spreadsheet_import/preview"
 
 require_relative "contracts_sk/engine" if defined?(Rails)
+
+# The in-space component engine (civora-org/civora-platform#89); the
+# manifest itself (contracts_sk/component) is registered by an initializer of
+# the standalone engine, once the host has Decidim loaded.
+require_relative "contracts_sk/space_component/engine" if defined?(Rails)

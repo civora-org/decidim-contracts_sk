@@ -1,0 +1,12 @@
+<%# Harness stand-in for decidim-core's decidim/shared/_component_announcement
+    partial (0.31.7, app/views/decidim/shared/_component_announcement.html.erb):
+    the same announcement selection (step settings first, then the global
+    ones) and the same blank test, minus the announcement cell (which needs
+    the full Decidim cell stack). What the cell's markup looks like is
+    host-only. %>
+<% announcement = translated_attribute(current_settings.announcement).presence || translated_attribute(component_settings.announcement).presence %>
+<% if strip_tags(announcement).present? %>
+  <section class="layout-main__section">
+    <div class="callout editor-content"><%= announcement.html_safe %></div>
+  </section>
+<% end %>

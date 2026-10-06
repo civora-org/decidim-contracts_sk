@@ -10,8 +10,13 @@ module Decidim
       # else (the object party, no IČO, a malformed stored IČO) renders as
       # plain text, and the helper never raises: the route would refuse a
       # malformed IČO with a UrlGenerationError.
+      #
+      # Supplier pages are routed only by the standalone engine: inside a
+      # participatory space (civora-org/civora-platform#89) the component's
+      # route table has no supplier route, so the name renders as plain
+      # text there instead of raising NoMethodError.
       def supplier_link_or_name(party, **options)
-        return party.name unless supplier_linkable?(party)
+        return party.name unless respond_to?(:supplier_path) && supplier_linkable?(party)
 
         link_to party.name, supplier_path(ico: party.ico), **options
       end

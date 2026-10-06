@@ -1741,6 +1741,26 @@ RSpec.describe Decidim::ContractsSk do
       end
     end
 
+    # The component manifest's admin vocabulary lives outside
+    # decidim.contracts_sk (Decidim looks it up by manifest name:
+    # decidim.components.<name>.name and ...settings.<scope>.<attribute>).
+    # rubocop:disable RSpec/ExampleLength
+    it "translates the component name and settings labels in both locales (civora-org/civora-platform#89)" do
+      names = { en: "Contracts", sk: "Zmluvy" }
+      announcements = { en: "Announcement", sk: "Oznam" }
+
+      names.each do |locale, name|
+        aggregate_failures do
+          expect(backend.translate(locale, "decidim.components.contracts_sk.name")).to eq(name)
+          %w[global step].each do |scope|
+            expect(backend.translate(locale, "decidim.components.contracts_sk.settings.#{scope}.announcement"))
+              .to eq(announcements.fetch(locale))
+          end
+        end
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+
     it "translates the pagination labels in both locales (civora-org/civora-platform#86b)" do
       LocaleContract::PAGINATION_LABELS.each do |locale, labels|
         labels.each do |key, value|

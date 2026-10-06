@@ -792,3 +792,15 @@ en:
           email_intro: "The contract %{resource_title} (%{reference}) was published."
           email_outro: "You received this notification because you hold a contracts role in this organization."
           notification_title: "The contract <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) was published."
+    # The contracts component (civora-org/civora-platform#89): the keys the
+    # Decidim admin looks up by manifest name (components_controller.rb,
+    # _component_row.html.erb, _settings_fields.html.erb), so they live under
+    # decidim.components rather than decidim.contracts_sk.
+    components:
+      contracts_sk:
+        name: "Contracts"
+        settings:
+          global:
+            announcement: "Announcement"
+          step:
+            announcement: "Announcement"
