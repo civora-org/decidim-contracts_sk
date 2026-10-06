@@ -71,6 +71,10 @@ Landed in civora-org/civora-platform#120. `GET /zmluvy/feed.atom` is an Atom (RF
 - **Well-formed by construction.** All text goes through the XML builder's escaping; markup characters are escaped and characters XML 1.0 forbids (control characters, NUL) are replaced, so a hostile title cannot break the feed.
 - **Caching.** No explicit headers; the host's `Rack::ETag` digests the small body, so `If-None-Match` is answered with `304`. Decidim's `rack_attack` throttling (production) applies; readers should poll at a modest rate.
 
+## E-mail alerts
+
+The same own-records scope and the catalogue's filters also drive the e-mail alerts for new contracts (civora-org/civora-platform#121): a resident subscribes an address to a search and gets a digest of what was published since. Privacy design, host scheduling and the DPIA input: [search-alerts.md](search-alerts.md).
+
 ## Licence
 
 The municipality decides under which licence it publishes this data; the engine states none. A sensible default is **Creative Commons Attribution 4.0 (CC BY 4.0)** with an attribution such as: "Contract data of <organization name>, published at <catalogue URL>, licensed under CC BY 4.0." Put the chosen licence on the page your organization links from Decidim's Open Data page (below) and in any dataset listing.

@@ -231,6 +231,15 @@ module Decidim
         )
       }
 
+      # The machine-readable surfaces' scope (civora-org/civora-platform#119,
+      # ADR-008 decision 6): the organization's OWN lifecycle-published
+      # records, never CRZ mirrors. One definition for the export, the Atom
+      # feed and the e-mail alerts (#121), so the three can never disagree
+      # about what may be re-published.
+      def self.open_data(organization)
+        where(organization: organization).published.where.not(source: CrzImport::Mapper::SOURCE)
+      end
+
       # The catalogue's publication date (civora-org/civora-platform#159):
       # the real CRZ publication DATE (crz_published_on — written by the
       # import for mirrors and by the filing confirmation for filed

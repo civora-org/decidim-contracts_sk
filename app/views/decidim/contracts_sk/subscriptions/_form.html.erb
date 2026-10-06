@@ -1,0 +1,29 @@
+<%# The alert subscription form (civora-org/civora-platform#121), shared by the
+    catalogue's alerts block and the subscriptions/new page. It posts the
+    NORMALIZED active filters (the same params as the download links, minus
+    the sort) as hidden fields, so what is subscribed is exactly what the
+    page shows. Plain Rails tag helpers, label above the field, the privacy
+    statement tied to the field with aria-describedby. Locals: query, email
+    (prefill after a rejected post), error (nil, :email or :search). %>
+<% form_t = "decidim.contracts_sk.subscriptions.form" %>
+<% error ||= nil %>
+<% email ||= nil %>
+<%= form_tag subscriptions_path, method: :post, class: "form-defaults cs-alerts__form" do %>
+  <% query.to_params.except("sort").each do |name, value| %>
+    <%= hidden_field_tag name, value, id: nil %>
+  <% end %>
+  <div class="cs-alerts__field">
+    <%= label_tag :alert_email, t("#{form_t}.email_label") %>
+    <%= email_field_tag :email, email, id: "alert_email", required: true, autocomplete: "email",
+                                       maxlength: Decidim::ContractsSk::Subscription::EMAIL_MAX_LENGTH,
+                                       "aria-describedby": ["alert-privacy", ("alert-error" if error)].compact.join(" "),
+                                       "aria-invalid": (error ? "true" : nil) %>
+    <% if error %>
+      <p class="cs-alerts__error" id="alert-error" role="alert"><%= t("#{form_t}.errors.#{error}") %></p>
+    <% end %>
+  </div>
+  <p class="cs-small" id="alert-privacy"><%= t("#{form_t}.privacy", hours: Decidim::ContractsSk::Subscription::CONFIRMATION_TTL.in_hours.to_i) %></p>
+  <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary" do %>
+    <span><%= t("#{form_t}.submit") %></span>
+  <% end %>
+<% end %>

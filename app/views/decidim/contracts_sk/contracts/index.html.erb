@@ -166,6 +166,18 @@
       <% end %>
     </section>
 
+    <%# E-mail alerts (civora-org/civora-platform#121): subscribe to this very
+        search. Own records only like the downloads above, so the source=crz
+        filter has no alerts block. The form posts the normalized filters. %>
+    <% unless query.filters.source == "crz" %>
+      <% alerts_t = "decidim.contracts_sk.subscriptions.form" %>
+      <section class="cs-alerts" aria-labelledby="cs-alerts-title">
+        <h2 class="cs-alerts__title" id="cs-alerts-title"><%= t("#{alerts_t}.heading") %></h2>
+        <p class="cs-small"><%= t("#{alerts_t}.intro") %></p>
+        <%= render "decidim/contracts_sk/subscriptions/form", query: query, email: nil, error: nil %>
+      </section>
+    <% end %>
+
     <% if @contracts.any? %>
       <%# The register: one row per contract, hairline-separated. Title and
           identity on the left; the amount — the figure a reader compares

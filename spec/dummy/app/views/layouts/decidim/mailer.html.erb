@@ -1,0 +1,18 @@
+<%# Harness stand-in for decidim-core's layouts/decidim/mailer (0.31.7): same
+    slots (content, :unsubscribe) and the organization link in the footer, minus
+    the pack-compiled stylesheet and the logo partial a host provides. The body
+    is escaped exactly like the real layout's, so the mails' escaping is
+    exercised the way a host renders them. %>
+<!DOCTYPE html>
+<html>
+  <head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>
+  <body>
+    <table class="body"><tr><td>
+      <div class="content"><%= yield %></div>
+      <div class="cityhall-bar"><%= link_to organization_name(@organization).html_safe, "http://#{@organization.host}/" %></div>
+      <% if content_for?(:unsubscribe) %>
+        <div class="footnote"><%= yield(:unsubscribe) %></div>
+      <% end %>
+    </td></tr></table>
+  </body>
+</html>

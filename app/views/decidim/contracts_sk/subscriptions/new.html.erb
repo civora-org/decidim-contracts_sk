@@ -1,0 +1,35 @@
+<%# The alert subscription page (civora-org/civora-platform#121): the same form
+    as the catalogue's alerts block, on a page of its own. It is where a
+    rejected post lands (with the error and the typed address), and a
+    working no-JavaScript landing for the "alerts" link. %>
+<% t_s = "decidim.contracts_sk.subscriptions" %>
+<% subscription_page_head(t("#{t_s}.new.title")) %>
+<%= render "decidim/contracts_sk/shared/public_styles" %>
+<main class="layout-1col cols-8">
+  <div class="cs-page cs-alerts-page">
+    <header class="cs-head">
+      <h1 class="cs-head__title"><%= t("#{t_s}.new.title") %></h1>
+      <p class="cs-head__lead"><%= t("#{t_s}.form.intro") %></p>
+    </header>
+
+    <% if @query.filters.source == "crz" %>
+      <p class="cs-small"><%= t("#{t_s}.form.errors.search") %></p>
+    <% else %>
+      <section class="cs-alerts" aria-labelledby="cs-alerts-search">
+        <h2 class="cs-alerts__title" id="cs-alerts-search"><%= t("#{t_s}.form.search_heading") %></h2>
+        <% filters = catalogue_active_filters(@query) %>
+        <% if filters.any? %>
+          <ul class="cs-filters-active__list">
+            <% filters.each do |label, text| %>
+              <li><span class="label"><%= label %>: <%= text %></span></li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="cs-small"><%= t("#{t_s}.form.search_all") %></p>
+        <% end %>
+        <%= render "decidim/contracts_sk/subscriptions/form", query: @query, email: @email, error: @error %>
+      </section>
+    <% end %>
+    <p><%= link_to t("#{t_s}.back_to_catalogue"), contracts_path(@query.to_params.symbolize_keys), class: "cs-link" %></p>
+  </div>
+</main>

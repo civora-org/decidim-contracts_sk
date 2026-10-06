@@ -1,0 +1,24 @@
+<p class="email-greeting"><%= t(".hello") %></p>
+
+<p class="email-instructions"><%= t(".intro", organization: organization_name(@organization)) %></p>
+
+<% filters = catalogue_active_filters(@query) %>
+<% if filters.any? %>
+  <p class="email-instructions"><%= t(".search_filtered") %></p>
+  <ul>
+    <% filters.each do |label, text| %>
+      <li><%= label %>: <%= text %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="email-instructions"><%= t(".search_all") %></p>
+<% end %>
+
+<p class="email-instructions"><%= t(".action") %></p>
+<p><%= link_to t(".button"), @confirm_url, class: "button" %></p>
+<p class="email-instructions"><%= t(".expires", hours: Decidim::ContractsSk::Subscription::CONFIRMATION_TTL.in_hours.to_i) %></p>
+<p class="email-instructions"><%= t(".ignore") %></p>
+
+<% content_for :unsubscribe do %>
+  <%= link_to t(".unsubscribe"), @unsubscribe_url %>
+<% end %>

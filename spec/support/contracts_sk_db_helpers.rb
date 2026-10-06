@@ -93,7 +93,8 @@ RSpec.shared_context "contracts_sk db support" do
       Object.const_get(snake_name.camelize).migrate(:up)
     end
 
-    %w[Contract Party Document Amendment AuditEvent ContractLink UserRole Note Template].each do |model_name|
+    %w[Contract Party Document Amendment AuditEvent ContractLink UserRole Note Template
+       Subscription].each do |model_name|
       klass = Decidim::ContractsSk.const_get(model_name)
       klass&.reset_column_information
     end

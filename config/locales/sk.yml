@@ -220,6 +220,69 @@ sk:
             share: "Podiel"
             unit: "Odkiaľ záznamy pochádzajú: zapísala ich organizácia, alebo boli prevzaté z Centrálneho registra zmlúv."
           note: "Obdobia sa riadia dátumom podpisu. Sumy v rôznych menách sa nikdy nesčítavajú a záznamy bez uvedenej hodnoty sa rátajú, no do súčtov nič nepridávajú. Dodávatelia sa rátajú podľa IČO. Zmluva zverejnená aj organizáciou, aj ako záznam prevzatý z CRZ, sa počíta dvakrát. Súbor na stiahnutie obsahuje len vlastné záznamy organizácie; záznamy prevzaté z CRZ v ňom nie sú. Údaje sa obnovujú najmenej raz za hodinu."
+      subscriptions:
+        back_to_catalogue: "Späť na zoznam zmlúv"
+        form:
+          heading: "Upozornenia e-mailom"
+          intro: "Dostaňte e-mail, keď sa zverejnia nové zmluvy zodpovedajúce tomuto vyhľadávaniu: súhrn, nie správa ku každej zmluve. Pokrývajú sa len vlastné záznamy organizácie."
+          search_heading: "Vaše vyhľadávanie"
+          search_all: "Všetky novozverejnené zmluvy"
+          email_label: "Váš e-mail"
+          privacy: "Najprv pošleme jeden potvrdzovací e-mail a nič iné, kým ho do %{hours} hodín nepotvrdíte; inak sa vaša žiadosť vymaže. Uchovávame len vašu adresu, toto vyhľadávanie a jazyk a po odhlásení ich hneď vymažeme. Každý e-mail obsahuje odkaz na odhlásenie."
+          submit: "Odoberať upozornenia"
+          errors:
+            email: "Zadajte platnú e-mailovú adresu."
+            search: "Upozornenia pokrývajú len vlastné záznamy organizácie, preto vyhľadávanie obmedzené na záznamy prevzaté z CRZ nemožno odoberať."
+        new:
+          title: "Upozornenia e-mailom na nové zmluvy"
+        confirmation:
+          title: "Potvrďte upozornenia"
+          body: "Potvrďte, že chcete dostať e-mail, keď sa zverejnia nové zmluvy zodpovedajúce tomuto vyhľadávaniu."
+          button: "Potvrdiť odber"
+        cancellation:
+          title: "Odhlásenie z upozornení"
+          body: "Tlačidlom ukončíte tieto upozornenia. Vaša adresa a toto vyhľadávanie sa potom vymažú."
+          button: "Odhlásiť"
+        messages:
+          sent:
+            title: "Pozrite si schránku"
+            body: "Ak adresa môže upozornenia prijímať, potvrdzovací e-mail je na ceste. Odkazom v ňom upozornenia spustíte. Kým to neurobíte, nič iné sa neposiela a žiadosť sa automaticky vymaže."
+          throttled:
+            title: "Príliš veľa žiadostí"
+            body: "Skúste to prosím o niečo neskôr."
+          unavailable:
+            title: "E-mail sa nepodarilo odoslať"
+            body: "Nič sa neuložilo. Skúste to prosím neskôr."
+          invalid_link:
+            title: "Odkaz nie je platný"
+            body: "Mohol vypršať, byť zmenený, alebo ste už odhlásený. Odber môžete znova nastaviť v zozname zmlúv."
+          confirmed:
+            title: "Upozornenia sú zapnuté"
+            body: "Dostanete e-mail, keď sa zverejnia nové zmluvy zodpovedajúce vášmu vyhľadávaniu. Každý e-mail obsahuje odkaz na odhlásenie."
+          unsubscribed:
+            title: "Boli ste odhlásený"
+            body: "Vaša adresa a toto vyhľadávanie sa vymazali. Už vám nepošleme žiadne e-maily."
+      subscription_mailer:
+        confirmation:
+          subject: "Potvrďte upozornenia na zmluvy - %{organization}"
+          hello: "Dobrý deň,"
+          intro: "Niekto, pravdepodobne vy, požiadal o upozornenia e-mailom na nové zmluvy, ktoré zverejnila organizácia %{organization}."
+          search_filtered: "Vyhľadávanie:"
+          search_all: "Vyhľadávanie: všetky novozverejnené zmluvy."
+          action: "Upozornenia spustíte potvrdením adresy:"
+          button: "Potvrdiť odber"
+          expires: "Odkaz platí %{hours} hodín. Potom sa žiadosť vymaže."
+          ignore: "Ak ste to neboli vy, e-mail ignorujte: nič sa nepošle a vaša adresa sa automaticky vymaže."
+          unsubscribe: "Vymazať túto žiadosť"
+        digest:
+          subject: "Nové zmluvy - %{organization}"
+          hello: "Dobrý deň,"
+          intro: "Organizácia %{organization} zverejnila nové zmluvy zodpovedajúce vášmu upozorneniu: %{count}."
+          search_filtered: "Vaše vyhľadávanie:"
+          signed: "podpísaná %{date}"
+          more: "a ďalšie v zozname zmlúv: %{count}"
+          why: "Tento e-mail dostávate, pretože ste si nastavili upozornenia."
+          unsubscribe: "Odhlásiť"
       feeds:
         show:
           title: "Zmluvy — %{organization}"

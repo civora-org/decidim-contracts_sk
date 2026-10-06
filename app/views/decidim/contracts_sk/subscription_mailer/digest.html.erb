@@ -1,0 +1,28 @@
+<p class="email-greeting"><%= t(".hello") %></p>
+
+<p class="email-instructions"><%= t(".intro", organization: organization_name(@organization), count: @total) %></p>
+
+<% filters = catalogue_active_filters(@query) %>
+<% if filters.any? %>
+  <p class="email-instructions"><%= t(".search_filtered") %>
+    <%= filters.map { |label, text| "#{label}: #{text}" }.join("; ") %></p>
+<% end %>
+
+<ul>
+  <% @contracts.each do |contract| %>
+    <% signed = contract.signed_on && t(".signed", date: format_date(contract.signed_on)) %>
+    <li>
+      <%= link_to contract.title, @contract_urls.fetch(contract.id) %><br>
+      <%= [contract.reference, format_amount(contract.amount, contract.currency), signed].compact_blank.join(", ") %>
+    </li>
+  <% end %>
+</ul>
+
+<% if @more_url %>
+  <p class="email-instructions"><%= link_to t(".more", count: @total - @contracts.size), @more_url %></p>
+<% end %>
+
+<% content_for :unsubscribe do %>
+  <%= t(".why") %>
+  <%= link_to t(".unsubscribe"), @unsubscribe_url %>
+<% end %>
