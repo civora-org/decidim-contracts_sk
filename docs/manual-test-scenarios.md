@@ -191,6 +191,30 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 > link, and a later `import_crz` of the same id answers "already linked"
 > without writing. Needs network access to the ekosystem feed.
 
+## 3c. Role assignment walkthrough (civora-org/civora-platform#95, #113)
+
+End-to-end check of per-user roles. Needs the seeded `contracts-admin@example.org`
+(organization admin) and a **non-admin** user: register a plain participant on
+the host (e.g. `contracts-clerk@example.org`, fictional) and confirm the email.
+Both demo users are admins and hold both roles by default, so the clerk is the
+one to test with. Four-eyes (#123): the approver must differ from the
+submitter, so approve a record someone else submitted. Base:
+`http://localhost:3000/zmluvy/admin`. The host must have the `UserRole`
+migration applied.
+
+| # | User | Action | Expected |
+|---|---|---|---|
+| R1 | clerk (no role) | open `/zmluvy/admin/contracts`; check `/account` | redirect to the public catalogue with the "not authorized" flash; no "Contracts administration" item in the account menu |
+| R2 | `contracts-admin@example.org` | sidebar **Roles** → **Grant role** → search `clerk` (at least 3 characters) → **Grant Editor** | results show name and nickname, no email; flash "Editor role granted to <name>."; the clerk is listed with Editor |
+| R3 | clerk | `/account` → **Contracts administration**; create a draft; **Submit** | the overview and `/zmluvy/admin/contracts` work; the record goes to `in_review`; **Approve** is not offered |
+| R4 | clerk | open `/zmluvy/admin/user_roles` | refused (roles are for organization admins only); no **Roles** item in the sidebar |
+| R5 | `contracts-admin@example.org` | grant **Reviewer** to the clerk; the clerk approves a record submitted by someone else (e.g. DEMO-2026-002 in `in_review`) | **Approve** appears only on records the clerk did not submit; approve succeeds |
+| R6 | `contracts-admin@example.org` | **Revoke** both roles (confirm each) | flash "<role> role revoked from <name>."; the holder row disappears |
+| R7 | clerk | open `/zmluvy/admin/contracts` again | refused, landing on the public catalogue; the account-menu item is gone |
+| R8 | `contracts-admin@example.org` | `/zmluvy/admin/audit_events` | four role rows (two grants, two revokes) with the clerk's **name** as target and the admin as actor, no email anywhere |
+| R9 | `contracts-admin@example.org` | search with 2 characters; then with a unique email fragment | "Enter at least 3 characters."; the email match finds the user but the email is never printed |
+| R10 | `contracts-admin@example.org` | archive the test contracts created above | clean state |
+
 ## 3b. Notifications walkthrough (civora-org/civora-platform#94)
 
 End-to-end verification of workflow notifications. Both demo users are
