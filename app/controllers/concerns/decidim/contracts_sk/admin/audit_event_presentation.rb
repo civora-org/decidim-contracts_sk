@@ -55,6 +55,10 @@ module Decidim
           "contract.note_added" => "decidim.contracts_sk.admin.audit_events.actions.note_added",
           "contract.crz_mirror_absorbed" => "decidim.contracts_sk.admin.audit_events.actions.crz_mirror_absorbed",
           "contract.imported_from_file" => "decidim.contracts_sk.admin.audit_events.actions.imported_from_file",
+          "user_role.grant_editor" => "decidim.contracts_sk.admin.audit_events.actions.grant_editor",
+          "user_role.grant_reviewer" => "decidim.contracts_sk.admin.audit_events.actions.grant_reviewer",
+          "user_role.revoke_editor" => "decidim.contracts_sk.admin.audit_events.actions.revoke_editor",
+          "user_role.revoke_reviewer" => "decidim.contracts_sk.admin.audit_events.actions.revoke_reviewer",
           "crz_import_create" => "decidim.contracts_sk.admin.audit_events.actions.crz_import_create",
           "crz_import_update" => "decidim.contracts_sk.admin.audit_events.actions.crz_import_update"
         }.freeze
@@ -94,18 +98,28 @@ module Decidim
           target = event.target
           return nil if target.blank?
 
-          case target
-          when Contract
-            contract_target_info(target)
-          when Amendment
-            amendment_target_info(target)
-          end
+          target_info_for(target)
         rescue StandardError
           nil
         end
 
+        def target_info_for(target)
+          case target
+          when Contract then contract_target_info(target)
+          when Amendment then amendment_target_info(target)
+          when Decidim::User then user_target_info(target)
+          end
+        end
+
         def contract_target_info(contract)
           { label: contract.title, url: edit_admin_contract_path(contract) }
+        end
+
+        # A granted/revoked role's target is the affected user (#111): the
+        # display NAME only, never the email, and no link (there is no user
+        # page in the engine admin).
+        def user_target_info(user)
+          { label: user.name.presence || t("decidim.contracts_sk.admin.audit_events.unknown_actor"), url: nil }
         end
 
         def amendment_target_info(amendment)

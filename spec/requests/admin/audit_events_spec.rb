@@ -151,6 +151,23 @@ RSpec.describe "admin audit-trail viewer", type: :request do
       end
     end
 
+    it "renders the four role grant/revoke labels and a user target by NAME only, never the email (#111)" do
+      holder = Decidim::User.create!(organization: organization, name: "Hal Holder", email: "holder@example.org")
+      %w[grant_editor grant_reviewer revoke_editor revoke_reviewer].each do |action|
+        create_event!(action: "user_role.#{action}", target: holder)
+      end
+
+      get "/admin/audit_events"
+
+      expect(response).to have_http_status(:ok)
+      aggregate_failures do
+        ["Editor role granted", "Reviewer role granted", "Editor role revoked",
+         "Reviewer role revoked"].each { |label| expect(response.body).to include(label) }
+        expect(response.body).to include("Hal Holder")
+        expect(response.body).not_to include("holder@example.org")
+      end
+    end
+
     it "lists the organization's events newest-first, id as the same-second tiebreaker" do
       create_event!(action: "order_first", created_at: Time.current - 2.days)
       # ONE captured timestamp for both rows: identical created_at is the

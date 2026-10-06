@@ -528,6 +528,10 @@ sk:
             crz_mirror_absorbed: "Zrkadlový záznam z CRZ nahradený potvrdeným záznamom"
             note_added: "Pridaná interná poznámka"
             imported_from_file: "Importované z tabuľky"
+            grant_editor: "Udelená rola editora"
+            grant_reviewer: "Udelená rola recenzenta"
+            revoke_editor: "Odobratá rola editora"
+            revoke_reviewer: "Odobratá rola recenzenta"
           amendment_target: "Dodatok č. %{version}"
           deleted_target: "Záznam už neexistuje"
           filter_banner: "Zobrazujú sa udalosti auditnej stopy pre: %{title}"
@@ -658,6 +662,9 @@ sk:
             success: "Poznámka bola pridaná."
             error: "Poznámku sa nepodarilo pridať. Nesmie byť prázdna ani dlhšia ako 2000 znakov."
           link: "Poznámky"
+        user_roles:
+          form:
+            unknown_email: "V tejto organizácii neexistuje používateľ s týmto e-mailom."
         crz_handoff:
           title: "Odovzdanie do CRZ"
           disclaimer: "Vygenerovaný PDF je pomôcka na odovzdanie do CRZ — nie právna publikácia."

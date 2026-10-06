@@ -37,14 +37,21 @@ module Decidim
       attr_accessor :role_resolver
     end
 
-    # Reads (and memoizes) a user's stored engine roles. The memo is keyed on
-    # the user OBJECT in a WeakMap: current_user is built per request, so the
-    # cache lives exactly one request and dies with the object (no global
-    # state, no mutation of the Decidim core class). A grant written after
-    # the object was first resolved is therefore only visible on a freshly
-    # loaded user — use UserRole directly where read-your-writes matters.
+    # Reads (and memoizes) a user's stored engine roles. The memo is an
+    # instance variable on the user OBJECT: current_user is built per
+    # request, so the cache lives exactly one request and dies with the
+    # object (no global state, no mutation of the Decidim core class). A
+    # grant written after the object was first resolved is therefore only
+    # visible on a freshly loaded user - use UserRole directly where
+    # read-your-writes matters.
+    #
+    # Not an ObjectSpace::WeakMap: its VALUES are weak too, so the memoized
+    # array could be garbage-collected while the user object was alive,
+    # silently re-querying (a flaky memo, #110). An ivar keeps the value
+    # exactly as long as its key. A frozen object cannot hold the ivar and
+    # is simply not memoized.
     module StoredRoles
-      CACHE = ObjectSpace::WeakMap.new
+      MEMO_IVAR = :@contracts_sk_stored_roles
 
       def self.for(user)
         # Duck-typed fail-closed guard: anything that is not a persisted,
@@ -53,11 +60,12 @@ module Decidim
         return [] if user.id.nil?
 
         key = [user.id, user.decidim_organization_id]
-        cached = CACHE[user]
+        cached = user.instance_variable_get(MEMO_IVAR)
         return cached.last if cached && cached.first == key
 
-        CACHE[user] = [key, query(*key)]
-        CACHE[user].last
+        roles = query(*key)
+        user.instance_variable_set(MEMO_IVAR, [key, roles]) unless user.frozen?
+        roles
       end
 
       def self.query(user_id, organization_id)

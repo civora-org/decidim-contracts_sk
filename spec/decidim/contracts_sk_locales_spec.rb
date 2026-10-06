@@ -531,6 +531,25 @@ module LocaleContract
     }
   }.freeze
 
+  # The role-management labels per locale (civora-org/civora-platform#111):
+  # the four audit-viewer actions and the generic unknown-email form error.
+  USER_ROLE_LABELS = {
+    en: {
+      "admin.audit_events.actions.grant_editor" => "Editor role granted",
+      "admin.audit_events.actions.grant_reviewer" => "Reviewer role granted",
+      "admin.audit_events.actions.revoke_editor" => "Editor role revoked",
+      "admin.audit_events.actions.revoke_reviewer" => "Reviewer role revoked",
+      "admin.user_roles.form.unknown_email" => "No user with this email in this organization."
+    },
+    sk: {
+      "admin.audit_events.actions.grant_editor" => "Udelená rola editora",
+      "admin.audit_events.actions.grant_reviewer" => "Udelená rola recenzenta",
+      "admin.audit_events.actions.revoke_editor" => "Odobratá rola editora",
+      "admin.audit_events.actions.revoke_reviewer" => "Odobratá rola recenzenta",
+      "admin.user_roles.form.unknown_email" => "V tejto organizácii neexistuje používateľ s týmto e-mailom."
+    }
+  }.freeze
+
   # The admin form hints and the engine-shipped date format per locale
   # (civora-org/civora-platform#79, #81). The date format is a strftime
   # STRING resolved by the engine's format_date helper — never a named I18n
@@ -595,11 +614,15 @@ module LocaleContract
     "admin.audit_events.actions.crz_import_create",
     "admin.audit_events.actions.crz_import_update",
     "admin.audit_events.actions.crz_mirror_absorbed",
+    "admin.audit_events.actions.grant_editor",
+    "admin.audit_events.actions.grant_reviewer",
     "admin.audit_events.actions.imported_from_file",
     "admin.audit_events.actions.note_added",
     "admin.audit_events.actions.redaction_confirmed",
     "admin.audit_events.actions.reject_self",
     "admin.audit_events.actions.return_self",
+    "admin.audit_events.actions.revoke_editor",
+    "admin.audit_events.actions.revoke_reviewer",
     "admin.audit_events.amendment_target",
     "admin.audit_events.back_to_all",
     "admin.audit_events.deleted_target",
@@ -916,6 +939,7 @@ module LocaleContract
     "admin.parties.roles.object",
     "admin.parties.update.error",
     "admin.parties.update.success",
+    "admin.user_roles.form.unknown_email",
     "contract.amount",
     "contract.crz_filed",
     "contract.crz_filed_confirmed",
@@ -1581,6 +1605,14 @@ RSpec.describe Decidim::ContractsSk do
 
     it "translates the four-eyes labels in both locales (civora-org/civora-platform#123)" do
       LocaleContract::FOUR_EYES_LABELS.each do |locale, labels|
+        labels.each do |key, value|
+          expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
+        end
+      end
+    end
+
+    it "translates the role-management labels in both locales (civora-org/civora-platform#111)" do
+      LocaleContract::USER_ROLE_LABELS.each do |locale, labels|
         labels.each do |key, value|
           expect(backend.translate(locale, "decidim.contracts_sk.#{key}")).to eq(value)
         end

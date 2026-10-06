@@ -1353,6 +1353,45 @@ RSpec.describe Decidim::ContractsSk::Permissions do
       expect(action_for(roleless, scope: :admin, action: :approve, contract: in_review).allowed?).to be(false)
     end
   end
+
+  # Role management (M03-06-D, civora-org/civora-platform#111, parent #95):
+  # organization admins with accepted terms only; holding engine roles never
+  # confers it.
+  describe "admin scope — user_role (civora-org/civora-platform#111: grant/revoke authority)" do
+    let(:both_roles_holder) { SpecUser.new(admin: false, admin_terms_accepted: true) }
+
+    %i[read create destroy].each do |act|
+      it "allows #{act} to an organization admin with accepted terms" do
+        expect(action_for(org_admin, scope: :admin, action: act, action_subject: :user_role).allowed?).to be(true)
+      end
+
+      it "denies #{act} to an organization admin who has not accepted the admin terms" do
+        expect(action_for(org_admin_unaccepted, scope: :admin, action: act,
+                                                action_subject: :user_role).allowed?).to be(false)
+      end
+
+      it "denies #{act} to a non-admin holding BOTH engine roles (the resolver is not consulted)" do
+        swap_resolver(%i[editor reviewer]) do
+          expect(action_for(both_roles_holder, scope: :admin, action: act,
+                                               action_subject: :user_role).allowed?).to be(false)
+        end
+      end
+
+      it "denies #{act} to an unauthenticated visitor (nil user)" do
+        expect(action_for(nil, scope: :admin, action: act, action_subject: :user_role).allowed?).to be(false)
+      end
+    end
+
+    it "leaves every other admin action on the subject unset (fail-closed), even for an org admin" do
+      %i[update publish approve export].each do |act|
+        expect(unset?(org_admin, scope: :admin, action: act, action_subject: :user_role)).to be(true), act.to_s
+      end
+    end
+
+    it "leaves public-scope user_role actions unset" do
+      expect(unset?(org_admin, scope: :public, action: :read, action_subject: :user_role)).to be(true)
+    end
+  end
 end
 
 # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
