@@ -56,6 +56,17 @@ unless defined?(Decidim::User)
       # same shape the real Decidim::User carries. Optional so the plain
       # `Decidim::User.create!` author stand-ins keep working.
       belongs_to :organization, foreign_key: "decidim_organization_id", optional: true
+
+      # Mirrors of the real scopes/predicate (decidim-core
+      # user_base_entity.rb / user.rb) that the engine's default seams use
+      # (role_resolver, notification_candidates; civora-org/civora-platform
+      # #110).
+      scope :confirmed, -> { where.not(confirmed_at: nil) }
+      scope :available, -> { where(deleted_at: nil, blocked: false, managed: false) }
+
+      def admin_terms_accepted?
+        admin_terms_accepted_at.present?
+      end
     end
   end
 end
@@ -170,6 +181,9 @@ RSpec.configure do |config|
       t.boolean :admin, default: false, null: false
       t.datetime :admin_terms_accepted_at
       t.datetime :confirmed_at
+      t.datetime :deleted_at
+      t.boolean :blocked, default: false, null: false
+      t.boolean :managed, default: false, null: false
     end
 
     # The ActiveStorage tables a host app owns (see the helper's comment):

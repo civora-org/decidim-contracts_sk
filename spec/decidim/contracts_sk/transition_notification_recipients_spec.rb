@@ -141,19 +141,7 @@ RSpec.describe Decidim::ContractsSk::TransitionNotification do
     end
   end
 
-  describe "the default notification_candidates seam" do
-    # Captured at file load, before any example swaps the seam.
-    default_seam = Decidim::ContractsSk.notification_candidates
-
-    it "asks for the organization's confirmed, available admins only" do
-      chain = []
-      confirmed = Struct.new(:marker).new(:confirmed)
-      available = Struct.new(:confirmed).new(confirmed)
-      admins = Struct.new(:available).new(available)
-      stub_const("Decidim::User", Class.new { define_singleton_method(:where) { |**args| chain << args && admins } })
-
-      expect([default_seam.call(organization), chain]).to eq([confirmed, [{ organization: organization, admin: true }]])
-    end
-  end
+  # The default seam's query (admins plus stored reviewers) is DB-backed and
+  # specced in spec/decidim/contracts_sk/contracts_sk_role_resolver_spec.rb.
 end
 # rubocop:enable RSpec/MultipleMemoizedHelpers, RSpec/ExampleLength

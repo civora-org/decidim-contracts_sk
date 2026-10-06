@@ -117,8 +117,9 @@ about their own action.
 Recipients come from a config-time seam (`Decidim::ContractsSk.notification_candidates`:
 a callable `(organization) -> users`) which bounds the set of candidates, then
 narrowed through the `role_resolver` to keep only those with `:reviewer`. The
-default candidates are organization admins (confirmed, available), which suffices
-for the default resolver.
+default candidates are organization admins plus users holding a stored `reviewer`
+`UserRole` in the organization (all confirmed, available), which covers everyone
+the default resolver can grant `:reviewer` (#110).
 
 **Key constraint:** when the `role_resolver` grants `:reviewer` to non-admins,
 the `notification_candidates` seam **must** include them, otherwise eligible
@@ -154,6 +155,15 @@ lifecycle doc's deferrals: org admins (with accepted admin terms) hold
 table itself stays untouched. The union gives one admin both roles, which is
 why the per-person [four-eyes rule](#four-eyes-rule-per-person-segregation-123)
 below exists: roles alone never separated duties between two *people*.
+
+Since #110 the default resolver also unions the user's stored `UserRole` rows
+(#109) for the user's **own** organization, so a non-admin can hold `editor`
+and/or `reviewer`. The resolver ignores its `context` argument (the admin menu
+passes an organization, `Permissions` a Hash; spike #108, note N1). Admins
+short-circuit with no query; for everyone else the stored roles cost one
+indexed query per user object, memoized for that object's lifetime (one
+request), so per-row `allowed_to?` calls do not multiply queries. A host that
+assigns its own `role_resolver` is unaffected.
 
 ## Non-admin role holders and the engine admin (#108, #161)
 
