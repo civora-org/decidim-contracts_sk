@@ -429,7 +429,7 @@ RSpec.describe "public contracts catalogue", type: :request do
           expect(body).to include(%(inputmode="decimal"))
           expect(body).to include(%(type="date"))
           expect(body).to include(%(aria-describedby="party-hint"))
-          expect(body).to include(%(id="party-hint")).and include("Name or 8-digit IČO")
+          expect(body).to include(%(id="party-hint")).and include("8-digit IČO, or the name of a party with an IČO")
           expect(body).to include("Any").and include("Organisation&#39;s own records").and include("Mirrored from CRZ")
           # The sort moved to the toolbar menu; the form carries it only when it is not the default.
           expect(body).not_to include(%(name="sort"))

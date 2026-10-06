@@ -33,7 +33,9 @@ module Decidim
     # * A reversed range (from after to) is swapped, not rejected.
     # * party matches a contract's party by exact IČO (8 digits) or by
     #   case-insensitive name substring, via an IN-subquery (no N+1, no
-    #   DISTINCT).
+    #   DISTINCT). A name is matched only against parties that have an IČO:
+    #   a party without one (possibly a natural person) is never findable by
+    #   name. q searches title and reference only, never party names.
     class CatalogueQuery
       PARAM_KEYS = %i[q amount_min amount_max published_from published_to
                       signed_from signed_to party source sort].freeze

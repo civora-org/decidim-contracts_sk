@@ -457,7 +457,7 @@ RSpec.describe Decidim::ContractsSk::CatalogueQuery do
         add_party!(obec, "Stavby 100% s.r.o.", "36396567")
         other = create_contract!("OTHER")
         add_party!(other, "Dodávateľ_X", "12345678")
-        add_party!(other, "Iná obec", nil, "object")
+        add_party!(other, "Iná obec", "87654321", "object")
         create_contract!("NOPARTY")
       end
 
@@ -490,14 +490,14 @@ RSpec.describe Decidim::ContractsSk::CatalogueQuery do
       end
 
       it "treats a backslash literally in party names" do
-        add_party!(create_contract!("BSP"), "Firma A\\B")
+        add_party!(create_contract!("BSP"), "Firma A\\B", "11111111")
 
         expect(refs_unordered({ "party" => "a\\b" })).to eq(%w[BSP])
         expect(refs_unordered({ "party" => "\\%" })).to eq([])
       end
 
       it "down-cases the party term in Ruby (upper-case diacritic term, lower-case name)" do
-        add_party!(create_contract!("DIA"), "dodávateľ štúr")
+        add_party!(create_contract!("DIA"), "dodávateľ štúr", "22222222")
 
         expect(refs_unordered({ "party" => "ŠTÚR" })).to eq(%w[DIA])
       end
@@ -505,6 +505,40 @@ RSpec.describe Decidim::ContractsSk::CatalogueQuery do
       it "returns each contract once even when several parties match (no DISTINCT needed)" do
         expect(query({ "party" => "obec" }).relation.pluck(:id).size).to eq(2)
         expect(query({ "party" => "s" }).relation.pluck(:id).tally.values.max).to eq(1)
+      end
+    end
+
+    describe "party without an IČO (possibly natural persons)" do
+      before do
+        add_party!(create_contract!("PERSON"), "Ján Novák")
+        add_party!(create_contract!("BLANK"), "Jana Blanková", "")
+        mixed = create_contract!("MIXED")
+        add_party!(mixed, "Ján Novák")
+        add_party!(mixed, "Novák Stavby s.r.o.", "33333333")
+        create_contract!("TITLED", title: "Zmluva Novák")
+      end
+
+      it "never matches a no-IČO party name through party" do
+        expect(refs_unordered({ "party" => "Ján" })).to eq([])
+        expect(refs_unordered({ "party" => "Blanková" })).to eq([])
+      end
+
+      it "never matches a no-IČO party name through q" do
+        expect(refs_unordered({ "q" => "Ján" })).to eq([])
+        expect(refs_unordered({ "q" => "Blanková" })).to eq([])
+      end
+
+      it "still matches the name of a party that has an IČO" do
+        expect(refs_unordered({ "party" => "Stavby s.r.o." })).to eq(%w[MIXED])
+      end
+
+      it "matches a contract with both kinds of party only through the IČO party" do
+        expect(refs_unordered({ "party" => "Novák" })).to eq(%w[MIXED])
+        expect(refs_unordered({ "party" => "33333333" })).to eq(%w[MIXED])
+      end
+
+      it "stays NUL-safe" do
+        expect(refs_unordered({ "party" => "Novák\u0000" })).to eq(%w[MIXED])
       end
     end
 

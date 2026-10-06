@@ -44,7 +44,12 @@ module Decidim
       # Columns are table-qualified, so the condition stays unambiguous when a
       # reusing scope joins another table.
       CONTRACT_CONDITION = condition(*%w[title reference].map { |c| "#{Contract.table_name}.#{c}" }).freeze
-      PARTY_CONDITION = condition("#{Party.table_name}.name").freeze
+      # The party name match carries its IČO guard in the SQL itself: a name
+      # is searched only among parties that have an IČO (a party without one
+      # may be a natural person: never profiled, DPIA #135).
+      PARTY_CONDITION =
+        "(#{condition("#{Party.table_name}.name")}) " \
+        "AND #{Party.table_name}.ico IS NOT NULL AND #{Party.table_name}.ico <> ''".freeze
     end
   end
 end
