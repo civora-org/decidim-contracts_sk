@@ -657,6 +657,8 @@ en:
             target_type: "Target type"
             target_id: "Target id"
             submit: "Add link"
+        second_factor:
+          required: "Please complete the second verification step to open the contracts administration."
         templates:
           link: "Templates"
           back_to_list: "Back to the templates"

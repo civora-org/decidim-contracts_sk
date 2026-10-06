@@ -960,6 +960,7 @@ module LocaleContract
     "admin.parties.roles.object",
     "admin.parties.update.error",
     "admin.parties.update.success",
+    "admin.second_factor.required",
     "admin.templates.back_to_contracts",
     "admin.templates.back_to_list",
     "admin.templates.create.error",

@@ -18,6 +18,18 @@ module Decidim
         helper Decidim::ContractsSk::ApplicationHelper
 
         before_action :authenticate_user!
+        before_action :require_second_factor!
+
+        # Optional second-factor guard (civora-org/civora-platform#165,
+        # ADR-010): a no-op unless the host assigns
+        # Decidim::ContractsSk.second_factor_satisfied. Admin-only: public
+        # and in-space controllers do not inherit this class.
+        def require_second_factor!
+          return if Decidim::ContractsSk.second_factor_satisfied.call(current_user, session)
+
+          flash[:alert] = I18n.t("decidim.contracts_sk.admin.second_factor.required")
+          redirect_to Decidim::ContractsSk.second_factor_redirect_path.call(self)
+        end
 
         def permission_class_chain
           [Decidim::ContractsSk::Permissions, *super]
