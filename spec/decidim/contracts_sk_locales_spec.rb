@@ -599,6 +599,8 @@ module LocaleContract
   # deadline-tracking keys (civora-org/civora-platform#124). Sorted
   # alphabetically.
   EXPECTED_KEYS = [
+    "admin.a11y.actions",
+    "admin.a11y.row_action",
     "admin.amendments.back_to_contract",
     "admin.amendments.create.error",
     "admin.amendments.create.success",
@@ -1083,6 +1085,7 @@ module LocaleContract
     "contracts.index.filters.sources.crz",
     "contracts.index.filters.sources.editorial",
     "contracts.index.intro",
+    "contracts.index.list_heading",
     "contracts.index.no_search_results",
     "contracts.index.open_data.atom",
     "contracts.index.open_data.crz_link",

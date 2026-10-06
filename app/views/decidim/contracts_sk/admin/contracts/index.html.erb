@@ -1,7 +1,7 @@
 <%= render "decidim/contracts_sk/shared/admin_styles" %>
 <div class="card">
   <div class="item_show__header">
-    <h1 class="item_show__header-title">
+    <h1 class="item_show__header-title" id="cs-contracts-title">
       <%= t("decidim.contracts_sk.admin.contracts.index.title") %>
     </h1>
     <%# Admin overview (civora-org/civora-platform#126). %>
@@ -26,9 +26,11 @@
       state's chip carries the --active marker class. %>
   <div class="card-section">
     <div class="cs-admin-chips">
-      <%= link_to index_counter_label(nil), index_counter_path(nil), class: index_counter_classes(nil) %>
+      <%= link_to index_counter_label(nil), index_counter_path(nil), class: index_counter_classes(nil),
+                  aria: { current: (index_filters.state.nil? ? "true" : nil) } %>
       <% Decidim::ContractsSk::ContractLifecycle::STATES.each do |state| %>
-        <%= link_to index_counter_label(state), index_counter_path(state), class: index_counter_classes(state) %>
+        <%= link_to index_counter_label(state), index_counter_path(state), class: index_counter_classes(state),
+                    aria: { current: (index_filters.state == state ? "true" : nil) } %>
       <% end %>
     </div>
   </div>
@@ -43,7 +45,8 @@
     <div class="cs-admin-chips">
       <% %i[due_soon overdue].each do |deadline| %>
         <%= link_to index_deadline_counter_label(deadline), index_deadline_counter_path(deadline),
-                    class: index_deadline_counter_classes(deadline) %>
+                    class: index_deadline_counter_classes(deadline),
+                    aria: { current: (index_filters.deadline == deadline ? "true" : nil) } %>
       <% end %>
     </div>
     <p class="cs-admin-hint"><em><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></em></p>
@@ -120,15 +123,15 @@
 
   <% if @contracts.any? %>
     <div class="table-scroll">
-      <table class="table-list">
+      <table class="table-list" aria-labelledby="cs-contracts-title">
         <thead>
           <tr>
-            <th><%= t("decidim.contracts_sk.contract.title") %></th>
-            <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
-            <th><%= t("decidim.contracts_sk.contract.status") %></th>
-            <th><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></th>
-            <th><%= t("decidim.contracts_sk.admin.contracts.edit.title") %></th>
-            <th></th>
+            <th scope="col"><%= t("decidim.contracts_sk.contract.title") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.contract.reference_number") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.contract.status") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.contracts.edit.title") %></th>
+            <%= actions_column_header %>
           </tr>
         </thead>
         <tbody>
@@ -139,7 +142,8 @@
               <td><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
               <%# CRZ deadline badge (civora-org/civora-platform#124): empty for filed, mirror and terminal rows. %>
               <td><%= crz_deadline_badge(contract, today: index_today) %></td>
-              <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
+              <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract),
+                          aria: { label: contract_row_label(t("decidim.contracts_sk.admin.contracts.edit.title"), contract) } %></td>
               <td class="table-list__actions">
                 <%# Internal review notes (civora-org/civora-platform#128): the
                     entry for every role holder (a reviewer has no edit page).
@@ -150,7 +154,8 @@
                   <%= button_to t("decidim.contracts_sk.admin.notes.link"),
                                 admin_contract_notes_path(contract),
                                 method: :get,
-                                class: "button button__sm button__secondary" %>
+                                class: "button button__sm button__secondary",
+                                aria: { label: contract_row_label(t("decidim.contracts_sk.admin.notes.link"), contract) } %>
                 <% end %>
                 <%# Derived, never hand-enumerated: only the events the acting role may fire.
                     The judgment edges (return/reject, #90) render the inline decision-reason
@@ -163,6 +168,7 @@
                                   public_send(:"#{event}_admin_contract_path", contract),
                                   method: :post,
                                   class: "button button__sm button__secondary",
+                                  aria: { label: contract_row_label(t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize), contract) },
                                   data: { confirm: t("decidim.contracts_sk.admin.contracts.transition.confirm.#{event}") } %>
                   <% end %>
                 <% end %>
@@ -191,7 +197,8 @@
                   <%= button_to t("decidim.contracts_sk.admin.contracts.crz_filing.link"),
                                 crz_filing_admin_contract_path(contract),
                                 method: :get,
-                                class: "button button__sm button__secondary" %>
+                                class: "button button__sm button__secondary",
+                                aria: { label: contract_row_label(t("decidim.contracts_sk.admin.contracts.crz_filing.link"), contract) } %>
                 <% end %>
                 <%# Reviewer decision on the row (civora-org/civora-platform#90):
                     a record sitting in a decision state with a captured

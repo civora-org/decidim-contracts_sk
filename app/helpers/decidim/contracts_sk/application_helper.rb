@@ -192,6 +192,20 @@ module Decidim
         crz_deadline_wording(contract, status, today)
       end
 
+      # Accessible name of a per-row admin control ("Poznámky: <title>"): the
+      # visible label stays first (WCAG 2.5.3), the record follows, so a
+      # screen-reader user tabbing a table of identical "Edit" or "Notes"
+      # buttons hears which contract each one acts on (WCAG 2.4.6).
+      def contract_row_label(action, contract)
+        t("decidim.contracts_sk.admin.a11y.row_action", action: action, title: contract.title)
+      end
+
+      # Header cell of an actions column: no visible text, but a name for
+      # assistive technology (axe empty-table-header, WCAG 1.3.1).
+      def actions_column_header
+        tag.th(tag.span(t("decidim.contracts_sk.admin.a11y.actions"), class: "cs-admin-sr-only"), scope: "col")
+      end
+
       private
 
       # The dated wording of the edit page's deadline line.

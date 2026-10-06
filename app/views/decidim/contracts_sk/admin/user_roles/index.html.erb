@@ -6,7 +6,7 @@
     form, since a bare link in an actions cell can render invisible. %>
 <div class="card">
   <div class="item_show__header">
-    <h1 class="item_show__header-title">
+    <h1 class="item_show__header-title" id="cs-roles-title">
       <%= t("decidim.contracts_sk.admin.user_roles.index.title") %>
     </h1>
     <div class="cs-admin-actions">
@@ -23,13 +23,13 @@
 
   <% if @holders.any? %>
     <div class="table-scroll">
-      <table class="table-list cs-admin-roles">
+      <table class="table-list cs-admin-roles" aria-labelledby="cs-roles-title">
         <thead>
           <tr>
-            <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.name") %></th>
-            <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.nickname") %></th>
-            <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.roles") %></th>
-            <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.revoke") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.user_roles.index.headers.name") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.user_roles.index.headers.nickname") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.user_roles.index.headers.roles") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.user_roles.index.headers.revoke") %></th>
           </tr>
         </thead>
         <tbody>

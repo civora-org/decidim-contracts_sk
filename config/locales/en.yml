@@ -71,6 +71,7 @@ en:
           title: "Contracts"
           empty: "No published contracts yet."
           search_label: "Search contracts"
+          list_heading: "Contract register"
           search_submit: "Search"
           intro: "Published contracts of the organisation, with their documents and change history."
           no_search_results: "No contracts match your search or filters."
@@ -224,6 +225,9 @@ en:
           subtitle_filtered: "Newly published contracts. Filters: %{filters}"
           summary_signed: "signed %{date}"
       admin:
+        a11y:
+          actions: "Actions"
+          row_action: "%{action}: %{title}"
         contracts:
           back_to_index: "Back to contracts"
           index:

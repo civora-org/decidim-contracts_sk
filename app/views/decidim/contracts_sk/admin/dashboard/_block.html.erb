@@ -10,19 +10,19 @@
     otherwise (in review, approved, ...) to the index narrowed to the
     record, where its transition controls live. %>
 <div class="card-section" id="dashboard-<%= key.dasherize %>">
-  <h2 class="h4"><%= t("decidim.contracts_sk.admin.dashboard.blocks.#{key}.title", days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS) %></h2>
+  <h2 class="h4" id="dashboard-<%= key.dasherize %>-title"><%= t("decidim.contracts_sk.admin.dashboard.blocks.#{key}.title", days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS) %></h2>
   <p><em><%= t("decidim.contracts_sk.admin.dashboard.blocks.#{key}.#{local_assigns.fetch(:hint, "hint")}", days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS) %></em></p>
   <% if block.records.empty? %>
     <p><%= t("decidim.contracts_sk.admin.dashboard.blocks.#{key}.empty") %></p>
   <% else %>
     <div class="table-scroll">
-      <table class="table-list table-list--selectable">
+      <table class="table-list table-list--selectable" aria-labelledby="dashboard-<%= key.dasherize %>-title">
         <thead>
           <tr>
-            <th><%= t("decidim.contracts_sk.contract.title") %></th>
-            <th><%= t("decidim.contracts_sk.contract.reference_number") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.contract.title") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.contract.reference_number") %></th>
             <% columns.each do |column| %>
-              <th><%= t("decidim.contracts_sk.admin.dashboard.columns.#{column}") %></th>
+              <th scope="col"><%= t("decidim.contracts_sk.admin.dashboard.columns.#{column}") %></th>
             <% end %>
           </tr>
         </thead>

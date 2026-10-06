@@ -7,14 +7,14 @@
     left-aligns the second column (the table-list default centres every
     column after the first, which floated the record titles mid-cell). %>
 <div class="table-scroll">
-  <table class="table-list table-list--selectable">
+  <table class="table-list table-list--selectable" aria-labelledby="<%= local_assigns.fetch(:labelled_by, "cs-audit-title") %>">
     <thead>
       <tr>
-        <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.action") %></th>
-        <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.record") %></th>
-        <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.user") %></th>
-        <th><%= t("decidim.contracts_sk.admin.audit_events.index.headers.when") %></th>
-        <th><%= t("decidim.contracts_sk.admin.contracts.transition.review_reason.label") %></th>
+        <th scope="col"><%= t("decidim.contracts_sk.admin.audit_events.index.headers.action") %></th>
+        <th scope="col"><%= t("decidim.contracts_sk.admin.audit_events.index.headers.record") %></th>
+        <th scope="col"><%= t("decidim.contracts_sk.admin.audit_events.index.headers.user") %></th>
+        <th scope="col"><%= t("decidim.contracts_sk.admin.audit_events.index.headers.when") %></th>
+        <th scope="col"><%= t("decidim.contracts_sk.admin.contracts.transition.review_reason.label") %></th>
       </tr>
     </thead>
     <tbody>

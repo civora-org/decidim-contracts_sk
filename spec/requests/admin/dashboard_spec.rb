@@ -436,7 +436,7 @@ RSpec.describe "admin dashboard", type: :request do
         expect(body.scan(/Queue (?:other|legacy)[ \d]*</).size).to eq(queue_count.to_i)
         expect(body).not_to include("Queue own")
         get "/admin/contracts", params: { state: "returned", submitter: "me" }
-        expect(body.scan(/Returned mine/).size).to eq(returned_count.to_i)
+        expect(body.scan(/Returned mine \d</).size).to eq(returned_count.to_i)
         expect(queue_count).to eq("4")
         expect(returned_count).to eq("2")
       end

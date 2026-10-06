@@ -40,7 +40,8 @@
     <% more_open = (query.active_filter_keys - [:q]).any? || query.non_default_sort? %>
     <% filters_t = "decidim.contracts_sk.contracts.index.filters" %>
     <div class="cs-search">
-      <%= form_tag contracts_path, method: :get, class: "form-defaults", role: "search" do %>
+      <%= form_tag contracts_path, method: :get, class: "form-defaults", role: "search",
+                    aria: { label: t("decidim.contracts_sk.contracts.index.search_label") } do %>
         <%= label_tag :q, t("decidim.contracts_sk.contracts.index.search_label") %>
         <div class="cs-search__row">
           <%= text_field_tag :q, search_term, autocomplete: "off" %>
@@ -170,7 +171,8 @@
           identity on the left; the amount — the figure a reader compares
           down the list — right-aligned in tabular numerals on md+, below
           the title on narrow screens. %>
-      <ol class="cs-list">
+      <h2 class="cs-sr" id="cs-register-title"><%= t("decidim.contracts_sk.contracts.index.list_heading") %></h2>
+      <ol class="cs-list" aria-labelledby="cs-register-title">
         <% @contracts.each do |contract| %>
           <%= render "decidim/contracts_sk/contracts/row", contract: contract %>
         <% end %>
