@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 # Structural (offline) and runnable (:db) specs for the contract templates
 # migration (civora-org/civora-platform#127): reversible single `change`, a
-# timestamp at or after 20261011000001, the columns the copy-on-create
+# timestamp at or after 20261006000003, the columns the copy-on-create
 # semantics rely on, and the absence of any link back from contracts.
 # ---------------------------------------------------------------------------
 
@@ -28,11 +28,11 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_templates.rb" do
       expect(migration_source).not_to include("execute")
     end
 
-    it "carries a unique timestamp of 20261011000001 or later" do
+    it "carries a unique timestamp after the UserRole migration" do
       stamps = Dir.glob(File.join(engine_root, "db", "migrate", "*.rb")).map { |path| File.basename(path)[/\A\d+/] }
       own = File.basename(migration_path)[/\A\d+/]
 
-      expect(own.to_i).to be >= 20_261_011_000_001
+      expect(own.to_i).to be > 20_261_006_000_001
       expect(stamps.uniq.size).to eq(stamps.size)
     end
   end

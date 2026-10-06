@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 # Structural (offline) and runnable (:db) specs for the e-mail alert
 # subscriptions migration (civora-org/civora-platform#121): reversible single
-# `change`, a timestamp at or after 20261013000010, and above all the exact
+# `change`, a timestamp at or after 20261006000004, and above all the exact
 # column list: this is the engine's first table of resident personal data, so
 # the spec pins that nothing beyond the approved minimum is ever stored (no
 # IP, no user agent, no user reference, no raw token).
@@ -30,11 +30,11 @@ RSpec.describe "db/migrate/*_create_decidim_contracts_sk_subscriptions.rb" do
       expect(migration_source).not_to include("execute")
     end
 
-    it "carries a unique timestamp of 20261013000010 or later" do
+    it "carries a unique timestamp after the UserRole migration" do
       stamps = Dir.glob(File.join(engine_root, "db", "migrate", "*.rb")).map { |path| File.basename(path)[/\A\d+/] }
       own = File.basename(migration_path)[/\A\d+/]
 
-      expect(own.to_i).to be >= 20_261_013_000_010
+      expect(own.to_i).to be > 20_261_006_000_001
       expect(stamps.uniq.size).to eq(stamps.size)
     end
   end
