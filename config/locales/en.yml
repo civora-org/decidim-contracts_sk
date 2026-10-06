@@ -466,6 +466,7 @@ en:
             crz_filed: "CRZ filing confirmed"
             crz_filed_override: "CRZ filing confirmed despite differences"
             crz_mirror_absorbed: "CRZ mirror absorbed by the filed record"
+            note_added: "Internal note added"
           amendment_target: "Amendment v%{version}"
           deleted_target: "Record no longer exists"
           filter_banner: "Showing audit events for: %{title}"
@@ -579,6 +580,23 @@ en:
             target_type: "Target type"
             target_id: "Target id"
             submit: "Add link"
+        notes:
+          index:
+            title: "Internal notes"
+            back_to_contract: "Back to the contract"
+            back_to_list: "Back to the contract list"
+            empty: "No internal notes have been added to this contract yet."
+            visibility: "Internal notes are visible only to role holders in the admin. They are never published and cannot be edited or removed."
+          note:
+            unknown_author: "Unknown user"
+          form:
+            body: "Note"
+            placeholder: "Write a note for the other role holders"
+            submit: "Add note"
+          create:
+            success: "Note added."
+            error: "The note could not be added. It must not be empty or longer than 2000 characters."
+          link: "Notes"
         crz_handoff:
           title: "CRZ handoff"
           disclaimer: "The generated PDF is a handoff aid for the CRZ record — not a legal publication."

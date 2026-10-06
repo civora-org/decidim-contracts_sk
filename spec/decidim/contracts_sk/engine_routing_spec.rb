@@ -12,6 +12,8 @@ require "spec_helper"
 # Shared vocabulary and route-table introspection for the example groups
 # below. Kept in a plain module (not inside a describe block) so that its
 # constants stay lint-clean and its helpers can be included where needed.
+# The module IS the pinned route table, so it grows with each route.
+# rubocop:disable Metrics/ModuleLength
 module EngineRoutingContract
   PUBLIC_CONTROLLER = "decidim/contracts_sk/contracts"
   ADMIN_CONTROLLER = "decidim/contracts_sk/admin/contracts"
@@ -121,6 +123,8 @@ module EngineRoutingContract
     ["DELETE", "/admin/contracts/:contract_id/amendments/:id(.:format)", "#{AMENDMENTS_CONTROLLER}#destroy"],
     ["POST", "/admin/contracts/:contract_id/links(.:format)", "#{LINKS_CONTROLLER}#create"],
     ["DELETE", "/admin/contracts/:contract_id/links/:id(.:format)", "#{LINKS_CONTROLLER}#destroy"],
+    ["GET", "/admin/contracts/:contract_id/notes(.:format)", "decidim/contracts_sk/admin/notes#index"],
+    ["POST", "/admin/contracts/:contract_id/notes(.:format)", "decidim/contracts_sk/admin/notes#create"],
     ["GET", "/admin/audit_events(.:format)", "#{AUDIT_EVENTS_CONTROLLER}#index"]
   ].freeze
 
@@ -166,6 +170,7 @@ module EngineRoutingContract
     routes.map { |_, _, endpoint| endpoint.split("#", 2).first }.uniq.sort
   end
 end
+# rubocop:enable Metrics/ModuleLength
 
 RSpec.describe Decidim::ContractsSk::Engine do
   describe "engine route table" do
@@ -749,6 +754,31 @@ RSpec.describe Decidim::ContractsSk::Engine do
     end
   end
 
+  describe "internal notes routes (civora-org/civora-platform#128)" do
+    include EngineRoutingContract
+
+    # Local to this group (the shared module sits at its length budget).
+    notes_controller = "decidim/contracts_sk/admin/notes"
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    # rubocop:disable RSpec/ExampleLength
+    it "nests only the thread page and the append under the contract (append-only: no edit/update/destroy)" do
+      notes_routes = route_triples.select { |_, _, endpoint| endpoint.start_with?("#{notes_controller}#") }
+
+      aggregate_failures do
+        expect(notes_routes).to contain_exactly(
+          ["GET", "/admin/contracts/:contract_id/notes(.:format)",
+           "#{notes_controller}#index"],
+          ["POST", "/admin/contracts/:contract_id/notes(.:format)",
+           "#{notes_controller}#create"]
+        )
+        expect(url_helpers.admin_contract_notes_path(7)).to eq("/admin/contracts/7/notes")
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+  end
+
   describe "audit-trail viewer route (civora-org/civora-platform#92)" do
     include EngineRoutingContract
 
@@ -787,11 +817,12 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's thirteen controllers, distinct by the admin/ segment" do
+    it "routes only the engine's fourteen controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
         decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/dashboard
-        decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links decidim/contracts_sk/admin/parties
+        decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links decidim/contracts_sk/admin/notes
+        decidim/contracts_sk/admin/parties
         decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
         decidim/contracts_sk/sitemaps decidim/contracts_sk/statistics decidim/contracts_sk/suppliers
       ].sort
@@ -800,14 +831,17 @@ RSpec.describe Decidim::ContractsSk::Engine do
     end
     # rubocop:enable RSpec/ExampleLength
 
+    # rubocop:disable RSpec/ExampleLength
     it "maps no admin-prefixed path to the public controller" do
       admin_prefixed = route_triples.select { |_, path, _| path.start_with?("/admin/") }
 
       expect(controllers_of(admin_prefixed))
         .to eq(["decidim/contracts_sk/admin/amendments", "decidim/contracts_sk/admin/audit_events",
                 "decidim/contracts_sk/admin/contracts", "decidim/contracts_sk/admin/documents",
-                "decidim/contracts_sk/admin/links", "decidim/contracts_sk/admin/parties"])
+                "decidim/contracts_sk/admin/links", "decidim/contracts_sk/admin/notes",
+                "decidim/contracts_sk/admin/parties"])
     end
+    # rubocop:enable RSpec/ExampleLength
 
     it "maps no non-admin path to the admin controllers" do
       # The dashboard root (/admin(.:format)) is the one admin route without a trailing slash.

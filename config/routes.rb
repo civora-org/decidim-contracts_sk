@@ -98,6 +98,13 @@ Decidim::ContractsSk::Engine.routes.draw do
       # derived through the parent contract; the controller loads both
       # records from tenant-scoped associations before the permission check.
       resources :links, only: %i[create destroy]
+
+      # Internal review notes (civora-org/civora-platform#128): the private
+      # thread role holders keep on a record. Append-only like the audit
+      # trail, so the route set is the thread page (index) and the append
+      # (create) only — no edit/update/destroy. Never public: nothing under
+      # the public routes renders a note.
+      resources :notes, only: %i[index create]
     end
 
     # Read-only audit-trail viewer (civora-org/civora-platform#92): one

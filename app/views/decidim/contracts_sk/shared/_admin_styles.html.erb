@@ -28,7 +28,13 @@
                          pushed right, no shrinking inside .item_show__header)
       .cs-admin-chips    wrapping rows of chip/filter buttons with a gap
       .cs-admin-more     breathing room above a "show all" button
-      .cs-admin-hint     small top margin for a hint line under a button row %>
+      .cs-admin-hint     small top margin for a hint line under a button row
+      .cs-admin-notes    the notes list (ordered, no bullets)
+      .cs-admin-note     one internal review note (author line + body)
+      .cs-admin-note-meta  a note's author (strong) and time, wrapping on narrow screens
+      .cs-admin-note-body  a note's text: newlines kept, long words wrapped
+      .cs-admin-note-visibility  the muted "internal only" line above the thread
+      .cs-admin-note-form  the append form: label above a full-width textarea %>
 <% unless @cs_admin_styles_rendered %>
   <% @cs_admin_styles_rendered = true %>
   <% css = capture do %>
@@ -37,6 +43,16 @@
   .cs-admin-chips { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
   .cs-admin-more { margin-top: 1rem; }
   .cs-admin-hint { margin-top: .5rem; }
+  .cs-admin-notes { list-style: none; margin: 0; padding: 0; max-width: 72ch; }
+  .cs-admin-note { padding: .875rem 0; border-top: 1px solid rgba(0, 0, 0, .1); }
+  .cs-admin-note:first-child { border-top: 0; padding-top: 0; }
+  .cs-admin-note-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; margin: 0 0 .25rem; }
+  .cs-admin-note-meta time { font-size: .875rem; color: #3e4c5c; font-variant-numeric: tabular-nums; }
+  .cs-admin-note-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+  .cs-admin-note-visibility { margin: 0; font-size: .875rem; color: #3e4c5c; }
+  .cs-admin-note-form { max-width: 72ch; }
+  .cs-admin-note-form label { display: block; }
+  .cs-admin-note-form textarea { display: block; width: 100%; margin: .375rem 0 .75rem; }
 </style>
   <% end %>
   <% if respond_to?(:snippets) %>

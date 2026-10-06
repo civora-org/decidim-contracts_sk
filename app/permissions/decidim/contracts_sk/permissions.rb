@@ -5,7 +5,7 @@ module Decidim
     # Permission checks for the engine's contract records and their child
     # records, following Decidim's DefaultPermissions contract: it may set
     # the permission action's state only for the subjects it owns (:contract,
-    # :party, :document, :amendment, :link, :audit_event) and leaves every
+    # :party, :document, :amendment, :link, :note, :audit_event) and leaves every
     # other action untouched, so the rest of the host's permission_class_chain
     # decides those.
     #
@@ -90,6 +90,16 @@ module Decidim
     # - :read is allowed when the user holds any engine role, same rule as
     #   :party/:document (the admin index shows drafts and published alike).
     #
+    # Admin scope, subject :note (civora-org/civora-platform#128): internal
+    # review notes are a private thread on a contract. :read and :create are
+    # allowed when the user holds ANY engine role (editor OR reviewer — the
+    # editor asks, the reviewer explains), in ANY lifecycle state: the
+    # thread is never public and survives publication. The gate is
+    # role-only; the parent contract (context[:contract]) is passed for
+    # the tenant-scoped lookup but not consulted. Notes are append-only, so
+    # :update and :destroy are deliberately left unset (fail-closed) for
+    # every role.
+    #
     # Admin scope, subject :audit_event (civora-org/civora-platform#92):
     # the append-only audit trail is read-only and organization-scoped, so
     # its single action mirrors the contracts index read:
@@ -130,7 +140,7 @@ module Decidim
                                                         .uniq.sort.freeze
 
       def permissions
-        return permission_action unless %i[contract party document amendment link audit_event].include? subject
+        return permission_action unless %i[contract party document amendment link note audit_event].include? subject
 
         case permission_action.scope
         when :admin
@@ -149,8 +159,16 @@ module Decidim
         when :contract then contract_action
         when :party, :document, :link then child_record_action
         when :amendment then amendment_action
+        when :note then note_action
         when :audit_event then audit_event_action
         end
+      end
+
+      # The internal-notes rule (civora-org/civora-platform#128): any engine
+      # role may read and add, no lifecycle condition. Only :read and
+      # :create are answered; update/destroy stay unset (append-only).
+      def note_action
+        toggle_allow(roles_for_user.any?) if %i[read create].include?(action)
       end
 
       # The audit-trail read rule (civora-org/civora-platform#92): any

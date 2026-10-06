@@ -823,6 +823,55 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — note (internal review notes, civora-org/civora-platform#128)" do
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    def note_outcome(roles, action, state)
+      action_for(SpecUser.new(engine_roles: roles), scope: :admin, action: action,
+                                                    contract: SpecContract.new(state), action_subject: :note)
+    end
+
+    it "allows :read and :create for any engine role on every lifecycle state" do
+      lifecycle::STATES.each do |state|
+        %i[read create].each do |action|
+          %i[editor reviewer].each do |role|
+            expect(note_outcome([role], action, state).allowed?).to be(true), "#{role} must #{action} notes on #{state}"
+          end
+        end
+      end
+    end
+
+    it "denies :read and :create for a roleless user" do
+      %i[read create].each do |action|
+        expect(note_outcome([], action, :draft).allowed?).to be(false), "roleless must not #{action} notes"
+      end
+    end
+
+    it "never answers :update or :destroy (append-only): left unset, so denied fail-closed for every role" do
+      %i[update destroy].each do |action|
+        %i[editor reviewer].each do |role|
+          outcome = note_outcome([role], action, :draft)
+
+          expect { outcome.allowed? }.to raise_error(Decidim::PermissionAction::PermissionNotSetError),
+                                         "#{role} #{action} on a note must stay unset"
+        end
+      end
+    end
+
+    it "is not answered in the public scope (notes are never public)" do
+      outcome = action_for(SpecUser.new(engine_roles: %i[editor reviewer]), scope: :public, action: :read,
+                                                                            contract: SpecContract.new(:published),
+                                                                            action_subject: :note)
+
+      expect { outcome.allowed? }.to raise_error(Decidim::PermissionAction::PermissionNotSetError)
+    end
+  end
+
   describe "admin scope — amendment (M02-05-B, civora-org/civora-platform#65)" do
     # Amendment decisions read BOTH state sources: the parent contract's
     # lifecycle state (context[:contract]) and the amendment's own draft

@@ -52,6 +52,7 @@ module Decidim
           "amendment.publish" => "decidim.contracts_sk.admin.audit_events.actions.amendment_publish",
           "contract.crz_filed" => "decidim.contracts_sk.admin.audit_events.actions.crz_filed",
           "contract.crz_filed_override" => "decidim.contracts_sk.admin.audit_events.actions.crz_filed_override",
+          "contract.note_added" => "decidim.contracts_sk.admin.audit_events.actions.note_added",
           "contract.crz_mirror_absorbed" => "decidim.contracts_sk.admin.audit_events.actions.crz_mirror_absorbed",
           "crz_import_create" => "decidim.contracts_sk.admin.audit_events.actions.crz_import_create",
           "crz_import_update" => "decidim.contracts_sk.admin.audit_events.actions.crz_import_update"

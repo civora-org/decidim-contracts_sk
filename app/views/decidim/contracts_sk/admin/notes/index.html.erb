@@ -1,0 +1,20 @@
+<%# Internal review notes page (civora-org/civora-platform#128): the entry for
+    every role holder. A reviewer cannot reach the contract's edit page
+    (editor-only), so the thread lives on its own page; the edit page embeds
+    the same thread. %>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t("decidim.contracts_sk.admin.notes.index.title") %>: <%= @contract.title %>
+    </h1>
+  </div>
+
+  <div class="card-section">
+    <% if allowed_to?(:update, :contract, contract: @contract) %>
+      <p><%= link_to t("decidim.contracts_sk.admin.notes.index.back_to_contract"), edit_admin_contract_path(@contract) %></p>
+    <% end %>
+    <p><%= link_to t("decidim.contracts_sk.admin.notes.index.back_to_list"), admin_contracts_path %></p>
+  </div>
+
+  <%= render "thread", contract: @contract, notes: @notes, form: @form %>
+</div>
