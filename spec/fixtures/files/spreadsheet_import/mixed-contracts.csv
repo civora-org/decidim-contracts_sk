@@ -1,0 +1,6 @@
+reference,title,subject_matter,amount,currency,signed_on,effective_from,crz_url,party_roles,party_icos,party_names,published_at,url
+DEMO-2026-101,Oprava strechy materskej školy,Oprava strešnej krytiny,15200.00,EUR,2026-01-12,2026-01-20,,object | contractor,00000001 | 00000004,Obec Ukážková | Strechy Demo s.r.o.,,
+DEMO-2026-102,Správa verejného osvetlenia,Údržba osvetlenia 2026,"3400,00",EUR,15.2.2026,,,,00000005,Svetlo Demo s.r.o.,,
+DEMO-2026-103,Odvoz komunálneho odpadu,Zber a odvoz odpadu,,EUR,2026-03-01,,,,,,,
+DEMO-2026-104,Dodávka softvéru,Licencie,12 oo,EUR,2026-31-02,,,,,,,
+=1+1,Zmluva s chybnou referenciou,,100.00,EUR,2026-02-01,,,,,,,

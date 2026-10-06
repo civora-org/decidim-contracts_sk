@@ -1,0 +1,46 @@
+<%# Spreadsheet import, step 1 (civora-org/civora-platform#129): the upload
+    form. Also re-rendered (422) with @preview.problems when the file itself
+    could not be read. Decidim admin classes plus the engine's .cs-admin-*
+    rules (shared/_admin_styles): the host bundle strips list styling. %>
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<% scope = "decidim.contracts_sk.admin.contract_imports" %>
+<div class="item_show__header">
+  <h1 class="item_show__header-title"><%= t("#{scope}.title") %></h1>
+</div>
+
+<p><%= link_to t("decidim.contracts_sk.admin.contracts.back_to_index"), admin_contracts_path %></p>
+
+<% if @preview&.problems&.any? %>
+  <div class="callout alert" role="alert">
+    <p><strong><%= t("#{scope}.problems_heading") %></strong></p>
+    <ul class="cs-admin-rules">
+      <% @preview.problems.each do |problem| %>
+        <li><%= t("#{scope}.errors.#{problem.code}", **problem.detail) %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="card">
+  <div class="card-section">
+    <p><%= t("#{scope}.description") %></p>
+    <%= form_with url: admin_preview_contract_import_path, method: :post, multipart: true, local: true, html: { class: "form form-defaults" } do %>
+      <div class="form__wrapper">
+        <%= label_tag :file, t("#{scope}.file_label") %>
+        <%= file_field_tag :file, accept: ".csv,text/csv", required: true %>
+      </div>
+      <%= submit_tag t("#{scope}.preview_submit"), name: nil, class: "button button__sm button__secondary" %>
+    <% end %>
+  </div>
+  <div class="card-section">
+    <h2 class="card-title"><%= t("#{scope}.rules.title") %></h2>
+    <ul class="cs-admin-rules">
+      <li><%= t("#{scope}.rules.drafts") %></li>
+      <li><%= t("#{scope}.rules.all_or_nothing") %></li>
+      <li><%= t("#{scope}.rules.columns", columns: Decidim::ContractsSk::SpreadsheetImport::KNOWN_COLUMNS.join(", ")) %></li>
+      <li><%= t("#{scope}.rules.limits", rows: Decidim::ContractsSk::SpreadsheetImport::MAX_ROWS,
+                                         kilobytes: Decidim::ContractsSk::SpreadsheetImport::MAX_BYTES / 1024) %></li>
+      <li><%= t("#{scope}.rules.format") %></li>
+    </ul>
+  </div>
+</div>

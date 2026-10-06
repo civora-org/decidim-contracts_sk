@@ -1,0 +1,81 @@
+<%# Spreadsheet import, step 2 (civora-org/civora-platform#129): the dry-run
+    result. Nothing has been written. Every row is listed with its line
+    number and its errors; the confirm form exists only when EVERY row is
+    valid, and the import re-validates the posted text regardless. All cell
+    values are escaped by ERB and truncated for display. The table reads
+    left-aligned with a right-aligned, tabular amount (.cs-admin-import). %>
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<% scope = "decidim.contracts_sk.admin.contract_imports" %>
+<% rows = @preview.rows %>
+<div class="item_show__header">
+  <h1 class="item_show__header-title"><%= t("#{scope}.preview.title") %></h1>
+</div>
+
+<p><%= link_to t("#{scope}.preview.upload_again"), admin_new_contract_import_path %></p>
+
+<% if @preview.importable? %>
+  <div class="callout success">
+    <p><%= t("#{scope}.preview.all_valid", count: rows.size) %></p>
+  </div>
+<% else %>
+  <div class="callout alert" role="alert">
+    <p><%= t("#{scope}.preview.has_errors", invalid: @preview.invalid_rows.size, total: rows.size) %></p>
+  </div>
+<% end %>
+
+<% if @preview.ignored_columns.any? %>
+  <p><em><%= t("#{scope}.preview.ignored_columns", columns: @preview.ignored_columns.join(", ")) %></em></p>
+<% end %>
+
+<div class="card">
+  <div class="card-section">
+    <div class="table-scroll">
+      <table class="table-list cs-admin-import">
+        <caption class="show-for-sr"><%= t("#{scope}.preview.title") %></caption>
+        <thead>
+          <tr>
+            <th scope="col"><%= t("#{scope}.preview.headers.line") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.contract.reference_number") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.contract.title") %></th>
+            <th scope="col" class="cs-admin-import__num"><%= t("decidim.contracts_sk.admin.contracts.form.amount") %></th>
+            <th scope="col"><%= t("#{scope}.preview.headers.result") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.each do |row| %>
+            <tr>
+              <th scope="row"><%= row.line %></th>
+              <td><%= truncate(row.cells["reference"], length: 60) %></td>
+              <td><%= truncate(row.cells["title"], length: 80) %></td>
+              <td class="cs-admin-import__num"><%= truncate(row.cells["amount"], length: 20) %></td>
+              <td>
+                <% if row.ok? %>
+                  <span class="label success"><%= t("#{scope}.preview.row_ok") %></span>
+                <% else %>
+                  <span class="label alert"><%= t("#{scope}.preview.row_invalid") %></span>
+                  <ul class="cs-admin-import__errors">
+                    <% row.errors.each do |message| %>
+                      <li><%= truncate(message, length: 200) %></li>
+                    <% end %>
+                  </ul>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if @preview.importable? %>
+    <div class="card-section">
+      <p><%= t("#{scope}.preview.confirm_hint") %></p>
+      <%= form_with url: admin_contract_imports_path, method: :post, local: true, html: { class: "form form-defaults" } do %>
+        <%= hidden_field_tag :payload, @preview.text, id: nil %>
+        <%= submit_tag t("#{scope}.preview.confirm_submit", count: rows.size),
+                       name: nil, class: "button button__sm button__secondary",
+                       data: { disable_with: t("#{scope}.preview.confirming") } %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -34,7 +34,10 @@
       .cs-admin-note-meta  a note's author (strong) and time, wrapping on narrow screens
       .cs-admin-note-body  a note's text: newlines kept, long words wrapped
       .cs-admin-note-visibility  the muted "internal only" line above the thread
-      .cs-admin-note-form  the append form: label above a full-width textarea %>
+      .cs-admin-note-form  the append form: label above a full-width textarea
+      .cs-admin-rules    a readable bulleted rules/problems list (the bundle strips list styles)
+      .cs-admin-import   the import preview table: left-aligned, tabular line numbers,
+                         right-aligned amounts (__num) and per-row error lists (__errors) %>
 <% unless @cs_admin_styles_rendered %>
   <% @cs_admin_styles_rendered = true %>
   <% css = capture do %>
@@ -53,6 +56,15 @@
   .cs-admin-note-form { max-width: 72ch; }
   .cs-admin-note-form label { display: block; }
   .cs-admin-note-form textarea { display: block; width: 100%; margin: .375rem 0 .75rem; }
+  .cs-admin-rules { list-style: disc; margin: .5rem 0 0 1.25rem; padding: 0; max-width: 72ch; }
+  .cs-admin-rules li { margin-bottom: .5rem; line-height: 1.5; }
+  .table-list.cs-admin-import th, .table-list.cs-admin-import td { text-align: left; vertical-align: top; }
+  .table-list.cs-admin-import tbody th { font-variant-numeric: tabular-nums; color: #3e4c5c; }
+  .table-list.cs-admin-import .cs-admin-import__num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cs-admin-import__errors { list-style: none; margin: .375rem 0 0; padding: 0; font-size: .875rem; color: #8a1c1c; }
+  .cs-admin-import__errors li + li { margin-top: .25rem; }
+  .table-list.cs-admin-import td:nth-child(2) { white-space: nowrap; }
+  .cs-admin-import caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
   <% end %>
   <% if respond_to?(:snippets) %>

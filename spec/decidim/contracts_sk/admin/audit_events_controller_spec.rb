@@ -22,8 +22,9 @@ module Decidim
     # back to the humanized label.
     EXPECTED_AUDIT_ACTION_KEYS = %w[
       amendment.publish contract.approve contract.approve_self contract.archive
-      contract.crz_filed contract.crz_filed_override contract.crz_mirror_absorbed contract.note_added
-      contract.publish contract.redaction_confirmed contract.reject contract.reject_self
+      contract.crz_filed contract.crz_filed_override contract.crz_mirror_absorbed
+      contract.imported_from_file contract.note_added contract.publish contract.redaction_confirmed
+      contract.reject contract.reject_self
       contract.return contract.return_self contract.submit crz_import_create crz_import_update
     ].freeze
 

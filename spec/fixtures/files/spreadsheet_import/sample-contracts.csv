@@ -1,0 +1,4 @@
+reference,title,subject_matter,amount,currency,signed_on,effective_from,crz_url,party_roles,party_icos,party_names
+DEMO-2026-001,Oprava miestnej komunikácie Ukážková ulica,Rekonštrukcia povrchu komunikácie,48500.00,EUR,2026-02-10,2026-02-15,,object | contractor,00000001 | 00000002,Obec Ukážková | Cesty Demo s.r.o.
+DEMO-2026-002,Dodávka kancelárskych potrieb,Papier a toner na rok 2026,"1250,50",EUR,12.3.2026,2026-03-20,,object | contractor,00000001 | 00000003,Obec Ukážková | Papier Demo a.s.
+DEMO-2026-003,Nájomná zmluva k priestorom kultúrneho domu,,,,2026-04-01,,https://www.crz.gov.sk/zmluva/0000000/,,,
