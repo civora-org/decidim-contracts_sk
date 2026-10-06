@@ -50,6 +50,37 @@ module Decidim
         users.compact.reject { |user| user.id == actor&.id }.uniq(&:id)
       end
 
+      # Publishes the notification for a committed transition (#94,
+      # M03-05-C / #106) through Decidim's event machinery. Recipients go in
+      # as +affected_users+ (not +followers+): Decidim's email generator
+      # sends such "own" notifications when a user's settings are `all` or
+      # `own-only`. return/reject carry the stored reviewer reason, every
+      # other event carries none.
+      #
+      # Fail-soft: a notification must never fail a transition, so any
+      # StandardError is swallowed and logged by CLASS NAME ONLY (no
+      # message, ids or emails: the message may embed record data). Returns
+      # nil in every case.
+      def publish(event:, contract:, actor:)
+        name = event_name(event)
+        users = name ? recipients(event: event, contract: contract, actor: actor) : []
+        deliver(name, event, contract, users) unless users.empty?
+        nil
+      rescue StandardError => e
+        Rails.logger.warn("[decidim-contracts_sk] transition notification failed: #{e.class}")
+        nil
+      end
+
+      def deliver(name, event, contract, users)
+        Decidim::EventsManager.publish(
+          event: name,
+          event_class: Decidim::ContractsSk::ContractTransitionEvent,
+          resource: contract,
+          affected_users: users,
+          extra: REASON_EVENTS.include?(event.to_sym) ? { reason: contract.review_reason } : {}
+        )
+      end
+
       # Candidates narrowed through the role resolver. The result is always
       # intersected with ContractLifecycle::ROLES (the same intersection
       # TransitionContract#role uses): resolver output is never trusted raw.

@@ -250,6 +250,20 @@ module Decidim
         crz_published_on ? crz_published_on.in_time_zone("UTC") : published_at
       end
 
+      # Decidim's notification-resource contract (civora-org/civora-platform
+      # #94, M03-05-C live fix): Notification#can_participate? (notification.rb:41,
+      # called by NotificationCell#show and the digest mailer) delegates to the
+      # resource, and the notification/email generators call it when present.
+      # A contract belongs to no participatory space, so the only gate is
+      # tenancy: true for a user of the contract's organization, false for
+      # nil or a user of another organization. Audience (who is notified) is
+      # decided by TransitionNotification.recipients, not here.
+      def can_participate?(user)
+        return false if user.nil? || decidim_organization_id.nil?
+
+        user.decidim_organization_id == decidim_organization_id
+      end
+
       # The record's computed CRZ deadline; nil when signed_on is unknown.
       def crz_deadline
         CrzDeadline.deadline_for(signed_on)
