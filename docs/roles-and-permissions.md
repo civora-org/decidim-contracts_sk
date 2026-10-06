@@ -106,6 +106,25 @@ Decidim::ContractsSk.role_resolver = lambda do |user, _context|
 end
 ```
 
+## Notification recipients
+
+Workflow notifications are sent through Decidim's event machinery when a
+contract transitions (#94). The `submit` event notifies all users holding the
+`:reviewer` role in the organization; the `return`, `approve`, `reject` and
+`publish` events notify the contract's author. The acting user is never notified
+about their own action.
+
+Recipients come from a config-time seam (`Decidim::ContractsSk.notification_candidates`:
+a callable `(organization) -> users`) which bounds the set of candidates, then
+narrowed through the `role_resolver` to keep only those with `:reviewer`. The
+default candidates are organization admins (confirmed, available), which suffices
+for the default resolver.
+
+**Key constraint:** when the `role_resolver` grants `:reviewer` to non-admins,
+the `notification_candidates` seam **must** include them, otherwise eligible
+reviewers will not be notified about submissions. The seam is config-time only,
+like the resolver itself — see README § Configuration.
+
 ## State source (caller contract)
 
 State is read duck-typed from the permission context:

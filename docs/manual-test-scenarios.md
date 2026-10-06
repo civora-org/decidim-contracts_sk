@@ -191,6 +191,34 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 > link, and a later `import_crz` of the same id answers "already linked"
 > without writing. Needs network access to the ekosystem feed.
 
+## 3b. Notifications walkthrough (civora-org/civora-platform#94)
+
+End-to-end verification of workflow notifications. Both demo users are
+organization admins, so each holds the `editor` and `reviewer` roles; as
+result, the actor always receives the recipient role but is excluded by the
+"actor never notified of own action" rule. Run steps 1–5 live on a booted
+host with a job processor (Sidekiq, GoodJob, etc.) running the `events` queue;
+the second user watches for notifications in the Decidim bell icon
+(`/notifications` or the dropdown).
+
+| # | User | Action | Expected | Notes |
+|---|---|---|---|---|
+| N1 | `contracts-editor@example.org` | Create contract `MANUAL-2026-NOTIF`; edit title/reference; **Submit** it | submit notification queued | contract transitions to `in_review` |
+| N2 | — | Bell icon → dropdown (or `/notifications`) | notification "… was submitted for review", linking to the edit page; timestamp | no email without SMTP; the notified users are those with `:reviewer` role |
+| N3 | `contracts-admin@example.org` | Open the notification; check the contract title/reference in the email (if SMTP) or the in-app card | title/reference rendered, reference as `decidim_html_escape(resource.reference)` (safe from XSS) | privacy rule: no amounts, parties, documents |
+| N4 | `contracts-admin@example.org` | **Return** the contract with reason "Doplňte prílohu." | return notification queued for the **author** (`contracts-editor`) | actor (`contracts-admin`) never sees own action |
+| N5 | `contracts-editor@example.org` | Check `/notifications` | "… was returned for changes"; read the reason "Doplňte prílohu." in the notification and email | reason included in return/reject only |
+| N6 | `contracts-admin@example.org` | **Resubmit** the same user; confirm **Approve** it | approve notification queued for author (`contracts-editor`) | non-reason events: `approve`, `reject`, `publish` have no reason field |
+| N7 | `contracts-editor@example.org` | Check notifications | approve card; resubmit, **Publish** (confirm redaction first) | publish notification queued for author (would be editor if someone else published) |
+| N8 | — | Both users check their inboxes | each has their own notifications only (author-targeted events; editor never gets their own submit) | "archive" is never notified; both seeded users hold all roles, so either could publish; author is always receiver for approve/reject/publish |
+| N9 | Switch host locale to `sk` and repeat one step | Slovak event text and reason rendering | localized keys live in `config/locales/sk.yml` | the i18n_scope lives under `decidim.contracts_sk.events.*` |
+| N10 | Check Rails logs | `[decidim-contracts_sk] transition notification failed:` should **not** appear | fail-soft logging (no class name only; no message/ids/emails) | see pilot-operations.md § Notification queue operations |
+
+> **Seeded-user note:** demo users are both org admins with all roles. To test
+> with editor-only and reviewer-only users, configure a host `role_resolver`
+> that assigns roles narrowly; then make sure `notification_candidates` includes
+> them (see README § Configuration and docs/roles-and-permissions.md).
+
 ## 4. RSpec-side demo data
 
 `CONTRACTS_SK_DB=1 bundle exec rspec` gains the `ContractsSkDemoData` helper

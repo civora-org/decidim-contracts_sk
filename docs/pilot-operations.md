@@ -25,7 +25,7 @@
 | App server | Puma (systemd unit) | cez UNIX socket |
 | Reverse proxy | Caddy | auto-HTTPS (Let's Encrypt), servuje aj statické `/assets` |
 | Súbory | ActiveStorage `local` service na disk + off-site záloha adresára | engine `has_one_attached :file` na `Document`; schému ActiveStorage vlastní host app |
-| Background jobs | **žiadne** | engine nevie `ApplicationJob`/`ActiveJob` a nedefinuje `app/jobs` — CRZ import je rake task (`decidim_contracts_sk:crz_import:sync`) schedulovaný cron-om; **sidekiq sa nainštalovať nemusí** |
+| Background jobs | **Decidim `events` queue** (for notifications only) | engine nedefinuje `app/jobs` a CRZ import je rake task (`decidim_contracts_sk:crz_import:sync`) — sidekiq/shoryuken sa nainštalovať nemusí, ale workflow notifications (civora-org/civora-platform#94) sú queued na Decidim's `events` queue; ak je queue processor vypnutý, notifikácie sa neodošlú (logy sú OK, queue len rastie) |
 | Monitoring | UptimeRobot + týždenná prehľada logov; vlastník = maintainer | detail § 7; Prometheus/Grafana neskôr (epic #16) |
 | Zálohy | nočný `pg_dump -Fc` + `tar` storage adresára; 7 dní lokálne + 30 dní off-site (rclone → S3-compatible, napr. Exoscale SOS) | skripty `bin/backup` / `bin/restore` v tomto repozitári (šablóny pre host server) |
 
@@ -372,6 +372,23 @@ ak RTO > 1 h, skript/infra optimalizovať a cvičenie opakovať.
 | Timer `contracts-backup` failed | záloha neprebehla — **vysoká priorita**, ohrozuje RPO | spustiť ručne, čítať chybu (disk full / rclone auth / DB prístup); do opravy ne deployovať nič dátové |
 | Timer `crz_import` failed | ekosystem nedostupný alebo sa zmenila schéma | nie je urgentné (mirror je staleness-safe); pozri docs/crz-import.md § Failure modes; zopakujú ďalšiu noc |
 | Disk > 85 % | rast logov/storage/backups | prune starých backupov lokálne, rotuj logy, zväčši disk |
+
+### Notification queue operations
+
+Workflow notifications (civora-org/civora-platform#94) fire lifecycle events
+(`submit`, `return`, `approve`, `reject`, `publish`) and queue them on
+Decidim's `events` queue for asynchronous delivery. The host app must run a
+job processor (e.g. Sidekiq, Shoryuken, GoodJob) on the `events` queue for
+notifications to be sent (with the `:async` adapter the web process runs them
+in-process). In-app notifications under the bell icon need nothing else; email
+delivery additionally needs SMTP (in-app only is fine).
+
+**Health check:** look for `[decidim-contracts_sk] transition notification failed:`
+in the Rails logs (`docker compose logs app | grep "notification failed"`).
+If this line appears, notification publishing hit an error (bad event config,
+resolver crash, etc.). Blank logs = OK (either published without errors or no
+transitions happened). If the `events` queue processor is not running, published
+events queue silently and replay on restart — no error line in the main log.
 
 Prometheus/Grafana a alerting-škálovanie vlastní epic #16 — tu zámerne len
 minimálna pilotná výbava.

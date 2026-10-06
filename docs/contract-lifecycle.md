@@ -137,6 +137,44 @@ contract cannot be missed.
 - **Follow-ups.** Notifications on approaching deadlines: civora-org/civora-platform#94.
   (Real filing confirmation replacing the `crz_url` proxy: shipped in #125.)
 
+## Notifications (#94, M03-05-A / #104)
+
+Five lifecycle transitions fire Decidim workflow notifications through the
+engine's event machinery (civora-org/civora-platform#94, M03-05-A / #104).
+The notifications are fail-soft (an event publication failure never fails the
+transition; a warn-level log entry is written instead) and include the decision
+reason for `return` and `reject` events only (privacy rule: no amounts, parties
+or document names).
+
+### Event and recipient table
+
+| Event | Fired on | Recipients | Reason in email |
+|---|---|---|---|
+| `contract_submitted` | `submit` | all users with `:reviewer` role in the organization | — |
+| `contract_returned` | `return` | the contract's author | yes, mandatory reason |
+| `contract_approved` | `approve` | the contract's author | — |
+| `contract_rejected` | `reject` | the contract's author | yes, mandatory reason |
+| `contract_published` | `publish` | the contract's author | — |
+
+**Note:** archive events (`archive`) are deliberately not notified (civora-org/civora-platform#94).
+The acting user is never notified about their own action, even if they hold a
+receiving role. Recipients see notifications under the bell icon in Decidim's
+top bar and (if the host has SMTP configured) in their email inbox, subject to
+their Decidim notification settings (each user controls which events they want
+email for — the engine respects these settings at delivery time). Both in-app
+and email delivery run through Decidim's jobs on the `events` queue, so the
+host's Active Job backend must process that queue; email additionally needs
+SMTP.
+
+### Recipient discovery
+
+Candidates are listed through a config-time seam (`Decidim::ContractsSk.notification_candidates`:
+a callable returning a collection of users per organization) and then narrowed
+through the role resolver to keep only those with the `:reviewer` role. The
+default candidates are the organization's confirmed, available admins. A host
+whose role resolver grants engine roles to non-admins must override the
+candidates seam to include them — see README § Configuration.
+
 ## Public API
 
 ```ruby
