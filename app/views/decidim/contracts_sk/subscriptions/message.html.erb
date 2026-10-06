@@ -1,0 +1,17 @@
+<%# One page for every outcome that is only a message (civora-org/civora-platform
+    #121): the "check your inbox" answer, the rate-limit and mail-failure
+    notices, the confirmed and unsubscribed results, and the invalid-link
+    page. @message selects the texts under subscriptions.messages.*; the
+    status code is set by the controller. No address is ever shown. %>
+<% t_s = "decidim.contracts_sk.subscriptions" %>
+<% subscription_page_head(t("#{t_s}.messages.#{@message}.title")) %>
+<%= render "decidim/contracts_sk/shared/public_styles" %>
+<main class="layout-1col cols-8">
+  <div class="cs-page cs-alerts-page">
+    <header class="cs-head">
+      <h1 class="cs-head__title"><%= t("#{t_s}.messages.#{@message}.title") %></h1>
+      <p class="cs-head__lead"><%= t("#{t_s}.messages.#{@message}.body") %></p>
+    </header>
+    <p><%= link_to t("#{t_s}.back_to_catalogue"), contracts_path, class: "cs-link" %></p>
+  </div>
+</main>

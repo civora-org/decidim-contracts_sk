@@ -141,6 +141,26 @@ Decidim::ContractsSk::Engine.routes.draw do
     end
   end
 
+  # E-mail alerts for new contracts matching a search (civora-org/civora-platform
+  # #121): an anonymous, double-opt-in subscription. The form page and its
+  # POST; then, per token, a page + POST pair for the confirmation and for the
+  # unsubscribe (a GET never changes state, so a mail scanner opening a link
+  # cannot opt anybody in or out; the unsubscribe POST is also the target of
+  # the List-Unsubscribe-Post one-click header). The token segment is
+  # constrained to the URL-safe alphabet of both token kinds, no format
+  # segment. All of it sits under /subscriptions, before the /:id catch-all
+  # (which only answers a single GET segment).
+  token = /[A-Za-z0-9_=.-]{16,400}/
+  get "/subscriptions/new", to: "subscriptions#new", as: :new_subscription, format: false
+  post "/subscriptions", to: "subscriptions#create", as: :subscriptions, format: false
+  get "/subscriptions/:token/confirm", to: "subscriptions#confirmation", as: :subscription_confirmation,
+                                       format: false, constraints: { token: token }
+  post "/subscriptions/:token/confirm", to: "subscriptions#confirm", format: false, constraints: { token: token }
+  get "/subscriptions/:token/unsubscribe", to: "subscriptions#cancellation", as: :subscription_unsubscribe,
+                                           format: false, constraints: { token: token }
+  post "/subscriptions/:token/unsubscribe", to: "subscriptions#unsubscribe", format: false,
+                                            constraints: { token: token }
+
   # Open-data export (civora-org/civora-platform#119): the format segment is
   # REQUIRED and limited to csv|json, so /export, /export.xml and friends
   # never match here and fall through to the /:id catch-all below (a plain

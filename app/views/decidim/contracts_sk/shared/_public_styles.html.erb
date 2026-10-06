@@ -85,6 +85,20 @@
   .cs-opendata .cs-small { margin: 0 0 .75rem; max-width: 42rem; }
   .cs-opendata__links { display: flex; flex-wrap: wrap; gap: .5rem; }
 
+  /* E-mail alerts block and pages (#121): the subscribe form sits under the
+     download block; the confirmation, unsubscribe and message pages reuse
+     the shared .cs-head. */
+  .cs-alerts { margin: 0 0 1.5rem; }
+  .cs-alerts__title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; color: #020203; }
+  .cs-alerts .cs-small { margin: 0 0 .75rem; max-width: 42rem; }
+  .cs-alerts__form { max-width: 42rem; margin-top: .75rem; }
+  .cs-alerts__field { margin-bottom: .75rem; }
+  .cs-alerts__field label { display: block; margin-bottom: .5rem; font-weight: 600; color: #020203; }
+  .cs-alerts__field input { width: 100%; min-width: 0; }
+  .cs-alerts__error { margin: .5rem 0 0; font-weight: 600; color: #a1161b; }
+  .cs-alerts-page .cs-head { padding-bottom: 1.5rem; }
+  .cs-alerts-page .cs-filters-active__list { margin-bottom: 1rem; }
+
   /* Supplier page (#117): summary facts above the register. */
   .cs-supplier { margin: 0 0 2rem; }
   .cs-supplier__facts { margin: 0 0 .75rem; }
@@ -260,7 +274,7 @@
     .cs-yb__fact:nth-child(n+3) { border-top: 0; }
   }
   @media print {
-    .cs-search form, .cs-filters, .cs-opendata, .cs-switch { display: none; }
+    .cs-search form, .cs-filters, .cs-opendata, .cs-alerts, .cs-switch { display: none; }
     .cs-detail { grid-template-columns: 1fr; }
     .cs-facts { order: 0; background: none; }
   }

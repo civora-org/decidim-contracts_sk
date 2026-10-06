@@ -30,6 +30,7 @@ module EngineRoutingContract
   SUPPLIERS_CONTROLLER = "decidim/contracts_sk/suppliers"
   STATISTICS_CONTROLLER = "decidim/contracts_sk/statistics"
   SITEMAPS_CONTROLLER = "decidim/contracts_sk/sitemaps"
+  SUBSCRIPTIONS_CONTROLLER = "decidim/contracts_sk/subscriptions"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -84,6 +85,12 @@ module EngineRoutingContract
     ["GET", "/sitemap.:format", "#{SITEMAPS_CONTROLLER}#show"],
     ["GET", "/suppliers/:ico", "#{SUPPLIERS_CONTROLLER}#show"],
     ["GET", "/statistics", "#{STATISTICS_CONTROLLER}#show"],
+    ["GET", "/subscriptions/new", "#{SUBSCRIPTIONS_CONTROLLER}#new"],
+    ["POST", "/subscriptions", "#{SUBSCRIPTIONS_CONTROLLER}#create"],
+    ["GET", "/subscriptions/:token/confirm", "#{SUBSCRIPTIONS_CONTROLLER}#confirmation"],
+    ["POST", "/subscriptions/:token/confirm", "#{SUBSCRIPTIONS_CONTROLLER}#confirm"],
+    ["GET", "/subscriptions/:token/unsubscribe", "#{SUBSCRIPTIONS_CONTROLLER}#cancellation"],
+    ["POST", "/subscriptions/:token/unsubscribe", "#{SUBSCRIPTIONS_CONTROLLER}#unsubscribe"],
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
@@ -364,6 +371,57 @@ RSpec.describe Decidim::ContractsSk::Engine do
       expect(found).not_to eq(EngineRoutingContract::STATISTICS_CONTROLLER)
     end
   end
+
+  # The route-pinning examples below list their routes in full by design.
+  # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
+  describe "e-mail alert subscription routes (civora-org/civora-platform#121)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+    let(:token) { "a" * 43 }
+
+    def recognized(verb, path)
+      request = ActionDispatch::Request.new(Rack::MockRequest.env_for(path, method: verb))
+      described_class.routes.router.recognize(request) do |route, _|
+        break route.defaults.values_at(:controller, :action)
+      end
+    end
+
+    it "names the helpers and has no format segment" do
+      expect(url_helpers.new_subscription_path).to eq("/subscriptions/new")
+      expect(url_helpers.subscriptions_path).to eq("/subscriptions")
+      expect(url_helpers.subscription_confirmation_path(token)).to eq("/subscriptions/#{token}/confirm")
+      expect(url_helpers.subscription_unsubscribe_path(token)).to eq("/subscriptions/#{token}/unsubscribe")
+    end
+
+    it "is declared before the /:id catch-all" do
+      table = described_class.routes.routes.map { |route| route.path.spec.to_s }
+
+      expect(table.index("/subscriptions/new")).to be < table.index("/:id(.:format)")
+      expect(table.index("/subscriptions/:token/confirm")).to be < table.index("/:id(.:format)")
+    end
+
+    it "changes state on POST only: a GET of a token URL is only ever a page" do
+      expect(recognized("GET", "/subscriptions/#{token}/confirm"))
+        .to eq([EngineRoutingContract::SUBSCRIPTIONS_CONTROLLER, "confirmation"])
+      expect(recognized("POST", "/subscriptions/#{token}/confirm"))
+        .to eq([EngineRoutingContract::SUBSCRIPTIONS_CONTROLLER, "confirm"])
+      expect(recognized("GET", "/subscriptions/#{token}/unsubscribe"))
+        .to eq([EngineRoutingContract::SUBSCRIPTIONS_CONTROLLER, "cancellation"])
+      expect(recognized("POST", "/subscriptions/#{token}/unsubscribe"))
+        .to eq([EngineRoutingContract::SUBSCRIPTIONS_CONTROLLER, "unsubscribe"])
+    end
+
+    it "sends GET /subscriptions to the /:id catch-all (no index of subscriptions) and refuses odd token shapes" do
+      expect(recognized("GET", "/subscriptions")).to eq([EngineRoutingContract::PUBLIC_CONTROLLER, "show"])
+      expect(recognized("GET", "/subscriptions/short/confirm")).to eq([])
+      expect(recognized("GET", "/subscriptions/#{token}%00/confirm")).to eq([])
+      expect(recognized("GET", "/subscriptions/#{token}/confirm.json")).to eq([])
+      expect(recognized("DELETE", "/subscriptions/#{token}/unsubscribe")).to eq([])
+    end
+  end
+
+  # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
 
   describe "admin URL helpers" do
     let(:url_helpers) { described_class.routes.url_helpers }
@@ -848,7 +906,7 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's fifteen controllers, distinct by the admin/ segment" do
+    it "routes only the engine's sixteen controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
         decidim/contracts_sk/admin/contract_imports decidim/contracts_sk/admin/contracts
@@ -856,7 +914,8 @@ RSpec.describe Decidim::ContractsSk::Engine do
         decidim/contracts_sk/admin/links decidim/contracts_sk/admin/notes decidim/contracts_sk/admin/parties
         decidim/contracts_sk/admin/templates decidim/contracts_sk/admin/user_roles
         decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
-        decidim/contracts_sk/sitemaps decidim/contracts_sk/statistics decidim/contracts_sk/suppliers
+        decidim/contracts_sk/sitemaps decidim/contracts_sk/statistics decidim/contracts_sk/subscriptions
+        decidim/contracts_sk/suppliers
       ].sort
 
       expect(controllers_of(route_triples)).to eq(controllers)
@@ -879,7 +938,7 @@ RSpec.describe Decidim::ContractsSk::Engine do
       expect(controllers_of(non_admin))
         .to eq(["decidim/contracts_sk/contracts", "decidim/contracts_sk/feeds", "decidim/contracts_sk/open_data",
                 "decidim/contracts_sk/sitemaps", "decidim/contracts_sk/statistics",
-                "decidim/contracts_sk/suppliers"])
+                "decidim/contracts_sk/subscriptions", "decidim/contracts_sk/suppliers"])
     end
   end
 end

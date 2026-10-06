@@ -62,7 +62,7 @@ module Decidim
       end
 
       def open_data_scope
-        published_contracts.where.not(source: CrzImport::Mapper::SOURCE)
+        Contract.open_data(current_organization)
       end
     end
   end

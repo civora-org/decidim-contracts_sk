@@ -41,6 +41,9 @@ require "logger"
 
 require "rails"
 require "action_controller/railtie"
+# ActionMailer rides along since the e-mail alerts (civora-org/civora-platform
+# #121): the engine ships a mailer on Decidim::ApplicationMailer (stand-in below).
+require "action_mailer/railtie"
 # ActiveStorage rides along since M02-05-A0 (civora-org/civora-platform#73):
 # the engine's Document model declares `has_one_attached :file` unguarded —
 # decidim-core parity, since every Decidim app runs ActiveStorage — so the
@@ -205,6 +208,12 @@ class DummyPublicPermissions < Decidim::DefaultPermissions; end
 unless defined?(Decidim::ApplicationController)
   module Decidim
     class ApplicationController < ActionController::Base
+      # The real one protects every controller from forgery; the e-mail
+      # alert forms (#121) are the first public POSTs, so the harness does too
+      # (the enforcement itself is switched off below, like Rails' test env,
+      # and switched on by the one spec that pins the CSRF behaviour).
+      protect_from_forgery with: :exception
+
       helper DummyMetaTagsHelper
       # The harness layout renders the head (see its header comment).
       layout "application"
@@ -290,6 +299,32 @@ module Decidim
 
       def permission_class_chain
         [current_component.manifest.permissions_class, DummyPublicPermissions]
+      end
+    end
+  end
+end
+
+# Minimal stand-in for decidim-core's Decidim::ApplicationMailer (civora-org/
+# civora-platform#121): the engine's mailer inherits the real one in a host,
+# which brings the "decidim/mailer" layout, the sender and the organization
+# helpers. The stand-in keeps the same names (layout, #organization_name as a
+# helper, the default sender) over a plain ActionMailer::Base; the layout is
+# spec/dummy/app/views/layouts/decidim/mailer.html.erb.
+unless defined?(Decidim::ApplicationMailer)
+  module Decidim
+    class ApplicationMailer < ActionMailer::Base
+      default from: "noreply@example.org"
+      layout "decidim/mailer"
+      helper_method :organization_name
+
+      # Same result as decidim-core's OrganizationHelper#organization_name
+      # (the name in the current locale), over the stand-in's JSON name.
+      def organization_name(organization)
+        names = organization.name
+        return organization.host.to_s unless names.is_a?(Hash)
+
+        names[I18n.locale.to_s].presence || names[organization.default_locale.to_s].presence ||
+          names.values.grep(String).first.to_s
       end
     end
   end
@@ -399,6 +434,11 @@ class DummyApp < Rails::Application
   # ExceptionWrapper#show? treats false as "unset" (renders all); only
   # :none re-raises everything.
   config.action_dispatch.show_exceptions = :none
+  # Like Rails' test environment: CSRF enforcement is off unless a spec turns
+  # it on (the e-mail alert specs do, once, to pin the unsubscribe exemption).
+  config.action_controller.allow_forgery_protection = false
+  config.action_mailer.delivery_method = :test
+  config.action_mailer.perform_deliveries = true
   config.cache_store = :null_store
 
   # Host-form parity (see the builder requires above): same default builder

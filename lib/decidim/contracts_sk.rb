@@ -32,6 +32,7 @@ require_relative "contracts_sk/link_targets"
 require_relative "contracts_sk/related_contracts"
 require_relative "contracts_sk/crz_scope"
 require_relative "contracts_sk/menu"
+require_relative "contracts_sk/subscription_throttle"
 
 # The CRZ import ETL (ADR-008, civora-org/civora-platform#86): pure-Ruby
 # layers over the transport seam — no Rails constants touched at load time

@@ -1,0 +1,22 @@
+<%# The unsubscribe page (civora-org/civora-platform#121): the page behind the
+    unsubscribe link of every alert e-mail. One button; its POST deletes the
+    subscription. Opening the page changes nothing (a mail scanner may
+    follow the link). Mail clients' one-click unsubscribe POSTs straight to
+    the same URL. %>
+<% t_s = "decidim.contracts_sk.subscriptions" %>
+<% subscription_page_head(t("#{t_s}.cancellation.title")) %>
+<%= render "decidim/contracts_sk/shared/public_styles" %>
+<main class="layout-1col cols-8">
+  <div class="cs-page cs-alerts-page">
+    <header class="cs-head">
+      <h1 class="cs-head__title"><%= t("#{t_s}.cancellation.title") %></h1>
+      <p class="cs-head__lead"><%= t("#{t_s}.cancellation.body") %></p>
+    </header>
+    <%= form_tag subscription_unsubscribe_path(params[:token]), method: :post, class: "cs-alerts__form" do %>
+      <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary" do %>
+        <span><%= t("#{t_s}.cancellation.button") %></span>
+      <% end %>
+    <% end %>
+    <p><%= link_to t("#{t_s}.back_to_catalogue"), contracts_path, class: "cs-link" %></p>
+  </div>
+</main>

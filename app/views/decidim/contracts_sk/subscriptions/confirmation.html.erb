@@ -1,0 +1,33 @@
+<%# The confirmation page (civora-org/civora-platform#121): the page behind the
+    link in the confirmation e-mail. Showing it changes nothing (a mail
+    scanner may open the link); only the button's POST confirms. The page
+    names the search being confirmed and never the address. %>
+<% t_s = "decidim.contracts_sk.subscriptions" %>
+<% subscription_page_head(t("#{t_s}.confirmation.title")) %>
+<%= render "decidim/contracts_sk/shared/public_styles" %>
+<% filters = catalogue_active_filters(@query) %>
+<main class="layout-1col cols-8">
+  <div class="cs-page cs-alerts-page">
+    <header class="cs-head">
+      <h1 class="cs-head__title"><%= t("#{t_s}.confirmation.title") %></h1>
+      <p class="cs-head__lead"><%= t("#{t_s}.confirmation.body") %></p>
+    </header>
+    <section class="cs-alerts" aria-labelledby="cs-alerts-search">
+      <h2 class="cs-alerts__title" id="cs-alerts-search"><%= t("#{t_s}.form.search_heading") %></h2>
+      <% if filters.any? %>
+        <ul class="cs-filters-active__list">
+          <% filters.each do |label, text| %>
+            <li><span class="label"><%= label %>: <%= text %></span></li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="cs-small"><%= t("#{t_s}.form.search_all") %></p>
+      <% end %>
+      <%= form_tag subscription_confirmation_path(params[:token]), method: :post, class: "cs-alerts__form" do %>
+        <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary" do %>
+          <span><%= t("#{t_s}.confirmation.button") %></span>
+        <% end %>
+      <% end %>
+    </section>
+  </div>
+</main>

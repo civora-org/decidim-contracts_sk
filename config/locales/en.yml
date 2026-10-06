@@ -220,6 +220,69 @@ en:
           next: "Continue"
           download_csv: "Download the organisation's own records (CSV)"
           note: "Periods follow the signing date. Amounts in different currencies are never added together, and records without an amount are counted but add nothing to the totals. Suppliers are counted by IČO. A contract published both by the organisation and as a record taken from CRZ is counted twice. The download contains only the organisation's own records; records taken from CRZ are not part of it. The figures are refreshed at least hourly."
+      subscriptions:
+        back_to_catalogue: "Back to the catalogue"
+        form:
+          heading: "E-mail alerts"
+          intro: "Get an e-mail when new contracts matching this search are published: a digest, not one message per contract. Only the organisation's own records are covered."
+          search_heading: "Your search"
+          search_all: "All newly published contracts"
+          email_label: "Your e-mail address"
+          privacy: "We first send one confirmation e-mail and nothing else until you confirm it within %{hours} hours; otherwise your request is deleted. We keep only your address, this search and your language, and delete them as soon as you unsubscribe. Every e-mail has an unsubscribe link."
+          submit: "Subscribe to alerts"
+          errors:
+            email: "Enter a valid e-mail address."
+            search: "Alerts cover the organisation's own records only, so a search limited to records taken from CRZ cannot be subscribed to."
+        new:
+          title: "E-mail alerts for new contracts"
+        confirmation:
+          title: "Confirm your alerts"
+          body: "Confirm that you want an e-mail when new contracts matching this search are published."
+          button: "Confirm subscription"
+        cancellation:
+          title: "Unsubscribe from alerts"
+          body: "Press the button to stop these alerts. Your address and this search are then deleted."
+          button: "Unsubscribe"
+        messages:
+          sent:
+            title: "Check your inbox"
+            body: "If the address can receive alerts, a confirmation e-mail is on its way. Open the link in it to start the alerts. Until you do, nothing else is sent, and the request is deleted automatically."
+          throttled:
+            title: "Too many requests"
+            body: "Please try again a little later."
+          unavailable:
+            title: "The e-mail could not be sent"
+            body: "Nothing was saved. Please try again later."
+          invalid_link:
+            title: "This link is not valid"
+            body: "It may have expired, been changed, or you may already be unsubscribed. You can subscribe again from the catalogue."
+          confirmed:
+            title: "Alerts are on"
+            body: "You will get an e-mail when new contracts matching your search are published. Every e-mail has an unsubscribe link."
+          unsubscribed:
+            title: "You are unsubscribed"
+            body: "Your address and this search have been deleted. No more e-mails will be sent."
+      subscription_mailer:
+        confirmation:
+          subject: "Confirm your contract alerts - %{organization}"
+          hello: "Hello,"
+          intro: "Someone, probably you, asked for e-mail alerts about new contracts published by %{organization}."
+          search_filtered: "The search:"
+          search_all: "The search: all newly published contracts."
+          action: "To start the alerts, confirm your address:"
+          button: "Confirm subscription"
+          expires: "The link works for %{hours} hours. After that the request is deleted."
+          ignore: "If this was not you, ignore this e-mail: nothing will be sent and your address is deleted automatically."
+          unsubscribe: "Delete this request"
+        digest:
+          subject: "New contracts - %{organization}"
+          hello: "Hello,"
+          intro: "New contracts matching your alert were published by %{organization}: %{count}."
+          search_filtered: "Your search:"
+          signed: "signed %{date}"
+          more: "and %{count} more in the catalogue"
+          why: "You get this e-mail because you subscribed to alerts."
+          unsubscribe: "Unsubscribe"
       feeds:
         show:
           title: "Contracts — %{organization}"
