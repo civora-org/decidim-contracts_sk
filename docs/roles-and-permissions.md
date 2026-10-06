@@ -29,7 +29,7 @@ the engine's two-role vocabulary stays unchanged for MVP.
 
 The permissions class speaks Decidim's `PermissionAction` vocabulary and
 answers for subjects `:contract`, `:party`, `:document`, `:amendment`,
-`:link` and `:audit_event`:
+`:link`, `:audit_event` and `:user_role`:
 
 | Scope | Subject | Action | Allowed when |
 |---|---|---|---|
@@ -54,6 +54,7 @@ answers for subjects `:contract`, `:party`, `:document`, `:amendment`,
 | `admin` | `amendment` | `read` | user holds **any** engine role (admin amendment index; drafts and published alike) |
 | `admin` | `audit_event` | `read` | user holds **any** engine role — role-only gate, no record and no lifecycle condition: the audit-trail viewer is organization-level (the trail's tenancy is explicit on each row), and the trail has no write surface (civora-org/civora-platform#92) |
 | `public` | `contract` | `read` | `ContractLifecycle.publicly_visible?(state)` — i.e. state in `PUBLIC_STATES` (`published`, `archived`) |
+| `admin` | `user_role` | `read`, `create`, `destroy` | user is an **organization admin with accepted admin terms** (`user.admin? && user.admin_terms_accepted?`) — engine roles, stored or resolver-granted, never qualify, so a role holder can neither grant nor revoke roles for anyone, themselves included (civora-org/civora-platform#111, parent #95). The commands `GrantUserRole` / `RevokeUserRole` re-check the actor inside their row locks and write one `user_role.grant_<role>` / `user_role.revoke_<role>` audit row (target = the affected user, no email or name) |
 | anything else | anything else | anything | **action left unset** → Decidim fails closed (see below) — including every `public`-scope `party`, `document`, `amendment`, `link` and `audit_event` action, so parties, documents, amendments, links and the audit trail are never publicly addressable as subjects (public document downloads and the version history render as part of the published `contract`/`read` page) |
 
 The transition-event list is **derived** from

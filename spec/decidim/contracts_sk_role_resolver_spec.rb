@@ -121,6 +121,17 @@ RSpec.describe Decidim::ContractsSk, ".role_resolver", :db do
       expect(queries.size).to eq(1)
     end
 
+    it "keeps the memo for the life of the user object, surviving garbage collection (#110 flake)" do
+      grant(plain, "reviewer")
+      user = Decidim::User.find(plain.id)
+      resolver.call(user, {})
+
+      # A WeakMap memo loses its (weakly held) value here and re-queries.
+      3.times { GC.start }
+
+      expect(select_queries { resolver.call(user, {}) }).to be_empty
+    end
+
     it "does not share the memo between user objects (a fresh load sees new grants)" do
       user = Decidim::User.find(plain.id)
       expect(resolver.call(user, {})).to eq([])

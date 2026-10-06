@@ -528,6 +528,10 @@ en:
             crz_mirror_absorbed: "CRZ mirror absorbed by the filed record"
             note_added: "Internal note added"
             imported_from_file: "Imported from a spreadsheet"
+            grant_editor: "Editor role granted"
+            grant_reviewer: "Reviewer role granted"
+            revoke_editor: "Editor role revoked"
+            revoke_reviewer: "Reviewer role revoked"
           amendment_target: "Amendment v%{version}"
           deleted_target: "Record no longer exists"
           filter_banner: "Showing audit events for: %{title}"
@@ -658,6 +662,9 @@ en:
             success: "Note added."
             error: "The note could not be added. It must not be empty or longer than 2000 characters."
           link: "Notes"
+        user_roles:
+          form:
+            unknown_email: "No user with this email in this organization."
         crz_handoff:
           title: "CRZ handoff"
           disclaimer: "The generated PDF is a handoff aid for the CRZ record — not a legal publication."

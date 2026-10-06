@@ -5,7 +5,8 @@ module Decidim
     # Permission checks for the engine's contract records and their child
     # records, following Decidim's DefaultPermissions contract: it may set
     # the permission action's state only for the subjects it owns (:contract,
-    # :party, :document, :amendment, :link, :note, :audit_event) and leaves every
+    # :party, :document, :amendment, :link, :note, :audit_event, :user_role) and
+    # leaves every
     # other action untouched, so the rest of the host's permission_class_chain
     # decides those.
     #
@@ -112,6 +113,18 @@ module Decidim
     #   is role-only: no record is needed (the viewer is org-level) and no
     #   lifecycle state is consulted.
     #
+    # Admin scope, subject :user_role (M03-06-D, civora-org/civora-platform
+    # #111, parent #95): managing who holds an engine role is reserved to
+    # organization admins who accepted the admin terms
+    # (user.admin? && user.admin_terms_accepted?) - and ONLY to them. The
+    # rule deliberately does NOT go through the role resolver: holding
+    # engine roles (editor, reviewer, or both, stored or via a host
+    # resolver) never confers it, so a role holder can neither grant nor
+    # revoke roles for anyone, themselves included. :read, :create and
+    # :destroy are answered; every other action stays unset (fail-closed).
+    # The decision is target-agnostic (an admin may act on themselves; see
+    # RevokeUserRole). The commands re-check the actor inside their locks.
+    #
     # Public scope, subject :contract:
     # - :read is allowed exactly when the record's state is publicly visible
     #   (ContractLifecycle::PUBLIC_STATES). No authentication required.
@@ -143,8 +156,10 @@ module Decidim
                                                         .flat_map(&:keys)
                                                         .uniq.sort.freeze
 
+      SUBJECTS = %i[contract party document amendment link note audit_event user_role].freeze
+
       def permissions
-        return permission_action unless %i[contract party document amendment link note audit_event].include? subject
+        return permission_action unless SUBJECTS.include? subject
 
         case permission_action.scope
         when :admin
@@ -165,7 +180,15 @@ module Decidim
         when :amendment then amendment_action
         when :note then note_action
         when :audit_event then audit_event_action
+        when :user_role then user_role_action
         end
+      end
+
+      # The role-management rule (civora-org/civora-platform#95/#111):
+      # organization admins with accepted terms only; engine roles never
+      # qualify, so the resolver is deliberately not consulted.
+      def user_role_action
+        toggle_allow(user&.admin? && user.admin_terms_accepted?) if %i[read create destroy].include?(action)
       end
 
       # The internal-notes rule (civora-org/civora-platform#128): any engine

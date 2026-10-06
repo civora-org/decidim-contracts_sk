@@ -17,7 +17,8 @@ module Decidim
     # The commands write exactly these action strings (transition events
     # via "contract.<event>", plus the redaction stamp, the amendment
     # publish and the two CRZ-import actions, plus the three
-    # "_self" variants of the judgment events, civora-org/civora-platform#123); the viewer's frozen label
+    # "_self" variants of the judgment events, civora-org/civora-platform#123, plus
+    # the four role grant/revoke actions, #111); the viewer's frozen label
     # mapping must cover every one of them, otherwise a row would fall
     # back to the humanized label.
     EXPECTED_AUDIT_ACTION_KEYS = %w[
@@ -26,6 +27,7 @@ module Decidim
       contract.imported_from_file contract.note_added contract.publish contract.redaction_confirmed
       contract.reject contract.reject_self
       contract.return contract.return_self contract.submit crz_import_create crz_import_update
+      user_role.grant_editor user_role.grant_reviewer user_role.revoke_editor user_role.revoke_reviewer
     ].freeze
 
     RSpec.describe Admin::AuditEventsController do
