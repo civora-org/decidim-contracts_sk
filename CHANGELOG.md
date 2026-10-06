@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [1.7.1](https://github.com/civora-org/decidim-contracts_sk/compare/v1.7.0...v1.7.1) (2026-10-06)
+
+
+### Bug Fixes
+
+* **db:** re-date three future-stamped migrations ([a15ef23](https://github.com/civora-org/decidim-contracts_sk/commit/a15ef23acec197c002718f49ef7745aef301fbf9))
+* **db:** re-date three migrations that were stamped in the future ([78f971f](https://github.com/civora-org/decidim-contracts_sk/commit/78f971f66dddce006b29faf019eed43378f0df58))
+
 ## [1.7.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.6.0...v1.7.0) (2026-10-06)
 
 
