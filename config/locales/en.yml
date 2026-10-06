@@ -86,7 +86,7 @@ en:
             signed_from: "From"
             signed_to: "To"
             party: "Party"
-            party_hint: "Name or 8-digit IČO"
+            party_hint: "8-digit IČO, or the name of a party with an IČO"
             sources:
               any: "Any"
               editorial: "Organisation's own records"

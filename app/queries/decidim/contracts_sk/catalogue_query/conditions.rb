@@ -104,6 +104,11 @@ module Decidim
           relation.where(id: party_scope(party).select(:contract_id))
         end
 
+        # A name is only ever searched among parties that carry an IČO. A
+        # party without one may be a natural person, and listing a private
+        # person's contracts by name would be profiling (PRODUCT principle 4,
+        # DPIA civora-org/civora-platform#135). Every public surface (list,
+        # feed, export, alerts) filters through here.
         def party_scope(party)
           return Party.where(ico: party.value) if party.kind == :ico
 

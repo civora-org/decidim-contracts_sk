@@ -86,7 +86,7 @@ sk:
             signed_from: "Od"
             signed_to: "Do"
             party: "Zmluvná strana"
-            party_hint: "Názov alebo 8-miestne IČO"
+            party_hint: "8-miestne IČO alebo názov strany s IČO"
             sources:
               any: "Všetky"
               editorial: "Vlastné záznamy organizácie"
