@@ -64,8 +64,20 @@ RSpec.describe "e-mail alert subscriptions", :db, type: :request do
   end
 
   describe "the form" do
-    it "is on the catalogue page next to the downloads, posting the normalized filters but not the sort" do
+    it "is reached from the catalogue's Follow link, which carries the normalized filters but not the sort" do
       get "/?q=cesta&amount_min=10+000,5&sort=amount_asc&bogus=1"
+
+      expect(response).to have_http_status(:ok)
+      html = Nokogiri::HTML(response.body)
+      follow = html.at_css("a.cs-bar__follow")
+      expect(follow["href"]).to eq("/subscriptions/new?amount_min=10000.5&q=cesta")
+      # The form itself no longer renders inline on the catalogue.
+      expect(html.at_css("form[action='/subscriptions']")).to be_nil
+      expect(response.body).not_to include("cs-alerts")
+    end
+
+    it "posts the normalized filters but not the sort from the page of its own" do
+      get "/subscriptions/new?q=cesta&amount_min=10+000,5&sort=amount_asc&bogus=1"
 
       expect(response).to have_http_status(:ok)
       html = Nokogiri::HTML(response.body)
@@ -73,14 +85,30 @@ RSpec.describe "e-mail alert subscriptions", :db, type: :request do
       expect(form).to be_present
       expect(form.at_css("input[type=email][name=email][required][autocomplete=email]")).to be_present
       expect(form.at_css("label[for=alert_email]")).to be_present
+      expect(form.at_css("#alert-privacy")).to be_present
       hidden = form.css("input[type=hidden]").to_h { |input| [input["name"], input["value"]] }
       expect(hidden).to include("q" => "cesta", "amount_min" => "10000.5")
       expect(hidden.keys).not_to include("sort", "bogus")
     end
 
-    it "is absent for the source=crz filter, whose own-records alerts could never match" do
+    it "names the subscribed search in one summary line" do
+      get "/subscriptions/new?q=plyn&amount_min=1000"
+
+      summary = Nokogiri::HTML(response.body).at_css("p.cs-alerts__search")
+      expect(summary.text.squish).to eq("Your search: Search: plyn · Amount from: 1000.0 EUR")
+    end
+
+    it "says it is every newly published contract when no filter is set" do
+      get "/subscriptions/new"
+
+      summary = Nokogiri::HTML(response.body).at_css("p.cs-alerts__search")
+      expect(summary.text.squish).to eq("Your search: All newly published contracts")
+    end
+
+    it "has no Follow link on the catalogue for the source=crz filter, whose own-records alerts could never match" do
       get "/?source=crz"
 
+      expect(Nokogiri::HTML(response.body).at_css("a.cs-bar__follow")).to be_nil
       expect(response.body).not_to include("cs-alerts")
     end
 

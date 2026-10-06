@@ -21,6 +21,13 @@ module Decidim
         link_to party.name, supplier_path(ico: party.ico), **options
       end
 
+      # The contractors of a register row, in entry order. Reads the loaded
+      # association (the lists preload parties), so a row costs no query. The
+      # object party is the contracting body itself and is left out.
+      def contract_contractors(contract)
+        contract.parties.select { |party| party.role.to_s == "contractor" }.sort_by(&:id)
+      end
+
       private
 
       def supplier_linkable?(party)

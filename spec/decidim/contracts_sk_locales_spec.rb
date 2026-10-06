@@ -448,12 +448,14 @@ module LocaleContract
       "pagination.prev" => "Previous",
       "pagination.next" => "Next",
       "pagination.page_count" => "Page %{current} of %{total}",
+      "pagination.page_link" => "Page %{page}",
       "pagination.aria_label" => "Pagination"
     },
     sk: {
       "pagination.prev" => "Predchádzajúca",
       "pagination.next" => "Ďalšia",
       "pagination.page_count" => "Strana %{current} z %{total}",
+      "pagination.page_link" => "Strana %{page}",
       "pagination.aria_label" => "Stránkovanie"
     }
   }.freeze
@@ -1050,6 +1052,15 @@ module LocaleContract
     "contract_states.published",
     "contract_states.rejected",
     "contract_states.returned",
+    "contracts.index.chips.amount",
+    "contracts.index.chips.from",
+    "contracts.index.chips.group_label",
+    "contracts.index.chips.party",
+    "contracts.index.chips.published",
+    "contracts.index.chips.remove",
+    "contracts.index.chips.signed",
+    "contracts.index.chips.source",
+    "contracts.index.chips.to",
     "contracts.index.empty",
     "contracts.index.filters.active.amount_max",
     "contracts.index.filters.active.amount_min",
@@ -1062,26 +1073,20 @@ module LocaleContract
     "contracts.index.filters.active.sort",
     "contracts.index.filters.active.source",
     "contracts.index.filters.active_heading",
-    "contracts.index.filters.amount",
     "contracts.index.filters.amount_max",
     "contracts.index.filters.amount_min",
     "contracts.index.filters.apply",
     "contracts.index.filters.clear",
-    "contracts.index.filters.more",
     "contracts.index.filters.party",
     "contracts.index.filters.party_hint",
-    "contracts.index.filters.published",
     "contracts.index.filters.published_from",
     "contracts.index.filters.published_to",
-    "contracts.index.filters.signed",
     "contracts.index.filters.signed_from",
     "contracts.index.filters.signed_to",
-    "contracts.index.filters.sort",
     "contracts.index.filters.sorts.amount_asc",
     "contracts.index.filters.sorts.amount_desc",
     "contracts.index.filters.sorts.published_asc",
     "contracts.index.filters.sorts.published_desc",
-    "contracts.index.filters.source",
     "contracts.index.filters.sources.any",
     "contracts.index.filters.sources.crz",
     "contracts.index.filters.sources.editorial",
@@ -1093,13 +1098,25 @@ module LocaleContract
     "contracts.index.open_data.crz_note",
     "contracts.index.open_data.csv",
     "contracts.index.open_data.csv_excel",
-    "contracts.index.open_data.heading",
-    "contracts.index.open_data.intro",
     "contracts.index.open_data.json",
-    "contracts.index.open_data.own_only",
+    "contracts.index.open_data.terms",
     "contracts.index.search_label",
     "contracts.index.search_submit",
     "contracts.index.title",
+    "contracts.index.toolbar.count.few",
+    "contracts.index.toolbar.count.one",
+    "contracts.index.toolbar.count.other",
+    "contracts.index.toolbar.download",
+    "contracts.index.toolbar.follow",
+    "contracts.index.toolbar.millions",
+    "contracts.index.toolbar.other_currency",
+    "contracts.index.toolbar.sort_label",
+    "contracts.index.toolbar.sorts.amount_asc",
+    "contracts.index.toolbar.sorts.amount_desc",
+    "contracts.index.toolbar.sorts.published_asc",
+    "contracts.index.toolbar.sorts.published_desc",
+    "contracts.index.toolbar.total_sr",
+    "contracts.index.toolbar.without_amount",
     "contracts.show.current_version",
     "contracts.show.documents",
     "contracts.show.documents_empty",
@@ -1154,6 +1171,7 @@ module LocaleContract
     "pagination.aria_label",
     "pagination.next",
     "pagination.page_count",
+    "pagination.page_link",
     "pagination.prev",
     "provenance.badge",
     "provenance.imported_on",
@@ -1339,8 +1357,14 @@ module PublicCatalogueLabels
       "contract.published_on" => "Published on",
       "contract.published_on_crz" => "Published in CRZ on",
       "contracts.index.empty" => "No published contracts yet.",
+      "contracts.index.chips.amount" => "Amount",
+      "contracts.index.chips.party" => "Party / IČO",
+      "contracts.index.toolbar.download" => "Download",
+      "contracts.index.toolbar.follow" => "Follow",
+      # rubocop:disable Style/FormatStringToken
+      "contracts.index.toolbar.without_amount" => "%{count} without an amount",
+      # rubocop:enable Style/FormatStringToken
       "contracts.index.no_search_results" => "No contracts match your search or filters.",
-      "contracts.index.open_data.heading" => "Download data",
       "contracts.index.open_data.csv" => "CSV",
       "contracts.index.open_data.csv_excel" => "CSV for Excel",
       "contracts.index.open_data.json" => "JSON",
@@ -1360,8 +1384,6 @@ module PublicCatalogueLabels
       "feeds.show.subtitle_filtered" => "Newly published contracts. Filters: %{filters}",
       "feeds.show.summary_signed" => "signed %{date}",
       # rubocop:enable Style/FormatStringToken
-      "contracts.index.open_data.own_only" =>
-        "Only the organisation's own records; records taken from CRZ are not included.",
       "contracts.index.open_data.crz_link" => "crz.gov.sk",
       "contracts.index.search_label" => "Search contracts",
       "contracts.index.search_submit" => "Search",
@@ -1377,26 +1399,20 @@ module PublicCatalogueLabels
       "contracts.index.filters.active.sort" => "Sort",
       "contracts.index.filters.active.source" => "Source",
       "contracts.index.filters.active_heading" => "Active filters",
-      "contracts.index.filters.amount" => "Amount (EUR)",
       "contracts.index.filters.amount_max" => "To",
       "contracts.index.filters.amount_min" => "From",
-      "contracts.index.filters.apply" => "Apply filters",
+      "contracts.index.filters.apply" => "Apply",
       "contracts.index.filters.clear" => "Clear filters",
-      "contracts.index.filters.more" => "More filters",
       "contracts.index.filters.party" => "Party",
       "contracts.index.filters.party_hint" => "Name or 8-digit IČO",
-      "contracts.index.filters.published" => "Publication date",
       "contracts.index.filters.published_from" => "From",
       "contracts.index.filters.published_to" => "To",
-      "contracts.index.filters.signed" => "Signing date",
       "contracts.index.filters.signed_from" => "From",
       "contracts.index.filters.signed_to" => "To",
-      "contracts.index.filters.sort" => "Sort by",
       "contracts.index.filters.sorts.amount_asc" => "Lowest amount first",
       "contracts.index.filters.sorts.amount_desc" => "Highest amount first",
       "contracts.index.filters.sorts.published_asc" => "Oldest first",
       "contracts.index.filters.sorts.published_desc" => "Newest first",
-      "contracts.index.filters.source" => "Source",
       "contracts.index.filters.sources.any" => "Any",
       "contracts.index.filters.sources.crz" => "Mirrored from CRZ",
       "contracts.index.filters.sources.editorial" => "Organisation's own records",
@@ -1408,8 +1424,14 @@ module PublicCatalogueLabels
       "contract.published_on" => "Dátum zverejnenia",
       "contract.published_on_crz" => "Zverejnené v CRZ dňa",
       "contracts.index.empty" => "Zatiaľ nie je zverejnená žiadna zmluva.",
+      "contracts.index.chips.amount" => "Suma",
+      "contracts.index.chips.party" => "Strana / IČO",
+      "contracts.index.toolbar.download" => "Stiahnuť",
+      "contracts.index.toolbar.follow" => "Sledovať",
+      # rubocop:disable Style/FormatStringToken
+      "contracts.index.toolbar.without_amount" => "%{count} bez sumy",
+      # rubocop:enable Style/FormatStringToken
       "contracts.index.no_search_results" => "Žiadna zmluva nezodpovedá vášmu hľadaniu ani filtrom.",
-      "contracts.index.open_data.heading" => "Stiahnuť dáta",
       "contracts.index.open_data.csv" => "CSV",
       "contracts.index.open_data.csv_excel" => "CSV pre Excel",
       "contracts.index.open_data.json" => "JSON",
@@ -1429,8 +1451,6 @@ module PublicCatalogueLabels
       "feeds.show.subtitle_filtered" => "Novozverejnené zmluvy. Filtre: %{filters}",
       "feeds.show.summary_signed" => "podpísaná %{date}",
       # rubocop:enable Style/FormatStringToken
-      "contracts.index.open_data.own_only" =>
-        "Len vlastné záznamy organizácie; záznamy prevzaté z CRZ nie sú zahrnuté.",
       "contracts.index.open_data.crz_link" => "crz.gov.sk",
       "contracts.index.search_label" => "Hľadať zmluvy",
       "contracts.index.search_submit" => "Hľadať",
@@ -1446,26 +1466,20 @@ module PublicCatalogueLabels
       "contracts.index.filters.active.sort" => "Zoradenie",
       "contracts.index.filters.active.source" => "Zdroj",
       "contracts.index.filters.active_heading" => "Aktívne filtre",
-      "contracts.index.filters.amount" => "Suma (EUR)",
       "contracts.index.filters.amount_max" => "Do",
       "contracts.index.filters.amount_min" => "Od",
-      "contracts.index.filters.apply" => "Použiť filtre",
+      "contracts.index.filters.apply" => "Použiť",
       "contracts.index.filters.clear" => "Zrušiť filtre",
-      "contracts.index.filters.more" => "Ďalšie filtre",
       "contracts.index.filters.party" => "Zmluvná strana",
       "contracts.index.filters.party_hint" => "Názov alebo 8-miestne IČO",
-      "contracts.index.filters.published" => "Dátum zverejnenia",
       "contracts.index.filters.published_from" => "Od",
       "contracts.index.filters.published_to" => "Do",
-      "contracts.index.filters.signed" => "Dátum podpisu",
       "contracts.index.filters.signed_from" => "Od",
       "contracts.index.filters.signed_to" => "Do",
-      "contracts.index.filters.sort" => "Zoradiť podľa",
       "contracts.index.filters.sorts.amount_asc" => "Od najnižšej sumy",
       "contracts.index.filters.sorts.amount_desc" => "Od najvyššej sumy",
       "contracts.index.filters.sorts.published_asc" => "Od najstarších",
       "contracts.index.filters.sorts.published_desc" => "Od najnovších",
-      "contracts.index.filters.source" => "Zdroj",
       "contracts.index.filters.sources.any" => "Všetky",
       "contracts.index.filters.sources.crz" => "Prevzaté z CRZ",
       "contracts.index.filters.sources.editorial" => "Vlastné záznamy organizácie",
@@ -1773,6 +1787,30 @@ RSpec.describe Decidim::ContractsSk do
         CrzDeadlineLabels::PLURALS.each do |locale, expectations|
           expectations.each do |count, text|
             expect(I18n.t("decidim.contracts_sk.admin.contracts.deadline.days", locale: locale, count: count))
+              .to eq(text)
+          end
+        end
+      ensure
+        I18n.backend = original_backend
+      end
+    end
+    # rubocop:enable RSpec/ExampleLength
+
+    # The catalogue toolbar's count ("1 zmluva", "3 zmluvy", "5 zmlúv").
+    # rubocop:disable RSpec/ExampleLength
+    it "resolves the toolbar count with the Slovak one/few/other rule and the English one/other rule" do
+      plural_backend = Class.new(I18n::Backend::Simple) { include I18n::Backend::Pluralization }.new
+      plural_backend.load_translations(*LocaleContract::LOCALES.map { |locale| locale_file(locale) })
+      plural_backend.store_translations(:sk, RailsI18n::Pluralization::WestSlavic.with_locale(:sk)[:sk])
+      expected = { sk: { 1 => "1 zmluva", 2 => "2 zmluvy", 4 => "4 zmluvy", 5 => "5 zmlúv", 659 => "659 zmlúv" },
+                   en: { 1 => "1 contract", 2 => "2 contracts", 659 => "659 contracts" } }
+
+      original_backend = I18n.backend
+      I18n.backend = plural_backend
+      begin
+        expected.each do |locale, counts|
+          counts.each do |count, text|
+            expect(I18n.t("decidim.contracts_sk.contracts.index.toolbar.count", locale: locale, count: count, n: count))
               .to eq(text)
           end
         end

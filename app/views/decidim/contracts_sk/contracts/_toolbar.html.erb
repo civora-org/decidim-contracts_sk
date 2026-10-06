@@ -1,0 +1,71 @@
+<%# The results toolbar, one line directly above the list. Local: query.
+    Left: what the filtered set holds (count, EUR total, and a muted note
+    for the records the total leaves out; amounts are never summed across
+    currencies). Right: the sort menu, the download menu and the alert link.
+    Menus are native <details> of plain links, so they work without
+    JavaScript; the shared name keeps one open at a time. Downloads and
+    alerts carry the active filters but never the sort (the export is
+    ordered by id, a digest is always newest first); mirrored CRZ records
+    are never exported, so a source=crz filter swaps them for a pointer to
+    the original register. %>
+<% toolbar_t = "decidim.contracts_sk.contracts.index.toolbar" %>
+<% open_data_t = "decidim.contracts_sk.contracts.index.open_data" %>
+<% summary = query.summary %>
+<% figures = catalogue_summary_figures(summary) %>
+<% crz_only = query.filters.source == "crz" %>
+<div class="cs-bar">
+  <p class="cs-bar__sum">
+    <span class="cs-bar__figure"><%= figures.first %></span>
+    <% if figures.size > 1 %>
+      <span class="cs-bar__figure"><span class="cs-sr"><%= t("#{toolbar_t}.total_sr") %></span> <%= figures.last %></span>
+    <% end %>
+    <% catalogue_summary_notes(summary).each do |note| %>
+      <span class="cs-bar__note"><%= note %></span>
+    <% end %>
+  </p>
+
+  <div class="cs-bar__tools">
+    <details class="cs-menu" name="cs-pop">
+      <summary class="cs-menu__summary"><span><%= t("#{toolbar_t}.sort_label") %> <%= catalogue_sort_label(query) %></span></summary>
+      <ul class="cs-menu__panel">
+        <% Decidim::ContractsSk::CatalogueQuery::SORTS.each do |sort| %>
+          <li>
+            <%= link_to t("decidim.contracts_sk.contracts.index.filters.sorts.#{sort}"),
+                        catalogue_sort_path(query, sort),
+                        aria: { current: (sort == query.filters.sort ? "true" : nil) } %>
+          </li>
+        <% end %>
+      </ul>
+    </details>
+
+    <details class="cs-menu" name="cs-pop">
+      <summary class="cs-menu__summary"><span><%= t("#{toolbar_t}.download") %></span></summary>
+      <div class="cs-menu__panel">
+        <% if crz_only %>
+          <p class="cs-small">
+            <%= t("#{open_data_t}.crz_note") %>
+            <%= link_to t("#{open_data_t}.crz_link"), "https://www.crz.gov.sk/", class: "cs-link" %>
+          </p>
+        <% else %>
+          <% export_params = query.to_params.except("sort").symbolize_keys %>
+          <ul>
+            <li><%= link_to t("#{open_data_t}.csv"), export_path(export_params.merge(format: :csv)), type: "text/csv" %></li>
+            <li><%= link_to t("#{open_data_t}.csv_excel"), export_path(export_params.merge(format: :csv, profile: "excel")), type: "text/csv" %></li>
+            <li><%= link_to t("#{open_data_t}.json"), export_path(export_params.merge(format: :json)), type: "application/json" %></li>
+            <li><%= link_to t("#{open_data_t}.atom"), feed_path(feed_link_params(query)), type: "application/atom+xml" %></li>
+          </ul>
+          <p class="cs-small"><%= t("#{open_data_t}.terms") %></p>
+        <% end %>
+      </div>
+    </details>
+
+    <%# E-mail alerts (civora-org/civora-platform#121) cover own records only,
+        like the downloads, so the source=crz filter has no alert link. %>
+    <% unless crz_only %>
+      <%= link_to catalogue_follow_path(query), class: "cs-bar__follow" do %>
+        <svg class="cs-bar__icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14v10H3zM3.5 5.5L10 11l6.5-5.5"/></svg>
+        <span><%= t("#{toolbar_t}.follow") %></span>
+      <% end %>
+    <% end %>
+  </div>
+</div>

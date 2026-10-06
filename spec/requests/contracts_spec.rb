@@ -82,6 +82,26 @@ class PaginableStub
     self
   end
 
+  # The register preloads parties; the stub's doubles carry none.
+  def includes(*)
+    self
+  end
+
+  # The toolbar's summary reads the filtered set through
+  # relation.group(:currency).pluck(...) and .sum(:amount); the stub answers
+  # both from its records (one EUR group).
+  def group(*)
+    self
+  end
+
+  def pluck(*)
+    [["EUR", @records.size, @records.count { |record| record.amount.present? }]]
+  end
+
+  def sum(*)
+    { "EUR" => @records.sum(BigDecimal("0")) { |record| record.amount.to_d } }
+  end
+
   def page(_num)
     self
   end
@@ -155,6 +175,8 @@ RSpec.describe "public contracts catalogue", type: :request do
       # no cell).
       amount: BigDecimal("1250.5"), currency: "EUR",
       to_param: "7",
+      # The register row's contractor names; none by default.
+      parties: [],
       **overrides
     )
   end
@@ -168,7 +190,7 @@ RSpec.describe "public contracts catalogue", type: :request do
 
       body = response.body
       aggregate_failures do
-        expect(body).to include("Download data")
+        expect(body).to include(">Download<")
         expect(body).to include(%(href="/export.csv?amount_min=100&amp;q=road"))
         expect(body).to include(%(href="/export.csv?amount_min=100&amp;profile=excel&amp;q=road"))
         expect(body).to include(%(href="/export.json?amount_min=100&amp;q=road"))
@@ -392,12 +414,15 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response).to have_http_status(:ok)
         body = response.body
         aggregate_failures do
-          expect(body).to include(%(class="cs-filters"))
+          # One GET form carries the search and the five chips; each chip is a native <details> in one
+          # exclusive group, and its label is the idle name.
+          page = Nokogiri::HTML.parse(body)
+          expect(page.css("form[role=search] details.cs-chip[name=cs-pop]").size).to eq(5)
+          expect(page.css("form[role=search] details.cs-chip > summary").map { |node| node.text.strip })
+            .to eq(["Amount", "Publication date", "Signing date", "Party / IČO", "Source"])
           expect(body).to include("<summary")
-          expect(body).to include("More filters")
           expect(body.scan("<fieldset").size).to eq(3)
-          expect(body).to include("Amount (EUR)").and include("Publication date").and include("Signing date")
-          %w[amount_min amount_max published_from published_to signed_from signed_to party source sort].each do |name|
+          %w[amount_min amount_max published_from published_to signed_from signed_to party source].each do |name|
             expect(body).to include(%(name="#{name}"))
             expect(body).to include(%(for="#{name}"))
           end
@@ -406,24 +431,25 @@ RSpec.describe "public contracts catalogue", type: :request do
           expect(body).to include(%(aria-describedby="party-hint"))
           expect(body).to include(%(id="party-hint")).and include("Name or 8-digit IČO")
           expect(body).to include("Any").and include("Organisation&#39;s own records").and include("Mirrored from CRZ")
-          expect(body).to include("Newest first").and include("Lowest amount first")
+          # The sort moved to the toolbar menu; the form carries it only when it is not the default.
+          expect(body).not_to include(%(name="sort"))
         end
       end
 
-      it "keeps the filters collapsed and shows no summary or clear link without filters" do
+      it "keeps every chip idle and shows no applied filters or clear link without filters" do
         get "/"
 
         aggregate_failures do
-          expect(response.body).not_to include(%(class="cs-filters" open))
+          expect(response.body).not_to include("cs-chip--on")
           expect(response.body).not_to include("Active filters")
           expect(response.body).not_to include("Clear filters")
         end
       end
 
-      it "keeps the filters collapsed when only q is active" do
+      it "keeps every chip idle when only q is active, and offers the clear link" do
         get "/", params: { q: "road" }
 
-        expect(response.body).not_to include(%(class="cs-filters" open))
+        expect(response.body).not_to include("cs-chip--on")
         expect(response.body).to include("Clear filters")
       end
 
@@ -434,13 +460,12 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response).to have_http_status(:ok)
         body = response.body
         aggregate_failures do
-          expect(body).to include(%(class="cs-filters" open))
           expect(body).to include(%(value="10000.5"))
           expect(body).to include(%(value="2026-09-01"))
           expect(body).to include(%(value="2026-09-30"))
           expect(body).to include(%(value="Obec Ukážková"))
           expect(body).to include(%(<option selected="selected" value="crz">))
-          expect(body).to include(%(<option selected="selected" value="amount_asc">))
+          expect(body).to include(%(<input type="hidden" name="sort" value="amount_asc" autocomplete="off" />))
         end
       end
 
@@ -453,8 +478,9 @@ RSpec.describe "public contracts catalogue", type: :request do
           expect(body).to include("Search: road")
           expect(body).to include("Amount to: 500.0 EUR")
           expect(body).to include("Source: Mirrored from CRZ")
-          expect(body).to include("Sort: Oldest first")
-          expect(body).to include(%(<a class="cs-link" href="/">Clear filters</a>))
+          # The sort has its own menu: it is no removable filter.
+          expect(body).not_to include("Sort: Oldest first")
+          expect(body).to include(%(<a class="cs-active__clear" href="/">Clear filters</a>))
         end
       end
 
@@ -1648,7 +1674,7 @@ RSpec.describe "public contracts catalogue", type: :request do
         get "/", params: { amount_min: "9000", amount_max: "100", party: "stavby" }
 
         expect(response.body).to include("Amount from: 100.0 EUR").and include("Party: stavby")
-        expect(response.body).to include(%(<a class="cs-link" href="/">Clear filters</a>))
+        expect(response.body).to include(%(<a class="cs-active__clear" href="/">Clear filters</a>))
         expect(filter_refs).to eq(%w[ZP-F-003 ZP-F-002 ZP-F-001])
       end
 

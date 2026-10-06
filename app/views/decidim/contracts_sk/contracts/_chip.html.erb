@@ -1,0 +1,16 @@
+<%# One filter chip of the catalogue's filter bar: a native <details> whose
+    label carries the applied value ("Suma: 1 000–5 000 €"). Rendered as a
+    layout: the block is the chip's fields, which sit inside the enclosing
+    GET form, so the chip's own "Apply" submits every filter at once.
+    Locals: query, chip (a key of CatalogueHelper::CHIPS). The shared
+    name keeps one popover open at a time (no JavaScript). %>
+<% active = catalogue_chip_active?(query, chip) %>
+<details class="cs-chip<%= " cs-chip--on" if active %>" name="cs-pop">
+  <summary class="cs-chip__summary"><span><%= catalogue_chip_label(query, chip) %></span></summary>
+  <div class="cs-chip__panel">
+    <%= yield %>
+    <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary cs-chip__apply" do %>
+      <span><%= t("decidim.contracts_sk.contracts.index.filters.apply") %></span>
+    <% end %>
+  </div>
+</details>

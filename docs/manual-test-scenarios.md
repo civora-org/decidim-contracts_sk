@@ -65,7 +65,7 @@ Run against the demo seed (published: DEMO-2026-006, the CRZ mirrors DEMO-2026-0
 
 | # | Request | Expected |
 |---|---------|----------|
-| P14 | `GET /zmluvy/?source=crz` | only the two mirrored records; "More filters" is open; summary chip "Source: Mirrored from CRZ" |
+| P14 | `GET /zmluvy/?source=crz` | only the two mirrored records; the "Zdroj" chip reads "Zdroj: Prevzaté z CRZ" and an applied-filter chip "Zdroj: Prevzaté z CRZ" can be removed |
 | P15 | `GET /zmluvy/?source=editorial` | only editorial records |
 | P16 | `GET /zmluvy/?amount_min=1000` and `?amount_min=10.000` | the first lists records with a stored amount of at least 1000 (records without amount disappear); the second value is ambiguous, so it is ignored and everything is listed |
 | P17 | `GET /zmluvy/?published_from=2026-09-10&published_to=2026-09-01` | reversed range swapped; the form fields show 2026-09-01 and 2026-09-10 |
