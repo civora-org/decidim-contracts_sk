@@ -15,7 +15,7 @@
 <% collapsed = local_assigns.fetch(:collapsed, false) %>
 <% if collapsed %>
   <details class="redaction-confirmation">
-    <summary><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></summary>
+    <summary aria-label="<%= contract_row_label(t("decidim.contracts_sk.admin.contracts.confirm_redaction.title"), contract) %>"><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></summary>
     <%= render "redaction_confirmation_body", contract: contract %>
   </details>
 <% else %>

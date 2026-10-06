@@ -34,17 +34,17 @@
 <% if @comparison %>
   <div class="card">
     <div class="card-divider">
-      <h2 class="card-title"><%= t("#{scope}.comparison.title") %></h2>
+      <h2 class="card-title" id="cs-crz-comparison-title"><%= t("#{scope}.comparison.title") %></h2>
     </div>
     <div class="card-section">
       <div class="table-scroll">
-        <table class="table-list">
+        <table class="table-list" aria-labelledby="cs-crz-comparison-title">
           <thead>
             <tr>
-              <th><%= t("#{scope}.comparison.field") %></th>
-              <th><%= t("#{scope}.comparison.editorial") %></th>
-              <th><%= t("#{scope}.comparison.crz") %></th>
-              <th><%= t("#{scope}.comparison.result") %></th>
+              <th scope="col"><%= t("#{scope}.comparison.field") %></th>
+              <th scope="col"><%= t("#{scope}.comparison.editorial") %></th>
+              <th scope="col"><%= t("#{scope}.comparison.crz") %></th>
+              <th scope="col"><%= t("#{scope}.comparison.result") %></th>
             </tr>
           </thead>
           <tbody>

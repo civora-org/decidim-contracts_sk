@@ -1,6 +1,6 @@
 <div class="card">
   <div class="item_show__header">
-    <h1 class="item_show__header-title">
+    <h1 class="item_show__header-title" id="cs-parties-title">
       <%= t("decidim.contracts_sk.admin.parties.index.title") %>
     </h1>
   </div>
@@ -15,14 +15,14 @@
 
   <% if @parties.any? %>
     <div class="table-scroll">
-      <table class="table-list">
+      <table class="table-list" aria-labelledby="cs-parties-title">
         <thead>
           <tr>
-            <th><%= t("decidim.contracts_sk.admin.parties.form.role") %></th>
-            <th><%= t("decidim.contracts_sk.admin.parties.form.name") %></th>
-            <th><%= t("decidim.contracts_sk.admin.parties.form.ico") %></th>
-            <th><%= t("decidim.contracts_sk.admin.parties.form.address") %></th>
-            <th></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.parties.form.role") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.parties.form.name") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.parties.form.ico") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.parties.form.address") %></th>
+            <%= actions_column_header %>
           </tr>
         </thead>
         <tbody>

@@ -203,6 +203,10 @@
   .cs-doc__body { min-width: 0; }
   .cs-link { font-weight: 600; color: var(--secondary); text-decoration: none; overflow-wrap: anywhere; }
   .cs-link:hover { text-decoration: underline; text-underline-offset: .2em; }
+  /* A link set inside a sentence must not rely on colour alone (WCAG 1.4.1). */
+  .cs-small .cs-link { text-decoration: underline; text-underline-offset: .2em; }
+  /* One visible focus ring for every engine link; the browser default is a 1px line (WCAG 2.4.7). */
+  .cs-page a:focus-visible { outline: 3px solid var(--secondary); outline-offset: 2px; border-radius: 2px; }
   .cs-plain { display: block; padding: 1rem 0; }
 
   .cs-version { padding: 1.25rem 0; }

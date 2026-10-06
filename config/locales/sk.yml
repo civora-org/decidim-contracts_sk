@@ -71,6 +71,7 @@ sk:
           title: "Zmluvy"
           empty: "Zatiaľ nie je zverejnená žiadna zmluva."
           search_label: "Hľadať zmluvy"
+          list_heading: "Register zmlúv"
           search_submit: "Hľadať"
           intro: "Zverejnené zmluvy organizácie s dokumentmi a históriou zmien."
           no_search_results: "Žiadna zmluva nezodpovedá vášmu hľadaniu ani filtrom."
@@ -224,6 +225,9 @@ sk:
           subtitle_filtered: "Novozverejnené zmluvy. Filtre: %{filters}"
           summary_signed: "podpísaná %{date}"
       admin:
+        a11y:
+          actions: "Akcie"
+          row_action: "%{action}: %{title}"
         contracts:
           back_to_index: "Späť na zmluvy"
           index:

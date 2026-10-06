@@ -66,7 +66,7 @@
     controls, permission-gated exactly like the pages themselves. %>
 <div class="card">
   <div class="card-divider">
-    <h2 class="card-title">
+    <h2 class="card-title" id="cs-documents-title">
       <%= t("decidim.contracts_sk.admin.documents.index.title") %>
     </h2>
   </div>
@@ -79,13 +79,13 @@
 
   <% if @contract.documents.any? %>
     <div class="table-scroll">
-      <table class="table-list">
+      <table class="table-list" aria-labelledby="cs-documents-title">
         <thead>
           <tr>
-            <th><%= t("decidim.contracts_sk.admin.documents.form.title") %></th>
-            <th><%= t("decidim.contracts_sk.admin.documents.form.kind") %></th>
-            <th><%= t("decidim.contracts_sk.admin.documents.form.current_file") %></th>
-            <th></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.documents.form.title") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.documents.form.kind") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.documents.form.current_file") %></th>
+            <%= actions_column_header %>
           </tr>
         </thead>
         <tbody>
@@ -132,7 +132,7 @@
     hidden — a standalone engine cannot link anything, by design. %>
 <div class="card">
   <div class="card-divider">
-    <h2 class="card-title">
+    <h2 class="card-title" id="cs-links-title">
       <%= t("decidim.contracts_sk.admin.links.index.title") %>
     </h2>
   </div>
@@ -166,12 +166,12 @@
   <% links = @contract.links.order(:id) %>
   <% if links.any? %>
     <div class="table-scroll">
-      <table class="table-list">
+      <table class="table-list" aria-labelledby="cs-links-title">
         <thead>
           <tr>
-            <th><%= t("decidim.contracts_sk.admin.links.form.target_type") %></th>
-            <th><%= t("decidim.contracts_sk.admin.links.form.target_id") %></th>
-            <th></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.links.form.target_type") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.links.form.target_id") %></th>
+            <%= actions_column_header %>
           </tr>
         </thead>
         <tbody>

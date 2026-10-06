@@ -20,7 +20,7 @@
                  vocabulary — never a second one. %>
 <% field_id = "review_reason_#{contract.id}_#{event}" %>
 <details class="review-decision">
-  <summary><%= t("decidim.contracts_sk.admin.contracts.transition.#{event}") %></summary>
+  <summary aria-label="<%= contract_row_label(t("decidim.contracts_sk.admin.contracts.transition.#{event}"), contract) %>"><%= t("decidim.contracts_sk.admin.contracts.transition.#{event}") %></summary>
   <div class="card-section">
     <%= form_with url: public_send(:"#{event}_admin_contract_path", contract), method: :post, local: true do %>
       <div class="row column">
