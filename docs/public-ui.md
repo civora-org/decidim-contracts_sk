@@ -103,6 +103,19 @@ The admin pages (overview, contracts index, audit trail) lay out their button ro
 - `.cs-admin-more` — space above a "show all" button;
 - `.cs-admin-hint` — small top margin for a hint line under a button row.
 
+Per-screen admin classes added in the 2026-10-06 arc (all in `shared/_admin_styles`): `.cs-admin-note*` (internal notes thread and form, #128), `.cs-admin-rules` (readable bulleted rules), `.cs-admin-import*` (import preview table, #129), `.cs-admin-search`, `.cs-admin-role-actions`, `.cs-admin-roles` (role screens, #112), `.cs-admin-templates`, `.cs-admin-template-*`, `.cs-admin-choice--idle` (templates, #127), `.cs-admin-sr-only`. The left-aligned-table rules repeat per screen; folding them into one `.cs-admin-table` is a known cleanup.
+
+### Host admin bundle traps
+
+The host's compiled Decidim admin bundle, not the gem source, decides how admin markup looks, and the spec harness stubs Decidim's admin layout, so none of these show up in the suite. Every one was hit live:
+
+- **`button` without a variant renders as plain text.** Always add `button__secondary` (or another variant). `button__primary` renders **red**, which reads as danger, so don't use it for a "current" state. For a one-of chooser keep every option `button__secondary` and outline the unselected ones with `.cs-admin-choice--idle`.
+- **A bare `text_area_tag` is borderless and ~160px wide.** Wrap the field inside its label (as Decidim's form builder does) inside a `form form-defaults` form, and give it width from an engine class.
+- **List styles are stripped.** A `<ul>` of rules renders as a wall of text; use `.cs-admin-rules`.
+- **`table-list` centres every cell.** Left-align people/record tables with a `.table-list.<engine-class>` rule (the doubled class is needed to win), and right-align amounts with tabular numerals.
+- **`show-for-sr` does not exist.** Use `.cs-admin-sr-only`.
+- **A bare `<a>` in a table actions cell can render invisible.** Use a GET `button_to`.
+
 Override points: (1) host or other modules can restyle the classes from their own CSS — selectors are single classes, no ids, no `!important`; (2) a host app can replace the whole partial by placing a file at `app/views/decidim/contracts_sk/shared/_admin_styles.html.erb` (host views win over engine views).
 
 ## Admin CRZ deadline badges
