@@ -107,6 +107,13 @@ The four-eyes rule (civora-org/civora-platform#123) forbids the person who last 
 Decidim::ContractsSk.allow_self_review = true
 ```
 
+A host that runs its own two-factor authentication (ADR-010, civora-org/civora-platform#164) can require it before the engine admin is reachable through two more config-time seams (civora-org/civora-platform#165): `Decidim::ContractsSk.second_factor_satisfied`, a callable `(user, session) -> boolean` (default: always `true`, so nothing changes unless set), and `Decidim::ContractsSk.second_factor_redirect_path`, a callable `(controller) -> path` (default: the Decidim root). When the first returns falsey, every engine admin request is redirected to the second's path with a flash alert. The guard covers the engine admin only: not the public catalogue, the in-space component, nor Decidim's `/admin` and `/system`. The engine implements no enrolment or challenge; those are host concerns:
+
+```ruby
+Decidim::ContractsSk.second_factor_satisfied = ->(user, session) { session[:totp_verified_user_id] == user&.id }
+Decidim::ContractsSk.second_factor_redirect_path = ->(controller) { controller.main_app.new_totp_challenge_path }
+```
+
 The freshness threshold behind the catalogue's stale indicator is configurable the same way (`Decidim::ContractsSk.stale_after`): assign Integer seconds or an `ActiveSupport::Duration`. The default is 172_800 seconds (48 h — twice the recommended nightly sync cadence); it only decides when the stale notice appears (see the provenance bullet under Usage), never implying real-time accuracy:
 
 ```ruby

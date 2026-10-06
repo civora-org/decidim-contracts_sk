@@ -335,6 +335,32 @@ submit and approve their own record.
 Decidim::ContractsSk.allow_self_review = true
 ```
 
+## Second-factor guard (#165, ADR-010)
+
+Two config-time seams let a host require a second factor before the engine
+admin is reachable, without the engine knowing how 2FA works (enrolment and
+the challenge screen are host concerns, civora-org/civora-platform#164):
+
+- `Decidim::ContractsSk.second_factor_satisfied`: a callable
+  `(user, session) -> boolean`. Default: always `true`, so the guard is off
+  unless a host sets it.
+- `Decidim::ContractsSk.second_factor_redirect_path`: a callable
+  `(controller) -> path`. Default: the Decidim root.
+
+A `before_action` in the engine admin base controller (after
+`authenticate_user!`, before any permission check) redirects to the path with
+the flash alert `admin.second_factor.required` when the callable returns
+falsey. It covers every engine admin route, the admin root included. It does
+not touch the public catalogue, the in-space component, or Decidim's `/admin`
+and `/system`. Like `role_resolver`, assign both at config time only, and
+never log the user or session inside them.
+
+```ruby
+# config/initializers/contracts_sk.rb (host with TOTP, ADR-010)
+Decidim::ContractsSk.second_factor_satisfied = ->(user, session) { session[:totp_verified_user_id] == user&.id }
+Decidim::ContractsSk.second_factor_redirect_path = ->(controller) { controller.main_app.new_totp_challenge_path }
+```
+
 ## Explicit deferrals
 
 - **Role assignment per user** shipped with #95; see [Assigning roles](#assigning-roles-95).

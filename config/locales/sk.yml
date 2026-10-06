@@ -657,6 +657,8 @@ sk:
             target_type: "Typ cieľa"
             target_id: "ID cieľa"
             submit: "Pridať odkaz"
+        second_factor:
+          required: "Na otvorenie správy zmlúv dokončite druhý krok overenia."
         templates:
           link: "Šablóny"
           back_to_list: "Späť na šablóny"

@@ -23,6 +23,7 @@ end
 require_relative "contracts_sk/contract_lifecycle"
 require_relative "contracts_sk/role_resolver"
 require_relative "contracts_sk/self_review"
+require_relative "contracts_sk/second_factor"
 require_relative "contracts_sk/stale_after"
 require_relative "contracts_sk/notification_candidates"
 require_relative "contracts_sk/transition_notification"
