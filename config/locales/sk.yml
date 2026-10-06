@@ -43,6 +43,7 @@ sk:
       menu:
         contracts: "Zmluvy"
         admin_contracts: "Zmluvy"
+        user_admin_contracts: "Správa zmlúv"
       pagination:
         prev: "Predchádzajúca"
         next: "Ďalšia"

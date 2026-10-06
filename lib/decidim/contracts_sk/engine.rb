@@ -42,6 +42,12 @@ module Decidim
       initializer "decidim_contracts_sk.admin_menu" do
         Decidim::ContractsSk::Menu.register_admin_menu_modules!
       end
+
+      # Account-area entry link to the engine admin for role holders who are
+      # not Decidim admins (civora-org/civora-platform#161).
+      initializer "decidim_contracts_sk.user_menu" do
+        Decidim::ContractsSk::Menu.register_user_menu!
+      end
     end
   end
 end

@@ -108,7 +108,7 @@ RSpec.describe "admin link management", type: :request do
 
       post "/admin/contracts/1/links", params: { link: { target_type: supported_type, target_id: "12" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -118,7 +118,7 @@ RSpec.describe "admin link management", type: :request do
 
       post "/admin/contracts/1/links", params: { link: { target_type: supported_type, target_id: "12" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -128,7 +128,7 @@ RSpec.describe "admin link management", type: :request do
 
       delete "/admin/contracts/1/links/9"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -138,7 +138,7 @@ RSpec.describe "admin link management", type: :request do
 
       delete "/admin/contracts/1/links/9"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
   end
@@ -264,7 +264,7 @@ RSpec.describe "admin link management", type: :request do
 
       post "/admin/contracts/#{contract.id}/links", params: valid_params
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::ContractLink.count).to eq(0)
     end
@@ -275,13 +275,13 @@ RSpec.describe "admin link management", type: :request do
 
       post "/admin/contracts/#{contract.id}/links", params: valid_params
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::ContractLink.count).to eq(1)
 
       delete "/admin/contracts/#{contract.id}/links/#{link.id}"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::ContractLink.exists?(link.id)).to be(true)
     end

@@ -106,7 +106,7 @@ RSpec.describe "admin party management", type: :request do
 
       get "/admin/contracts/1/parties/new"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -116,7 +116,7 @@ RSpec.describe "admin party management", type: :request do
 
       post "/admin/contracts/1/parties", params: { party: { role: "object", name: "Obec Zelen" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -126,7 +126,7 @@ RSpec.describe "admin party management", type: :request do
 
       get "/admin/contracts/1/parties/new"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -136,7 +136,7 @@ RSpec.describe "admin party management", type: :request do
 
       patch "/admin/contracts/1/parties/9", params: { party: { role: "object", name: "Tampered" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -146,7 +146,7 @@ RSpec.describe "admin party management", type: :request do
 
       delete "/admin/contracts/1/parties/9"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -156,7 +156,7 @@ RSpec.describe "admin party management", type: :request do
 
       get "/admin/contracts/1/parties/9/edit"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
   end
@@ -334,7 +334,7 @@ RSpec.describe "admin party management", type: :request do
 
       post "/admin/contracts/#{contract.id}/parties", params: valid_params
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Party.count).to eq(0)
     end
@@ -345,13 +345,13 @@ RSpec.describe "admin party management", type: :request do
 
       post "/admin/contracts/#{contract.id}/parties", params: valid_params
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Party.count).to eq(1)
 
       delete "/admin/contracts/#{contract.id}/parties/#{party.id}"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Party.exists?(party.id)).to be(true)
     end

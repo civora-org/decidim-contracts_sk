@@ -108,7 +108,7 @@ RSpec.describe "admin document management", type: :request do
 
       get "/admin/contracts/1/documents/new"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -118,7 +118,7 @@ RSpec.describe "admin document management", type: :request do
 
       post "/admin/contracts/1/documents", params: { document: { title: "Scan", kind: "contract" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -128,7 +128,7 @@ RSpec.describe "admin document management", type: :request do
 
       get "/admin/contracts/1/documents/new"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -139,7 +139,7 @@ RSpec.describe "admin document management", type: :request do
       patch "/admin/contracts/1/documents/9",
             params: { document: { file: fixture_file_upload("spec/fixtures/files/sample.pdf") } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -149,7 +149,7 @@ RSpec.describe "admin document management", type: :request do
 
       delete "/admin/contracts/1/documents/9"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -159,7 +159,7 @@ RSpec.describe "admin document management", type: :request do
 
       get "/admin/contracts/1/documents/9/edit"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
   end
@@ -452,7 +452,7 @@ RSpec.describe "admin document management", type: :request do
         document: { title: "Signed contract scan", kind: "contract", file: upload("sample.pdf", "application/pdf") }
       }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Document.count).to eq(0)
     end
@@ -465,13 +465,13 @@ RSpec.describe "admin document management", type: :request do
         document: { title: "Another scan", kind: "annex", file: upload("sample.pdf", "application/pdf") }
       }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Document.count).to eq(1)
 
       delete "/admin/contracts/#{contract.id}/documents/#{document.id}"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Document.exists?(document.id)).to be(true)
     end

@@ -224,7 +224,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
       sign_in(roles: %i[reviewer])
       get "/admin/contracts/new"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(flash[:dummy_authentication_required]).to be_nil
     end
@@ -235,7 +235,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
 
       get "/admin/contracts/1/edit"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -245,7 +245,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
 
       patch "/admin/contracts/1", params: { contract: { title: "Tampered", reference: "ZP-2026-001" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -728,7 +728,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
       patch "/admin/contracts/#{record.id}",
             params: { contract: { title: "Sneaky edit", reference: "ZP-2026-009" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       record.reload
       expect(record.title).to eq("Road reconstruction")
@@ -741,7 +741,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
       patch "/admin/contracts/#{record.id}",
             params: { contract: { title: "Sneaky edit", reference: "ZP-2026-009" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       record.reload
       expect(record.title).to eq("Road reconstruction")
@@ -755,7 +755,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
 
       post "/admin/contracts", params: valid_params
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
     end
@@ -768,7 +768,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
         contract: { title: "Tampered", reference: "ZP-2026-009", amount: "-5" }
       }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
 
       record.reload

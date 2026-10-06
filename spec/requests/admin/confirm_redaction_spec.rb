@@ -101,7 +101,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
 
       post "/admin/contracts/1/confirm_redaction"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -111,7 +111,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
 
       post "/admin/contracts/1/confirm_redaction"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
   end
@@ -251,7 +251,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
       post "/admin/contracts/#{contract.id}/confirm_redaction"
 
       aggregate_failures do
-        expect(response).to redirect_to("/")
+        expect(response).to redirect_to("/admin")
         expect(flash[:alert]).to eq(unauthorized)
       end
 

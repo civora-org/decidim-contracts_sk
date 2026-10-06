@@ -91,7 +91,10 @@ Hostiteľskú Decidim 0.31 app vytvor a nakonfiguruj podľa README tohto
 repozitára (Gemfile → `bundle install` → mount `Decidim::ContractsSk::Engine,
 at: "/zmluvy"` v `config/routes.rb`). Engine pridáva menu položky aj admin
 sidebar sám; konfigurácia rolí je cez `Decidim::ContractsSk.role_resolver`
-(pozri README § Configuration).
+(pozri README § Configuration). Používateľ s rolou editora/recenzenta, ktorý
+nie je správca Decidimu, nemá prístup na `/admin`; do správy zmlúv ho vedie
+odkaz „Správa zmlúv" v menu účtu (`/account`) a odmietnutá akcia ho vráti
+na prehľad správy zmlúv (nie na 404).
 
 ### 2.6 Secrets a prostredie
 

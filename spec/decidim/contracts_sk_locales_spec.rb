@@ -385,8 +385,10 @@ module LocaleContract
   # the public catalogue entry (main + mobile menu) and the admin sidebar
   # entry carry separate keys so the host-facing vocabularies can diverge.
   MENU_LABELS = {
-    en: { "menu.contracts" => "Contracts", "menu.admin_contracts" => "Contracts" },
-    sk: { "menu.contracts" => "Zmluvy", "menu.admin_contracts" => "Zmluvy" }
+    en: { "menu.contracts" => "Contracts", "menu.admin_contracts" => "Contracts",
+          "menu.user_admin_contracts" => "Contracts administration" },
+    sk: { "menu.contracts" => "Zmluvy", "menu.admin_contracts" => "Zmluvy",
+          "menu.user_admin_contracts" => "Správa zmlúv" }
   }.freeze
 
   # The admin index filter labels per locale (civora-org/civora-platform
@@ -968,6 +970,7 @@ module LocaleContract
     "feeds.show.title",
     "menu.admin_contracts",
     "menu.contracts",
+    "menu.user_admin_contracts",
     "meta.contract.amount",
     "meta.contract.reference",
     "meta.contract.supplier",

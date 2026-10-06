@@ -80,7 +80,7 @@ RSpec.describe "admin CRZ import", type: :request do
       sign_in(roles: %i[reviewer])
       post "/admin/contracts/import_crz", params: { source_id: "2142424" }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
