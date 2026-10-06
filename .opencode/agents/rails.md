@@ -33,3 +33,4 @@ Rails and Decidim engine implementation agent.
 - Admin UI: avoid the *Host admin bundle traps* in `docs/public-ui.md` (button variants, unstyled textarea, stripped lists, centred `table-list` cells, no `show-for-sr`); the suite cannot catch them.
 - When a model becomes something Decidim renders, mails or exports (notifications, search, serializers), list every Decidim call site on it with file:line and cover the missing methods.
 - When parallel branches exist, expect conflicts in the shared registries (locales and `EXPECTED_KEYS`, routing spec, audit vocabulary, `_admin_styles`, menu): keep both sides, keep lists sorted, re-run the full `:db` suite.
+- Migration timestamps: today's date plus a distinct suffix (`YYYYMMDD0000NN`), never a future date; the router assigns suffixes when branches run in parallel.

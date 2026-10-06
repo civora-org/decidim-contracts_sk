@@ -136,6 +136,8 @@ Current lessons:
 
 - **Implementing a host-framework contract means auditing every consumer.** Making an engine record a Decidim notification resource (#106) required `can_participate?` — found only by a live 500 on `/notifications`. When a model becomes something Decidim renders, mails, digests or exports, list every Decidim call site on it (cells, mailers, jobs, serializers) with file:line before shipping, and add a spec that drives the real Decidim class.
 
+- **Migration timestamps are today's date, never a reservation.** To keep parallel branches from colliding, agents were told to pick "a later timestamp" and chose 10–13 October on 6 October; Rails 7.2 refuses to load a schema with migrations more than a day in the future (`InvalidMigrationTimestampError`), so v1.7.0 broke the host's CI and needed v1.7.1 to re-date three migrations. Use the current date with a distinct sequence suffix (`YYYYMMDD0000NN`), let the router assign suffixes when branches run in parallel, and keep `spec/decidim/contracts_sk/migration_timestamps_spec.rb` green (proven in the 2026-10-06 arc).
+
 *Archived lessons (dependency floors & caps, cloud-session gates and per-person walkthroughs migrated 2026-10-06; tracker & issue hygiene; engine mount-design; tooling & verification hygiene; host-app & ops; engine implementation mechanics; release-please; Decidim view & asset mechanics; live-source operations; issue & planning hygiene; agent-review session tooling clusters) live in [`docs/retro-lessons.md`](docs/retro-lessons.md).*
 
 ## Testing Expectations
