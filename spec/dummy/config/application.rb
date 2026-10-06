@@ -128,6 +128,23 @@ end
 # railtie's config initializer is seen.
 require "kaminari/activerecord"
 
+# The REAL Decidim::MetaTagsHelper (civora-org/civora-platform#122): a host
+# gets it through Decidim::ApplicationController's `helper`, and the engine's
+# public views register their titles/descriptions through it. The harness
+# layout (spec/dummy/app/views/layouts/application.html.erb) renders the
+# values the way decidim-core's _head partial does. Only the image lookup is
+# stubbed: MetaImageUrlResolver queries content blocks, which need a full
+# Decidim schema.
+require File.join(decidim_core, "app/helpers/decidim/meta_tags_helper")
+
+module DummyMetaTagsHelper
+  include Decidim::MetaTagsHelper
+
+  def resolve_meta_image_url(_resource)
+    nil
+  end
+end
+
 # Inert chain members: DefaultPermissions' base target_scope ("") matches no
 # real scope (:admin / :public), so #permissions returns the action untouched
 # — exactly what a chain member that decides nothing must do.
@@ -138,6 +155,10 @@ class DummyPublicPermissions < Decidim::DefaultPermissions; end
 unless defined?(Decidim::ApplicationController)
   module Decidim
     class ApplicationController < ActionController::Base
+      helper DummyMetaTagsHelper
+      # The harness layout renders the head (see its header comment).
+      layout "application"
+
       # Devise-ish seam (stubbed; overridden per-example in specs): a real
       # host provides current_organization via Decidim::NeedsOrganization,
       # and the engine's public catalogue reads it for its tenant scope.

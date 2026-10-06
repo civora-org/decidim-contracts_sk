@@ -48,6 +48,17 @@ sk:
         next: "Ďalšia"
         page_count: "Strana %{current} z %{total}"
         aria_label: "Stránkovanie"
+      meta:
+        page: "Strana %{page}"
+        contract:
+          title: "%{title} (%{reference})"
+          reference: "Číslo zmluvy: %{reference}"
+          amount: "Suma: %{amount}"
+          suppliers: "Dodávatelia: %{suppliers}"
+          supplier: "%{name} (IČO %{ico})"
+        supplier:
+          title: "%{name} (IČO %{ico})"
+          description: "Zverejnené zmluvy dodávateľa %{name} (IČO %{ico}) v katalógu: %{count}."
       provenance:
         badge: "Externe potvrdené údaje"
         imported_on: "Zrkadlené z registra CRZ dňa"

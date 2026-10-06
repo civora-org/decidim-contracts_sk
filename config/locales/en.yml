@@ -48,6 +48,17 @@ en:
         next: "Next"
         page_count: "Page %{current} of %{total}"
         aria_label: "Pagination"
+      meta:
+        page: "Page %{page}"
+        contract:
+          title: "%{title} (%{reference})"
+          reference: "Reference: %{reference}"
+          amount: "Amount: %{amount}"
+          suppliers: "Suppliers: %{suppliers}"
+          supplier: "%{name} (IČO %{ico})"
+        supplier:
+          title: "%{name} (IČO %{ico})"
+          description: "Published contracts of %{name} (IČO %{ico}) in the catalogue: %{count}."
       provenance:
         badge: "Externally confirmed"
         imported_on: "Mirrored from the CRZ register on"
