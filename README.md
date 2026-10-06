@@ -91,6 +91,12 @@ Decidim::ContractsSk.role_resolver = ->(user, _context) { user&.admin? ? %i[edit
 
 Results are always intersected with the engine's role vocabulary, and the resolver is config-time only — never mutate it at request time. See [docs/roles-and-permissions.md](docs/roles-and-permissions.md).
 
+Workflow notifications (civora-org/civora-platform#94) use a second config-time seam, `Decidim::ContractsSk.notification_candidates`: a callable `(organization) -> users` listing who may be notified about a submission. The candidates are then narrowed through `role_resolver` (only holders of the `reviewer` role are notified), so the seam bounds the users that are asked and never grants a role. The default is the organization's confirmed, available admins — enough for the default resolver. A host whose resolver grants roles to non-admins overrides it to cover every user that can hold `reviewer`; the acting user is never notified about their own action:
+
+```ruby
+Decidim::ContractsSk.notification_candidates = ->(organization) { Decidim::User.where(organization: organization).available.confirmed.where(my_role: "reviewer") }
+```
+
 The four-eyes rule (civora-org/civora-platform#123) forbids the person who last submitted a contract to return, approve or reject it, so a deployment needs at least two people holding engine roles. One-person municipalities can opt out with `Decidim::ContractsSk.allow_self_review = true` (default `false`, config-time only); every such self-judgment is then audited as `contract.<event>_self`:
 
 ```ruby
