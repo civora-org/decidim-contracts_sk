@@ -27,6 +27,10 @@ module Decidim
     #   — importing one CRZ record by id is a record-management act on the
     #   catalogue, not an edit of an existing record (the created/updated
     #   record's own lifecycle guards live in the upsert command's lock).
+    # - :import_file (civora-org/civora-platform#129, spreadsheet bulk
+    #   import) is allowed when the user's engine roles include :editor,
+    #   role-only like :import_crz: the rows land as DRAFTS and still pass
+    #   the normal workflow (four-eyes review included).
     # - :download_crz_handoff (M02-05-C, civora-org/civora-platform#74) is
     #   allowed when the user's engine roles include :editor, with NO
     #   editability condition — fetching the generated handoff aid is
@@ -186,7 +190,7 @@ module Decidim
         # civora-org/civora-platform#74) and :import_crz (ADR-008,
         # civora-org/civora-platform#86) share the role-only rule: editor
         # membership decides, no lifecycle state is consulted.
-        when :create, :download_crz_handoff, :import_crz
+        when :create, :download_crz_handoff, :import_crz, :import_file
           toggle_allow(roles_for_user.include?(:editor))
         # :update and :confirm_redaction (ADR-007,
         # civora-org/civora-platform#91) share the editor-role rule but

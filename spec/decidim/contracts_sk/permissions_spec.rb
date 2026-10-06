@@ -491,6 +491,33 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — import_file (civora-org/civora-platform#129: editor-only spreadsheet import)" do
+    def file_import_user(*roles)
+      SpecUser.new(engine_roles: roles)
+    end
+
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    it "is allowed for an editor and denied for a reviewer" do
+      aggregate_failures do
+        expect(action_for(file_import_user(:editor), scope: :admin, action: :import_file).allowed?).to be(true)
+        expect(action_for(file_import_user(:reviewer), scope: :admin, action: :import_file).allowed?).to be(false)
+      end
+    end
+
+    it "is disallowed (not unset) for a roleless user — fail-closed" do
+      aggregate_failures do
+        expect(action_for(file_import_user, scope: :admin, action: :import_file).allowed?).to be(false)
+        expect(unset?(file_import_user, scope: :admin, action: :import_file)).to be(false)
+      end
+    end
+  end
+
   describe "admin scope — read (admin index)" do
     it "is allowed when the user holds any engine role" do
       swap_resolver(%i[reviewer]) do

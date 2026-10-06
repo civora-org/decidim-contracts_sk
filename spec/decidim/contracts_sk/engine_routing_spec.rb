@@ -17,6 +17,7 @@ require "spec_helper"
 module EngineRoutingContract
   PUBLIC_CONTROLLER = "decidim/contracts_sk/contracts"
   ADMIN_CONTROLLER = "decidim/contracts_sk/admin/contracts"
+  IMPORTS_CONTROLLER = "decidim/contracts_sk/admin/contract_imports"
   PARTIES_CONTROLLER = "decidim/contracts_sk/admin/parties"
   DOCUMENTS_CONTROLLER = "decidim/contracts_sk/admin/documents"
   AMENDMENTS_CONTROLLER = "decidim/contracts_sk/admin/amendments"
@@ -86,6 +87,9 @@ module EngineRoutingContract
     ["POST", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#create"],
     ["GET", "/admin/contracts/new(.:format)", "#{ADMIN_CONTROLLER}#new"],
     ["POST", "/admin/contracts/import_crz(.:format)", "#{ADMIN_CONTROLLER}#import_crz"],
+    ["GET", "/admin/contracts/import(.:format)", "#{IMPORTS_CONTROLLER}#new"],
+    ["POST", "/admin/contracts/import(.:format)", "#{IMPORTS_CONTROLLER}#create"],
+    ["POST", "/admin/contracts/import/preview(.:format)", "#{IMPORTS_CONTROLLER}#preview"],
     ["POST", "/admin/contracts/:id/approve(.:format)", "#{ADMIN_CONTROLLER}#approve"],
     ["POST", "/admin/contracts/:id/archive(.:format)", "#{ADMIN_CONTROLLER}#archive"],
     ["POST", "/admin/contracts/:id/confirm_redaction(.:format)", "#{ADMIN_CONTROLLER}#confirm_redaction"],
@@ -574,6 +578,20 @@ RSpec.describe Decidim::ContractsSk::Engine do
     end
   end
 
+  describe "spreadsheet import routes (civora-org/civora-platform#129)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    it "names the upload, dry-run and import helpers on /admin/contracts/import" do
+      aggregate_failures do
+        expect(url_helpers.admin_new_contract_import_path).to eq("/admin/contracts/import")
+        expect(url_helpers.admin_preview_contract_import_path).to eq("/admin/contracts/import/preview")
+        expect(url_helpers.admin_contract_imports_path).to eq("/admin/contracts/import")
+      end
+    end
+  end
+
   describe "redaction-confirmation member route (ADR-007, civora-org/civora-platform#91)" do
     include EngineRoutingContract
 
@@ -820,9 +838,9 @@ RSpec.describe Decidim::ContractsSk::Engine do
     it "routes only the engine's fourteen controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
-        decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/dashboard
-        decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links decidim/contracts_sk/admin/notes
-        decidim/contracts_sk/admin/parties
+        decidim/contracts_sk/admin/contract_imports decidim/contracts_sk/admin/contracts
+        decidim/contracts_sk/admin/dashboard decidim/contracts_sk/admin/documents
+        decidim/contracts_sk/admin/links decidim/contracts_sk/admin/notes decidim/contracts_sk/admin/parties
         decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
         decidim/contracts_sk/sitemaps decidim/contracts_sk/statistics decidim/contracts_sk/suppliers
       ].sort
@@ -831,17 +849,13 @@ RSpec.describe Decidim::ContractsSk::Engine do
     end
     # rubocop:enable RSpec/ExampleLength
 
-    # rubocop:disable RSpec/ExampleLength
     it "maps no admin-prefixed path to the public controller" do
       admin_prefixed = route_triples.select { |_, path, _| path.start_with?("/admin/") }
+      admin_controllers = %w[amendments audit_events contract_imports contracts documents links notes parties]
+                          .map { |name| "decidim/contracts_sk/admin/#{name}" }
 
-      expect(controllers_of(admin_prefixed))
-        .to eq(["decidim/contracts_sk/admin/amendments", "decidim/contracts_sk/admin/audit_events",
-                "decidim/contracts_sk/admin/contracts", "decidim/contracts_sk/admin/documents",
-                "decidim/contracts_sk/admin/links", "decidim/contracts_sk/admin/notes",
-                "decidim/contracts_sk/admin/parties"])
+      expect(controllers_of(admin_prefixed)).to eq(admin_controllers)
     end
-    # rubocop:enable RSpec/ExampleLength
 
     it "maps no non-admin path to the admin controllers" do
       # The dashboard root (/admin(.:format)) is the one admin route without a trailing slash.

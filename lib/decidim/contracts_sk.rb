@@ -45,4 +45,12 @@ require_relative "contracts_sk/crz_import/sync"
 require_relative "contracts_sk/crz_import/prune"
 require_relative "contracts_sk/crz_import/backfill_published_on"
 
+# The spreadsheet (CSV) bulk import (civora-org/civora-platform#129): the
+# reader and the dry-run preview are plain Ruby over the autoloaded forms
+# (resolved at call time); the writing command lives in app/commands.
+require_relative "contracts_sk/spreadsheet_import/reader"
+require_relative "contracts_sk/spreadsheet_import/party_columns"
+require_relative "contracts_sk/spreadsheet_import/row_builder"
+require_relative "contracts_sk/spreadsheet_import/preview"
+
 require_relative "contracts_sk/engine" if defined?(Rails)

@@ -17,6 +17,14 @@ Decidim::ContractsSk::Engine.routes.draw do
     # /:id catch-all like the rest of the namespace.
     root to: "dashboard#show"
 
+    # Spreadsheet bulk import (civora-org/civora-platform#129): a GET upload
+    # form, a stateless POST dry run (writes nothing) and a POST that
+    # re-validates the posted text and imports it. Declared before the
+    # contracts resource so "import" is never read as a record id.
+    get "contracts/import", to: "contract_imports#new", as: :new_contract_import
+    post "contracts/import/preview", to: "contract_imports#preview", as: :preview_contract_import
+    post "contracts/import", to: "contract_imports#create", as: :contract_imports
+
     resources :contracts, only: %i[index new create edit update] do
       # CRZ single-record import (ADR-008, civora-org/civora-platform#86):
       # one collection POST taking a :source_id (CRZ numeric id) param —
