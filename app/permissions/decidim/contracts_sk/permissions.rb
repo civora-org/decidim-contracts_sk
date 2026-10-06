@@ -105,6 +105,14 @@ module Decidim
     # :update and :destroy are deliberately left unset (fail-closed) for
     # every role.
     #
+    # Admin scope, subject :template (civora-org/civora-platform#127):
+    # contract templates are organization-wide editorial configuration, so
+    # :read, :create, :update and :destroy are ALL allowed to the :editor
+    # role only (the role that creates contracts from them) - a reviewer has
+    # no use for templates and cannot see or change them. The gate is
+    # role-only: templates have no lifecycle, and starting a contract from
+    # one is just the :create :contract check (a template only prefills).
+    #
     # Admin scope, subject :audit_event (civora-org/civora-platform#92):
     # the append-only audit trail is read-only and organization-scoped, so
     # its single action mirrors the contracts index read:
@@ -156,7 +164,9 @@ module Decidim
                                                         .flat_map(&:keys)
                                                         .uniq.sort.freeze
 
-      SUBJECTS = %i[contract party document amendment link note audit_event user_role].freeze
+      # The subjects this class owns (see the class comment); everything
+      # else is left to the rest of the permission_class_chain.
+      SUBJECTS = %i[contract party document amendment link note template audit_event user_role].freeze
 
       def permissions
         return permission_action unless SUBJECTS.include? subject
@@ -173,15 +183,17 @@ module Decidim
 
       private
 
+      # One rule method per owned subject (the case would exceed the
+      # complexity budget as the subject list grows).
+      ADMIN_RULES = { contract: :contract_action, party: :child_record_action,
+                      document: :child_record_action, link: :child_record_action,
+                      amendment: :amendment_action, note: :note_action,
+                      template: :template_action, audit_event: :audit_event_action,
+                      user_role: :user_role_action }.freeze
+
       def admin_action
-        case subject
-        when :contract then contract_action
-        when :party, :document, :link then child_record_action
-        when :amendment then amendment_action
-        when :note then note_action
-        when :audit_event then audit_event_action
-        when :user_role then user_role_action
-        end
+        rule = ADMIN_RULES[subject]
+        send(rule) if rule
       end
 
       # The role-management rule (civora-org/civora-platform#95/#111):
@@ -196,6 +208,15 @@ module Decidim
       # :create are answered; update/destroy stay unset (append-only).
       def note_action
         toggle_allow(roles_for_user.any?) if %i[read create].include?(action)
+      end
+
+      # The template rule (civora-org/civora-platform#127): editor only, for
+      # every action, no lifecycle condition. Anything else stays unset
+      # (fail-closed).
+      TEMPLATE_ACTIONS = %i[read create update destroy].freeze
+
+      def template_action
+        toggle_allow(editor?) if TEMPLATE_ACTIONS.include?(action)
       end
 
       # The audit-trail read rule (civora-org/civora-platform#92): any

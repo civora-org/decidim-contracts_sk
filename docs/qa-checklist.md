@@ -132,6 +132,15 @@ ideally in both `en` and `sk` where noted.
 - [ ] After confirming: record leaves the deadline counters and filter; audit trail shows `CRZ filing confirmed` (or `... despite differences`, and `CRZ mirror absorbed ...` when a pristine mirror was replaced); public detail shows "Published in CRZ on <date>" (or "Publication in CRZ confirmed" without a date) with the official link.
 - [ ] `import_crz` / sync of a filed record's id: "already linked", no new mirror, `updated_at` unchanged; the rake summary counts it under `linked`.
 
+## Contract templates (#127)
+
+- [ ] Contracts index header: a **Templates** button for an editor, none for a reviewer; `/admin/templates` as a reviewer is refused with the permission flash.
+- [ ] Templates list: empty state with the "New template" button; with templates, one row each with name, title pattern, currency, object party and IČO, and **New contract** / **Edit** / **Remove** all rendered as visible buttons (not plain text) at 1440px and 375px, no horizontal page scroll.
+- [ ] Template form: every field has a visible label, the name is marked required, the IČO hint is shown, the textarea is bordered like the contract form's; a duplicate name, a 7-digit IČO, or an IČO without a party name each re-render with an announced error summary and keep the typed values.
+- [ ] New contract with at least one template: a **Start from** row (blank plus each template), the current choice highlighted; picking a template reloads the form prefilled (title, subject matter, currency) and names the object party that will be added; the reference stays empty.
+- [ ] Saving the draft: it is a plain draft (not published, not submitted) with the object party copied; the audit trail shows "Contract draft created from a template"; the template list is unchanged. Editing or removing the template afterwards does not change the contract.
+- [ ] Another organization's templates never appear in the list, the chooser or by id (`?template_id=` of a foreign template is a 404).
+
 ## Known gaps and follow-ups
 
 - CRZ handoff section disappears on a failed contract update re-render — civora-org/civora-platform#77.

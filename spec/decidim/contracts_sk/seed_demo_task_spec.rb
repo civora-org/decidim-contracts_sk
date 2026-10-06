@@ -210,6 +210,28 @@ RSpec.describe "decidim_contracts_sk:seed_demo demo seed task", :db do
     end
   end
 
+  describe "the contract templates (civora-org/civora-platform#127)" do
+    it "seeds three fictional templates with a valid object-party skeleton in the seeded organization only" do
+      run_seed!
+
+      templates = Decidim::ContractsSk::Template.all.to_a
+      expect(templates.size).to eq(3)
+      expect(templates.map(&:decidim_organization_id).uniq).to eq([organization.id])
+      expect(templates.map(&:name)).to include("Nájomná zmluva – nebytové priestory", "Zmluva o dielo")
+      expect(templates).to all(be_valid)
+      expect(templates.map(&:party_skeleton)).to all(include(role: "object", ico: "00000001"))
+    end
+
+    it "is idempotent and leaves an editor-changed template alone on a re-seed" do
+      run_seed!
+      Decidim::ContractsSk::Template.find_by!(name: "Zmluva o dielo").update!(subject_matter: "Edited by an editor")
+
+      expect { run_seed! }.not_to change(Decidim::ContractsSk::Template, :count)
+      expect(Decidim::ContractsSk::Template.find_by!(name: "Zmluva o dielo").subject_matter)
+        .to eq("Edited by an editor")
+    end
+  end
+
   it "resets any submitter stamp on re-seed (four-eyes, civora-org/civora-platform#123)" do
     run_seed!
     contract = Decidim::ContractsSk::Contract.find_by!(reference: "DEMO-2026-002")

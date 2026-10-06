@@ -13,6 +13,13 @@
     help_text option wires neither an id nor the aria relation, so the
     hint element is explicit). %>
 <%= form_with model: @form, url: url, method: method, html: { class: "form form-defaults" } do |form| %>
+  <%# The template the new-contract form was prefilled from (civora-org/
+      civora-platform#127), carried to create so the draft's object party is
+      copied from it. The id is only a lookup key: create re-loads it from
+      the organization's scope. Absent on edit and on a blank draft. %>
+  <% if local_assigns[:template] %>
+    <%= hidden_field_tag :template_id, template.id, id: "template_id" %>
+  <% end %>
   <div class="card">
     <div class="card-section">
       <div class="form__wrapper">

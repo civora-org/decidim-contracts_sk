@@ -1,0 +1,70 @@
+<%# url:, method: and submit_label: come from the caller (new / edit). Only
+    the template's own content is rendered - the organization is never
+    form-writable (civora-org/civora-platform#127). Same builder shape as
+    the contract and party forms (label inside the field wrapper, explicit
+    ids/names, a required attribute on the presence-validated name, hints
+    wired through aria-describedby). The party skeleton is ONE object party
+    (the municipality); the contractor is entered on each contract. %>
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<%= form_with model: @form, url: url, method: method, html: { class: "form form-defaults" } do |form| %>
+  <div class="card">
+    <div class="card-section">
+      <div class="form__wrapper">
+        <% if @form.errors.any? %>
+          <div class="flash alert">
+            <ul role="alert" tabindex="-1" autofocus>
+              <% @form.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <div class="row column">
+          <%= form.text_field :name, label: t("decidim.contracts_sk.admin.templates.form.name"), label_options: { for: "template_name" }, id: "template_name", name: "template[name]", value: @form.name, required: true, aria: { describedby: "template_name_hint" } %>
+          <span class="help-text" id="template_name_hint"><%= t("decidim.contracts_sk.admin.templates.form.name_hint") %></span>
+        </div>
+
+        <div class="row column">
+          <%= form.text_field :title_pattern, label: t("decidim.contracts_sk.admin.templates.form.title_pattern"), label_options: { for: "template_title_pattern" }, id: "template_title_pattern", name: "template[title_pattern]", value: @form.title_pattern, aria: { describedby: "template_title_pattern_hint" } %>
+          <span class="help-text" id="template_title_pattern_hint"><%= t("decidim.contracts_sk.admin.templates.form.title_pattern_hint") %></span>
+        </div>
+
+        <div class="row column">
+          <%= form.text_area :subject_matter, label: t("decidim.contracts_sk.admin.templates.form.subject_matter"), label_options: { for: "template_subject_matter" }, id: "template_subject_matter", name: "template[subject_matter]", value: @form.subject_matter %>
+        </div>
+
+        <div class="row column">
+          <% currency_options = Decidim::ContractsSk::Contract::SUPPORTED_CURRENCIES.map do |currency|
+               [currency, currency]
+             end %>
+          <%= form.select :currency, currency_options, { selected: @form.currency, label: t("decidim.contracts_sk.admin.templates.form.currency"), label_options: { for: "template_currency" } }, id: "template_currency", name: "template[currency]" %>
+        </div>
+
+        <div class="row column">
+          <p class="cs-admin-template-section"><strong><%= t("decidim.contracts_sk.admin.templates.form.party_section") %></strong></p>
+          <span class="help-text"><%= t("decidim.contracts_sk.admin.templates.form.party_hint") %></span>
+        </div>
+
+        <div class="row column">
+          <%= form.text_field :object_party_name, label: t("decidim.contracts_sk.admin.templates.form.object_party_name"), label_options: { for: "template_object_party_name" }, id: "template_object_party_name", name: "template[object_party_name]", value: @form.object_party_name %>
+        </div>
+
+        <div class="row column">
+          <%= form.text_field :object_party_ico, label: t("decidim.contracts_sk.admin.templates.form.object_party_ico"), label_options: { for: "template_object_party_ico" }, id: "template_object_party_ico", name: "template[object_party_ico]", value: @form.object_party_ico, aria: { describedby: "template_object_party_ico_hint" } %>
+          <span class="help-text" id="template_object_party_ico_hint"><%= t("decidim.contracts_sk.admin.parties.form.ico_hint") %></span>
+        </div>
+
+        <div class="row column">
+          <%= form.text_field :object_party_address, label: t("decidim.contracts_sk.admin.templates.form.object_party_address"), label_options: { for: "template_object_party_address" }, id: "template_object_party_address", name: "template[object_party_address]", value: @form.object_party_address %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item__edit-sticky">
+    <div class="item__edit-sticky-container">
+      <%= form.submit submit_label, class: "button button__sm button__secondary" %>
+    </div>
+  </div>
+<% end %>

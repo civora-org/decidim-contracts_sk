@@ -8,6 +8,11 @@
     <div class="cs-admin-actions">
       <%= link_to t("decidim.contracts_sk.admin.dashboard.overview_link"), admin_root_path,
                   class: "button button__sm button__secondary" %>
+      <%# Contract templates (civora-org/civora-platform#127): editor-only. %>
+      <% if allowed_to?(:read, :template) %>
+        <%= link_to t("decidim.contracts_sk.admin.templates.link"), admin_templates_path,
+                    class: "button button__sm button__secondary" %>
+      <% end %>
     </div>
   </div>
 

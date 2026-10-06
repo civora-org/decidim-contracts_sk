@@ -278,6 +278,10 @@ en:
               unknown: "CRZ filing deadline unknown — add signing date"
           new:
             title: "New contract"
+            start_from: "Start from"
+            blank: "Blank contract"
+            template_note: "The form is prefilled from the template \"%{name}\". Everything stays editable, and nothing is created until you save the draft."
+            template_party: "The object party (%{party}) is added to the draft when you save it."
           edit:
             title: "Edit contract"
           create:
@@ -533,6 +537,7 @@ en:
             grant_reviewer: "Reviewer role granted"
             revoke_editor: "Editor role revoked"
             revoke_reviewer: "Reviewer role revoked"
+            create_from_template: "Contract draft created from a template"
           amendment_target: "Amendment v%{version}"
           deleted_target: "Record no longer exists"
           filter_banner: "Showing audit events for: %{title}"
@@ -646,6 +651,48 @@ en:
             target_type: "Target type"
             target_id: "Target id"
             submit: "Add link"
+        templates:
+          link: "Templates"
+          back_to_list: "Back to the templates"
+          back_to_contracts: "Back to contracts"
+          index:
+            title: "Contract templates"
+            intro: "A template prefills a new contract draft (title, subject matter, currency and the municipality as the object party). It never publishes anything: the draft goes through the normal review workflow, and editing or removing a template does not change contracts already created from it."
+            empty: "No templates have been created yet."
+            headers:
+              object_party: "Object party"
+            ico: "IČO"
+            no_party: "None"
+            use: "New contract"
+          new:
+            title: "New template"
+          edit:
+            title: "Edit template"
+            submit: "Save template"
+            copy_note: "Changes apply only to contracts created from this template afterwards."
+          form:
+            name: "Template name"
+            name_hint: "Shown when choosing a template, for example \"Rental of non-residential premises\". Must be unique."
+            title_pattern: "Title pattern"
+            title_pattern_hint: "Prefills the contract title. The editor completes it on each contract."
+            subject_matter: "Subject matter"
+            currency: "Currency"
+            party_section: "Object party"
+            party_hint: "Usually the municipality. Added to each new draft; the contractor is entered on the contract itself."
+            object_party_name: "Name"
+            object_party_ico: "Company number (IČO)"
+            object_party_address: "Address"
+          create:
+            success: "Template created."
+            error: "The template could not be created."
+          update:
+            success: "Template updated."
+            error: "The template could not be updated."
+          destroy:
+            link: "Remove"
+            confirm: "Remove this template? Contracts already created from it are not affected."
+            success: "Template removed."
+            error: "The template could not be removed."
         notes:
           index:
             title: "Internal notes"

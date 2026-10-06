@@ -380,12 +380,38 @@ namespace :decidim_contracts_sk do
       organization: organization, actor: admin, target: rejected, action: "reject"
     )
 
+    # Contract templates (civora-org/civora-platform#127): three recurring
+    # contract types with the fictional municipality as the object party.
+    # Idempotent per (organization, name) like the records above; an
+    # existing template is left as the editors may have changed it.
+    [
+      { name: "Nájomná zmluva – nebytové priestory",
+        title_pattern: "Nájomná zmluva – nebytové priestory – ",
+        subject_matter: "Prenájom nebytových priestorov vo vlastníctve mesta." },
+      { name: "Zmluva o dielo",
+        title_pattern: "Zmluva o dielo – ",
+        subject_matter: "Zhotovenie diela podľa podmienok zmluvy." },
+      { name: "Kúpna zmluva – dodávka tovaru",
+        title_pattern: "Kúpna zmluva – ",
+        subject_matter: "Dodanie tovaru podľa podmienok zmluvy." }
+    ].each do |attrs|
+      Decidim::ContractsSk::Template.find_or_create_by!(organization: organization, name: attrs[:name]) do |template|
+        template.assign_attributes(attrs.except(:name).merge(
+                                     currency: "EUR",
+                                     object_party_name: "Mesto Demo (objekt zmluvy)",
+                                     object_party_ico: "00000001",
+                                     object_party_address: "Hlavná 1, 811 01 Bratislava"
+                                   ))
+      end
+    end
+
     puts "Seeded demo data for organization ##{organization.id}:"
     contracts.each_value { |c| puts "  [#{c.state}] #{c.reference} — #{c.title}" }
     puts "  imported (CRZ mirrors, provenance-labelled in the catalogue): " \
          "DEMO-2026-008 (fresh), DEMO-2026-009 (stale — imported 60 days ago)"
     puts "  statistics demo (#118): DEMO-2026-010..033 — published, spread over the last 12 months, " \
          "7 repeat contractors, 2 without an amount, 3 CRZ mirrors"
+    puts "  templates (#127): 3 contract templates (rental, works, supply)"
     puts "  users: #{admin.email} (admin), #{editor.email} (editor persona)"
     puts "Public catalogue: /<mount>/ — published-only; DEMO-OTHER-001 must 404."
   end

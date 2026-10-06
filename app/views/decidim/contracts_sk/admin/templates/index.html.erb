@@ -1,0 +1,88 @@
+<%# Contract templates list (civora-org/civora-platform#127). A template only
+    prefills a new draft; every row's "New contract" entry opens the normal
+    new-contract form with the template's defaults, so nothing here creates,
+    publishes or advances anything. Editor-only (the :template permission);
+    the table-cell controls are GET button_to forms like the contracts index
+    (a bare link can render invisible inside the host's table cells). %>
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t("decidim.contracts_sk.admin.templates.index.title") %>
+    </h1>
+    <div class="cs-admin-actions">
+      <% if allowed_to?(:create, :template) %>
+        <%= link_to t("decidim.contracts_sk.admin.templates.new.title"), new_admin_template_path,
+                    class: "button button__sm button__secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card-section">
+    <p class="cs-admin-template-intro"><%= t("decidim.contracts_sk.admin.templates.index.intro") %></p>
+    <p class="cs-admin-more"><%= link_to t("decidim.contracts_sk.admin.templates.back_to_contracts"), admin_contracts_path %></p>
+  </div>
+
+  <% if @templates.any? %>
+    <div class="table-scroll">
+      <table class="table-list cs-admin-templates">
+        <thead>
+          <tr>
+            <th><%= t("decidim.contracts_sk.admin.templates.form.name") %></th>
+            <th><%= t("decidim.contracts_sk.admin.templates.form.title_pattern") %></th>
+            <th><%= t("decidim.contracts_sk.admin.templates.form.currency") %></th>
+            <th><%= t("decidim.contracts_sk.admin.templates.index.headers.object_party") %></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @templates.each do |template| %>
+            <tr>
+              <td class="cs-admin-template-name"><%= template.name %></td>
+              <td><%= template.title_pattern %></td>
+              <td><%= template.currency %></td>
+              <td>
+                <% if template.party_skeleton %>
+                  <%= template.object_party_name %>
+                  <% if template.object_party_ico.present? %>
+                    <span class="cs-admin-template-ico">(<%= t("decidim.contracts_sk.admin.templates.index.ico") %> <%= template.object_party_ico %>)</span>
+                  <% end %>
+                <% else %>
+                  <span class="cs-admin-template-none"><%= t("decidim.contracts_sk.admin.templates.index.no_party") %></span>
+                <% end %>
+              </td>
+              <td class="table-list__actions">
+                <div>
+                <% if allowed_to?(:create, :contract) %>
+                  <%= button_to t("decidim.contracts_sk.admin.templates.index.use"),
+                                new_admin_contract_path,
+                                method: :get,
+                                params: { template_id: template.id },
+                                class: "button button__sm button__secondary" %>
+                <% end %>
+                <% if allowed_to?(:update, :template) %>
+                  <%= button_to t("decidim.contracts_sk.admin.templates.edit.title"),
+                                edit_admin_template_path(template),
+                                method: :get,
+                                class: "button button__sm button__secondary" %>
+                <% end %>
+                <% if allowed_to?(:destroy, :template) %>
+                  <%= button_to t("decidim.contracts_sk.admin.templates.destroy.link"),
+                                admin_template_path(template),
+                                method: :delete,
+                                class: "button button__sm button__secondary alert",
+                                data: { confirm: t("decidim.contracts_sk.admin.templates.destroy.confirm") } %>
+                <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card-section">
+      <p><%= t("decidim.contracts_sk.admin.templates.index.empty") %></p>
+    </div>
+  <% end %>
+</div>

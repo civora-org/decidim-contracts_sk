@@ -115,6 +115,12 @@ Decidim::ContractsSk::Engine.routes.draw do
       resources :notes, only: %i[index create]
     end
 
+    # Contract templates (civora-org/civora-platform#127): organization-level
+    # CRUD (no :show - a template is edited, not displayed). Starting a
+    # contract from one is not a route of its own: it is the existing
+    # contracts#new with a ?template_id= param (a prefill, nothing more).
+    resources :templates, only: %i[index new create edit update destroy]
+
     # Read-only audit-trail viewer (civora-org/civora-platform#92): one
     # org-level index over the append-only AuditEvent trail, optionally
     # filtered to one contract through ?contract_id= (a GET param, not a

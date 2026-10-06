@@ -899,6 +899,40 @@ RSpec.describe Decidim::ContractsSk::Permissions do
     end
   end
 
+  describe "admin scope — template (contract templates, civora-org/civora-platform#127)" do
+    around do |example|
+      original = Decidim::ContractsSk.role_resolver
+      Decidim::ContractsSk.role_resolver = ->(user, _context) { Array(user&.engine_roles) }
+      example.run
+      Decidim::ContractsSk.role_resolver = original
+    end
+
+    def template_outcome(roles, action, scope: :admin)
+      action_for(SpecUser.new(engine_roles: roles), scope: scope, action: action, action_subject: :template)
+    end
+
+    it "allows every template action to the editor only" do
+      %i[read create update destroy].each do |action|
+        expect(template_outcome(%i[editor], action).allowed?).to be(true), "editor must #{action} templates"
+      end
+    end
+
+    it "denies every template action to a reviewer and to a roleless user (managing templates is editor work)" do
+      %i[read create update destroy].each do |action|
+        expect(template_outcome(%i[reviewer], action).allowed?).to be(false), "reviewer must not #{action} templates"
+        expect(template_outcome([], action).allowed?).to be(false), "roleless must not #{action} templates"
+      end
+    end
+
+    it "leaves every other template action unset (fail-closed) and the public scope unanswered" do
+      outcome = template_outcome(%i[editor], :publish)
+      expect { outcome.allowed? }.to raise_error(Decidim::PermissionAction::PermissionNotSetError)
+
+      public_outcome = template_outcome(%i[editor], :read, scope: :public)
+      expect { public_outcome.allowed? }.to raise_error(Decidim::PermissionAction::PermissionNotSetError)
+    end
+  end
+
   describe "admin scope — amendment (M02-05-B, civora-org/civora-platform#65)" do
     # Amendment decisions read BOTH state sources: the parent contract's
     # lifecycle state (context[:contract]) and the amendment's own draft
