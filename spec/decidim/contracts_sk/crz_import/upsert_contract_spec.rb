@@ -164,6 +164,70 @@ RSpec.describe Decidim::ContractsSk::CrzImport::UpsertContract, :db do
     end
   end
 
+  # civora-org/civora-platform#159: the real CRZ publication date lands in
+  # crz_published_on (the catalogue prefers it); published_at keeps meaning
+  # "entered the catalogue". The payloads use the live format (UTC timestamp
+  # with microseconds, verified 2026-10-05).
+  describe "CRZ publication date (#159)" do
+    let(:published_payload) { { "published_at" => "2026-03-01T23:30:00.000000Z" } }
+
+    it "stores the Slovak-calendar CRZ date on create and still stamps published_at at import time" do
+      call_command(mapped_crz_record("2142424", published_payload))
+
+      contract = Decidim::ContractsSk::Contract.find_by!(source_id: "2142424")
+      aggregate_failures do
+        expect(contract.crz_published_on).to eq(Date.new(2026, 3, 2)) # 23:30 UTC = 00:30 CET next day
+        expect(contract.published_at).to be_within(1.minute).of(Time.current)
+        # A date is not the "filed" flag: only the filing confirmation stamps crz_filed_at.
+        expect(contract.crz_filed_at).to be_nil
+      end
+    end
+
+    it "updates the date when the checksum changed (and leaves published_at alone)" do
+      contract = create_imported_record("2142424")
+      contract.update_columns(crz_published_on: Date.new(2026, 1, 1), published_at: Time.utc(2026, 1, 5, 9))
+
+      call_command(mapped_crz_record("2142424", published_payload.merge("subject" => "Zmenený predmet")))
+
+      contract.reload
+      aggregate_failures do
+        expect(contract.crz_published_on).to eq(Date.new(2026, 3, 2))
+        expect(contract.published_at).to eq(Time.utc(2026, 1, 5, 9))
+      end
+    end
+
+    it "maps the 0000-00-00 sentinel, a blank and garbage to nil" do
+      ["0000-00-00", "", "not a date", nil].each_with_index do |raw, index|
+        call_command(mapped_crz_record("90#{index}", "published_at" => raw))
+
+        expect(Decidim::ContractsSk::Contract.find_by!(source_id: "90#{index}").crz_published_on).to be_nil
+      end
+    end
+
+    it "clears a stored date when a changed payload no longer carries one" do
+      contract = create_imported_record("2142424")
+      contract.update_columns(crz_published_on: Date.new(2026, 1, 1))
+
+      call_command(mapped_crz_record("2142424", "published_at" => "0000-00-00"))
+
+      expect(contract.reload.crz_published_on).to be_nil
+    end
+
+    it "still writes nothing for an unchanged payload, even when the stored date is missing (the backfill's job)" do
+      record = mapped_crz_record("2142424", published_payload)
+      contract = create_imported_record("2142424", checksum: record[:checksum])
+      before_updated_at = contract.updated_at
+
+      events = call_command(record)
+
+      aggregate_failures do
+        expect(events[:ok][:outcome]).to eq(:unchanged)
+        expect(contract.reload.crz_published_on).to be_nil
+        expect(contract.updated_at).to eq(before_updated_at)
+      end
+    end
+  end
+
   describe "collision path (editorial protection)" do
     it "never touches an editorial record holding the same source_id" do
       editorial = Decidim::ContractsSk::Contract.create!(

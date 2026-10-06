@@ -32,7 +32,7 @@ curl -s http://localhost:3000/decidim-packs/css/decidim_core-<hash>.css | grep -
 One GET form (`role="search"`) above the register; the state lives in the URL and every pagination link carries every active filter (`CatalogueQuery::PARAM_KEYS` is the `filter_keys` of `shared/_pagination`).
 
 - **Always visible:** the `q` search field and its button.
-- **Behind a native `<details class="cs-filters">` ("More filters"):** amount from/to (EUR), publication date from/to ("Published in the catalogue"), signing date from/to, party (name or 8-digit IČO, with a hint tied via `aria-describedby`), source (any / the organisation's own records / mirrored from CRZ) and the sort. The block is open whenever a non-`q` filter or a non-default sort is active. No JavaScript: `<details>` is keyboard- and screen-reader-operable.
+- **Behind a native `<details class="cs-filters">` ("More filters"):** amount from/to (EUR), publication date from/to ("Publication date" — the CRZ publication date where the record has one, else the date it entered the catalogue; #159), signing date from/to, party (name or 8-digit IČO, with a hint tied via `aria-describedby`), source (any / the organisation's own records / mirrored from CRZ) and the sort. The block is open whenever a non-`q` filter or a non-default sort is active. No JavaScript: `<details>` is keyboard- and screen-reader-operable.
 - **Labels above fields**, each from/to pair in a `<fieldset>` with a `<legend>`. Amounts are `type="text" inputmode="decimal"` (so "10 000,50" works on a Slovak keyboard); dates are `type="date"` and the server also accepts `d.m.yyyy`.
 - **Prefilled from the normalized query**, not the raw params: a swapped range shows swapped, an invalid value shows empty.
 - **Active-filters summary and "Clear filters"** (links to the bare catalogue, clearing `q` too) appear when anything is active. The empty state turns into the "no match" variant.
@@ -56,9 +56,9 @@ A `<section class="cs-opendata">` between the filter form and the register: head
 
 ## Page structure
 
-**Catalogue** (`cols-10`): title, one-line intro, search (label above; field and button in one row from 640px), the filter form (see below), then the register. One row per contract: title link, `reference · date`, the CRZ provenance label for mirrored records, and the amount right-aligned in tabular numerals from 768px.
+**Catalogue** (`cols-10`): title, one-line intro, search (label above; field and button in one row from 640px), the filter form (see below), then the register. One row per contract: title link, `reference · date` (the CRZ date reads "Published in CRZ on …"; a record without one shows the date it entered the catalogue), the CRZ provenance label for mirrored records, and the amount right-aligned in tabular numerals from 768px.
 
-**Detail** (`cols-10`): title and identity line (reference, publication date). Below it, a two-column grid from 1024px: the main column (subject matter, CRZ provenance notice, parties, documents, links, version history) and the "Údaje o zmluve" facts panel on the right (amount as the headline figure, reference, dates, CRZ link). The facts panel comes first in the DOM, so phones read it before the long sections.
+**Detail** (`cols-10`): title and identity line (reference, publication date: "Published in CRZ on" with the CRZ date when the record has one, else "Published on" with the catalogue entry date). Below it, a two-column grid from 1024px: the main column (subject matter, CRZ provenance notice, parties, documents, links, version history) and the "Údaje o zmluve" facts panel on the right (amount as the headline figure, reference, dates, CRZ link). The facts panel comes first in the DOM, so phones read it before the long sections.
 
 Rules that hold across both pages:
 

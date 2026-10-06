@@ -10,8 +10,15 @@
       <%# Locale-aware date rendering (civora-org/civora-platform#81):
           the format string ships with the engine, so no host-app
           locale data is required. %>
-      <% if contract.published_at.present? %>
-        <span><%= format_date(contract.published_at) %></span>
+      <%# The publication date the catalogue filters and sorts by
+          (civora-org/civora-platform#159): "Published in CRZ on: <date>"
+          for the real CRZ date (the detail page's punctuation), the bare
+          entry date otherwise. format_date takes both a Date and a Time. %>
+      <% if publication_date(contract).present? %>
+        <span>
+          <% if publication_date_from_crz?(contract) %><%= publication_date_label(contract) %>: <% end %>
+          <%= format_date(publication_date(contract)) %>
+        </span>
       <% end %>
     </div>
     <%# CRZ-mirror provenance (civora-org/civora-platform#88, ADR-002

@@ -864,6 +864,7 @@ module LocaleContract
     "contract.party.contractor",
     "contract.party.object",
     "contract.published_on",
+    "contract.published_on_crz",
     "contract.reference_number",
     "contract.signed_on",
     "contract.status",
@@ -1085,6 +1086,7 @@ module PublicCatalogueLabels
   VIEW_LABELS = {
     en: {
       "contract.published_on" => "Published on",
+      "contract.published_on_crz" => "Published in CRZ on",
       "contracts.index.empty" => "No published contracts yet.",
       "contracts.index.no_search_results" => "No contracts match your search or filters.",
       "contracts.index.open_data.heading" => "Download data",
@@ -1132,7 +1134,7 @@ module PublicCatalogueLabels
       "contracts.index.filters.more" => "More filters",
       "contracts.index.filters.party" => "Party",
       "contracts.index.filters.party_hint" => "Name or 8-digit IČO",
-      "contracts.index.filters.published" => "Published in the catalogue",
+      "contracts.index.filters.published" => "Publication date",
       "contracts.index.filters.published_from" => "From",
       "contracts.index.filters.published_to" => "To",
       "contracts.index.filters.signed" => "Signing date",
@@ -1153,6 +1155,7 @@ module PublicCatalogueLabels
     },
     sk: {
       "contract.published_on" => "Dátum zverejnenia",
+      "contract.published_on_crz" => "Zverejnené v CRZ dňa",
       "contracts.index.empty" => "Zatiaľ nie je zverejnená žiadna zmluva.",
       "contracts.index.no_search_results" => "Žiadna zmluva nezodpovedá vášmu hľadaniu ani filtrom.",
       "contracts.index.open_data.heading" => "Stiahnuť dáta",
@@ -1200,7 +1203,7 @@ module PublicCatalogueLabels
       "contracts.index.filters.more" => "Ďalšie filtre",
       "contracts.index.filters.party" => "Zmluvná strana",
       "contracts.index.filters.party_hint" => "Názov alebo 8-miestne IČO",
-      "contracts.index.filters.published" => "Zverejnené v katalógu",
+      "contracts.index.filters.published" => "Dátum zverejnenia",
       "contracts.index.filters.published_from" => "Od",
       "contracts.index.filters.published_to" => "Do",
       "contracts.index.filters.signed" => "Dátum podpisu",

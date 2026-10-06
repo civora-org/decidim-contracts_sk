@@ -24,14 +24,23 @@
   dodávateľ → `contractor`). **Not mirrored:** documents (link-only via
   `crz_url`), currency and the VAT flag (absent upstream — manual fields),
   amendment linkage hints (structurally unreliable per the spike).
-- **Filing-confirmation fields (#125):** the mapper also returns `status_id`
-  (CRZ status code) and `published_on` (from `published_at`, "Dátum
-  zverejnenia v CRZ", spike-verified field) beside the written attributes —
-  they are read only by the filing confirmation and never written by the
-  import or part of the checksum. The spike does not document the format of
-  `published_at`: a plain `YYYY-MM-DD` is taken as is, a timestamp is
-  converted to Europe/Bratislava before taking the date, and the
-  `0000-00-00` sentinel, blanks and garbage map to nil.
+- **Filing-confirmation and publication-date fields (#125, #159):** the
+  mapper also returns `status_id` (CRZ status code) and `published_on`
+  (from `published_at`, "Dátum zverejnenia v CRZ", spike-verified field)
+  beside the written attributes. They are never part of the checksum.
+  `status_id` is read only by the filing confirmation; `published_on` is
+  read by it too and, since #159, **written by the import** to the
+  `crz_published_on` column of every mirror (on create and on a
+  checksum-changed update), so the catalogue's publication date, filter and
+  sort reflect the real CRZ date instead of the import time. `published_at`
+  keeps meaning "entered the catalogue" (it is what the feed's
+  `published`/`updated` stamps and the export's `published_at` column carry). The format of `published_at` was
+  **verified live on 2026-10-05** (record 2142424): a full UTC ISO8601
+  timestamp with microseconds, e.g. `"2015-11-06T17:58:31.000000Z"`. It is
+  converted to Europe/Bratislava before taking the date, so a near-midnight
+  UTC instant lands on the Slovak calendar day (`2026-03-01T23:30:00Z`
+  becomes 2 March); a plain `YYYY-MM-DD` is still accepted, and the
+  `0000-00-00` sentinel, blanks and garbage map to nil (no date stored).
 - **Organization scope (civora-org/civora-platform#145):** the ekosystem
   feed carries every contract published anywhere in Slovakia. Only
   records whose parties carry the organization's IČO (as objednávateľ or
@@ -47,9 +56,9 @@
 
 | Situation | What happens |
 |---|---|
-| No record holds the CRZ id | A new record is created in **`published`** state — the ONE recorded lifecycle exception — with full provenance and a `crz_import_create` audit event. |
+| No record holds the CRZ id | A new record is created in **`published`** state — the ONE recorded lifecycle exception — with full provenance, the CRZ publication date (`crz_published_on`; `published_at` stays the import time) and a `crz_import_create` audit event. |
 | A `source="crz"` record exists, payload checksum unchanged | **No-op** (zero writes, `updated_at` untouched). This is what makes re-running the sync safe. |
-| A `source="crz"` record exists, checksum changed, record still `published` | Content fields, parties and provenance are re-mirrored + a `crz_import_update` audit event. Lifecycle state, author and currency are never touched. |
+| A `source="crz"` record exists, checksum changed, record still `published` | Content fields, the CRZ publication date, parties and provenance are re-mirrored + a `crz_import_update` audit event. Lifecycle state, author and currency are never touched. |
 | A `source="crz"` record exists but left `published` (e.g. archived) | **Skipped** — never resurrected or overwritten. |
 | A record with the same source id has `source != "crz"` and **`crz_filed_at` present** (an editorial record confirmed as filed, civora-org/civora-platform#125) | **Linked, no-op** — the filed editorial record is already the canonical record of the CRZ id: zero writes (`updated_at` untouched), no mirror created, counted as `linked` (not a collision). |
 | A record with the same source id has `source != "crz"` and **no filing confirmation** (an editorial record that merely carries the id) | **Never touched** — the collision is counted and logged for manual resolution (see below). |
@@ -137,6 +146,56 @@ out of scope, and the checksum gate never refreshes their parties (the
 payload did not change). On a stack with real pre-v1.4.0 mirrors, run the
 dry run, check the count, and after pruning re-sync from the go-live
 `SINCE` to restore the organization's own contracts with correct IČOs.
+
+#### Backfilling the CRZ publication date (civora-org/civora-platform#159)
+
+Mirrors imported before the import stored `crz_published_on` have no CRZ
+date, and **a re-sync from `SINCE` does not fill it in**: the checksum gate
+leaves an unchanged payload alone (zero writes), and these payloads did not
+change. Until backfilled such a mirror falls back to its import time in the
+catalogue's publication date. The backfill task fetches each of the
+organization's `source="crz"` mirrors with a NULL `crz_published_on` by id,
+maps it with the same mapper as the import and writes that one date:
+
+```bash
+bin/rails "decidim_contracts_sk:crz_import:backfill_published_on[<organization_id>]"            # dry run: count and source ids, nothing fetched
+CONFIRM=1 bin/rails "decidim_contracts_sk:crz_import:backfill_published_on[<organization_id>]"  # fetch and write
+```
+
+- **Dry run by default** (no network, no writes); `CONFIRM=1` writes.
+- **Only `crz_published_on` is written** (`update_column` under the row's
+  lock): `updated_at`, `checksum`, `imported_at`, `import_status`, the
+  parties and the audit trail are left alone, because a backfill is not a
+  re-mirror. In particular the checksum is not refreshed, so a genuine later
+  change of the CRZ payload is still picked up by the next sync. No audit
+  event is written; the printed counts and ids are the record of the run.
+- **Lock doctrine:** `with_lock` and an in-lock re-check that the row is
+  still a `source="crz"` mirror with no date; a row a sync or filing
+  confirmation moved in between is skipped.
+- Editorial records, other organizations' mirrors and mirrors that already
+  carry a date are never candidates. One request per mirror (one retry
+  budget per request, as in the sync), so mind the ekosystem rate budget on
+  large stacks and run it off-peak.
+- **Throttled:** ekosystem allows 60 requests a minute, so the run pauses
+  `PAUSE` seconds between fetches (default 1.1 s, about 54 a minute; the
+  rate-limit headers are not parsed). `PAUSE=0` disables it, which will
+  produce 429 failures on a large stack. A 636-mirror run takes about 12
+  minutes at the default.
+- **A re-run picks up failures:** only mirrors still without a date are
+  candidates, so after a run with `failed` ids (for example 429s that
+  outlasted the client's retries) just run the task again.
+- **Statistics cache:** the backfill does not touch `updated_at`, so the
+  statistics cache (keyed on the record count and `MAX(updated_at)`) can lag
+  behind the new dates by up to its TTL; statistics bucket by signing date
+  anyway.
+- Printed id listings (candidates in a dry run, failed, skipped) are capped
+  at 50 ids followed by "… and N more".
+- **Per-record errors never abort the run:** not found upstream, source
+  unreachable, an unparseable or structurally invalid payload are counted as
+  `failed`; a payload without a usable date (sentinel, blank, garbage) or a
+  row that changed under the lock is counted as `skipped`. Source ids are
+  listed, payloads are never logged. Re-running is safe: only mirrors still
+  without a date are candidates.
 
 ### 2. Admin action (single record, interactive)
 
@@ -313,6 +372,12 @@ import writes — mirrors are labelled, never implied to be real-time
 - No official-CRZ ZIP verification of the filing confirmation: it relies on
   the ekosystem feed (and its up-to-a-day lag); the ZIP fallback is the same
   future arc.
+- The publication date (CRZ date, else `published_at`) drives the catalogue's
+  filter, sort and views, and, because they share `CatalogueQuery`, the
+  open-data export's `published_from`/`published_to` filter and the Atom
+  feed's order and filters. The feed's `published`/`updated` stamps and the
+  export's `published_at` column stay "entered the catalogue", and the
+  statistics stay bucketed by signing date (#159).
 - No document (binary) mirroring — link-only via `crz_url`.
 - No amendment linkage — EK's `kind_id`/`reference` hints are officially
   unreliable; treat any future linking as a separate, heuristic arc.

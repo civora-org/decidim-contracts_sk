@@ -224,6 +224,32 @@ module Decidim
         )
       }
 
+      # The catalogue's publication date (civora-org/civora-platform#159):
+      # the real CRZ publication DATE (crz_published_on — written by the
+      # import for mirrors and by the filing confirmation for filed
+      # editorial records) when the record carries one, else the moment it
+      # entered the catalogue (published_at). ONE rule for the filter, the
+      # sort, the supplier-name ordering and the views, so they never
+      # disagree. crz_published_on is NOT a "filed" flag — crz_filed_at
+      # stays the only one.
+      #
+      # The SQL form is COALESCE(crz_published_on, published_at) as an Arel
+      # node, deliberately WITHOUT a CAST (SQLite's CAST AS timestamp breaks;
+      # PostgreSQL resolves COALESCE(date, timestamp) to timestamp by
+      # itself). Used for ordering only: the range FILTER compares each
+      # column with its own type (CatalogueQuery::Conditions#by_published).
+      def self.publication_date_arel
+        Arel::Nodes::NamedFunction.new("COALESCE", [arel_table[:crz_published_on], arel_table[:published_at]])
+      end
+
+      # The Ruby twin of publication_date_arel for rows plucked as columns
+      # (the statistics' supplier-name ordering): a comparable Time. A CRZ
+      # date is read as midnight UTC, which is what PostgreSQL's
+      # date-to-timestamp promotion yields in the SQL form.
+      def self.publication_sort_key(crz_published_on, published_at)
+        crz_published_on ? crz_published_on.in_time_zone("UTC") : published_at
+      end
+
       # The record's computed CRZ deadline; nil when signed_on is unknown.
       def crz_deadline
         CrzDeadline.deadline_for(signed_on)

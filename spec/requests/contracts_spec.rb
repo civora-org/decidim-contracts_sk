@@ -138,11 +138,13 @@ RSpec.describe "public contracts catalogue", type: :request do
       .and_return(double(name: { "en" => "Test Org" }, host: "example.org", default_locale: "en"))
   end
 
+  # rubocop:disable Metrics/MethodLength -- one literal double; splitting it would hide the surface it fakes
   def published_contract_double(overrides = {})
     double(
       title: "Road reconstruction",
       reference: "ZP-2026-001",
       published_at: Time.new(2026, 9, 1, 12, 0, 0),
+      crz_published_on: nil,
       # Provenance defaults of an editorial record (civora-org/civora-platform
       # #88): every card renders through imported_contract?/the provenance
       # line, so the double must answer the provenance surface even when the
@@ -156,6 +158,7 @@ RSpec.describe "public contracts catalogue", type: :request do
       **overrides
     )
   end
+  # rubocop:enable Metrics/MethodLength
 
   describe "open-data download block (civora-org/civora-platform#119)" do
     before { stub_published_contracts(SearchablePaginableStub.new([published_contract_double])) }
@@ -393,7 +396,7 @@ RSpec.describe "public contracts catalogue", type: :request do
           expect(body).to include("<summary")
           expect(body).to include("More filters")
           expect(body.scan("<fieldset").size).to eq(3)
-          expect(body).to include("Amount (EUR)").and include("Published in the catalogue").and include("Signing date")
+          expect(body).to include("Amount (EUR)").and include("Publication date").and include("Signing date")
           %w[amount_min amount_max published_from published_to signed_from signed_to party source sort].each do |name|
             expect(body).to include(%(name="#{name}"))
             expect(body).to include(%(for="#{name}"))
@@ -488,7 +491,7 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(scope.applied).to eq([])
       end
 
-      it "hands normalized ranges to the scope (amount, signed, published instants)" do
+      it "hands normalized ranges to the scope (amount, signed ranges, the published condition)" do
         get "/", params: { amount_min: "100", amount_max: "200,5", signed_from: "1.5.2026", signed_to: "2026-05-31",
                            published_from: "2026-09-01", published_to: "2026-09-30" }
 
@@ -496,8 +499,9 @@ RSpec.describe "public contracts catalogue", type: :request do
         aggregate_failures do
           expect(ranges[:amount]).to eq(BigDecimal(100)..BigDecimal("200.5"))
           expect(ranges[:signed_on]).to eq(Date.new(2026, 5, 1)..Date.new(2026, 5, 31))
-          expect(ranges[:published_at]).to be_a(Range)
-          expect(ranges[:published_at].exclude_end?).to be(true)
+          # The publication filter is one Arel condition (CRZ date, else
+          # published_at; CatalogueQuery::Conditions#by_published), not a range.
+          expect(scope.applied.map(&:first).flatten).to include(be_a(Arel::Nodes::Node))
         end
       end
 
@@ -983,6 +987,97 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response.body.index("First published road")).to be < response.body.index("Second published road")
         expect(response.body).to include(%(href="/#{newer.id}"))
         expect(response.body).to include(%(href="/#{older.id}"))
+      end
+    end
+
+    # civora-org/civora-platform#159: the CRZ publication date, labelled as
+    # such, replaces the catalogue entry date wherever the record has one.
+    describe "publication date (#159)" do
+      let!(:mirror) do
+        create_contract!(title: "Mirrored road", reference: "ZP-M-1", source: "crz", source_id: "7001",
+                         crz_published_on: Date.new(2026, 3, 2), published_at: Time.utc(2026, 9, 5, 12),
+                         imported_at: Time.utc(2026, 9, 5, 12))
+      end
+      let!(:editorial) do
+        create_contract!(title: "Editorial road", reference: "ZP-E-1", published_at: Time.utc(2026, 6, 1, 12))
+      end
+
+      it "labels the CRZ date on the list card and keeps the entry date bare for a record without one" do
+        get "/"
+
+        cards = Nokogiri::HTML(response.body).css("li.cs-row")
+                        .to_h { |li| [li.at_css(".cs-row__title").text, li.text.squish] }
+        aggregate_failures do
+          expect(cards["Mirrored road"]).to include("Published in CRZ on: 2026-03-02")
+          # The import time (September) is not shown as the publication date.
+          expect(cards["Mirrored road"].sub(/·.*\z/, "")).not_to include("2026-09-05")
+          expect(cards["Editorial road"]).to include("2026-06-01")
+          expect(cards["Editorial road"]).not_to include("Published in CRZ on")
+        end
+      end
+
+      it "orders the list by the CRZ date: the older-entered editorial record leads the March mirror" do
+        get "/"
+
+        expect(response.body.index("Editorial road")).to be < response.body.index("Mirrored road")
+      end
+
+      it "shows the CRZ date with the CRZ label on the detail page, identity line and facts panel" do
+        get "/#{mirror.id}"
+
+        doc = Nokogiri::HTML(response.body)
+        identity = doc.at_css(".cs-meta").text.squish
+        facts = doc.at_css(".cs-facts").text.squish
+        aggregate_failures do
+          expect(identity).to include("Published in CRZ on: 2026-03-02")
+          expect(facts).to include("Published in CRZ on 2026-03-02")
+          expect(identity + facts).not_to include("2026-09-05")
+        end
+      end
+
+      it "shows the CRZ date once in the facts panel of a record confirmed as filed" do
+        filed = create_contract!(title: "Filed road", reference: "ZP-F-1", crz_published_on: Date.new(2026, 3, 2),
+                                 crz_filed_at: Time.utc(2026, 3, 3, 9), published_at: Time.utc(2026, 9, 5, 12))
+
+        get "/#{filed.id}"
+
+        doc = Nokogiri::HTML(response.body)
+        facts = doc.at_css(".cs-facts").text.squish
+        aggregate_failures do
+          expect(facts.scan("2026-03-02").size).to eq(1)
+          expect(facts).to include("Published in CRZ on 2026-03-02") # the existing filed row
+          # The identity line keeps its date.
+          expect(doc.at_css(".cs-meta").text.squish).to include("Published in CRZ on: 2026-03-02")
+        end
+      end
+
+      it "keeps the publication row for a record confirmed as filed without a CRZ date" do
+        filed = create_contract!(title: "Filed road", reference: "ZP-F-2", crz_filed_at: Time.utc(2026, 3, 3, 9),
+                                 published_at: Time.utc(2026, 9, 5, 12))
+
+        get "/#{filed.id}"
+
+        expect(Nokogiri::HTML(response.body).at_css(".cs-facts").text.squish).to include("Published on 2026-09-05")
+      end
+
+      it "shows published_at with the original label for a record without a CRZ date" do
+        get "/#{editorial.id}"
+
+        doc = Nokogiri::HTML(response.body)
+        aggregate_failures do
+          expect(doc.at_css(".cs-meta").text.squish).to include("Published on: 2026-06-01")
+          expect(doc.at_css(".cs-facts").text.squish).to include("Published on 2026-06-01")
+          expect(response.body).not_to include("Published in CRZ on")
+        end
+      end
+
+      it "filters the catalogue by the CRZ date, not the import time" do
+        get "/", params: { published_from: "2026-03-01", published_to: "2026-03-31" }
+
+        aggregate_failures do
+          expect(response.body).to include("Mirrored road")
+          expect(response.body).not_to include("Editorial road")
+        end
       end
     end
 

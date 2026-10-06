@@ -26,6 +26,18 @@
 #   bin/rails "decidim_contracts_sk:crz_import:prune_out_of_scope[<organization_id>]"            # dry run
 #   CONFIRM=1 bin/rails "decidim_contracts_sk:crz_import:prune_out_of_scope[<organization_id>]"  # delete
 #
+# Mirrors imported before the real CRZ publication date was stored
+# (civora-org/civora-platform#159) have no crz_published_on, and a re-sync
+# does not fill it in (the checksum gate leaves an unchanged payload
+# alone). The backfill task fetches each such mirror by id and writes that
+# one column only:
+#
+#   bin/rails "decidim_contracts_sk:crz_import:backfill_published_on[<organization_id>]"            # dry run
+#   CONFIRM=1 bin/rails "decidim_contracts_sk:crz_import:backfill_published_on[<organization_id>]"  # write
+#
+# The run pauses PAUSE seconds between fetches (default 1.1, under ekosystem's
+# 60 requests a minute); re-running retries whatever failed.
+#
 # Privacy: the sync logs ids, statuses and counts only — never payloads or
 # party names.
 
@@ -105,6 +117,42 @@ namespace :decidim_contracts_sk do
       else
         puts "Dry run: #{pruned.matched} out-of-scope CRZ mirror(s) in organization ##{org_id} " \
              "(IČO #{ico} on neither party). Re-run with CONFIRM=1 to delete them."
+      end
+    end
+
+    desc "List (dry run) or fetch and write (CONFIRM=1) the CRZ publication date of mirrors that lack it"
+    task :backfill_published_on, %i[organization_id] => :environment do |_task, args|
+      org_id = args[:organization_id].to_i
+      unless org_id.positive?
+        abort "Usage: rails \"decidim_contracts_sk:crz_import:backfill_published_on[<organization_id>]\""
+      end
+
+      organization = Decidim::Organization.find_by(id: org_id)
+      abort "Organization ##{org_id} not found" unless organization
+
+      backfill = Decidim::ContractsSk::CrzImport::BackfillPublishedOn
+      # PAUSE = seconds between fetches (ekosystem allows 60 requests a
+      # minute; the default keeps a run under that). PAUSE=0 disables it.
+      pause = ENV["PAUSE"].presence&.then { |value| Float(value, exception: false) }
+      pause = backfill::DEFAULT_PAUSE if pause.nil? || pause.negative?
+
+      result = backfill.call(organization: organization, confirm: ENV["CONFIRM"] == "1", pause: pause)
+
+      if result.confirmed
+        puts "CRZ publication date backfill for organization ##{org_id}: candidates=#{result.candidates} " \
+             "updated=#{result.updated} skipped=#{result.skipped} failed=#{result.failed}"
+        if result.skipped.positive?
+          puts "  skipped source ids (no usable date or row changed): #{backfill.format_ids(result.skipped_ids)}"
+        end
+        if result.failed.positive?
+          puts "  failed source ids (not found / unreachable / invalid payload): " \
+               "#{backfill.format_ids(result.failed_ids)}"
+          puts "  re-run the task to retry the failed ones (only mirrors still without a date are candidates)."
+        end
+      else
+        puts "Dry run: #{result.candidates} CRZ mirror(s) in organization ##{org_id} lack a CRZ publication date. " \
+             "Re-run with CONFIRM=1 to fetch and write it."
+        puts "  source ids: #{backfill.format_ids(result.candidate_ids)}" if result.candidates.positive?
       end
     end
 

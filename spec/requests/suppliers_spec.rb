@@ -97,6 +97,24 @@ RSpec.describe "supplier pages", :db, type: :request do
       expect(Nokogiri::HTML(response.body).at_css("h1").text).to eq("Nový názov")
     end
 
+    it "orders the list and names the supplier by the CRZ publication date, not the import time (#159)" do
+      create_contract!({ title: "Mirror March", source: "crz", source_id: "8001",
+                         crz_published_on: Date.new(2026, 3, 1), published_at: Time.utc(2026, 9, 9) },
+                       contractor: { name: "Zrkadlený názov", ico: ico })
+      create_contract!({ title: "Editorial May", published_at: Time.utc(2026, 5, 1) },
+                       contractor: { name: "Redakčný názov", ico: ico })
+
+      get "/suppliers/#{ico}"
+
+      doc = Nokogiri::HTML(response.body)
+      titles = doc.css(".cs-row__title").map(&:text)
+      aggregate_failures do
+        # Entered in September but published in CRZ in March: it sorts BEHIND the May record.
+        expect(titles).to eq(["Editorial May", "Mirror March"])
+        expect(doc.at_css("h1").text).to eq("Redakčný názov")
+      end
+    end
+
     it "does not take the name from a draft or another organization's newer record" do
       create_contract!({ published_at: Time.utc(2026, 1, 1) }, contractor: { name: "Verejný názov", ico: ico })
       create_contract!({ state: "draft", published_at: Time.utc(2027, 1, 1) },

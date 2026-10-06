@@ -355,6 +355,82 @@ RSpec.describe Decidim::ContractsSk::CatalogueQuery do
       end
     end
 
+    # civora-org/civora-platform#159: the publication date is the real CRZ
+    # date (crz_published_on) when the record carries one — a mirror or a
+    # filed editorial record — else published_at. Each column is compared
+    # with its own type, so the two branches never mix.
+    describe "publication date with a CRZ date (#159)" do
+      before do
+        # A mirror entered the catalogue in September but was published in
+        # CRZ in March: its CRZ date decides, in either direction.
+        create_contract!("MIRROR-MARCH", source: "crz", source_id: "9001", crz_published_on: Date.new(2026, 3, 10),
+                                         published_at: Time.utc(2026, 9, 1, 12))
+        # A filed editorial record carries a CRZ date too (any source).
+        create_contract!("FILED-EDITORIAL", crz_published_on: Date.new(2026, 5, 5), crz_filed_at: Time.utc(2026, 5, 6),
+                                            published_at: Time.utc(2026, 9, 2, 12))
+        # No CRZ date: published_at decides.
+        create_contract!("PLAIN-JUNE", published_at: Time.utc(2026, 6, 15, 12))
+        # CRZ date inside, entry instant outside, and the reverse.
+        create_contract!("CRZ-IN-ENTRY-OUT", source: "crz", source_id: "9002", crz_published_on: Date.new(2026, 7, 1),
+                                             published_at: Time.utc(2025, 1, 1, 12))
+        create_contract!("CRZ-OUT-ENTRY-IN", source: "crz", source_id: "9003", crz_published_on: Date.new(2020, 1, 1),
+                                             published_at: Time.utc(2026, 7, 1, 12))
+      end
+
+      it "filters by the CRZ date when present and by published_at otherwise" do
+        expect(refs_unordered({ "published_from" => "2026-03-01", "published_to" => "2026-03-31" }))
+          .to eq(%w[MIRROR-MARCH])
+        expect(refs_unordered({ "published_from" => "2026-05-01", "published_to" => "2026-06-30" }))
+          .to eq(%w[FILED-EDITORIAL PLAIN-JUNE])
+      end
+
+      it "judges a record by its CRZ date alone, never by both columns" do
+        july = { "published_from" => "2026-07-01", "published_to" => "2026-07-31" }
+
+        expect(refs_unordered(july)).to eq(%w[CRZ-IN-ENTRY-OUT])
+        # MIRROR-MARCH entered the catalogue in September, yet September misses it.
+        expect(refs_unordered({ "published_from" => "2026-09-01", "published_to" => "2026-09-30" })).to eq([])
+      end
+
+      it "includes the CRZ date on both bounds (inclusive calendar days)" do
+        expect(refs_unordered({ "published_from" => "2026-03-10", "published_to" => "2026-03-10" }))
+          .to eq(%w[MIRROR-MARCH])
+        expect(refs_unordered({ "published_from" => "2026-03-11", "published_to" => "2026-03-11" })).to eq([])
+        expect(refs_unordered({ "published_from" => "2026-03-09", "published_to" => "2026-03-09" })).to eq([])
+      end
+
+      it "supports open-ended ranges over both columns" do
+        # FILED-EDITORIAL entered in September but its CRZ date (May) is before June.
+        expect(refs_unordered({ "published_from" => "2026-06-01" })).to eq(%w[CRZ-IN-ENTRY-OUT PLAIN-JUNE])
+        expect(refs_unordered({ "published_to" => "2026-03-31" })).to eq(%w[CRZ-OUT-ENTRY-IN MIRROR-MARCH])
+      end
+
+      it "orders by the shared date in both directions, id as the tie-break" do
+        create_contract!("TIE", source: "crz", source_id: "9004", crz_published_on: Date.new(2026, 5, 5),
+                                published_at: Time.utc(2030, 1, 1))
+
+        # 2020-01-01, 2026-03-10, 2026-05-05 (x2: FILED-EDITORIAL < TIE by id), 2026-06-15, 2026-07-01
+        expected = %w[CRZ-OUT-ENTRY-IN MIRROR-MARCH FILED-EDITORIAL TIE PLAIN-JUNE CRZ-IN-ENTRY-OUT]
+        expect(refs({ "sort" => "published_asc" })).to eq(expected)
+        expect(refs({ "sort" => "published_desc" }))
+          .to eq(%w[CRZ-IN-ENTRY-OUT PLAIN-JUNE TIE FILED-EDITORIAL MIRROR-MARCH CRZ-OUT-ENTRY-IN])
+      end
+
+      it "sorts on COALESCE(crz_published_on, published_at) with NULLS LAST, without a CAST" do
+        sql = query({ "sort" => "published_desc" }).results.to_sql
+
+        expect(sql).to include("COALESCE(").and include("NULLS LAST")
+        expect(sql).not_to include("CAST(")
+      end
+
+      it "keeps records with neither date after the dated ones in both directions" do
+        create_contract!("UNDATED", published_at: nil, state: "published")
+
+        expect(refs({ "sort" => "published_asc" }).last).to eq("UNDATED")
+        expect(refs({ "sort" => "published_desc" }).last).to eq("UNDATED")
+      end
+    end
+
     describe "signing date" do
       before do
         create_contract!("S1", signed_on: Date.new(2026, 5, 1))
