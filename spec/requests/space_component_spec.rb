@@ -122,7 +122,7 @@ RSpec.describe "in-space contracts component", :db, type: :request do
 
       doc = Nokogiri::HTML(response.body)
       expect(doc.css("li.cs-row").size).to eq(Decidim::ContractsSk::CONTRACTS_PER_PAGE)
-      next_link = doc.at_css("nav.pagination a[rel=next]")
+      next_link = doc.at_css("nav.cs-pager a[rel=next]")
       expect(next_link["href"]).to eq("#{base}/?page=2")
 
       get base, params: { page: 2 }

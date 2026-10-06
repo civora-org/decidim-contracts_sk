@@ -45,6 +45,13 @@ module Decidim
       # A party filter: kind is :ico (exact) or :name (substring).
       PartyFilter = Data.define(:kind, :value)
 
+      # The results toolbar's figures (see #summary).
+      Summary = Data.define(:count, :eur_total, :eur_count, :other_currency, :without_amount)
+
+      # The one currency that is summed; amounts in any other currency are
+      # counted, never added in (PRODUCT: no sums across currencies).
+      SUMMARY_CURRENCY = "EUR"
+
       Filters = Data.define(:q, :amount_min, :amount_max, :published_from, :published_to,
                             :signed_from, :signed_to, :party, :source, :sort)
 
@@ -64,6 +71,14 @@ module Decidim
       # The filtered relation with the deterministic sort applied.
       def results
         conditions.sort(relation)
+      end
+
+      # What the filtered set holds, in at most two queries: the record count,
+      # the EUR sum over records that have an EUR amount (the sum is skipped
+      # when there is none), and the records the sum leaves out: those in
+      # another currency and those without an amount. Memoized.
+      def summary
+        @summary ||= build_summary
       end
 
       # Filter keys (never :sort) carrying a value.
@@ -102,6 +117,25 @@ module Decidim
       end
 
       private
+
+      # One grouped query: [currency, records, records with an amount] per
+      # currency; the EUR sum is a second query, only when it can be non-zero.
+      def build_summary
+        rows = relation.group(:currency).pluck(:currency, Arel.star.count, Contract.arel_table[:amount].count)
+        count = rows.sum { |_, total, _| total }
+        with_amount = rows.sum { |_, _, counted| counted }
+        eur_count = eur_amount_count(rows)
+        Summary.new(count: count, eur_total: eur_total(eur_count), eur_count: eur_count,
+                    other_currency: with_amount - eur_count, without_amount: count - with_amount)
+      end
+
+      def eur_amount_count(rows)
+        rows.sum { |currency, _, counted| currency == SUMMARY_CURRENCY ? counted : 0 }
+      end
+
+      def eur_total(eur_count)
+        relation.group(:currency).sum(:amount)[SUMMARY_CURRENCY] if eur_count.positive?
+      end
 
       def merged_params(overrides)
         given = overrides.to_h { |key, value| [key.to_s, value.nil? ? nil : stringify(value)] }

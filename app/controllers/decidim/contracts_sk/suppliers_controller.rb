@@ -30,7 +30,7 @@ module Decidim
         raise ActiveRecord::RecordNotFound unless Decidim::ContractsSk::ICO_FORMAT.match?(supplier_ico)
         raise ActiveRecord::RecordNotFound if supplier_count.zero?
 
-        @contracts = supplier_query.results.page(public_page)
+        @contracts = supplier_query.results.includes(:parties).page(public_page)
                                    .per(Decidim::ContractsSk::CONTRACTS_PER_PAGE)
       end
 

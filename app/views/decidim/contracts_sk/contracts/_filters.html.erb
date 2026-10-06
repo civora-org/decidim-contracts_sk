@@ -1,0 +1,114 @@
+<%# The catalogue's search and filter bar. Local: query (CatalogueQuery).
+    ONE GET form carries the search and every filter chip, so a single
+    "Apply" submit sends everything and the state lives in the URL (it
+    survives the pagination links). Each chip is a native <details>: it
+    works with the keyboard and a screen reader and needs no JavaScript; a
+    shared name makes the browser keep one open at a time. Closed chips
+    still submit their fields. Plain Rails tag helpers only — never a
+    Decidim FormBuilder field next to a standalone label (the builder
+    renders its own label around each field). Fields are prefilled from the
+    NORMALIZED query (a swapped range shows swapped). %>
+<% values = query.to_params %>
+<% filters_t = "decidim.contracts_sk.contracts.index.filters" %>
+<% chips_t = "decidim.contracts_sk.contracts.index.chips" %>
+<div class="cs-find">
+  <%= form_tag contracts_path, method: :get, class: "form-defaults", role: "search",
+                aria: { label: t("decidim.contracts_sk.contracts.index.search_label") } do %>
+    <%= label_tag :q, t("decidim.contracts_sk.contracts.index.search_label"), class: "cs-sr" %>
+    <div class="cs-find__row">
+      <%= text_field_tag :q, search_term, autocomplete: "off",
+                         placeholder: t("decidim.contracts_sk.contracts.index.search_label") %>
+      <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary" do %>
+        <%= contracts_icon(:search) %>
+        <span><%= t("decidim.contracts_sk.contracts.index.search_submit") %></span>
+      <% end %>
+    </div>
+    <%# The sort is chosen in the toolbar menu; it rides along so applying a
+        filter does not reset it. %>
+    <%= hidden_field_tag :sort, query.filters.sort, id: nil if query.non_default_sort? %>
+
+    <div class="cs-chips" role="group" aria-label="<%= t("#{chips_t}.group_label") %>">
+      <%= render layout: "decidim/contracts_sk/contracts/chip",
+                 locals: { query: query, chip: :amount } do %>
+        <fieldset class="cs-chip__pair">
+          <legend class="cs-sr"><%= t("#{chips_t}.amount") %></legend>
+          <div>
+            <%= label_tag :amount_min, t("#{filters_t}.amount_min") %>
+            <%= text_field_tag :amount_min, values["amount_min"], inputmode: "decimal", autocomplete: "off" %>
+          </div>
+          <div>
+            <%= label_tag :amount_max, t("#{filters_t}.amount_max") %>
+            <%= text_field_tag :amount_max, values["amount_max"], inputmode: "decimal", autocomplete: "off" %>
+          </div>
+        </fieldset>
+      <% end %>
+
+      <%= render layout: "decidim/contracts_sk/contracts/chip",
+                 locals: { query: query, chip: :published } do %>
+        <fieldset class="cs-chip__pair">
+          <legend class="cs-sr"><%= t("#{chips_t}.published") %></legend>
+          <div>
+            <%= label_tag :published_from, t("#{filters_t}.published_from") %>
+            <%= date_field_tag :published_from, values["published_from"] %>
+          </div>
+          <div>
+            <%= label_tag :published_to, t("#{filters_t}.published_to") %>
+            <%= date_field_tag :published_to, values["published_to"] %>
+          </div>
+        </fieldset>
+      <% end %>
+
+      <%= render layout: "decidim/contracts_sk/contracts/chip",
+                 locals: { query: query, chip: :signed } do %>
+        <fieldset class="cs-chip__pair">
+          <legend class="cs-sr"><%= t("#{chips_t}.signed") %></legend>
+          <div>
+            <%= label_tag :signed_from, t("#{filters_t}.signed_from") %>
+            <%= date_field_tag :signed_from, values["signed_from"] %>
+          </div>
+          <div>
+            <%= label_tag :signed_to, t("#{filters_t}.signed_to") %>
+            <%= date_field_tag :signed_to, values["signed_to"] %>
+          </div>
+        </fieldset>
+      <% end %>
+
+      <%= render layout: "decidim/contracts_sk/contracts/chip",
+                 locals: { query: query, chip: :party } do %>
+        <%= label_tag :party, t("#{chips_t}.party") %>
+        <%= text_field_tag :party, values["party"], autocomplete: "off",
+                           maxlength: Decidim::ContractsSk::CatalogueQuery::Normalizer::TEXT_MAX_LENGTH,
+                           "aria-describedby": "party-hint" %>
+        <p class="cs-small" id="party-hint"><%= t("#{filters_t}.party_hint") %></p>
+      <% end %>
+
+      <%= render layout: "decidim/contracts_sk/contracts/chip",
+                 locals: { query: query, chip: :source } do %>
+        <%= label_tag :source, t("#{chips_t}.source") %>
+        <%= select_tag :source,
+                       options_for_select([[t("#{filters_t}.sources.any"), ""]] +
+                                          Decidim::ContractsSk::CatalogueQuery::SOURCES.map { |s| [t("#{filters_t}.sources.#{s}"), s] },
+                                          values["source"].to_s) %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# The applied filters, each a link that drops that one param. %>
+  <% if query.active? %>
+    <div class="cs-active">
+      <h2 class="cs-sr"><%= t("#{filters_t}.active_heading") %></h2>
+      <ul class="cs-active__list">
+        <% catalogue_removable_filters(query).each do |key, label, text| %>
+          <li>
+            <%= link_to catalogue_without_path(query, key), class: "cs-tag" do %>
+              <span class="cs-sr"><%= t("#{chips_t}.remove") %>:</span>
+              <span><%= label %>: <%= text %></span>
+              <svg class="cs-tag__x" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 5l10 10M15 5L5 15"/></svg>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+      <%= link_to t("#{filters_t}.clear"), contracts_path, class: "cs-active__clear" %>
+    </div>
+  <% end %>
+</div>

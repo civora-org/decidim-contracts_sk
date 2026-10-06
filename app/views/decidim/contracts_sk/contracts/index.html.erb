@@ -1,4 +1,8 @@
-<%# The centered single-column container the host layout partial
+<%# The public catalogue, a results-first register: a compact header (title and
+    the Zoznam | Štatistiky switch on one line), one search with its filter
+    chips, then a one-line toolbar (count and EUR total on the left; sort,
+    downloads and the alert link on the right) directly above the list.
+    The centered single-column container is the one the host layout partial
     (layouts/decidim/shared/layout_center) would emit: the compiled classes
     are used directly so the engine keeps no view-path dependency on the
     host's layout partials. cols-10 (not cols-8): the catalogue is a
@@ -7,205 +11,55 @@
     shared/_public_styles for why not Tailwind utilities). %>
 <% catalogue_meta_tags(@contracts.current_page) %>
 <%= render "decidim/contracts_sk/shared/public_styles" %>
+<% query = catalogue_query %>
+<%# Feed auto-discovery (civora-org/civora-platform#120): readers pick the
+    feed up from the page head (decidim-core's _head partial yields
+    :header_snippets). Same filters as the page, no sort; absent for the
+    source=crz filter, whose own-records feed would be empty. %>
+<% content_for :header_snippets, feed_discovery_link(query) unless query.filters.source == "crz" %>
 <main class="layout-1col cols-10">
-  <div class="cs-page">
-    <%# The register's two views share one switch and one header style, so
-        moving to the statistics changes the content, not the page. %>
-    <%= render "decidim/contracts_sk/shared/section_switch", current: :catalogue %>
-    <header class="cs-head">
-      <h1 class="cs-head__title"><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
-      <p class="cs-head__lead"><%= t("decidim.contracts_sk.contracts.index.intro") %></p>
+  <div class="cs-page cs-reg cs-reg--top">
+    <header class="cs-top">
+      <h1 class="cs-top__title"><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
+      <%= render "decidim/contracts_sk/shared/section_switch", current: :catalogue %>
     </header>
 
-    <%# Free-text catalogue search (the public twin of the admin index's :q
-        filter): a compact GET form, so the search state lives in the URL
-        and survives the pagination links. Plain Rails tag helpers — never a
-        Decidim FormBuilder field next to a standalone label (the builder
-        renders its own label around each field); label_tag +
-        text_field_tag is the safe pairing here. Label above; field and
-        button share one row, the field takes the slack. %>
-    <%# One GET form: the search state lives in the URL and survives the
-        pagination links. q is always visible; every other filter and the
-        sort sit in a native <details> (keyboard and screen-reader friendly
-        without JS), open whenever one of them is active. Fields are
-        prefilled from the NORMALIZED query (a swapped range shows swapped).
-        Labels above fields; fieldset + legend group each from/to pair. %>
-    <% query = catalogue_query %>
-    <%# Feed auto-discovery (civora-org/civora-platform#120): readers pick the
-        feed up from the page head (decidim-core's _head partial yields
-        :header_snippets). Same filters as the page, no sort; absent for the
-        source=crz filter, whose own-records feed would be empty. %>
-    <% content_for :header_snippets, feed_discovery_link(query) unless query.filters.source == "crz" %>
-    <% values = query.to_params %>
-    <% more_open = (query.active_filter_keys - [:q]).any? || query.non_default_sort? %>
-    <% filters_t = "decidim.contracts_sk.contracts.index.filters" %>
-    <div class="cs-search">
-      <%= form_tag contracts_path, method: :get, class: "form-defaults", role: "search",
-                    aria: { label: t("decidim.contracts_sk.contracts.index.search_label") } do %>
-        <%= label_tag :q, t("decidim.contracts_sk.contracts.index.search_label") %>
-        <div class="cs-search__row">
-          <%= text_field_tag :q, search_term, autocomplete: "off" %>
-          <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary" do %>
-            <%= contracts_icon(:search) %>
-            <span><%= t("decidim.contracts_sk.contracts.index.search_submit") %></span>
-          <% end %>
-        </div>
-
-        <details class="cs-filters"<%= " open".html_safe if more_open %>>
-          <summary class="cs-filters__summary"><%= t("#{filters_t}.more") %></summary>
-          <div class="cs-filters__grid">
-            <fieldset class="cs-filters__group">
-              <legend><%= t("#{filters_t}.amount") %></legend>
-              <div class="cs-filters__pair">
-                <div>
-                  <%= label_tag :amount_min, t("#{filters_t}.amount_min") %>
-                  <%= text_field_tag :amount_min, values["amount_min"], inputmode: "decimal", autocomplete: "off" %>
-                </div>
-                <div>
-                  <%= label_tag :amount_max, t("#{filters_t}.amount_max") %>
-                  <%= text_field_tag :amount_max, values["amount_max"], inputmode: "decimal", autocomplete: "off" %>
-                </div>
-              </div>
-            </fieldset>
-
-            <fieldset class="cs-filters__group">
-              <legend><%= t("#{filters_t}.published") %></legend>
-              <div class="cs-filters__pair">
-                <div>
-                  <%= label_tag :published_from, t("#{filters_t}.published_from") %>
-                  <%= date_field_tag :published_from, values["published_from"] %>
-                </div>
-                <div>
-                  <%= label_tag :published_to, t("#{filters_t}.published_to") %>
-                  <%= date_field_tag :published_to, values["published_to"] %>
-                </div>
-              </div>
-            </fieldset>
-
-            <fieldset class="cs-filters__group">
-              <legend><%= t("#{filters_t}.signed") %></legend>
-              <div class="cs-filters__pair">
-                <div>
-                  <%= label_tag :signed_from, t("#{filters_t}.signed_from") %>
-                  <%= date_field_tag :signed_from, values["signed_from"] %>
-                </div>
-                <div>
-                  <%= label_tag :signed_to, t("#{filters_t}.signed_to") %>
-                  <%= date_field_tag :signed_to, values["signed_to"] %>
-                </div>
-              </div>
-            </fieldset>
-
-            <div class="cs-filters__field">
-              <%= label_tag :party, t("#{filters_t}.party") %>
-              <%= text_field_tag :party, values["party"], autocomplete: "off",
-                                 maxlength: Decidim::ContractsSk::CatalogueQuery::Normalizer::TEXT_MAX_LENGTH,
-                                 "aria-describedby": "party-hint" %>
-              <p class="cs-small" id="party-hint"><%= t("#{filters_t}.party_hint") %></p>
-            </div>
-
-            <div class="cs-filters__field">
-              <%= label_tag :source, t("#{filters_t}.source") %>
-              <%= select_tag :source,
-                             options_for_select([[t("#{filters_t}.sources.any"), ""]] +
-                                                Decidim::ContractsSk::CatalogueQuery::SOURCES.map { |s| [t("#{filters_t}.sources.#{s}"), s] },
-                                                values["source"].to_s) %>
-            </div>
-
-            <div class="cs-filters__field">
-              <%= label_tag :sort, t("#{filters_t}.sort") %>
-              <%= select_tag :sort,
-                             options_for_select(Decidim::ContractsSk::CatalogueQuery::SORTS.map { |s| [t("#{filters_t}.sorts.#{s}"), s] },
-                                                query.filters.sort) %>
-            </div>
-          </div>
-          <%= button_tag type: "submit", name: nil, class: "button button__sm button__secondary cs-filters__apply" do %>
-            <span><%= t("#{filters_t}.apply") %></span>
-          <% end %>
-        </details>
-      <% end %>
-
-      <% if query.active? || query.non_default_sort? %>
-        <div class="cs-filters-active">
-          <h2 class="cs-filters-active__title"><%= t("#{filters_t}.active_heading") %></h2>
-          <ul class="cs-filters-active__list">
-            <% catalogue_active_filters(query).each do |label, text| %>
-              <li><span class="label"><%= label %>: <%= text %></span></li>
-            <% end %>
-          </ul>
-          <%= link_to t("#{filters_t}.clear"), contracts_path, class: "cs-link" %>
-        </div>
-      <% end %>
-    </div>
-
-    <%# Open-data download block (civora-org/civora-platform#119): the same
-        filters as the list above, minus the sort (the export is ordered by
-        id). Mirrored CRZ records are never exported, so a source=crz filter
-        swaps the links for a pointer to the original register. %>
-    <% open_data_t = "decidim.contracts_sk.contracts.index.open_data" %>
-    <section class="cs-opendata" aria-labelledby="cs-opendata-title">
-      <h2 class="cs-opendata__title" id="cs-opendata-title"><%= t("#{open_data_t}.heading") %></h2>
-      <% if query.filters.source == "crz" %>
-        <p class="cs-small">
-          <%= t("#{open_data_t}.crz_note") %>
-          <%= link_to t("#{open_data_t}.crz_link"), "https://www.crz.gov.sk/", class: "cs-link" %>
-        </p>
-      <% else %>
-        <p class="cs-small"><%= t("#{open_data_t}.intro") %> <%= t("#{open_data_t}.own_only") %></p>
-        <% export_params = query.to_params.except("sort").symbolize_keys %>
-        <div class="cs-opendata__links">
-          <%= link_to t("#{open_data_t}.csv"), export_path(export_params.merge(format: :csv)),
-                      class: "button button__sm button__secondary", type: "text/csv" %>
-          <%= link_to t("#{open_data_t}.csv_excel"), export_path(export_params.merge(format: :csv, profile: "excel")),
-                      class: "button button__sm button__secondary", type: "text/csv" %>
-          <%= link_to t("#{open_data_t}.json"), export_path(export_params.merge(format: :json)),
-                      class: "button button__sm button__secondary", type: "application/json" %>
-          <%= link_to t("#{open_data_t}.atom"), feed_path(feed_link_params(query)),
-                      class: "button button__sm button__secondary", type: "application/atom+xml" %>
-        </div>
-      <% end %>
-    </section>
-
-    <%# E-mail alerts (civora-org/civora-platform#121): subscribe to this very
-        search. Own records only like the downloads above, so the source=crz
-        filter has no alerts block. The form posts the normalized filters. %>
-    <% unless query.filters.source == "crz" %>
-      <% alerts_t = "decidim.contracts_sk.subscriptions.form" %>
-      <section class="cs-alerts" aria-labelledby="cs-alerts-title">
-        <h2 class="cs-alerts__title" id="cs-alerts-title"><%= t("#{alerts_t}.heading") %></h2>
-        <p class="cs-small"><%= t("#{alerts_t}.intro") %></p>
-        <%= render "decidim/contracts_sk/subscriptions/form", query: query, email: nil, error: nil %>
-      </section>
-    <% end %>
+    <%= render "decidim/contracts_sk/contracts/filters", query: query %>
 
     <% if @contracts.any? %>
-      <%# The register: one row per contract, hairline-separated. Title and
-          identity on the left; the amount — the figure a reader compares
-          down the list — right-aligned in tabular numerals on md+, below
-          the title on narrow screens. %>
       <h2 class="cs-sr" id="cs-register-title"><%= t("decidim.contracts_sk.contracts.index.list_heading") %></h2>
+      <%= render "decidim/contracts_sk/contracts/toolbar", query: query %>
+
+      <%# The register: one hairline-separated row per contract, as a list. %>
       <ol class="cs-list" aria-labelledby="cs-register-title">
         <% @contracts.each do |contract| %>
           <%= render "decidim/contracts_sk/contracts/row", contract: contract %>
         <% end %>
       </ol>
 
-      <%# Catalogue pagination (civora-org/civora-platform#86b): the shared
-          engine partial, page controls only from two pages up; the
-          catalogue carries every filter key (CatalogueQuery::PARAM_KEYS) over
-          the page links. %>
+      <%# Page links from two pages up; every filter key
+          (CatalogueQuery::PARAM_KEYS) travels over them. %>
       <% if @contracts.total_pages > 1 %>
-        <%= render "decidim/contracts_sk/shared/pagination",
-                   collection: @contracts,
-                   filter_keys: Decidim::ContractsSk::CatalogueQuery::PARAM_KEYS,
-                   carried_params: query.to_params.symbolize_keys %>
+        <%= render "decidim/contracts_sk/shared/register_pagination",
+                   collection: @contracts, carried_params: query.to_params.symbolize_keys %>
       <% end %>
     <% else %>
       <%# Two distinct empty states: a search that finds nothing is a
           different situation from an empty catalogue — the record exists,
           it just does not match the query. %>
       <% if query.active? %>
-        <p class="cs-empty"><%= t("decidim.contracts_sk.contracts.index.no_search_results") %></p>
+        <p class="cs-empty">
+          <%= t("decidim.contracts_sk.contracts.index.no_search_results") %>
+          <%= link_to t("decidim.contracts_sk.contracts.index.filters.clear"), contracts_path, class: "cs-link" %>
+          <%# A search that matches nothing yet is the best time to ask to hear
+              when something does (own records only, like the toolbar's link). %>
+          <% unless query.filters.source == "crz" %>
+            <%= link_to catalogue_follow_path(query), class: "cs-bar__follow" do %>
+              <svg class="cs-bar__icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14v10H3zM3.5 5.5L10 11l6.5-5.5"/></svg>
+              <span><%= t("decidim.contracts_sk.contracts.index.toolbar.follow") %></span>
+            <% end %>
+          <% end %>
+        </p>
       <% else %>
         <p class="cs-empty"><%= t("decidim.contracts_sk.contracts.index.empty") %></p>
       <% end %>

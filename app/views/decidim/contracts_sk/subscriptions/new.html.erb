@@ -16,17 +16,16 @@
       <p class="cs-small"><%= t("#{t_s}.form.errors.search") %></p>
     <% else %>
       <section class="cs-alerts" aria-labelledby="cs-alerts-search">
-        <h2 class="cs-alerts__title" id="cs-alerts-search"><%= t("#{t_s}.form.search_heading") %></h2>
+        <%# One line naming the search being subscribed to: "Hľadanie: plyn · Suma od 1 000,00 EUR". %>
         <% filters = catalogue_active_filters(@query) %>
-        <% if filters.any? %>
-          <ul class="cs-filters-active__list">
-            <% filters.each do |label, text| %>
-              <li><span class="label"><%= label %>: <%= text %></span></li>
-            <% end %>
-          </ul>
-        <% else %>
-          <p class="cs-small"><%= t("#{t_s}.form.search_all") %></p>
-        <% end %>
+        <p class="cs-alerts__search">
+          <span class="cs-sr" id="cs-alerts-search"><%= t("#{t_s}.form.search_heading") %>:</span>
+          <% if filters.any? %>
+            <%= filters.map { |label, text| "#{label}: #{text}" }.join(" · ") %>
+          <% else %>
+            <%= t("#{t_s}.form.search_all") %>
+          <% end %>
+        </p>
         <%= render "decidim/contracts_sk/subscriptions/form", query: @query, email: @email, error: @error %>
       </section>
     <% end %>

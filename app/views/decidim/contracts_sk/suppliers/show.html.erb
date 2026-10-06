@@ -8,7 +8,7 @@
 <% t_s = "decidim.contracts_sk.suppliers.show" %>
 <%= render "decidim/contracts_sk/shared/public_styles" %>
 <main class="layout-1col cols-10">
-  <div class="cs-page">
+  <div class="cs-page cs-reg">
     <p class="cs-small"><%= link_to t("#{t_s}.back"), contracts_path, class: "cs-link" %></p>
     <h1 class="title-decorator"><%= supplier_name %></h1>
     <p class="cs-lead">
@@ -59,8 +59,8 @@
     <% end %>
 
     <% if @contracts.total_pages > 1 %>
-      <%= render "decidim/contracts_sk/shared/pagination",
-                 collection: @contracts, filter_keys: [], carried_params: {} %>
+      <%= render "decidim/contracts_sk/shared/register_pagination",
+                 collection: @contracts, carried_params: {} %>
     <% end %>
   </div>
 </main>

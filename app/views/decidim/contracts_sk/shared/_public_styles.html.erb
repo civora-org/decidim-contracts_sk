@@ -40,7 +40,6 @@
   .cs-head { padding-bottom: clamp(2rem, 4vw, 3rem); }
   .cs-head__title { margin: 0; font-size: clamp(2.25rem, 1.4rem + 3vw, 3.5rem); font-weight: 700; line-height: 1.08; letter-spacing: -.02em; color: #0e1b2e; text-wrap: balance; overflow-wrap: anywhere; view-transition-name: cs-head-title; }
   .cs-head__lead { max-width: 44ch; margin: 1.25rem 0 0; font-size: 1.25rem; line-height: 1.5; color: #44546a; text-wrap: pretty; }
-  .cs-head + .cs-search { margin-top: 0; }
 
   @view-transition { navigation: auto; }
   ::view-transition-group(cs-switch-ink) { animation-duration: .42s; animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
@@ -54,40 +53,83 @@
     .cs-switch .cs-switch__link { transition: none; }
   }
 
-  .cs-search { margin: 2rem 0 1.5rem; }
-  .cs-search label { display: block; margin-bottom: .5rem; font-weight: 600; color: #020203; }
-  .cs-search__row { display: flex; flex-direction: column; gap: .5rem; max-width: 42rem; }
-  .cs-search__row input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; }
-  .cs-search__row .button { justify-content: center; white-space: nowrap; }
+  /* Catalogue header: the compact title and the Zoznam | Štatistiky switch share
+     one line (wrapping on phones), parted from the content by one hairline. The
+     switch's ink line sits on that hairline. */
+  .cs-reg { color: #0e1b2e; font-variant-numeric: lining-nums; }
+  .cs-page.cs-reg--top { padding-top: 1.5rem; }
+  .cs-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0 2rem; margin: 0 0 1.25rem; border-bottom: 1px solid #d5dce6; }
+  .cs-top__title { margin: 0; padding-bottom: .5rem; font-size: clamp(1.375rem, 1.1rem + .9vw, 1.75rem); font-weight: 700; line-height: 1.2; letter-spacing: -.015em; color: #0e1b2e; overflow-wrap: anywhere; }
+  .cs-top .cs-switch { margin: 0; border-bottom: 0; }
 
-  /* Catalogue filters (#116): one column on phones, two from 640px, four
-     from 1024px; fields never overflow their cell. */
-  .cs-filters { margin-top: 1rem; max-width: 100%; }
-  .cs-filters__summary { display: inline-block; padding: .25rem 0; font-weight: 600; color: var(--secondary); cursor: pointer; }
-  .cs-filters__summary:focus-visible { outline: 3px solid var(--secondary); outline-offset: 2px; }
-  .cs-filters__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin: 1rem 0; }
-  .cs-filters__group { min-width: 0; margin: 0; padding: 0; border: 0; }
-  .cs-filters__group legend { padding: 0; margin-bottom: .5rem; font-weight: 600; color: #020203; }
-  .cs-filters__pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
-  .cs-filters__pair > div, .cs-filters__field { min-width: 0; }
-  .cs-filters label { display: block; margin-bottom: .25rem; font-weight: 400; color: #3e4c5c; }
-  .cs-filters input, .cs-filters select { width: 100%; min-width: 0; }
-  .cs-filters__field > label { font-weight: 600; color: #020203; }
-  .cs-filters__field .cs-small { margin-top: .25rem; }
-  .cs-filters-active { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: 1rem; }
-  .cs-filters-active__title { margin: 0; font-size: .875rem; font-weight: 600; color: #3e4c5c; }
+  /* Search and filter chips (#116): one GET form. The chips are native
+     <details> popovers (no JavaScript); the panel opens under its chip, or in
+     the flow on phones, so nothing overflows. A chip that holds a value says
+     so in its label and is tinted. Square, flat, hairline. */
+  .cs-find { margin: 0; }
+  .cs-find__row { display: flex; gap: .5rem; }
+  .cs-find__row input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; margin: 0; }
+  .cs-find__row .button { flex: none; justify-content: center; white-space: nowrap; }
+  .cs-find ::placeholder { color: #44546a; opacity: 1; }
+  .cs-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+  .cs-chip { position: relative; max-width: 100%; }
+  .cs-chip__summary, .cs-menu__summary { display: inline-flex; align-items: center; gap: .5rem; max-width: 100%; list-style: none; cursor: pointer; }
+  .cs-chip__summary::-webkit-details-marker, .cs-menu__summary::-webkit-details-marker { display: none; }
+  .cs-chip__summary::after, .cs-menu__summary::after { content: ""; flex: none; width: .4375rem; height: .4375rem; margin: -.1875rem 0 0 .125rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+  .cs-chip[open] > .cs-chip__summary::after, .cs-menu[open] > .cs-menu__summary::after { margin-top: .1875rem; transform: rotate(-135deg); }
+  .cs-chip__summary { padding: .375rem .75rem; border: 1px solid #d5dce6; background: #fff; font-size: .9375rem; font-weight: 600; line-height: 1.3; color: #0e1b2e; }
+  .cs-chip__summary span { overflow-wrap: anywhere; }
+  .cs-chip__summary:hover, .cs-chip[open] > .cs-chip__summary { border-color: #0e1b2e; }
+  .cs-chip--on > .cs-chip__summary { border-color: #0b5cad; background: #f1f4f8; color: #084782; }
+  .cs-reg summary:focus-visible { outline: 3px solid #0b5cad; outline-offset: 3px; border-radius: 2px; }
+  .cs-chip__panel { position: absolute; top: calc(100% + .25rem); left: 0; z-index: 5; width: max-content; min-width: 16rem; max-width: min(22rem, calc(100vw - 2rem)); padding: 1rem; background: #fff; border: 1px solid #d5dce6; border-top: 2px solid #0e1b2e; }
+  .cs-chip:nth-last-child(-n+2) > .cs-chip__panel { left: auto; right: 0; }
+  .cs-chip__panel label { display: block; margin-bottom: .25rem; font-size: .875rem; font-weight: 600; color: #44546a; }
+  .cs-chip__panel input, .cs-chip__panel select { width: 100%; min-width: 0; margin-bottom: 0; }
+  .cs-chip__panel .cs-small { margin-top: .25rem; color: #44546a; }
+  .cs-chip__pair { display: grid; min-width: 0; margin: 0; padding: 0; border: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+  .cs-chip__pair > div { min-width: 0; }
+  .cs-chip__apply { margin-top: .75rem; }
+
+  /* Applied filters: each a link that drops that one param. */
+  .cs-active { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: .75rem; }
+  .cs-active__list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+  .cs-reg .cs-tag { display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .5rem .25rem .625rem; background: #f1f4f8; font-size: .9375rem; line-height: 1.3; color: #0e1b2e; text-decoration: none; overflow-wrap: anywhere; }
+  .cs-reg .cs-tag:hover { color: #084782; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-tag__x { flex: none; width: .75rem; height: .75rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .cs-reg .cs-active__clear { font-size: .9375rem; font-weight: 600; color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  .cs-reg .cs-active__clear:hover { color: #084782; text-decoration-thickness: 2px; }
+
+  /* Results toolbar: one line above the list. Left, what the filtered set
+     holds; right, sort / download / follow. Opens on the register's 2px ink
+     rule. Menus are <details> of plain links. */
+  .cs-bar { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .375rem 1.5rem; margin-top: 1.25rem; padding: .625rem 0; border-top: 2px solid #0e1b2e; }
+  .cs-bar__sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: .125rem .5rem; margin: 0; font-size: 1.0625rem; font-variant-numeric: tabular-nums lining-nums; }
+  .cs-bar__figure { font-weight: 700; color: #0e1b2e; }
+  .cs-bar__note { font-size: .9375rem; color: #44546a; }
+  .cs-bar__sum > * + *::before { content: "·"; content: "·" / ""; margin-right: .5rem; font-weight: 400; color: #44546a; }
+  .cs-bar__tools { display: flex; flex-wrap: wrap; align-items: center; gap: .125rem 1.25rem; }
+  .cs-menu { position: relative; }
+  .cs-menu__summary { padding: .25rem 0; font-size: .9375rem; font-weight: 600; color: #0b5cad; }
+  .cs-menu__summary:hover { color: #084782; }
+  .cs-menu__panel { position: absolute; top: calc(100% + .25rem); right: 0; z-index: 5; width: max-content; min-width: 13rem; max-width: min(20rem, calc(100vw - 2rem)); margin: 0; padding: .5rem 1rem .75rem; list-style: none; background: #fff; border: 1px solid #d5dce6; border-top: 2px solid #0e1b2e; box-shadow: 0 .5rem 1.5rem rgba(14, 27, 46, .12); }
+  .cs-menu__panel ul { margin: 0; padding: 0; list-style: none; }
+  .cs-menu__panel li + li { border-top: 1px solid #d5dce6; }
+  .cs-menu__panel a { display: block; padding: .5rem 0; font-size: .9375rem; font-weight: 600; color: #0b5cad; text-decoration: none; }
+  .cs-menu__panel a:hover { color: #084782; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-menu__panel a[aria-current] { color: #0e1b2e; font-weight: 700; text-decoration: none; cursor: default; }
+  .cs-menu__panel .cs-small { margin-top: .5rem; color: #44546a; }
+  .cs-reg .cs-bar__follow { display: inline-flex; align-items: center; gap: .375rem; padding: .25rem 0; font-size: .9375rem; font-weight: 600; color: #0b5cad; text-decoration: none; }
+  .cs-reg .cs-bar__follow:hover { color: #084782; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-bar__icon { flex: none; width: 1.125rem; height: 1.125rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
   .cs-filters-active__list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
   .cs-filters-active .label { white-space: normal; overflow-wrap: anywhere; }
 
-  /* Open-data download block (#119): sits between the filters and the list. */
-  .cs-opendata { margin: 0 0 1.5rem; }
   .cs-opendata__title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; color: #020203; }
-  .cs-opendata .cs-small { margin: 0 0 .75rem; max-width: 42rem; }
-  .cs-opendata__links { display: flex; flex-wrap: wrap; gap: .5rem; }
 
-  /* E-mail alerts block and pages (#121): the subscribe form sits under the
-     download block; the confirmation, unsubscribe and message pages reuse
-     the shared .cs-head. */
+  /* E-mail alerts pages (#121): the subscribe form, the confirmation, unsubscribe
+     and message pages, all reusing the shared .cs-head. */
   .cs-alerts { margin: 0 0 1.5rem; }
   .cs-alerts__title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; color: #020203; }
   .cs-alerts .cs-small { margin: 0 0 .75rem; max-width: 42rem; }
@@ -98,6 +140,7 @@
   .cs-alerts__error { margin: .5rem 0 0; font-weight: 600; color: #a1161b; }
   .cs-alerts-page .cs-head { padding-bottom: 1.5rem; }
   .cs-alerts-page .cs-filters-active__list { margin-bottom: 1rem; }
+  .cs-alerts__search { margin: 0 0 1rem; padding: .75rem 0; border-top: 2px solid #0e1b2e; border-bottom: 1px solid #d5dce6; font-size: 1.0625rem; font-weight: 600; color: #0e1b2e; overflow-wrap: anywhere; }
 
   /* Supplier page (#117): summary facts above the register. */
   .cs-supplier { margin: 0 0 2rem; }
@@ -171,9 +214,35 @@
   .cs-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; }
   .cs-list > li + li { border-top: 1px solid #e1e5ef; }
 
-  .cs-row { display: grid; gap: .5rem; padding: 1.25rem 0; }
-  .cs-row__title { font-size: 1.125rem; font-weight: 600; line-height: 1.35; color: var(--secondary); text-decoration: none; overflow-wrap: anywhere; }
-  .cs-row__title:hover { text-decoration: underline; text-underline-offset: .2em; }
+  /* The register (catalogue, supplier page, in-space list): hairline-separated
+     two-line rows. Line 1: date | title | amount; line 2, muted: contractors,
+     reference, CRZ provenance. About 68px a row. */
+  .cs-reg .cs-list { border-color: #d5dce6; }
+  .cs-reg .cs-list > li + li { border-color: #d5dce6; }
+  .cs-row { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr) auto; grid-template-areas: "date title amount" ". meta meta"; column-gap: 1rem; row-gap: .125rem; align-items: baseline; padding: .75rem 0; }
+  .cs-row__date { grid-area: date; font-size: .9375rem; color: #44546a; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+  .cs-row__date--meta { display: none; }
+  .cs-row__title { grid-area: title; min-width: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.35; color: #0e1b2e; text-decoration: none; overflow-wrap: anywhere; }
+  .cs-row__title:hover { color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-row__amount { grid-area: amount; font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; }
+  .cs-row__meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 0 .5rem; min-width: 0; margin: 0; font-size: .875rem; line-height: 1.45; color: #44546a; font-variant-numeric: tabular-nums lining-nums; }
+  .cs-row__meta > *:not(:last-child)::after { content: "·"; content: "·" / ""; margin-left: .5rem; }
+  .cs-row__parties { min-width: 0; overflow-wrap: anywhere; }
+  .cs-row__src { white-space: nowrap; }
+  .cs-row .cs-row__supplier { color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  .cs-row .cs-row__supplier:hover { color: #084782; text-decoration-thickness: 2px; }
+  .cs-reg .cs-empty { padding: 1.5rem 0; border-top: 2px solid #0e1b2e; border-bottom: 1px solid #d5dce6; font-size: 1.0625rem; color: #44546a; }
+  .cs-reg .cs-empty .cs-bar__follow { margin-left: 1rem; }
+  .cs-reg .cs-empty .cs-link { margin-left: .5rem; color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+
+  .cs-pager { margin: 1.25rem 0 0; }
+  .cs-pager__list { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin: 0; padding: 0; list-style: none; font-size: 1.0625rem; font-variant-numeric: tabular-nums lining-nums; }
+  .cs-reg .cs-pager a, .cs-pager__current, .cs-pager__gap { display: inline-flex; align-items: center; justify-content: center; min-width: 2.5rem; min-height: 2.5rem; padding: 0 .5rem; }
+  .cs-reg .cs-pager a { font-weight: 600; color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  .cs-reg .cs-pager a:hover { color: #084782; text-decoration-thickness: 2px; }
+  .cs-pager__current { font-weight: 700; color: #0e1b2e; border-bottom: 3px solid #0e1b2e; }
+  .cs-pager__gap { color: #44546a; }
+
   .cs-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin-top: .25rem; font-size: .875rem; color: #3e4c5c; }
   .cs-meta strong { font-weight: 600; color: #020203; }
   /* The separator belongs to the item it introduces, so a wrapped line
@@ -181,8 +250,6 @@
      out of the accessible name where supported. */
   .cs-meta > * + *::before { content: "·"; content: "·" / ""; margin-right: .75rem; color: #3e4c5c; }
   .cs-meta > .label::before { content: none; }
-  .cs-amount { font-weight: 600; color: #020203; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .cs-tags { margin-top: .5rem; }
   .cs-empty { margin: 0; padding: 2.5rem 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; font-size: 1.125rem; color: #3e4c5c; }
   .cs-empty--inline { padding: 0; border: 0; font-size: 1rem; }
 
@@ -230,25 +297,33 @@
   .cs-version .cs-dl { margin-top: .75rem; column-gap: 2rem; row-gap: .75rem; }
 
   @media (min-width: 640px) {
-    .cs-search__row { flex-direction: row; }
-    .cs-filters__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cs-row__date--meta + *::before { content: none; }
     .cs-party { grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; align-items: start; }
     .cs-party__side { justify-content: flex-end; }
     .cs-supplier__facts { grid-template-columns: repeat(3, minmax(0, auto)); column-gap: 3rem; }
   }
   @media (min-width: 768px) {
     .cs-page { padding-top: 4rem; }
-    .cs-row { grid-template-columns: minmax(0, 1fr) auto; column-gap: 2rem; align-items: start; }
-    .cs-row .cs-amount { padding-top: .125rem; text-align: right; }
+    .cs-page.cs-reg--top { padding-top: 2rem; }
     .cs-version .cs-dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cs-dl__wide { grid-column: 1 / -1; }
   }
   @media (min-width: 1024px) {
-    .cs-filters__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .cs-detail { grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr); gap: 3rem; align-items: start; }
     .cs-facts { order: 2; }
   }
   @media (max-width: 639px) {
+    .cs-find__row .button { padding-inline: .75rem; }
+    .cs-chip[open] { flex: 1 0 100%; }
+    .cs-chip[open] > .cs-chip__summary { display: flex; }
+    .cs-chip__panel { position: static; width: auto; min-width: 0; max-width: none; margin-top: .25rem; }
+    .cs-bar__tools { position: relative; width: 100%; }
+    .cs-menu { position: static; }
+    .cs-menu__panel { left: 0; right: 0; width: auto; max-width: none; }
+    .cs-row { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "amount" "meta"; }
+    .cs-row__date:not(.cs-row__date--meta) { display: none; }
+    .cs-row__date--meta { display: inline; font-size: inherit; }
+    .cs-row__amount { text-align: left; }
     .cs-yb__table { font-size: 1rem; }
     .cs-yb__cell { flex-direction: column-reverse; align-items: stretch; gap: .375rem; }
     .cs-yb__bar { min-width: 0; }
@@ -274,7 +349,8 @@
     .cs-yb__fact:nth-child(n+3) { border-top: 0; }
   }
   @media print {
-    .cs-search form, .cs-filters, .cs-opendata, .cs-alerts, .cs-switch { display: none; }
+    .cs-find, .cs-bar__tools, .cs-pager, .cs-switch { display: none; }
+    .cs-top { border-bottom: 0; }
     .cs-detail { grid-template-columns: 1fr; }
     .cs-facts { order: 0; background: none; }
   }

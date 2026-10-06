@@ -1,44 +1,50 @@
-<%# One register row of a contract list (catalogue index and supplier page).
-    Local: contract. Title and identity on the left; the amount, the figure
-    a reader compares down the list, right-aligned in tabular numerals on
-    md+ and below the title on narrow screens. %>
+<%# One register row of a contract list (catalogue, supplier page, in-space
+    list). Local: contract. Two dense lines under a hairline rule.
+    Line 1: the publication date in a narrow column, the title (a link) and
+    the amount right-aligned in tabular numerals. Line 2, muted: the
+    contractors, the reference and, for a CRZ mirror, its provenance.
+    Under 640px the date moves into line 2 and the amount sits under the
+    title (the stylesheet shows one of the two date elements; the hidden one
+    is out of the accessibility tree, so the date is announced once). %>
+<% published = publication_date(contract) %>
+<% contractors = contract_contractors(contract) %>
+<% shown_contractors = contractors.first(3) %>
 <li class="cs-row">
-  <div>
-    <%= link_to contract.title, contract_path(contract), class: "cs-row__title" %>
-    <div class="cs-meta">
-      <span><%= contract.reference %></span>
-      <%# Locale-aware date rendering (civora-org/civora-platform#81):
-          the format string ships with the engine, so no host-app
-          locale data is required. %>
-      <%# The publication date the catalogue filters and sorts by
-          (civora-org/civora-platform#159): "Published in CRZ on: <date>"
-          for the real CRZ date (the detail page's punctuation), the bare
-          entry date otherwise. format_date takes both a Date and a Time. %>
-      <% if publication_date(contract).present? %>
-        <span>
-          <% if publication_date_from_crz?(contract) %><%= publication_date_label(contract) %>: <% end %>
-          <%= format_date(publication_date(contract)) %>
-        </span>
-      <% end %>
-    </div>
-    <%# CRZ-mirror provenance (civora-org/civora-platform#88, ADR-002
-        rule 1): imported records are labelled externally
-        confirmed, with the mirror date — never presented as
-        engine-published content. Editorial records render nothing
-        extra. The stale indicator is deliberately detail-only to
-        keep rows lean. %>
-    <% if imported_contract?(contract) %>
-      <div class="cs-tags">
-        <span class="label">
-          <%= t("decidim.contracts_sk.provenance.badge") %>
-          <% if contract.imported_at.present? %>
-            · <%= format_date(contract.imported_at) %>
-          <% end %>
-        </span>
-      </div>
-    <% end %>
-  </div>
-  <% if contract.amount.present? %>
-    <div class="cs-amount"><%= format_amount(contract.amount, contract.currency) %></div>
+  <%# Locale-aware date rendering (civora-org/civora-platform#81): the
+      format string ships with the engine, so no host-app locale data is
+      required. The publication date is the one the catalogue filters and
+      sorts by (civora-org/civora-platform#159): the real CRZ date when the
+      record carries one, otherwise the entry date. %>
+  <% if published.present? %>
+    <% date_label = publication_date_label(contract) %>
+    <time class="cs-row__date" datetime="<%= published.to_date.iso8601 %>"><span class="cs-sr"><%= date_label %>: </span><%= format_date(published) %></time>
   <% end %>
+  <%= link_to contract.title, contract_path(contract), class: "cs-row__title" %>
+  <% if contract.amount.present? %>
+    <span class="cs-row__amount"><%= format_amount(contract.amount, contract.currency) %></span>
+  <% end %>
+  <p class="cs-row__meta">
+    <% if published.present? %>
+      <time class="cs-row__date cs-row__date--meta" datetime="<%= published.to_date.iso8601 %>"><span class="cs-sr"><%= date_label %>: </span><%= format_date(published) %></time>
+    <% end %>
+    <% if shown_contractors.any? %>
+      <%# A contractor with an IČO links to its supplier page; one without
+          stays plain text (privacy: it may be a natural person). %>
+      <span class="cs-row__parties">
+        <% shown_contractors.each_with_index do |party, index| %><%= ", " if index.positive? %><%= supplier_link_or_name(party, class: "cs-row__supplier") %><% end %><% if contractors.size > shown_contractors.size %>, +<%= contractors.size - shown_contractors.size %><% end %>
+      </span>
+    <% end %>
+    <span><%= contract.reference %></span>
+    <%# CRZ-mirror provenance (civora-org/civora-platform#88, ADR-002
+        rule 1): imported records are labelled externally confirmed, with
+        the mirror date — never presented as engine-published content. The
+        short label is for the eye; the full wording is read aloud. Editorial
+        records render nothing extra. The stale indicator is deliberately
+        detail-only to keep rows lean. %>
+    <% if imported_contract?(contract) %>
+      <span class="cs-row__src">
+        <span class="cs-sr"><%= t("decidim.contracts_sk.provenance.badge") %>: </span>CRZ<% if contract.imported_at.present? %> · <%= format_date(contract.imported_at) %><% end %>
+      </span>
+    <% end %>
+  </p>
 </li>

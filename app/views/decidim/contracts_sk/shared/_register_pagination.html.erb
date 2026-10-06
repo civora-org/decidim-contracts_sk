@@ -1,0 +1,39 @@
+<%# Page links of the public register lists (catalogue, supplier page,
+    in-space list), set in the register: plain numbered links, the current
+    page marked (aria-current, and not a link). Locals:
+      collection     - a Kaminari-paginated collection
+      carried_params - already-normalized params to carry over (the
+                       catalogue passes CatalogueQuery#to_params; the lists
+                       without filters pass {}). Links carry ONLY these plus
+                       the page, so raw request params never reach url_for
+                       and a spoofed controller/action can neither break
+                       nor re-route them.
+    Rendered only from two pages up (the callers check). The window shows
+    the first and last page and two either side of the current one. %>
+<% current = collection.current_page %>
+<% last = collection.total_pages %>
+<% pages = ([1, last] + ((current - 2)..(current + 2)).to_a).select { |n| n.between?(1, last) }.uniq.sort %>
+<nav class="cs-pager" aria-label="<%= t("decidim.contracts_sk.pagination.aria_label") %>">
+  <p class="cs-sr"><%= t("decidim.contracts_sk.pagination.page_count", current: current, total: last) %></p>
+  <ul class="cs-pager__list">
+    <% if collection.prev_page %>
+      <li><%= link_to t("decidim.contracts_sk.pagination.prev"), url_for(carried_params.merge(page: collection.prev_page)), rel: "prev" %></li>
+    <% end %>
+    <% pages.each_with_index do |number, index| %>
+      <% if index.positive? && number - pages[index - 1] > 1 %>
+        <li class="cs-pager__gap" aria-hidden="true">&hellip;</li>
+      <% end %>
+      <li>
+        <% if number == current %>
+          <span class="cs-pager__current" aria-current="page"><%= number %></span>
+        <% else %>
+          <%= link_to number, url_for(carried_params.merge(page: number)),
+                      aria: { label: t("decidim.contracts_sk.pagination.page_link", page: number) } %>
+        <% end %>
+      </li>
+    <% end %>
+    <% if collection.next_page %>
+      <li><%= link_to t("decidim.contracts_sk.pagination.next"), url_for(carried_params.merge(page: collection.next_page)), rel: "next" %></li>
+    <% end %>
+  </ul>
+</nav>

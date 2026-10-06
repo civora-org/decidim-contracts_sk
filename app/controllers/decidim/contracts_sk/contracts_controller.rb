@@ -46,7 +46,7 @@ module Decidim
       helper_method :search_term
 
       def index
-        @contracts = catalogue_query.results.page(public_page)
+        @contracts = catalogue_query.results.includes(:parties).page(public_page)
                                     .per(Decidim::ContractsSk::CONTRACTS_PER_PAGE)
       end
 
