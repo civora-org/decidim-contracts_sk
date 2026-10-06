@@ -36,6 +36,10 @@
       .cs-admin-note-visibility  the muted "internal only" line above the thread
       .cs-admin-note-form  the append form: label above a full-width textarea
       .cs-admin-rules    a readable bulleted rules/problems list (the bundle strips list styles)
+      .cs-admin-search   the role-grant user search: label above a full-width field (#112)
+      .cs-admin-role-actions  a row of per-role button_to forms in a table actions cell (wraps)
+      .cs-admin-roles    the role tables: left-aligned like a list of people, not centred
+      .cs-admin-sr-only  visually hidden text for screen readers (the bundle has no show-for-sr)
       .cs-admin-import   the import preview table: left-aligned, tabular line numbers,
                          right-aligned amounts (__num) and per-row error lists (__errors) %>
 <% unless @cs_admin_styles_rendered %>
@@ -56,6 +60,14 @@
   .cs-admin-note-form { max-width: 72ch; }
   .cs-admin-note-form label { display: block; }
   .cs-admin-note-form textarea { display: block; width: 100%; margin: .375rem 0 .75rem; }
+  .cs-admin-search { max-width: 72ch; }
+  .cs-admin-search label { display: block; }
+  .cs-admin-search input[type="text"] { display: block; width: 100%; margin: .375rem 0 .5rem; }
+  .cs-admin-search .help-text { margin: 0 0 .75rem; }
+  .table-list.cs-admin-roles th, .table-list.cs-admin-roles td { text-align: left; vertical-align: middle; }
+  .cs-admin-role-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .cs-admin-role-actions form { margin: 0; }
+  .cs-admin-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .cs-admin-rules { list-style: disc; margin: .5rem 0 0 1.25rem; padding: 0; max-width: 72ch; }
   .cs-admin-rules li { margin-bottom: .5rem; line-height: 1.5; }
   .table-list.cs-admin-import th, .table-list.cs-admin-import td { text-align: left; vertical-align: top; }

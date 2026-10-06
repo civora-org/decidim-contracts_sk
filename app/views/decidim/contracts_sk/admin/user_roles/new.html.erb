@@ -1,0 +1,78 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<%# Grant screen (civora-org/civora-platform#112): a search, then one grant
+    button per role the found user does not hold yet. Matches show name and
+    nickname only - never an email - and the list is capped, so the page
+    cannot be used to dump the organization's users. The field sits inside
+    its label inside a form-defaults form: the host bundle leaves a bare
+    input unstyled. %>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t("decidim.contracts_sk.admin.user_roles.new.title") %>
+    </h1>
+    <div class="cs-admin-actions">
+      <%= link_to t("decidim.contracts_sk.admin.user_roles.new.back"), admin_user_roles_path,
+                  class: "button button__sm button__secondary" %>
+    </div>
+  </div>
+
+  <div class="card-section">
+    <%= form_with url: search_admin_user_roles_path, method: :post, html: { class: "form form-defaults cs-admin-search" } do %>
+      <label for="user_roles_query">
+        <%= t("decidim.contracts_sk.admin.user_roles.search.label") %>
+        <%= text_field_tag :q, @query, id: "user_roles_query", minlength: Decidim::ContractsSk::Admin::UserRolesController::MIN_QUERY_LENGTH,
+                                       maxlength: Decidim::ContractsSk::Admin::UserRolesController::MAX_QUERY_LENGTH, required: true,
+                                       autocomplete: "off", aria: { describedby: "user_roles_query_hint" } %>
+      </label>
+      <p class="help-text" id="user_roles_query_hint">
+        <%= t("decidim.contracts_sk.admin.user_roles.search.hint", min: Decidim::ContractsSk::Admin::UserRolesController::MIN_QUERY_LENGTH) %>
+      </p>
+      <%= submit_tag t("decidim.contracts_sk.admin.user_roles.search.submit"), name: nil,
+                                                                              class: "button button__sm button__secondary" %>
+    <% end %>
+  </div>
+
+  <% unless @candidates.nil? %>
+    <% if @candidates.any? %>
+      <div class="table-scroll">
+        <table class="table-list cs-admin-roles">
+          <caption class="cs-admin-sr-only"><%= t("decidim.contracts_sk.admin.user_roles.search.results") %></caption>
+          <thead>
+            <tr>
+              <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.name") %></th>
+              <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.nickname") %></th>
+              <th><%= t("decidim.contracts_sk.admin.user_roles.new.headers.grant") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @candidates.each do |user| %>
+              <% missing = Decidim::ContractsSk::UserRole::ROLES - Array(@held_roles[user.id]) %>
+              <tr>
+                <td><%= user.name %></td>
+                <td><%= user.nickname %></td>
+                <td class="table-list__actions">
+                  <% if missing.empty? %>
+                    <%= t("decidim.contracts_sk.admin.user_roles.new.holds_all") %>
+                  <% else %>
+                    <div class="cs-admin-role-actions">
+                      <% missing.each do |role| %>
+                        <%= button_to t("decidim.contracts_sk.admin.user_roles.new.grant", role: role_label(role)),
+                                      admin_user_roles_path,
+                                      params: { user_id: user.id, role: role },
+                                      class: "button button__sm button__secondary" %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="card-section">
+        <p><%= t("decidim.contracts_sk.admin.user_roles.search.no_results") %></p>
+      </div>
+    <% end %>
+  <% end %>
+</div>

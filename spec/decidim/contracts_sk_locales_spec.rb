@@ -533,22 +533,36 @@ module LocaleContract
 
   # The role-management labels per locale (civora-org/civora-platform#111):
   # the four audit-viewer actions and the generic unknown-email form error.
+  # rubocop:disable Style/FormatStringToken
   USER_ROLE_LABELS = {
     en: {
       "admin.audit_events.actions.grant_editor" => "Editor role granted",
       "admin.audit_events.actions.grant_reviewer" => "Reviewer role granted",
       "admin.audit_events.actions.revoke_editor" => "Editor role revoked",
       "admin.audit_events.actions.revoke_reviewer" => "Reviewer role revoked",
-      "admin.user_roles.form.unknown_email" => "No user with this email in this organization."
+      "admin.user_roles.form.unknown_email" => "No user with this email in this organization.",
+      "menu.admin_user_roles" => "Roles",
+      "admin.user_roles.index.title" => "Roles",
+      "admin.user_roles.index.grant_link" => "Grant role",
+      "admin.user_roles.roles.reviewer" => "Reviewer",
+      "admin.user_roles.search.submit" => "Search",
+      "admin.user_roles.create.success" => "%{role} role granted to %{name}."
     },
     sk: {
       "admin.audit_events.actions.grant_editor" => "Udelená rola editora",
       "admin.audit_events.actions.grant_reviewer" => "Udelená rola recenzenta",
       "admin.audit_events.actions.revoke_editor" => "Odobratá rola editora",
       "admin.audit_events.actions.revoke_reviewer" => "Odobratá rola recenzenta",
-      "admin.user_roles.form.unknown_email" => "V tejto organizácii neexistuje používateľ s týmto e-mailom."
+      "admin.user_roles.form.unknown_email" => "V tejto organizácii neexistuje používateľ s týmto e-mailom.",
+      "menu.admin_user_roles" => "Roly",
+      "admin.user_roles.index.title" => "Roly",
+      "admin.user_roles.index.grant_link" => "Udeliť rolu",
+      "admin.user_roles.roles.reviewer" => "Recenzent",
+      "admin.user_roles.search.submit" => "Hľadať",
+      "admin.user_roles.create.success" => "Rola %{role} bola udelená používateľovi %{name}."
     }
   }.freeze
+  # rubocop:enable Style/FormatStringToken
 
   # The admin form hints and the engine-shipped date format per locale
   # (civora-org/civora-platform#79, #81). The date format is a strftime
@@ -939,7 +953,34 @@ module LocaleContract
     "admin.parties.roles.object",
     "admin.parties.update.error",
     "admin.parties.update.success",
+    "admin.user_roles.create.invalid",
+    "admin.user_roles.create.success",
+    "admin.user_roles.destroy.invalid",
+    "admin.user_roles.destroy.success",
     "admin.user_roles.form.unknown_email",
+    "admin.user_roles.index.empty",
+    "admin.user_roles.index.grant_link",
+    "admin.user_roles.index.headers.name",
+    "admin.user_roles.index.headers.nickname",
+    "admin.user_roles.index.headers.revoke",
+    "admin.user_roles.index.headers.roles",
+    "admin.user_roles.index.note",
+    "admin.user_roles.index.revoke",
+    "admin.user_roles.index.revoke_confirm",
+    "admin.user_roles.index.title",
+    "admin.user_roles.new.back",
+    "admin.user_roles.new.grant",
+    "admin.user_roles.new.headers.grant",
+    "admin.user_roles.new.holds_all",
+    "admin.user_roles.new.title",
+    "admin.user_roles.roles.editor",
+    "admin.user_roles.roles.reviewer",
+    "admin.user_roles.search.hint",
+    "admin.user_roles.search.label",
+    "admin.user_roles.search.no_results",
+    "admin.user_roles.search.results",
+    "admin.user_roles.search.submit",
+    "admin.user_roles.search.too_short",
     "contract.amount",
     "contract.crz_filed",
     "contract.crz_filed_confirmed",
@@ -1057,6 +1098,7 @@ module LocaleContract
     "feeds.show.summary_signed",
     "feeds.show.title",
     "menu.admin_contracts",
+    "menu.admin_user_roles",
     "menu.contracts",
     "menu.user_admin_contracts",
     "meta.contract.amount",

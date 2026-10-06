@@ -43,6 +43,7 @@ sk:
       menu:
         contracts: "Zmluvy"
         admin_contracts: "Zmluvy"
+        admin_user_roles: "Roly"
         user_admin_contracts: "Správa zmlúv"
       pagination:
         prev: "Predchádzajúca"
@@ -663,6 +664,41 @@ sk:
             error: "Poznámku sa nepodarilo pridať. Nesmie byť prázdna ani dlhšia ako 2000 znakov."
           link: "Poznámky"
         user_roles:
+          roles:
+            editor: "Editor"
+            reviewer: "Recenzent"
+          index:
+            title: "Roly"
+            grant_link: "Udeliť rolu"
+            note: "Správcovia organizácie majú obe roly automaticky; tu udelené roly sú pre ďalších používateľov."
+            empty: "Zatiaľ nebola udelená žiadna rola."
+            headers:
+              name: "Meno"
+              nickname: "Prezývka"
+              roles: "Roly"
+              revoke: "Odobrať"
+            revoke: "Odobrať: %{role}"
+            revoke_confirm: "Odobrať rolu %{role} používateľovi %{name}?"
+          new:
+            title: "Udeliť rolu"
+            back: "Späť na roly"
+            grant: "Udeliť: %{role}"
+            holds_all: "Má obe roly"
+            headers:
+              grant: "Udeliť"
+          search:
+            label: "Nájsť používateľa podľa mena, prezývky alebo e-mailu"
+            hint: "Zadajte aspoň %{min} znaky. E-mailové adresy sa porovnávajú, ale nikdy sa nezobrazujú."
+            submit: "Hľadať"
+            too_short: "Zadajte aspoň %{min} znaky."
+            no_results: "Nezodpovedá žiadny potvrdený používateľ tejto organizácie."
+            results: "Nájdení používatelia"
+          create:
+            success: "Rola %{role} bola udelená používateľovi %{name}."
+            invalid: "Rolu sa nepodarilo udeliť."
+          destroy:
+            success: "Rola %{role} bola odobratá používateľovi %{name}."
+            invalid: "Rolu sa nepodarilo odobrať. Možno už bola odobratá."
           form:
             unknown_email: "V tejto organizácii neexistuje používateľ s týmto e-mailom."
         crz_handoff:

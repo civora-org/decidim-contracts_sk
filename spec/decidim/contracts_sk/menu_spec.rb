@@ -177,8 +177,12 @@ RSpec.describe Decidim::ContractsSk::Menu do
 
     let(:role_holder) { MenuSpecUser.new(admin: true, admin_terms_accepted: true) }
 
-    it "is the only visible item for an engine role holder" do
-      expect(items_for(:admin_menu_modules, current_user: role_holder).length).to eq(1)
+    it "is the only visible item for an engine role holder who may not manage roles" do
+      swap_resolver(->(_user, _context) { %i[editor reviewer] }) do
+        holder = MenuSpecUser.new(admin: false, admin_terms_accepted: true)
+
+        expect(items_for(:admin_menu_modules, current_user: holder).length).to eq(1)
+      end
     end
 
     it "is visible (a MenuItem) for an engine role holder" do
@@ -214,8 +218,56 @@ RSpec.describe Decidim::ContractsSk::Menu do
     end
   end
 
+  describe "role administration sidebar item (civora-org/civora-platform#112)" do
+    let(:org_admin) { MenuSpecUser.new(admin: true, admin_terms_accepted: true) }
+
+    def roles_item(user)
+      items_for(:admin_menu_modules, current_user: user).find { |i| i.identifier == :contracts_sk_roles }
+    end
+
+    it "is visible to an organization admin with accepted terms" do
+      expect(roles_item(org_admin)).to be_a(Decidim::MenuItem)
+    end
+
+    it "is labelled Roles and points at the role list, right after the Contracts entry" do
+      item = roles_item(org_admin)
+
+      expect([item.label, item.url, item.position > 2.4]).to eq(["Roles", routes.admin_user_roles_path, true])
+    end
+
+    it "is hidden from an engine role holder who is not an organization admin" do
+      swap_resolver(->(_user, _context) { %i[editor reviewer] }) do
+        expect(roles_item(MenuSpecUser.new(admin: false, admin_terms_accepted: true))).to be_nil
+      end
+    end
+
+    it "is hidden from an organization admin who has not accepted the admin terms" do
+      expect(roles_item(MenuSpecUser.new(admin: true, admin_terms_accepted: false))).to be_nil
+    end
+
+    it "is hidden for an anonymous visitor" do
+      expect(roles_item(nil)).to be_nil
+    end
+
+    it "does not consult the role resolver (a custom resolver never confers it)" do
+      swap_resolver(->(_user, _context) { %i[editor reviewer] }) do
+        expect(described_class.manages_roles?(MenuSpecUser.new(admin: false, admin_terms_accepted: true))).to be(false)
+      end
+    end
+
+    it "fails closed when the user object cannot answer" do
+      expect(described_class.manages_roles?(Object.new)).to be(false)
+    end
+  end
+
   describe "admin item visibility (role resolver seam)" do
     let(:role_holder) { MenuSpecUser.new(admin: true, admin_terms_accepted: true) }
+
+    # The Contracts entry only: the role-administration item has its own
+    # rule (the :user_role permission, never the resolver).
+    def contracts_items(user)
+      items_for(:admin_menu_modules, current_user: user).select { |i| i.identifier == :contracts_sk }
+    end
 
     it "is visible for a user granted a custom engine role" do
       swap_resolver(->(_user, _context) { %i[reviewer] }) do
@@ -241,21 +293,19 @@ RSpec.describe Decidim::ContractsSk::Menu do
 
     it "is hidden when the resolver returns only foreign roles (vocabulary intersection)" do
       swap_resolver(->(_user, _context) { %i[superadmin] }) do
-        expect(items_for(:admin_menu_modules, current_user: MenuSpecUser.new(admin: true, admin_terms_accepted: true)))
-          .to be_empty
+        expect(contracts_items(MenuSpecUser.new(admin: true, admin_terms_accepted: true))).to be_empty
       end
     end
 
     it "is hidden when the resolver is not callable (broken host config degrades, never raises)" do
       swap_resolver(nil) do
-        expect(items_for(:admin_menu_modules, current_user: MenuSpecUser.new(admin: true, admin_terms_accepted: true)))
-          .to be_empty
+        expect(contracts_items(MenuSpecUser.new(admin: true, admin_terms_accepted: true))).to be_empty
       end
     end
 
     it "is hidden when the resolver RAISES — fail-closed, never a 500 on admin pages (M-1)" do
       swap_resolver(->(_user, _context) { raise "boom" }) do
-        expect(items_for(:admin_menu_modules, current_user: role_holder)).to be_empty
+        expect(contracts_items(role_holder)).to be_empty
       end
     end
 
