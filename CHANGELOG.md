@@ -1,5 +1,35 @@
 ## [Unreleased]
 
+## [1.7.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.6.0...v1.7.0) (2026-10-06)
+
+
+### Features
+
+* **admin:** bulk import of existing contracts from a CSV spreadsheet (civora-org/civora-platform[#129](https://github.com/civora-org/decidim-contracts_sk/issues/129)) ([bf73a16](https://github.com/civora-org/decidim-contracts_sk/commit/bf73a161c04b9802a4933c35fd4441ffeeef8fad))
+* **admin:** contract templates for recurring contract types (civora-org/civora-platform[#127](https://github.com/civora-org/decidim-contracts_sk/issues/127)) ([8282a37](https://github.com/civora-org/decidim-contracts_sk/commit/8282a3731d337218c3a6ac0e9a6db21db8323c38))
+* **admin:** internal review notes on a contract (civora-org/civora-platform[#128](https://github.com/civora-org/decidim-contracts_sk/issues/128)) ([9a86ab9](https://github.com/civora-org/decidim-contracts_sk/commit/9a86ab964b3c83198ac8b5dc80c3440269173dc0))
+* **admin:** optional second-factor guard on the engine admin (civora-org/civora-platform[#165](https://github.com/civora-org/decidim-contracts_sk/issues/165)) ([d2b8d86](https://github.com/civora-org/decidim-contracts_sk/commit/d2b8d8693c765bfc727251647d736802236ae943))
+* **alerts:** email alerts for new contracts matching a search (civora-org/civora-platform[#121](https://github.com/civora-org/decidim-contracts_sk/issues/121)) ([f0376dd](https://github.com/civora-org/decidim-contracts_sk/commit/f0376ddc67b03e030febf6baeae7d31fc0ad9ed0))
+* **catalogue:** results-first catalogue in the civora.sk register ([1c3950b](https://github.com/civora-org/decidim-contracts_sk/commit/1c3950bac2923928123dc07428b324d9800c2a15))
+* **component:** register a Decidim component with in-space public views (civora-org/civora-platform[#89](https://github.com/civora-org/decidim-contracts_sk/issues/89)) ([f51b492](https://github.com/civora-org/decidim-contracts_sk/commit/f51b4920eeb4ecdc54833e3090d3a25930f99857))
+* **crz-import:** store the CRZ publication date on mirrors (civora-org/civora-platform[#159](https://github.com/civora-org/decidim-contracts_sk/issues/159)) ([0e0f158](https://github.com/civora-org/decidim-contracts_sk/commit/0e0f1586cb2a83fc2fe7530140efa4e8759fb6e2))
+* **notifications:** publish transition notifications after commit, fail-soft (M03-05-C) ([f58b02a](https://github.com/civora-org/decidim-contracts_sk/commit/f58b02abe7bd879f002cb40e84296a994287948c))
+* **notifications:** recipients and the notification_candidates seam (M03-05-B) ([dc39e33](https://github.com/civora-org/decidim-contracts_sk/commit/dc39e33d939a1365cb19f8bdd4fc4a423520816d))
+* **notifications:** transition event vocabulary, texts and event class (M03-05-A) ([694e7b0](https://github.com/civora-org/decidim-contracts_sk/commit/694e7b0f1357e8fb88aac69556825f33a6f8aeb4))
+* **related:** related-contracts block for Decidim result and project pages (civora-org/civora-platform[#131](https://github.com/civora-org/decidim-contracts_sk/issues/131)) ([ed55cd2](https://github.com/civora-org/decidim-contracts_sk/commit/ed55cd2a333c5853b873db108c68a86fbbcc7c1a))
+* **roles:** admin screens to list, grant and revoke roles (M03-06-E) ([c7143a4](https://github.com/civora-org/decidim-contracts_sk/commit/c7143a40c60998713998f92935585ca3a7c6bf23))
+* **roles:** default role_resolver unions stored UserRole rows (M03-06-C) ([5bddede](https://github.com/civora-org/decidim-contracts_sk/commit/5bddedebeeaa59fb9372e91d4697771e8f8d0123))
+* **roles:** grant/revoke commands, user_role permission and audit rows (M03-06-D) ([854d061](https://github.com/civora-org/decidim-contracts_sk/commit/854d061944b6f5dda7708a7bf88bfcf88714946c))
+* **roles:** UserRole table and model (M03-06-B) ([83f38fc](https://github.com/civora-org/decidim-contracts_sk/commit/83f38fcecc8729f526b690653aa11e9357ae8072))
+* **seo:** page titles, meta descriptions, Open Graph and sitemap (civora-org/civora-platform[#122](https://github.com/civora-org/decidim-contracts_sk/issues/122)) ([52a300f](https://github.com/civora-org/decidim-contracts_sk/commit/52a300fff696d5426374a969ba38976fa1ead70d))
+
+
+### Bug Fixes
+
+* **a11y:** engine findings from the WCAG 2.1 AA audit (civora-org/civora-platform[#133](https://github.com/civora-org/decidim-contracts_sk/issues/133)) ([3493605](https://github.com/civora-org/decidim-contracts_sk/commit/349360572b04277cde3fc74bf167755b1ea7fe8e))
+* **a11y:** statistics CRZ band reaches 3:1 non-text contrast (civora-org/civora-platform[#133](https://github.com/civora-org/decidim-contracts_sk/issues/133)) ([5984a9f](https://github.com/civora-org/decidim-contracts_sk/commit/5984a9ff17e6c68878683c688561f271fe5bbe4a))
+* **admin:** role-holder refusal redirect and admin entry link (M03-06-A2) ([f3058ec](https://github.com/civora-org/decidim-contracts_sk/commit/f3058ec2058b759e78847a8c999b9dcd7a20f14a))
+
 ## [1.6.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.5.0...v1.6.0) (2026-10-05)
 
 
