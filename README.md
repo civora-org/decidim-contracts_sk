@@ -152,6 +152,7 @@ Both settings are config-time only — never mutate them at request time.
 - **No ActiveStorage schema shipped.** The engine attaches files to documents but ships no storage-table migration — the host app owns the ActiveStorage schema.
 - **Roles resolve through one config-time seam.** The default resolver unions the admin roles with the per-user roles granted in the admin; a host that overrides `role_resolver` takes over fully and must union stored roles itself if it wants them.
 - **The component is a read-only lens, not a data owner.** Contracts carry no component or participatory-space reference (ADR-009), so the registered component lists the organization's published contracts, the same records as the mounted catalogue, in every space it is added to; administration stays organization-scoped in the mounted engine's admin. See [docs/decidim-component.md](docs/decidim-component.md).
+- **Related contracts are embedded by the host.** The engine ships the reverse lookup (`Decidim::ContractsSk.related_contracts_for(resource)`) and a partial that lists the published, same-organization contracts linked to a result or project, but Decidim 0.31 has no view hook on those pages, so the host overrides two view files to render it — see [docs/related-contracts.md](docs/related-contracts.md) (civora-org/civora-platform#131).
 
 ## Development
 

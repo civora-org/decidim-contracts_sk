@@ -28,6 +28,7 @@ require_relative "contracts_sk/notification_candidates"
 require_relative "contracts_sk/transition_notification"
 require_relative "contracts_sk/crz_deadline"
 require_relative "contracts_sk/link_targets"
+require_relative "contracts_sk/related_contracts"
 require_relative "contracts_sk/crz_scope"
 require_relative "contracts_sk/menu"
 

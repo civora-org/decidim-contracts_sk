@@ -1158,6 +1158,7 @@ module LocaleContract
     "provenance.imported_on",
     "provenance.note",
     "provenance.stale",
+    "related_contracts.title",
     "shared.switch.catalogue",
     "shared.switch.label",
     "shared.switch.statistics",
