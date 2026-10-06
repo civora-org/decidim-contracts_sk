@@ -65,18 +65,11 @@ RSpec.describe "supplier pages", :db, type: :request do
 
     it "marks the page noindex" do
       create_contract!
-      snippets = []
-      # The harness renders no Decidim layout (which yields :header_snippets
-      # into the head), so the snippets the view contributes are recorded.
-      allow_any_instance_of(ActionView::Base).to receive(:content_for)
-        .and_wrap_original do |original, name, *args, &block|
-        snippets << args.first if name == :header_snippets && args.first
-        original.call(name, *args, &block)
-      end
 
       get "/suppliers/#{ico}"
 
-      expect(snippets.map(&:to_s)).to eq([%(<meta name="robots" content="noindex">)])
+      robots = Nokogiri::HTML(response.body).css("head meta[name='robots']")
+      expect(robots.map { |meta| meta["content"] }).to eq(["noindex"])
     end
 
     it "keeps leading zeros of the IČO" do

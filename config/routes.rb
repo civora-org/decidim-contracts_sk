@@ -123,6 +123,14 @@ Decidim::ContractsSk::Engine.routes.draw do
   get "/feed", to: "feeds#show", as: :feed, format: true,
                constraints: { format: "atom" }
 
+  # XML sitemap of the published contracts (civora-org/civora-platform#122):
+  # the format segment is REQUIRED and limited to xml, so /sitemap alone and
+  # /sitemap.json fall through to the /:id catch-all (a plain 404). It lives
+  # under the mount (e.g. /contracts/sitemap.xml), never at the host root,
+  # where a host-level /sitemap.xml may already exist.
+  get "/sitemap", to: "sitemaps#show", as: :sitemap, format: true,
+                  constraints: { format: "xml" }
+
   # Supplier page (civora-org/civora-platform#117): every published contract
   # of one counterparty, keyed by its 8-digit IČO. No format segment and the
   # IČO is constrained to exactly eight ASCII digits, so /suppliers/abc and

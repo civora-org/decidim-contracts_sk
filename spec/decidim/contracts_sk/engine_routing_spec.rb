@@ -25,6 +25,7 @@ module EngineRoutingContract
   FEEDS_CONTROLLER = "decidim/contracts_sk/feeds"
   SUPPLIERS_CONTROLLER = "decidim/contracts_sk/suppliers"
   STATISTICS_CONTROLLER = "decidim/contracts_sk/statistics"
+  SITEMAPS_CONTROLLER = "decidim/contracts_sk/sitemaps"
 
   # The exact verb/path -> controller#action contract of config/routes.rb.
   # The public surface is the mount point itself: the catalogue index sits
@@ -76,6 +77,7 @@ module EngineRoutingContract
     ["GET", "/:id(.:format)", "#{PUBLIC_CONTROLLER}#show"],
     ["GET", "/export.:format", "#{OPEN_DATA_CONTROLLER}#export"],
     ["GET", "/feed.:format", "#{FEEDS_CONTROLLER}#show"],
+    ["GET", "/sitemap.:format", "#{SITEMAPS_CONTROLLER}#show"],
     ["GET", "/suppliers/:ico", "#{SUPPLIERS_CONTROLLER}#show"],
     ["GET", "/statistics", "#{STATISTICS_CONTROLLER}#show"],
     ["GET", "/admin/contracts(.:format)", "#{ADMIN_CONTROLLER}#index"],
@@ -251,6 +253,26 @@ RSpec.describe Decidim::ContractsSk::Engine do
       expect(recognized).to eq([EngineRoutingContract::PUBLIC_CONTROLLER, EngineRoutingContract::PUBLIC_CONTROLLER, []])
     end
     # rubocop:enable RSpec/ExampleLength
+  end
+
+  describe "sitemap route (civora-org/civora-platform#122)" do
+    include EngineRoutingContract
+
+    let(:url_helpers) { described_class.routes.url_helpers }
+
+    it "requires the xml format segment and names the helper sitemap_path" do
+      aggregate_failures do
+        expect(url_helpers.sitemap_path(format: "xml")).to eq("/sitemap.xml")
+        expect { url_helpers.sitemap_path(format: "json") }.to raise_error(ActionController::UrlGenerationError)
+        expect { url_helpers.sitemap_path }.to raise_error(ActionController::UrlGenerationError)
+      end
+    end
+
+    it "is declared before the /:id catch-all" do
+      table = described_class.routes.routes.map { |route| route.path.spec.to_s }
+
+      expect(table.index("/sitemap.:format")).to be < table.index("/:id(.:format)")
+    end
   end
 
   describe "supplier page routes (civora-org/civora-platform#117)" do
@@ -765,13 +787,13 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's twelve controllers, distinct by the admin/ segment" do
+    it "routes only the engine's thirteen controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
         decidim/contracts_sk/admin/contracts decidim/contracts_sk/admin/dashboard
         decidim/contracts_sk/admin/documents decidim/contracts_sk/admin/links decidim/contracts_sk/admin/parties
         decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
-        decidim/contracts_sk/statistics decidim/contracts_sk/suppliers
+        decidim/contracts_sk/sitemaps decidim/contracts_sk/statistics decidim/contracts_sk/suppliers
       ].sort
 
       expect(controllers_of(route_triples)).to eq(controllers)
@@ -793,7 +815,8 @@ RSpec.describe Decidim::ContractsSk::Engine do
 
       expect(controllers_of(non_admin))
         .to eq(["decidim/contracts_sk/contracts", "decidim/contracts_sk/feeds", "decidim/contracts_sk/open_data",
-                "decidim/contracts_sk/statistics", "decidim/contracts_sk/suppliers"])
+                "decidim/contracts_sk/sitemaps", "decidim/contracts_sk/statistics",
+                "decidim/contracts_sk/suppliers"])
     end
   end
 end

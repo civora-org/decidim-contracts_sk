@@ -4,6 +4,7 @@
     out of search engines (noindex) and shows only what the register already
     publishes (docs/contracts-domain-notes.md, "Supplier pages"). %>
 <% content_for :header_snippets, tag.meta(name: "robots", content: "noindex") %>
+<% supplier_meta_tags(name: supplier_name, ico: supplier_ico, count: supplier_count) %>
 <% t_s = "decidim.contracts_sk.suppliers.show" %>
 <%= render "decidim/contracts_sk/shared/public_styles" %>
 <main class="layout-1col cols-10">

@@ -27,6 +27,8 @@ module Decidim
 
       included do
         helper_method :catalogue_query, :current_organization
+        # Titles, descriptions and Open Graph tags of the HTML pages (#122).
+        helper Decidim::ContractsSk::DiscoverabilityHelper
       end
 
       # Upper bound of the page number: an absurd value would overflow the

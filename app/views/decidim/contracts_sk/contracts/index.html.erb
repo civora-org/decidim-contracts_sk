@@ -5,6 +5,7 @@
     register with a right-aligned amount column, and needs the width.
     Layout styling comes from the engine's own scoped stylesheet (see
     shared/_public_styles for why not Tailwind utilities). %>
+<% catalogue_meta_tags(@contracts.current_page) %>
 <%= render "decidim/contracts_sk/shared/public_styles" %>
 <main class="layout-1col cols-10">
   <div class="cs-page">

@@ -50,6 +50,23 @@ A `<section class="cs-opendata">` between the filter form and the register: head
 
 `suppliers/show.html.erb`, reached from the contractor names on the detail page (`supplier_link_or_name`, a `cs-link` only for a contractor with an 8-digit IČO; plain text otherwise). Structure: a "Back to the catalogue" link, one `h1` (the supplier name) with the IČO below, a "Summary" `h2` holding a `dl` (contract count, total value per currency, per-year tally as a list with a "Date unknown" bucket) and a note that a contract present both editorially and as a CRZ mirror counts twice, then a "Contracts" `h2` and the register. The rows are the catalogue's own partial (`contracts/_row.html.erb`), so the provenance badge comes along; pagination is the shared partial with no carried params. `.cs-supplier*` and `.cs-years` live in `shared/_public_styles` (Decidim classes plus engine CSS only; the facts form one column on phones and three from 640px). The head carries `<meta name="robots" content="noindex">` through `content_for :header_snippets`.
 
+## Discoverability: titles, descriptions, Open Graph, sitemap (civora-org/civora-platform#122)
+
+Every public HTML page registers its head values through Decidim's own `add_decidim_meta_tags` (`DiscoverabilityHelper`, called from the view). decidim-core's `_head` partial renders them as `<title>` and the `og:`/`twitter:` tags; the layout appends the organisation name to the title. Decidim renders no plain `<meta name="description">` and no `og:site_name`, so the helper adds those two through `content_for :header_snippets` (the description straight from `decidim_meta_description`, so it never differs from `og:description`). `og:type` stays Decidim's fixed `article`.
+
+| Page | Title | Description |
+|---|---|---|
+| Catalogue | "Zmluvy" (+ "Strana N" from page 2) | the catalogue intro |
+| Contract | "Title (reference)" (+ "Externe potvrdené údaje" for a CRZ mirror) | "Reference: R. Amount: A. Suppliers: Name (IČO n), ..." (+ the same label for a mirror) |
+| Supplier | "Name (IČO n)" | name, IČO and the number of published contracts; the page stays `noindex` |
+| Statistics | "Štatistiky zmlúv" | the page lead; indexable |
+
+Privacy rules: a description names only contractors **with an IČO** (at most three; a party without one is never profiled), never an object party and never the subject matter (free text). Decidim strips markup from descriptions; titles are escaped by the tag helpers. `og:url` is the canonical page URL without query or locale parameters for the contract, supplier and statistics pages.
+
+**Sitemap:** `GET <mount>/sitemap.xml` (`SitemapsController`; `/sitemap` without the format and `/sitemap.json` fall through to the `/:id` 404). It lists the organisation's published, **own** records (the open-data scope: CRZ mirrors are left out, as their canonical page is at crz.gov.sk; the mirror pages themselves stay reachable and are labelled) with `lastmod` = `updated_at` (UTC), oldest id first, capped at the protocol's 50 000 URLs (a sitemap index is out of scope until a catalogue gets that large). It lives under the mount so it never clashes with a host-level `/sitemap.xml`. **Host follow-up:** add `Sitemap: https://<host>/<mount>/sitemap.xml` to the host's `robots.txt`.
+
+Spec harness: the dummy app renders the head through a layout that mirrors decidim-core's `_head` meta lines and runs the real `Decidim::MetaTagsHelper` (`spec/dummy/app/views/layouts/application.html.erb`).
+
 ## Heading decorators need room below
 
 `.title-decorator` and `.decorator` draw a 0.25rem bar at `top: calc(100% + 0.25rem)`, below the heading's box. The bar takes no space in the layout, so the next element must keep at least ~0.75rem of clearance or the bar strikes through it. The engine stylesheet gives decorated headings their own bottom margin (`.cs-page .title-decorator`, `.cs-main .decorator`). Never place a meta line directly under a decorated heading without that margin.

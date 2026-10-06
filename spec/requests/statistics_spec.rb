@@ -150,16 +150,9 @@ RSpec.describe "statistics page", :db, type: :request do
     end
 
     it "is indexable: no robots meta is contributed" do
-      snippets = []
-      allow_any_instance_of(ActionView::Base).to receive(:content_for)
-        .and_wrap_original do |original, name, *args, &block|
-        snippets << args.first if name == :header_snippets && args.first
-        original.call(name, *args, &block)
-      end
-
       get "/statistics"
 
-      expect(snippets).to be_empty
+      expect(page.at_css("head meta[name='robots']")).to be_nil
       expect(response.body).not_to include("noindex")
     end
 
