@@ -8,8 +8,8 @@ module Decidim
       # well-formed 8-digit IČO and counted once per (IČO, contract), however
       # many of a contract's parties carry that IČO. The name is the most
       # recent spelling, ordered like SuppliersController (publication date,
-      # then contract id, then party id, newest first), so the two pages never
-      # disagree about a supplier's name.
+      # i.e. the CRZ date else published_at, then contract id, then party id,
+      # newest first), so the two pages never disagree about a supplier's name.
       #
       # by_amount is { currency => top suppliers } (amount desc, count desc,
       # IČO asc; only suppliers with an amount in that currency); by_count is
@@ -19,7 +19,7 @@ module Decidim
         Ranking = Data.define(:by_amount, :by_count)
 
         # One plucked (contractor party x contract) row.
-        Row = Data.define(:ico, :name, :party_id, :contract_id, :amount, :currency, :published_at)
+        Row = Data.define(:ico, :name, :party_id, :contract_id, :amount, :currency, :crz_published_on, :published_at)
 
         def initialize(relation)
           @relation = relation
@@ -53,7 +53,13 @@ module Decidim
         end
 
         def latest_name(group)
-          group.max_by { |row| [row.published_at || Time.zone.at(0), row.contract_id, row.party_id] }.name
+          group.max_by { |row| [publication_key(row) || Time.zone.at(0), row.contract_id, row.party_id] }.name
+        end
+
+        # The same publication date the catalogue sorts by (crz_published_on,
+        # else published_at; Contract.publication_sort_key).
+        def publication_key(row)
+          Contract.publication_sort_key(row.crz_published_on, row.published_at)
         end
 
         def amounts_of(per_contract)
@@ -63,7 +69,7 @@ module Decidim
         end
 
         # Based on the contract relation, so every contract column is cast
-        # by its own type (amount as BigDecimal, published_at as Time) on
+        # by its own type (amount as BigDecimal, the dates as Date/Time) on
         # any adapter.
         def rows
           @relation.joins(:parties).where(Party.table_name => { role: "contractor" })
@@ -75,7 +81,7 @@ module Decidim
           parties = Party.arel_table
           contracts = Contract.arel_table
           [parties[:ico], parties[:name], parties[:id], contracts[:id], contracts[:amount],
-           contracts[:currency], contracts[:published_at]]
+           contracts[:currency], contracts[:crz_published_on], contracts[:published_at]]
         end
       end
     end

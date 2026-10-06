@@ -18,18 +18,25 @@ module Decidim
           end
         end
 
+        # reorder: a reusing scope may arrive pre-ordered; determinism wins.
+        # The publication date is the shared COALESCE(crz_published_on,
+        # published_at) (Contract.publication_date_arel); nulls last in
+        # both directions, then the id, so the order is total.
         def sort(relation)
-          table = Contract.arel_table
-          # reorder: a reusing scope may arrive pre-ordered; determinism wins.
           case @filters.sort
-          when "published_asc" then relation.reorder(published_at: :asc, id: :asc)
-          when "amount_desc" then relation.reorder(table[:amount].desc.nulls_last, table[:id].desc)
-          when "amount_asc" then relation.reorder(table[:amount].asc.nulls_last, table[:id].asc)
-          else relation.reorder(published_at: :desc, id: :desc)
+          when "published_asc" then relation.reorder(*ordering(Contract.publication_date_arel, :asc))
+          when "amount_desc" then relation.reorder(*ordering(Contract.arel_table[:amount], :desc))
+          when "amount_asc" then relation.reorder(*ordering(Contract.arel_table[:amount], :asc))
+          else relation.reorder(*ordering(Contract.publication_date_arel, :desc))
           end
         end
 
         private
+
+        # [column, id] ordering in one direction, NULLs last.
+        def ordering(column, direction)
+          [column.public_send(direction).nulls_last, Contract.arel_table[:id].public_send(direction)]
+        end
 
         def by_search(relation)
           return relation unless @filters.q
@@ -45,14 +52,42 @@ module Decidim
           relation.where(amount: @filters.amount_min..@filters.amount_max)
         end
 
-        # Calendar days in the time zone as an instant range, half-open:
-        # [from 00:00, day after "to" 00:00) — the whole "to" day is in.
+        # The publication date (Contract.publication_date_arel) as calendar
+        # days: a record carrying a CRZ date (crz_published_on, a date)
+        # matches on it, inclusive on both ends; a record without one falls
+        # back to published_at, an instant range, half-open: [from 00:00,
+        # day after "to" 00:00) in the time zone — the whole "to" day is in.
+        # Each column is compared with its own type (no CAST, no mixed
+        # date/timestamp comparison), and either bound may be open. The
+        # IS NULL guard makes the two branches disjoint: a record is judged
+        # by its CRZ date alone, never by both.
         def by_published(relation)
           return relation unless @filters.published_from || @filters.published_to
 
+          table = Contract.arel_table
+          by_crz_date = crz_range(table)
+          by_entry = table[:crz_published_on].eq(nil).and(entry_range(table))
+          relation.where(by_crz_date.or(by_entry))
+        end
+
+        def crz_range(table)
+          bounds(table[:crz_published_on], @filters.published_from, @filters.published_to)
+        end
+
+        def entry_range(table)
           lower = @filters.published_from && midnight(@filters.published_from)
           upper = @filters.published_to && midnight(@filters.published_to + 1)
-          relation.where(published_at: lower...upper)
+          bounds(table[:published_at], lower, upper, upper_inclusive: false)
+        end
+
+        # An optionally open range over one column: >= lower and <= upper
+        # (or < upper), each bound only when given. At least one is, by the
+        # caller's guard.
+        def bounds(column, lower, upper, upper_inclusive: true)
+          conditions = []
+          conditions << column.gteq(lower) if lower
+          conditions << (upper_inclusive ? column.lteq(upper) : column.lt(upper)) if upper
+          conditions.reduce(:and)
         end
 
         def by_signed(relation)

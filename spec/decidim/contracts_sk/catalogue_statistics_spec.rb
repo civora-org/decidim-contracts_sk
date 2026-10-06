@@ -209,6 +209,18 @@ RSpec.describe Decidim::ContractsSk::CatalogueStatistics, :db do
       expect(stats.top_by_count.first.name).to eq("New name")
     end
 
+    # civora-org/civora-platform#159: the same publication-date rule as the
+    # catalogue sort and the supplier page (the CRZ date, else published_at).
+    it "names a supplier by the spelling with the latest CRZ publication date, not the latest import" do
+      make({ crz_published_on: Date.new(2026, 2, 1), published_at: Time.utc(2026, 9, 9) },
+           contractors: [{ ico: "11111111", name: "CRZ older" }])
+      make({ crz_published_on: Date.new(2026, 6, 1), published_at: Time.utc(2026, 9, 1) },
+           contractors: [{ ico: "11111111", name: "CRZ newer" }])
+      make({ published_at: Time.utc(2026, 4, 1) }, contractors: [{ ico: "11111111", name: "Plain April" }])
+
+      expect(stats.top_by_count.first.name).to eq("CRZ newer")
+    end
+
     it "ignores the object role, drafts and a malformed or missing IČO" do
       make({}, contractors: [{ ico: "11111111", name: "Real" }])
       make({}, contractors: [{ ico: nil, name: "No ICO" }])

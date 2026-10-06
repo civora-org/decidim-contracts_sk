@@ -15,13 +15,14 @@
     <h1 class="title-decorator"><%= @contract.title %></h1>
     <%# Quick-scan identity line under the title: the record's reference and
         publication date (guarded, civora-org/civora-platform#80: a sparse
-        record renders no dangling date span). The amount lives in the
+        record renders no dangling date span; the CRZ date when the record
+        carries one, labelled as such — #159). The amount lives in the
         facts panel, where it is the headline figure; provenance has its
         own notice below. %>
     <div class="cs-meta">
       <span><%= t("decidim.contracts_sk.contract.reference_number") %>: <strong><%= @contract.reference %></strong></span>
-      <% if @contract.published_at.present? %>
-        <span><%= t("decidim.contracts_sk.contract.published_on") %>: <%= format_date(@contract.published_at) %></span>
+      <% if publication_date(@contract).present? %>
+        <span><%= publication_date_label(@contract) %>: <%= format_date(publication_date(@contract)) %></span>
       <% end %>
     </div>
 
@@ -51,10 +52,13 @@
             <dd><%= @contract.reference %></dd>
           </div>
 
-          <% if @contract.published_at.present? %>
+          <%# A record confirmed as filed carries its CRZ date in the filed
+              block below, so the row would show it twice (#159). A filed
+              record WITHOUT a CRZ date keeps the row (its entry date). %>
+          <% if publication_date(@contract).present? && !(@contract.crz_filed_at.present? && publication_date_from_crz?(@contract)) %>
             <div>
-              <dt><%= t("decidim.contracts_sk.contract.published_on") %></dt>
-              <dd><%= format_date(@contract.published_at) %></dd>
+              <dt><%= publication_date_label(@contract) %></dt>
+              <dd><%= format_date(publication_date(@contract)) %></dd>
             </div>
           <% end %>
 

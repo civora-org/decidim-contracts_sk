@@ -222,6 +222,22 @@ RSpec.describe Decidim::ContractsSk::CrzImport::Mapper do
       end
     end
 
+    # Format verified live 2026-10-05 (record 2142424): ekosystem serves
+    # published_at as a full UTC ISO8601 timestamp with microseconds.
+    it "maps the live published_at format (UTC timestamp with microseconds) to the Slovak calendar day" do
+      published = lambda do |value|
+        described_class.map(crz_payload("published_at" => value))[:published_on]
+      end
+
+      aggregate_failures do
+        expect(published.call("2015-11-06T17:58:31.000000Z")).to eq(Date.new(2015, 11, 6))
+        # 23:30 UTC on 1 March is 00:30 CET on 2 March in Bratislava.
+        expect(published.call("2026-03-01T23:30:00.000000Z")).to eq(Date.new(2026, 3, 2))
+        # 22:30 UTC on 20 April is 00:30 CEST on 21 April.
+        expect(published.call("2026-04-20T22:30:00.000000Z")).to eq(Date.new(2026, 4, 21))
+      end
+    end
+
     it "leaves the checksum a digest of the raw payload only (unchanged by the new keys)" do
       payload = crz_payload("status_id" => 2, "published_at" => "2026-04-20")
 

@@ -52,7 +52,7 @@ module Decidim
         @supplier_count ||= supplier_query.relation.count
       end
 
-      # The most recent spelling of the name (newest publication first, id
+      # The most recent spelling of the name (newest publication date first, see Contract.publication_date_arel; id
       # then contract id, then party id: deterministic even when one contract
       # carries two spellings). Restricted to the contracts of THIS page's scope
       # through the subquery: a draft's or another organization's spelling
@@ -65,7 +65,7 @@ module Decidim
         contracts = Contract.arel_table
         Party.where(role: "contractor", ico: supplier_ico, contract_id: supplier_query.relation.select(:id))
              .joins(:contract)
-             .reorder(contracts[:published_at].desc, contracts[:id].desc, Party.arel_table[:id].desc)
+             .reorder(Contract.publication_date_arel.desc.nulls_last, contracts[:id].desc, Party.arel_table[:id].desc)
       end
 
       # { currency => total } over the records with an amount, one group

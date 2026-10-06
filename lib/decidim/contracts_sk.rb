@@ -43,5 +43,6 @@ require_relative "contracts_sk/crz_import/filing_comparison"
 require_relative "contracts_sk/crz_import/filing_lookup"
 require_relative "contracts_sk/crz_import/sync"
 require_relative "contracts_sk/crz_import/prune"
+require_relative "contracts_sk/crz_import/backfill_published_on"
 
 require_relative "contracts_sk/engine" if defined?(Rails)

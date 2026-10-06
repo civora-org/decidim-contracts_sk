@@ -16,14 +16,22 @@ module Decidim
       #   (source="crz", source_id, imported_at, import_status="succeeded",
       #   checksum), the mapped parties, and a "crz_import_create" audit
       #   event. Currency stays on the column default (never imported).
+      #   `published_at` keeps meaning "entered the catalogue" (import
+      #   time); the REAL CRZ publication date goes to crz_published_on
+      #   (civora-org/civora-platform#159), which the catalogue prefers.
+      #   crz_published_on is a date, never the "filed" flag — only
+      #   crz_filed_at is — so a mirror carrying one is still a mirror.
       # - UPDATE when a source="crz" record exists, only if the stored
       #   checksum differs (checksum gate — no blind overwrites) AND the
       #   record is still `published` (an imported record that left the
       #   published state is never resurrected or overwritten; the guard
       #   is re-checked INSIDE the lock). Content fields, parties and
       #   provenance are re-mirrored; state/author/currency are never
-      #   touched; a "crz_import_update" audit event rides the same
-      #   transaction.
+      #   touched; crz_published_on is re-mirrored with the content (nil
+      #   when CRZ reports none); a "crz_import_update" audit event rides
+      #   the same transaction. A mirror imported before #159 is NOT
+      #   refreshed by an unchanged payload (the checksum gate): the
+      #   backfill task (CrzImport::BackfillPublishedOn) fills its date.
       # - LINKED when a record with the same source_id has a different
       #   source (an editorial record) that was CONFIRMED as filed
       #   (crz_filed_at present, Admin::ConfirmCrzFiling,
@@ -80,7 +88,7 @@ module Decidim
         AUDIT_ACTIONS = { created: "crz_import_create", updated: "crz_import_update" }.freeze
 
         # `record` is the Mapper output ({ :source_id, :attributes,
-        # :parties, :checksum }); `actor` is the acting user (admin
+        # :parties, :checksum, :published_on }); `actor` is the acting user (admin
         # trigger) or the configured operator persona (rake trigger) —
         # required, because both the Contract author and the AuditEvent
         # actor columns are NOT NULL by engine schema.
@@ -163,7 +171,8 @@ module Decidim
             organization: organization,
             author: actor,
             state: "published",
-            published_at: Time.current
+            published_at: Time.current,
+            crz_published_on: record[:published_on]
           ).merge(provenance_attributes)
         end
 
@@ -250,6 +259,7 @@ module Decidim
 
         def update_attributes
           record[:attributes].merge(
+            crz_published_on: record[:published_on],
             imported_at: Time.current,
             import_status: IMPORT_STATUS_SUCCESS,
             checksum: record[:checksum]

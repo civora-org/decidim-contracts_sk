@@ -22,9 +22,14 @@ module Decidim
     # * Amounts compare the stored amount regardless of currency; only EUR
     #   exists (Contract::SUPPORTED_CURRENCIES). Records without an amount are
     #   excluded only while an amount filter is active.
-    # * Publication dates filter published_at (the moment the record entered
-    #   the catalogue; for CRZ mirrors that is their import time), as calendar
-    #   days in the given time zone. Signing dates filter signed_on.
+    # * Publication dates (civora-org/civora-platform#159) filter and sort the
+    #   real CRZ publication date (crz_published_on) when the record carries
+    #   one — CRZ mirrors and editorial records confirmed as filed — and
+    #   otherwise published_at (the moment the record entered the catalogue),
+    #   as calendar days in the given time zone (Contract.publication_date_arel).
+    #   A mirror imported before #159 has no CRZ date until the backfill
+    #   task has run, and meanwhile falls back to its import time. Signing
+    #   dates filter signed_on.
     # * A reversed range (from after to) is swapped, not rejected.
     # * party matches a contract's party by exact IČO (8 digits) or by
     #   case-insensitive name substring, via an IN-subquery (no N+1, no

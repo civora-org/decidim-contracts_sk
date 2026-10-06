@@ -55,12 +55,14 @@ module Decidim
           #   { source_id:, attributes: {...}, parties: [...], checksum:,
           #     status_id:, published_on: }
           #
-          # status_id (CRZ status code, Integer or nil) and published_on
-          # (Date or nil) are read by the filing confirmation
-          # (civora-org/civora-platform#125) ONLY. They deliberately sit
-          # beside — never inside — :attributes, so the import's written
-          # columns and the checksum (a digest of the raw payload) are
-          # unchanged by them.
+          # status_id (CRZ status code, Integer or nil) is read by the
+          # filing confirmation (civora-org/civora-platform#125) only.
+          # published_on (Date or nil) is read by it too, and — since
+          # civora-org/civora-platform#159 — written by the import
+          # (UpsertContract) and the published_on backfill to the
+          # crz_published_on column. Both deliberately sit beside — never
+          # inside — :attributes, so the import's attribute set and the
+          # checksum (a digest of the raw payload) are unchanged by them.
           # Raises Mapper::Error on structural invalidity.
           def map(payload)
             raise Error, "CRZ record is not a JSON object" unless payload.is_a?(Hash)
@@ -200,10 +202,13 @@ module Decidim
           end
 
           # published_at is documented only as "publication date in CRZ"
-          # (spike, verified field) — a plain date today, but a timestamp is
-          # tolerated: it is converted to Europe/Bratislava before taking
-          # the date, so a near-midnight UTC instant lands on the Slovak
-          # calendar day. Sentinel, blank and garbage → nil.
+          # (spike, verified field). Verified live 2026-10-05 (record
+          # 2142424): ekosystem serves a full UTC ISO8601 timestamp with
+          # microseconds ("2015-11-06T17:58:31.000000Z"), so the timestamp
+          # branch is the one that actually runs: the instant is converted
+          # to Europe/Bratislava before taking the date, so a near-midnight
+          # UTC instant lands on the Slovak calendar day. A plain date is
+          # still accepted as is. Sentinel, blank and garbage → nil.
           def parse_published_on(raw)
             value = text(raw)
             return parse_date(value) if value.match?(/\A\d{4}-\d{2}-\d{2}\z/)

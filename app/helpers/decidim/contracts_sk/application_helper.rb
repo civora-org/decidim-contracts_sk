@@ -15,6 +15,10 @@ module Decidim
     # PORO-safe — no view-context dependencies, I18n only — so the CRZ
     # handoff PDF (a plain object) can include this module and share one
     # formatting vocabulary with the views, never a second one.
+    # Cop note: one shared vocabulary of small PORO-safe formatters and
+    # predicates (the PDF includes this module too); splitting it would
+    # scatter that single vocabulary rather than simplify it.
+    # rubocop:disable Metrics/ModuleLength
     module ApplicationHelper
       include ActionView::Helpers::NumberHelper
 
@@ -24,6 +28,28 @@ module Decidim
       # never labelled.
       def imported_contract?(contract)
         contract.source == "crz"
+      end
+
+      # The date shown as the record's publication date (civora-org/
+      # civora-platform#159): the real CRZ date (crz_published_on, a Date)
+      # when the record carries one, else published_at (a Time, the moment it
+      # entered the catalogue) — the rule Contract.publication_date_arel
+      # sorts and filters by. Blank when neither exists; format_date takes
+      # both types. Reads the columns only, so any contract-like object works.
+      def publication_date(contract)
+        contract.crz_published_on || contract.published_at
+      end
+
+      # True when publication_date is the CRZ one.
+      def publication_date_from_crz?(contract)
+        contract.crz_published_on.present?
+      end
+
+      # "Published in CRZ on" when the date shown is the real CRZ one,
+      # otherwise the original "Published on" (the catalogue entry date).
+      def publication_date_label(contract)
+        key = publication_date_from_crz?(contract) ? "published_on_crz" : "published_on"
+        I18n.t("decidim.contracts_sk.contract.#{key}")
       end
 
       # Locale-aware amount rendering (civora-org/civora-platform#81).
@@ -211,5 +237,6 @@ module Decidim
         end
       end
     end
+    # rubocop:enable Metrics/ModuleLength
   end
 end

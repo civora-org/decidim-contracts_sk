@@ -123,6 +123,20 @@ RSpec.describe "atom feed", :db, type: :request do
       expect(entry_titles(feed)).to eq(%w[new tie-b tie-a old])
     end
 
+    it "orders by the publication date: a filed record's older CRZ date sorts behind a newer plain one (#159)" do
+      create_contract!(title: "Plain June", published_at: Time.utc(2026, 6, 1, 12))
+      create_contract!(title: "Filed, CRZ in March", published_at: Time.utc(2026, 9, 1, 12),
+                       crz_published_on: Date.new(2026, 3, 2), crz_filed_at: Time.utc(2026, 3, 3, 9))
+
+      doc = feed
+
+      aggregate_failures do
+        expect(entry_titles(doc)).to eq(["Plain June", "Filed, CRZ in March"])
+        # The entry stamps stay "entered the catalogue".
+        expect(entries(doc).last.at_xpath("a:published", atom_ns).text).to eq("2026-09-01T12:00:00Z")
+      end
+    end
+
     it "lists only the current organization's published editorial records" do
       create_contract!(title: "PUB")
       create_contract!(title: "DRAFT", state: "draft", published_at: nil)
