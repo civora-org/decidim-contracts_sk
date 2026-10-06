@@ -155,6 +155,28 @@ table itself stays untouched. The union gives one admin both roles, which is
 why the per-person [four-eyes rule](#four-eyes-rule-per-person-segregation-123)
 below exists: roles alone never separated duties between two *people*.
 
+## Non-admin role holders and the engine admin (#108, #161)
+
+A user who holds an engine role but is not a Decidim organization admin can
+use the whole engine admin (spike: [docs/spikes/m03-06-a-role-admin-access.md](spikes/m03-06-a-role-admin-access.md)):
+nothing in Decidim's admin base controller or layout requires an admin, and the
+Decidim admin-terms page is only forced on users holding a Decidim role. What
+they cannot open is Decidim's own `/admin` dashboard. Consequences, handled by
+the engine:
+
+- **Refusals.** Decidim redirects a refused admin action to `/admin`, a 404 for
+  them. The engine's admin base controller overrides `user_has_no_permission_path`
+  / `user_not_authorized_path`: an engine role holder lands on the engine admin
+  overview, a user without a role on the public catalogue; the "not authorized"
+  flash is unchanged, and a referer still wins (Decidim's behaviour).
+- **Entry link.** Decidim's header, admin bar and account links to the admin are
+  gated on `:read :admin_dashboard`, which they lack, so the engine registers a
+  "Contracts administration" item in the `:user_menu` registry (the account-area
+  navigation). It shows to engine role holders only, and is hidden when Decidim
+  already offers its own admin link (org admins), so nobody sees two.
+- **Known limitation.** The admin layout's logo and breadcrumb home icon still
+  point at `/admin` (404 for them); that is Decidim's layout.
+
 ## Admin overview: block visibility (#126)
 
 The admin overview (`/admin`) is gated by the contracts index's own

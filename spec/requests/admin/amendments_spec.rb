@@ -108,7 +108,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       get "/admin/contracts/1/amendments/new"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -118,7 +118,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       post "/admin/contracts/1/amendments", params: { amendment: { summary: "Forged" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -128,7 +128,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       get "/admin/contracts/1/amendments/new"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -138,7 +138,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       patch "/admin/contracts/1/amendments/9", params: { amendment: { summary: "Tampered" } }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -148,7 +148,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       post "/admin/contracts/1/amendments/9/publish"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -158,7 +158,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       delete "/admin/contracts/1/amendments/9"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -169,7 +169,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       get "/admin/contracts/1/amendments/9/edit"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
   end
@@ -364,7 +364,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       post "/admin/contracts/#{contract.id}/amendments", params: valid_params
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Amendment.count).to eq(0)
     end
@@ -374,7 +374,7 @@ RSpec.describe "admin amendment management", type: :request do
 
       post "/admin/contracts/#{contract.id}/amendments", params: valid_params
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Amendment.count).to eq(0)
     end
@@ -388,15 +388,15 @@ RSpec.describe "admin amendment management", type: :request do
       aggregate_failures do
         patch "/admin/contracts/#{contract.id}/amendments/#{amendment.id}",
               params: { amendment: { summary: "Tampered" } }
-        expect(response).to redirect_to("/")
+        expect(response).to redirect_to("/admin")
         expect(flash[:alert]).to eq(unauthorized)
 
         post "/admin/contracts/#{contract.id}/amendments/#{amendment.id}/publish"
-        expect(response).to redirect_to("/")
+        expect(response).to redirect_to("/admin")
         expect(flash[:alert]).to eq(unauthorized)
 
         delete "/admin/contracts/#{contract.id}/amendments/#{amendment.id}"
-        expect(response).to redirect_to("/")
+        expect(response).to redirect_to("/admin")
         expect(flash[:alert]).to eq(unauthorized)
       end
 

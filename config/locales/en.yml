@@ -43,6 +43,7 @@ en:
       menu:
         contracts: "Contracts"
         admin_contracts: "Contracts"
+        user_admin_contracts: "Contracts administration"
       pagination:
         prev: "Previous"
         next: "Next"

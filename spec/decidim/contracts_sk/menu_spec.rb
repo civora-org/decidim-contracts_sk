@@ -56,6 +56,18 @@ MenuSpecBareContext = Struct.new(:routes, :current_user) do
   end
 end
 
+# View-context stand-in for the :user_menu entry, which also asks the view's
+# allowed_to? helper whether Decidim already offers its own admin link.
+MenuSpecAccountContext = Struct.new(:routes, :current_user, :decidim_admin_link, keyword_init: true) do
+  def decidim_contracts_sk
+    routes
+  end
+
+  def allowed_to?(action, subject, *)
+    action == :read && subject == :admin_dashboard && decidim_admin_link
+  end
+end
+
 RSpec.describe Decidim::ContractsSk::Menu do
   let(:routes) { Decidim::ContractsSk::Engine.routes.url_helpers }
 
@@ -273,6 +285,54 @@ RSpec.describe Decidim::ContractsSk::Menu do
       end
     end
     # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
+  end
+
+  # civora-org/civora-platform#161 (D3 of the #108 spike): the account-area
+  # entry link, shown to engine role holders Decidim does not already link to
+  # the admin dashboard.
+  describe "account menu entry (:user_menu)" do
+    let(:plain_user) { MenuSpecUser.new(admin: false, admin_terms_accepted: false) }
+
+    def account_items(user, decidim_admin_link: false)
+      context = MenuSpecAccountContext.new(routes: routes, current_user: user,
+                                           decidim_admin_link: decidim_admin_link)
+      menu = Decidim::Menu.new(:user_menu)
+      menu.build_for(context)
+      menu.items
+    end
+
+    it "registers the user menu registry" do
+      expect(Decidim::MenuRegistry.find(:user_menu)).to be_a(Decidim::MenuRegistry)
+    end
+
+    it "shows for a non-admin engine role holder, pointing at the engine admin root" do
+      swap_resolver(->(_user, _context) { %i[editor] }) do
+        item = account_items(plain_user).first
+
+        expect([item.identifier, item.url, item.label])
+          .to eq([:contracts_sk_admin, routes.admin_root_path, "Contracts administration"])
+      end
+    end
+
+    it "is hidden for a user without an engine role" do
+      expect(account_items(plain_user)).to be_empty
+    end
+
+    it "is hidden for an anonymous visitor" do
+      expect(account_items(nil)).to be_empty
+    end
+
+    it "is hidden when Decidim already offers the admin link (no duplicate for admins)" do
+      swap_resolver(->(_user, _context) { %i[editor reviewer] }) do
+        expect(account_items(plain_user, decidim_admin_link: true)).to be_empty
+      end
+    end
+
+    it "is hidden when the resolver raises (fail-closed)" do
+      swap_resolver(->(_user, _context) { raise "boom" }) do
+        expect(account_items(plain_user)).to be_empty
+      end
+    end
   end
 
   describe ".holds_engine_role?" do

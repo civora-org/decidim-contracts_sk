@@ -117,7 +117,7 @@ RSpec.describe "admin contract transitions", type: :request do
 
       post "/admin/contracts/1/submit"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -127,7 +127,7 @@ RSpec.describe "admin contract transitions", type: :request do
 
       post "/admin/contracts/1/approve"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
   end
@@ -304,7 +304,7 @@ RSpec.describe "admin contract transitions", type: :request do
         post "/admin/contracts/#{contract.id}/submit"
       end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
 
       contract.reload
@@ -318,7 +318,7 @@ RSpec.describe "admin contract transitions", type: :request do
         post "/admin/contracts/#{contract.id}/archive"
       end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
 
       contract.reload
@@ -840,7 +840,7 @@ RSpec.describe "admin contract transitions", type: :request do
           post "/admin/contracts/#{in_review.id}/#{event}", params: { reason: "Because." }
         end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
 
-        expect(response).to redirect_to("/")
+        expect(response).to redirect_to("/admin")
         expect(flash[:alert]).to eq(unauthorized)
 
         in_review.reload

@@ -85,6 +85,45 @@ module Decidim
         end
       end
 
+      # The entry link for engine role holders who are NOT Decidim admins
+      # (civora-org/civora-platform#161, D3 of the #108 spike). Decidim's own
+      # admin links (header dropdown, admin bar, /account sidebar) are gated
+      # on :read :admin_dashboard, which such users lack, so nothing led them
+      # to the engine admin.
+      #
+      # Placement: the :user_menu registry, the Decidim-native extension point
+      # rendered as the account-area navigation (decidim-core
+      # lib/decidim/core/menu.rb register_user_menu!, rendered by
+      # app/views/layouts/decidim/shared/_layout_user_profile.html.erb). The
+      # header user dropdown is hard-coded ERB without a registry, so reaching
+      # it would mean overriding a core view.
+      #
+      # Visibility: holds an engine role AND is not already offered Decidim's
+      # own admin link (allowed_to?(:read, :admin_dashboard), the exact test
+      # decidim-core's _user_menu.html.erb applies), so engine admins and
+      # users with a Decidim admin role keep their single, existing entry.
+      # Evaluated per render in the view context; fail-closed like the other
+      # registrations (holds_engine_role? never raises).
+      def self.register_user_menu!
+        Decidim.menu :user_menu do |menu|
+          menu.add_item :contracts_sk_admin,
+                        I18n.t("menu.user_admin_contracts", scope: "decidim.contracts_sk"),
+                        decidim_contracts_sk.admin_root_path,
+                        position: 1.8,
+                        active: :inclusive,
+                        if: Decidim::ContractsSk::Menu.account_entry_visible?(self)
+        end
+      end
+
+      # The :user_menu visibility test, evaluated against the rendering view
+      # (respond_to? guards keep stand-in contexts safe).
+      def self.account_entry_visible?(view)
+        organization = view.respond_to?(:current_organization) ? view.current_organization : nil
+        decidim_admin_link = view.respond_to?(:allowed_to?) && view.allowed_to?(:read, :admin_dashboard)
+
+        holds_engine_role?(view.current_user, organization) && !decidim_admin_link
+      end
+
       # True when the user holds at least one engine role through the
       # config-time role resolver — the same seam and intersection the
       # engine's Permissions class applies (Permissions#roles_for_user).

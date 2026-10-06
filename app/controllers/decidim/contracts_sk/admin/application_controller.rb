@@ -22,6 +22,25 @@ module Decidim
         def permission_class_chain
           [Decidim::ContractsSk::Permissions, *super]
         end
+
+        # Refusal landing (civora-org/civora-platform#161, D1 of the #108
+        # spike). Decidim's admin base redirects every refusal to
+        # decidim_admin.root_path (/admin), which is a 404 for a non-admin
+        # engine-role holder (Decidim's dashboard constraint). Engine role
+        # holders land on the engine admin root (open to any role), everyone
+        # else on the public catalogue; the "not authorized" flash is
+        # unchanged. A referer, when present, still wins (NeedsPermission).
+        def user_has_no_permission_path
+          if Decidim::ContractsSk::Menu.holds_engine_role?(current_user, current_organization)
+            admin_root_path
+          else
+            contracts_path
+          end
+        end
+
+        def user_not_authorized_path
+          user_has_no_permission_path
+        end
       end
     end
   end

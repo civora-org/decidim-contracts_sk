@@ -117,7 +117,7 @@ RSpec.describe "admin CRZ handoff", type: :request do
 
       get "/admin/contracts/1/crz_handoff"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -127,7 +127,7 @@ RSpec.describe "admin CRZ handoff", type: :request do
 
       post "/admin/contracts/1/crz_handoff"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -154,7 +154,7 @@ RSpec.describe "admin CRZ handoff", type: :request do
 
       post "/admin/contracts/1/crz_handoff"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
   end
@@ -292,7 +292,7 @@ RSpec.describe "admin CRZ handoff", type: :request do
 
       post "/admin/contracts/#{contract.id}/crz_handoff"
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
       expect(Decidim::ContractsSk::Document.count).to eq(0)
     end
@@ -319,7 +319,7 @@ RSpec.describe "admin CRZ handoff", type: :request do
       post "/admin/contracts/#{contract.id}/crz_handoff"
 
       aggregate_failures do
-        expect(response).to redirect_to("/")
+        expect(response).to redirect_to("/admin")
         expect(flash[:alert]).to eq(unauthorized)
         expect(Decidim::ContractsSk::Document.count).to eq(1)
       end

@@ -77,11 +77,11 @@ RSpec.describe "admin CRZ filing confirmation", :db, type: :request do
           sign_in_as
 
           get path
-          expect(response).to redirect_to("/")
+          expect(response).to redirect_to(role == :none ? "/" : "/admin")
           expect(flash[:alert]).to eq(unauthorized)
 
           post path, params: { crz_id: crz_id, checksum: token }
-          expect(response).to redirect_to("/")
+          expect(response).to redirect_to(role == :none ? "/" : "/admin")
           expect(flash[:alert]).to eq(unauthorized)
           expect(contract.reload.crz_filed_at).to be_nil
           expect(client).not_to have_received(:contract)
@@ -95,7 +95,7 @@ RSpec.describe "admin CRZ filing confirmation", :db, type: :request do
 
       get path
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
@@ -105,7 +105,7 @@ RSpec.describe "admin CRZ filing confirmation", :db, type: :request do
 
       post path, params: { crz_id: crz_id, checksum: token }
 
-      expect(response).to redirect_to("/")
+      expect(response).to redirect_to("/admin")
       expect(flash[:alert]).to eq(unauthorized)
     end
 
