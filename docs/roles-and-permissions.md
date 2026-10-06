@@ -89,7 +89,8 @@ resolver.call(user, context) # => Array of engine-role symbols
   (defensively, via `Array(...)`): foreign symbols are ignored, `nil` and
   bare symbols degrade safely to the empty set / a one-role set.
 - **Default:** organization admins with accepted admin terms hold every
-  engine role; everyone else holds none:
+  engine role; everyone else holds the roles stored for them (see
+  [Assigning roles](#assigning-roles-95)). The admin part of the default:
 
 ```ruby
 ->(user, _context) { user&.admin? && user.admin_terms_accepted? ? ContractLifecycle::ROLES : [] }
@@ -188,6 +189,58 @@ the engine:
 - **Known limitation.** The admin layout's logo and breadcrumb home icon still
   point at `/admin` (404 for them); that is Decidim's layout.
 
+## Assigning roles (#95)
+
+Roles are assigned per user in the engine admin, with no initializer edit
+(civora-org/civora-platform#109-#112).
+
+- **Storage.** One `Decidim::ContractsSk::UserRole` row per grant
+  (`decidim_contracts_sk_user_roles`: user, organization, `role` in
+  `editor`/`reviewer`), unique per `(user, organization, role)` and
+  organization-scoped; it holds no personal data beyond the user reference.
+  Hosts copy the migration like any other engine migration (README
+  Installation).
+- **Effective roles.** The default resolver returns the admin default (every
+  role for organization admins with accepted terms) **unioned** with the
+  user's stored rows; see [Org-admin union](#org-admin-union-d6). A grant or
+  revoke applies from the user's next request, with no permission-table edit.
+- **Who may assign.** Organization admins with accepted admin terms only
+  (`:user_role`, `:read`/`:create`/`:destroy`). The rule does not go through
+  the resolver: holding `editor` and/or `reviewer` never confers it, so a
+  clerk cannot see or open the screen. The commands re-check this inside
+  their locks.
+- **The screen.** Admin sidebar **Roles** (sk: *Roly*), `/<mount>/admin/user_roles`:
+  the role holders with a **Revoke** button per role (with a confirmation),
+  and **Grant role**. Granting starts from a search by name, nickname or
+  email: at least 3 characters, at most 20 hits, confirmed and available
+  users of the organization only (not deleted, blocked or managed). Results
+  show name and nickname; an email is matched but never shown, and the search
+  is a POST so it never lands in a URL. Each result offers **Grant Editor** /
+  **Grant Reviewer**; organization admins show "Holds both roles" and need no
+  rows. A duplicate grant, an unknown user or a failed re-check gives one
+  generic failure message. Self-revocation is allowed (admins keep both roles
+  through the default anyway).
+- **Audit.** Every grant and revoke writes an append-only row,
+  `user_role.grant_editor`, `user_role.grant_reviewer`,
+  `user_role.revoke_editor` or `user_role.revoke_reviewer`, with the acting
+  admin as actor and the affected user as target. The trail
+  (`/<mount>/admin/audit_events`) shows the user's **name**, never an email.
+- **Host overrides bypass stored roles.** A host `role_resolver` replaces the
+  default, so stored roles apply only if the host unions them itself:
+
+```ruby
+Decidim::ContractsSk.role_resolver = lambda do |user, context|
+  stored = Decidim::ContractsSk::StoredRoles.for(user)
+  (my_host_roles(user, context) | stored) & Decidim::ContractsSk::ContractLifecycle::ROLES
+end
+```
+
+- **Role holders who are not admins** reach the engine admin through the
+  [account-menu link](#non-admin-role-holders-and-the-engine-admin-108-161);
+  they are not asked for Decidim's admin terms.
+- **Non-goals.** No per-record ownership, no role hierarchy, no invitations:
+  the user must already have a confirmed account.
+
 ## Admin overview: block visibility (#126)
 
 The admin overview (`/admin`) is gated by the contracts index's own
@@ -273,10 +326,7 @@ Decidim::ContractsSk.allow_self_review = true
 
 ## Explicit deferrals
 
-- **Role-assignment table refinement** — how host organizations designate
-  editors and reviewers in Decidim terms is re-decided with the admin
-  command milestones ([civora-org/civora-platform#58],
-  [civora-org/civora-platform#60]).
+- **Role assignment per user** shipped with #95; see [Assigning roles](#assigning-roles-95).
 - **Ownership enforcement** (only the authoring editor may submit) —
   authorization concern of the admin command/authorization milestone; the
   permission layer checks role symbols only.

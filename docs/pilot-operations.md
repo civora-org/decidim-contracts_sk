@@ -187,6 +187,35 @@ Caddy sám si vystará a obnoví certifikát (auto-HTTPS). Overenie:
 curl -s -o /dev/null -w "%{http_code}\n" https://zmluvy.example.sk/zmluvy/   # 200
 ```
 
+### 2.10 Pridelenie roly úradníkovi (#95)
+
+Rolu editora alebo recenzenta pridelí admin organizácie v admin rozhraní
+enginu; netreba upravovať initializer ani reštartovať app. Predpoklady:
+úradník má **potvrdený účet** (bežný účastník) v tej istej organizácii a
+operátor je správca organizácie s prijatými admin podmienkami. Po deployi
+verzie enginu s rolami musia byť v hostiteľovi aplikované migrácie (§ 3),
+inak tabuľka rolí neexistuje.
+
+1. Admin sa prihlási a v admin menu otvorí **Roly** (`/zmluvy/admin/user_roles`).
+2. **Udeliť rolu** → do vyhľadávania zadaj aspoň 3 znaky mena, prezývky alebo
+   e-mailu úradníka (max. 20 výsledkov; e-mail sa porovnáva, ale nezobrazuje).
+3. Pri správnom používateľovi klikni **Udeliť Editor** (príp. **Udeliť
+   Recenzent**). Zoznam rolí ukáže potvrdenie; rola platí od úradníkovej ďalšej
+   požiadavky.
+4. Odobratie: **Roly** → **Odobrať** pri danej role (s potvrdením). Každé
+   udelenie a odobratie je v `/zmluvy/admin/audit_events` (meno úradníka, nie
+   e-mail; aktér je admin).
+
+Čo úradník vidí: nie je správca Decidimu, takže `/admin` je pre neho
+nedostupné a admin podmienky Decidimu sa od neho nežiadajú. Do správy zmlúv
+vedie odkaz **Správa zmlúv** v menu účtu (`/account`); odmietnutá akcia ho
+vráti na prehľad správy zmlúv (úradníka bez roly na verejný katalóg).
+Editor vidí tvorbu, úpravu, `submit`, `publish` a `archive`; recenzent
+`return` / `approve` / `reject` (nie na záznamoch, ktoré sám odoslal —
+pravidlo štyroch očí, #123). Obrazovku **Roly** nevidí a nemôže ju otvoriť.
+Logo a drobečková navigácia v admin rozložení stále vedú na `/admin`
+(známe obmedzenie Decidimu).
+
 ## 3. Deploy procedúra
 
 Jednoduchý git-based deploy; všetko pod `deploy` užívateľom. Script
@@ -406,6 +435,8 @@ docs/qa-checklist.md; demo dáta seed-neš podľa § 2.8.
 
 - [ ] Pilot má aspoň **2 osoby** s rolami enginu (odosielateľ ≠ posudzovateľ; pri predvolenom resolveri 2 org adminov s prijatými admin podmienkami), alebo je v initializeri vedome nastavené `Decidim::ContractsSk.allow_self_review = true` — **pass:** pravidlo štyroch očí (#123).
 - [ ] Osoba, ktorá urobila `submit` (demo: `contracts-editor@example.org`), na riadku záznamu nevidí tlačidlá `approve` / `return` / `reject`; priamy POST na tieto akcie je zamietnutý; druhý admin (demo: `contracts-admin@example.org`) ich vidí a `approve` prejde — **pass:** #123.
+
+- [ ] Roly (#95): admin udelí neadminovi (potvrdený účet) rolu editora cez **Roly** (§ 2.10); ten sa cez „Správa zmlúv" v `/account` dostane do správy zmlúv, vidí `submit` a nevidí `approve`, `/zmluvy/admin/user_roles` je pre neho zamietnuté; po odobratí roly ho `/zmluvy/admin/contracts` vráti na verejný katalóg; `/zmluvy/admin/audit_events` ukazuje riadky udelenia/odobratia s menom (bez e-mailu) — **pass:** scenár R1–R8 v docs/manual-test-scenarios.md § 3c.
 
 - [ ] Lehota CRZ (#124): admin index má stĺpec „Lehota CRZ"; na demo dátach má DEMO-2026-003 oranžový štítok „7 dní" (po novom seede), DEMO-2026-002 a -004 červený „Po termíne", DEMO-2026-001 tlmenú pomlčku (neznámy dátum podpisu), mirror/zamietnuté/archivované záznamy a DEMO-2026-006 žiadny (publikované redakčné záznamy sa sledujú; DEMO-2026-006 nemá štítok len preto, že je potvrdený ako zverejnený v CRZ (`crz_filed_at`, #125)); čipy „CRZ po termíne" / „CRZ do 14 dní" majú správne počty a filter `?deadline=overdue` / `?deadline=due_soon` zúži zoznam; edit DEMO-2026-003 ukazuje riadok s lehotou — **pass:** #124 (pomôcka, nie právne poradenstvo; štítky starnú, na obnovu spusti seed znova).
 
