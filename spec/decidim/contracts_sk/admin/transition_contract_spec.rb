@@ -20,9 +20,15 @@
 
 require "spec_helper"
 
-# rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
+# rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/MultipleMemoizedHelpers
 RSpec.describe Decidim::ContractsSk::Admin::TransitionContract, :db do
-  before { migrate_engine_schema! }
+  before do
+    migrate_engine_schema!
+    # The command only HANDS OFF to the notification layer (#94, M03-05-C);
+    # the notification group below pins the hand-off, the publish spec
+    # pins the layer itself.
+    allow(Decidim::ContractsSk::TransitionNotification).to receive(:publish)
+  end
 
   let(:contract) { Decidim::ContractsSk::Contract.create!(contract_attributes) }
 
@@ -702,5 +708,170 @@ RSpec.describe Decidim::ContractsSk::Admin::TransitionContract, :db do
       end
     end
   end
+
+  describe "workflow notifications (civora-org/civora-platform#94, M03-05-C)" do
+    let(:notifier) { Decidim::ContractsSk::TransitionNotification }
+    let(:resolver_roles) { %i[editor reviewer] }
+    let(:reviewer_user) { Decidim::User.create!(organization: organization) }
+    let(:in_review) do
+      Decidim::ContractsSk::Contract
+        .create!(contract_attributes(state: "in_review", decidim_submitted_by_id: author.id))
+    end
+    let(:approved) do
+      Decidim::ContractsSk::Contract
+        .create!(contract_attributes(state: "approved", redaction_confirmed_at: Time.current))
+    end
+
+    def expect_published_once(event, record, actor)
+      expect(notifier).to have_received(:publish).once.with(event: event, contract: record, actor: actor)
+    end
+
+    it "publishes submit with the acting user after the transition" do
+      described_class.call(contract, event: :submit, user: author)
+
+      expect_published_once(:submit, contract, author)
+    end
+
+    %i[return reject].each do |event|
+      it "publishes #{event} with the stored reason already on the record" do
+        stored = nil
+        allow(notifier).to receive(:publish) { |contract:, **| stored = contract.reload.review_reason }
+
+        described_class.call(in_review, event: event, user: reviewer_user, reason: "Doplňte prílohu.")
+
+        expect(stored).to eq("Doplňte prílohu.")
+        expect_published_once(event, in_review, reviewer_user)
+      end
+    end
+
+    it "publishes approve" do
+      described_class.call(in_review, event: :approve, user: reviewer_user)
+
+      expect_published_once(:approve, in_review, reviewer_user)
+    end
+
+    it "publishes publish" do
+      described_class.call(approved, event: :publish, user: author)
+
+      expect_published_once(:publish, approved, author)
+    end
+
+    it "publishes only once the new state is committed and visible to other connections' reads" do
+      state_at_publish = nil
+      allow(notifier).to receive(:publish) { |contract:, **| state_at_publish = contract.class.find(contract.id).state }
+
+      described_class.call(contract, event: :submit, user: author)
+
+      expect(state_at_publish).to eq("in_review")
+    end
+
+    it "publishes nothing when the role does not match" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { [:reviewer] }
+
+      described_class.call(contract, event: :submit, user: author)
+
+      expect(notifier).not_to have_received(:publish)
+    end
+
+    it "publishes nothing when the redaction gate refuses" do
+      gated = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "approved"))
+
+      described_class.call(gated, event: :publish, user: author)
+
+      expect(notifier).not_to have_received(:publish)
+    end
+
+    it "publishes nothing on a missing or refused reason" do
+      described_class.call(in_review, event: :return, user: reviewer_user)
+      described_class.call(in_review, event: :approve, user: reviewer_user, reason: "not allowed here")
+
+      expect(notifier).not_to have_received(:publish)
+    end
+
+    it "publishes nothing on an invalid edge" do
+      described_class.call(contract, event: :approve, user: author)
+
+      expect(notifier).not_to have_received(:publish)
+    end
+
+    it "publishes nothing when the four-eyes rule refuses" do
+      described_class.call(in_review, event: :approve, user: author)
+
+      expect(notifier).not_to have_received(:publish)
+    end
+
+    it "publishes nothing when the audit write fails inside the lock" do
+      allow(Decidim::ContractsSk::AuditEvent).to receive(:create!).and_raise(ActiveRecord::RecordInvalid)
+
+      described_class.call(contract, event: :submit, user: author)
+
+      expect(notifier).not_to have_received(:publish)
+    end
+
+    it "publishes nothing when the model rejects the edge inside the lock" do
+      allow(contract).to receive(:transition_state!).and_raise(Decidim::ContractsSk::ContractLifecycle::InvalidTransitionError)
+
+      described_class.call(contract, event: :submit, user: author)
+
+      expect(notifier).not_to have_received(:publish)
+    end
+
+    describe "inside an outer transaction" do
+      it "waits for the outermost commit" do
+        contract # created before the transaction opens
+        ActiveRecord::Base.transaction do
+          described_class.call(contract, event: :submit, user: author)
+          expect(notifier).not_to have_received(:publish)
+        end
+
+        expect_published_once(:submit, contract, author)
+      end
+
+      it "publishes nothing when the outer transaction rolls back, though the command broadcast :ok" do
+        contract # created before the transaction opens
+        events = nil
+        ActiveRecord::Base.transaction do
+          events = described_class.call(contract, event: :submit, user: author)
+          raise ActiveRecord::Rollback
+        end
+
+        expect(events).to have_key(:ok)
+        expect(notifier).not_to have_received(:publish)
+        expect(contract.reload.state).to eq("draft")
+      end
+    end
+
+    describe "fail-soft end to end (real publisher, failing events manager)" do
+      let(:manager) { Class.new { def self.publish(**) = raise(IOError, "secret.person@example.org") } }
+      let(:logger) { instance_spy(Logger) }
+
+      before do
+        allow(notifier).to receive(:publish).and_call_original
+        stub_const("Decidim::EventsManager", manager)
+        Decidim::ContractsSk.const_set(:ContractTransitionEvent, Class.new)
+        allow(Rails).to receive(:logger).and_return(logger)
+        Decidim::ContractsSk.notification_candidates = ->(_organization) { [reviewer_user] }
+      end
+
+      around do |example|
+        saved = Decidim::ContractsSk.notification_candidates
+        example.run
+      ensure
+        Decidim::ContractsSk.notification_candidates = saved
+      end
+
+      after do
+        Decidim::ContractsSk.send(:remove_const, :ContractTransitionEvent) # rubocop:disable RSpec/RemoveConst
+      end
+
+      it "keeps the :ok broadcast and the committed state, and logs the class only" do
+        events = described_class.call(contract, event: :submit, user: author)
+
+        expect(events).to have_key(:ok)
+        expect(contract.reload.state).to eq("in_review")
+        expect(logger).to have_received(:warn).with("[decidim-contracts_sk] transition notification failed: IOError")
+      end
+    end
+  end
 end
-# rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
+# rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/MultipleMemoizedHelpers

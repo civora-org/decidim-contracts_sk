@@ -85,6 +85,14 @@ module Decidim
       # When the host opts out (allow_self_review = true), a self review
       # proceeds but is audited as "contract.<event>_self", so the trail
       # still shows it.
+      #
+      # Notifications (civora-org/civora-platform#94, M03-05-C): after a
+      # successful transition the command publishes the matching Decidim
+      # event OUTSIDE the lock's transaction (after its commit, see
+      # #publish_notification) and fail-soft: a notification can never
+      # delay, roll back or fail a transition, and every refused transition
+      # publishes nothing.
+      # rubocop:disable Metrics/ClassLength -- the in-lock guards and writes of one transition stay together (#69 doctrine)
       class TransitionContract < Decidim::Command
         # The payload the redaction-gate refusal adds to its :invalid
         # broadcast (see the class comment).
@@ -149,9 +157,30 @@ module Decidim
             record_audit!
           end
 
-          broadcast(:ok, contract)
+          broadcast_ok
         rescue ContractLifecycle::InvalidTransitionError, ActiveRecord::RecordInvalid
           broadcast(:invalid)
+        end
+
+        # The workflow notification (civora-org/civora-platform#94, M03-05-C
+        # / #106), reached only after the with_lock block finished
+        # successfully (every refusal returns or raises before this line).
+        # Deferred with ActiveRecord.after_all_transactions_commit: it runs
+        # at once when no transaction is open (the normal request case, the
+        # lock's transaction has just committed) and otherwise waits for the
+        # OUTERMOST commit and is dropped on rollback, so a rolled-back
+        # transition notifies nobody. The publisher is fail-soft by itself
+        # (TransitionNotification.publish rescues and logs the class name).
+        def publish_notification
+          ActiveRecord.after_all_transactions_commit do
+            TransitionNotification.publish(event: event, contract: contract, actor: user)
+          end
+        end
+
+        # The success outcome: the notification hand-off, then :ok.
+        def broadcast_ok
+          publish_notification
+          broadcast(:ok, contract)
         end
 
         # The event's attribute writes, inside the caller's lock (each
@@ -303,6 +332,7 @@ module Decidim
           (ContractLifecycle.allowed_roles(from: state, event: event&.to_sym) & roles).first
         end
       end
+      # rubocop:enable Metrics/ClassLength
     end
   end
 end
