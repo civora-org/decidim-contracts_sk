@@ -119,6 +119,13 @@ module Decidim
       has_many :links, class_name: "Decidim::ContractsSk::ContractLink",
                        dependent: :destroy
 
+      # Internal review notes (civora-org/civora-platform#128): record
+      # content that leaves with the record. delete_all, not destroy: Note is
+      # append-only (readonly once persisted), so per-row destroy callbacks
+      # would raise; the FK cascade intent is a plain SQL delete.
+      has_many :notes, class_name: "Decidim::ContractsSk::Note",
+                       dependent: :delete_all
+
       # The audit trail must survive contract deletion — dangling targets
       # after the target's own destroy are the Decidim ActionLog precedent —
       # so no dependent option here.

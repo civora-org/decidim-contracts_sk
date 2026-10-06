@@ -1,0 +1,58 @@
+<%# The internal review notes thread (civora-org/civora-platform#128): the
+    chronological list plus the append form, shared by the notes page and the
+    contract edit page's notes panel. Notes are append-only, so there is no
+    edit or remove control; the body is rendered escaped (never as HTML) and
+    keeps its line breaks through the engine-owned .cs-admin-note-body class
+    (shared/_admin_styles; the host bundle drops engine-only utilities). The
+    form is plain tag helpers on purpose (the review-decision form
+    precedent): a url-based POST with no model object behind it. The maxlength
+    is a UX aid; the command and the model re-check the cap server-side.
+    Locals:
+      contract - the record the thread hangs off
+      notes    - the notes to list, oldest first
+      form     - the NoteForm (carries the text of a rejected submission) %>
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<div class="card-section">
+  <p class="cs-admin-note-visibility"><%= t("decidim.contracts_sk.admin.notes.index.visibility") %></p>
+</div>
+
+<% if notes.any? %>
+  <div class="card-section">
+    <ol id="contract-notes" class="cs-admin-notes">
+      <% notes.each do |note| %>
+        <li class="cs-admin-note">
+          <p class="cs-admin-note-meta">
+            <strong><%= note.author&.name.presence || t("decidim.contracts_sk.admin.notes.note.unknown_author") %></strong>
+            <time datetime="<%= note.created_at.iso8601 %>"><%= format_datetime(note.created_at) %></time>
+          </p>
+          <div class="cs-admin-note-body"><%= note.body %></div>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+<% else %>
+  <div class="card-section">
+    <p><%= t("decidim.contracts_sk.admin.notes.index.empty") %></p>
+  </div>
+<% end %>
+
+<% if allowed_to?(:create, :note, contract: contract) %>
+  <div class="card-section">
+    <%= form_with url: admin_contract_notes_path(contract), method: :post, local: true, html: { class: "form form-defaults cs-admin-note-form" } do %>
+      <div class="row column">
+        <%# The label wraps the field, as Decidim's form builder does (the
+            host bundle borders a textarea in that shape); its width comes
+            from .cs-admin-note-form. %>
+        <%= label_tag "note_body" do %>
+          <%= t("decidim.contracts_sk.admin.notes.form.body") %>
+          <%= text_area_tag "note[body]", form.body, id: "note_body", rows: 4,
+                                                     placeholder: t("decidim.contracts_sk.admin.notes.form.placeholder"),
+                                                     maxlength: Decidim::ContractsSk::Note::MAX_BODY_LENGTH,
+                                                     required: true %>
+        <% end %>
+      </div>
+      <%= submit_tag t("decidim.contracts_sk.admin.notes.form.submit"),
+                     class: "button button__sm button__secondary" %>
+    <% end %>
+  </div>
+<% end %>

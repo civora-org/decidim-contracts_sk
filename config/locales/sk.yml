@@ -466,6 +466,7 @@ sk:
             crz_filed: "Zverejnenie v CRZ potvrdené"
             crz_filed_override: "Zverejnenie v CRZ potvrdené napriek rozdielom"
             crz_mirror_absorbed: "Zrkadlový záznam z CRZ nahradený potvrdeným záznamom"
+            note_added: "Pridaná interná poznámka"
           amendment_target: "Dodatok č. %{version}"
           deleted_target: "Záznam už neexistuje"
           filter_banner: "Zobrazujú sa udalosti auditnej stopy pre: %{title}"
@@ -579,6 +580,23 @@ sk:
             target_type: "Typ cieľa"
             target_id: "ID cieľa"
             submit: "Pridať odkaz"
+        notes:
+          index:
+            title: "Interné poznámky"
+            back_to_contract: "Späť na zmluvu"
+            back_to_list: "Späť na zoznam zmlúv"
+            empty: "K tejto zmluve zatiaľ neboli pridané žiadne interné poznámky."
+            visibility: "Interné poznámky vidia iba nositelia rolí v administrácii. Nikdy sa nezverejňujú a nedajú sa upravovať ani odstrániť."
+          note:
+            unknown_author: "Neznámy používateľ"
+          form:
+            body: "Poznámka"
+            placeholder: "Napíšte poznámku pre ostatných nositeľov rolí"
+            submit: "Pridať poznámku"
+          create:
+            success: "Poznámka bola pridaná."
+            error: "Poznámku sa nepodarilo pridať. Nesmie byť prázdna ani dlhšia ako 2000 znakov."
+          link: "Poznámky"
         crz_handoff:
           title: "Odovzdanie do CRZ"
           disclaimer: "Vygenerovaný PDF je pomôcka na odovzdanie do CRZ — nie právna publikácia."

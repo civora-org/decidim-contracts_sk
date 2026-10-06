@@ -129,6 +129,17 @@
               <td><%= crz_deadline_badge(contract, today: index_today) %></td>
               <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract) %></td>
               <td class="table-list__actions">
+                <%# Internal review notes (civora-org/civora-platform#128): the
+                    entry for every role holder (a reviewer has no edit page).
+                    A GET button_to, not a link: see the CRZ filing entry
+                    below for why a bare <a> in this table cell can render
+                    invisible. %>
+                <% if allowed_to?(:read, :note, contract: contract) %>
+                  <%= button_to t("decidim.contracts_sk.admin.notes.link"),
+                                admin_contract_notes_path(contract),
+                                method: :get,
+                                class: "button button__sm button__secondary" %>
+                <% end %>
                 <%# Derived, never hand-enumerated: only the events the acting role may fire.
                     The judgment edges (return/reject, #90) render the inline decision-reason
                     form instead of a bare button — the command requires the reason. %>
