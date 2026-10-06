@@ -9,9 +9,11 @@ module Decidim
     # through +role_resolver+ (see TransitionNotification.recipients), so
     # this seam only bounds the set that is asked; it never grants a role.
     #
-    # Default: the organization's confirmed, available admins — the default
-    # role_resolver only grants roles to admins, so nobody is missed and no
-    # citizen account is scanned. Hosts that grant roles to non-admins
+    # Default (civora-org/civora-platform#110): the organization's confirmed,
+    # available admins PLUS confirmed, available users holding a stored
+    # :reviewer UserRole in that organization — exactly the users the default
+    # role_resolver can grant :reviewer, so nobody is missed and no other
+    # citizen account is scanned. Hosts that grant roles another way
     # override the seam, exactly like role_resolver, and must cover every
     # user the resolver can grant +:reviewer+. Config-time only: never
     # mutate at request time.
@@ -22,7 +24,11 @@ module Decidim
     end
 
     self.notification_candidates = lambda do |organization|
-      Decidim::User.where(organization: organization, admin: true).available.confirmed
+      users = Decidim::User.where(organization: organization).available.confirmed
+      reviewer_ids = Decidim::ContractsSk::UserRole.where(decidim_organization_id: organization.id,
+                                                          role: "reviewer")
+                                                   .select(:decidim_user_id)
+      users.where(admin: true).or(users.where(id: reviewer_ids))
     end
   end
 end
