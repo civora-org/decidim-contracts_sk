@@ -43,6 +43,7 @@ en:
       menu:
         contracts: "Contracts"
         admin_contracts: "Contracts"
+        admin_user_roles: "Roles"
         user_admin_contracts: "Contracts administration"
       pagination:
         prev: "Previous"
@@ -663,6 +664,41 @@ en:
             error: "The note could not be added. It must not be empty or longer than 2000 characters."
           link: "Notes"
         user_roles:
+          roles:
+            editor: "Editor"
+            reviewer: "Reviewer"
+          index:
+            title: "Roles"
+            grant_link: "Grant role"
+            note: "Organization admins hold both roles automatically; roles granted here are for other users."
+            empty: "No roles have been granted yet."
+            headers:
+              name: "Name"
+              nickname: "Nickname"
+              roles: "Roles"
+              revoke: "Revoke"
+            revoke: "Revoke %{role}"
+            revoke_confirm: "Revoke the %{role} role from %{name}?"
+          new:
+            title: "Grant role"
+            back: "Back to roles"
+            grant: "Grant %{role}"
+            holds_all: "Holds both roles"
+            headers:
+              grant: "Grant"
+          search:
+            label: "Find a user by name, nickname or email"
+            hint: "Enter at least %{min} characters. Email addresses are matched but never shown."
+            submit: "Search"
+            too_short: "Enter at least %{min} characters."
+            no_results: "No confirmed user of this organization matches."
+            results: "Matching users"
+          create:
+            success: "%{role} role granted to %{name}."
+            invalid: "The role could not be granted."
+          destroy:
+            success: "%{role} role revoked from %{name}."
+            invalid: "The role could not be revoked. It may already be revoked."
           form:
             unknown_email: "No user with this email in this organization."
         crz_handoff:

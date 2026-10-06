@@ -123,6 +123,16 @@ Decidim::ContractsSk::Engine.routes.draw do
     # deletable through the model (AuditEvent#readonly?), so there is no
     # other action to expose.
     resources :audit_events, only: :index
+
+    # Role administration (civora-org/civora-platform#112, parent #95): the
+    # role-holder list (index), the grant screen (new), a user search that
+    # renders it with candidates (collection POST - the query can be an
+    # email, so it never travels in a URL), the grant (create) and the
+    # revoke (destroy). No show/edit/update: a grant is added or removed,
+    # never edited.
+    resources :user_roles, only: %i[index new create destroy] do
+      collection { post :search }
+    end
   end
 
   # Open-data export (civora-org/civora-platform#119): the format segment is

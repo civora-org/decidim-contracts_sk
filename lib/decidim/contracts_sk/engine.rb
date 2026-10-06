@@ -41,6 +41,7 @@ module Decidim
       # holders through the config-time role resolver seam.
       initializer "decidim_contracts_sk.admin_menu" do
         Decidim::ContractsSk::Menu.register_admin_menu_modules!
+        Decidim::ContractsSk::Menu.register_admin_roles_item!
       end
 
       # Account-area entry link to the engine admin for role holders who are

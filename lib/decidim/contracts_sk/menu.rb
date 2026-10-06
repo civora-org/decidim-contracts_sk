@@ -85,6 +85,23 @@ module Decidim
         end
       end
 
+      # Role administration sidebar item (civora-org/civora-platform#112):
+      # visible only to users the :user_role permission admits, decided by
+      # the engine's own Permissions class rather than the view's allowed_to?
+      # (the sidebar also renders on Decidim's own admin pages, whose
+      # permission chain does not include the engine).
+      def self.register_admin_roles_item!
+        Decidim.menu :admin_menu_modules do |menu|
+          menu.add_item :contracts_sk_roles,
+                        I18n.t("menu.admin_user_roles", scope: "decidim.contracts_sk"),
+                        decidim_contracts_sk.admin_user_roles_path,
+                        icon_name: "user-settings-line",
+                        position: POSITION + 0.01,
+                        active: :inclusive,
+                        if: Decidim::ContractsSk::Menu.manages_roles?(current_user)
+        end
+      end
+
       # The entry link for engine role holders who are NOT Decidim admins
       # (civora-org/civora-platform#161, D3 of the #108 spike). Decidim's own
       # admin links (header dropdown, admin bar, /account sidebar) are gated
@@ -122,6 +139,20 @@ module Decidim
         decidim_admin_link = view.respond_to?(:allowed_to?) && view.allowed_to?(:read, :admin_dashboard)
 
         holds_engine_role?(view.current_user, organization) && !decidim_admin_link
+      end
+
+      # True when the :user_role permission admits the user to the role
+      # screens (admin scope, :read) - asked of the engine's Permissions
+      # class itself, the single source of the rule (org admin with accepted
+      # admin terms). Fail-closed like holds_engine_role?: nil users and any
+      # error answer false, so menu rendering never raises.
+      def self.manages_roles?(user)
+        return false if user.nil?
+
+        action = Decidim::PermissionAction.new(scope: :admin, action: :read, subject: :user_role)
+        Decidim::ContractsSk::Permissions.new(user, action, {}).permissions.allowed?
+      rescue StandardError
+        false
       end
 
       # True when the user holds at least one engine role through the

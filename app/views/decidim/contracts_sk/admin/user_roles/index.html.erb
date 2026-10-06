@@ -1,0 +1,63 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<%# Role holders (civora-org/civora-platform#112): name, nickname and the
+    stored roles, one revoke button per role. Emails are never rendered.
+    Decidim admin classes plus the engine's .cs-admin-* (the host bundle
+    drops engine-only utilities, docs/public-ui.md); revoke is a button_to
+    form, since a bare link in an actions cell can render invisible. %>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t("decidim.contracts_sk.admin.user_roles.index.title") %>
+    </h1>
+    <div class="cs-admin-actions">
+      <%= link_to t("decidim.contracts_sk.admin.dashboard.overview_link"), admin_root_path,
+                  class: "button button__sm button__secondary" %>
+      <%= link_to t("decidim.contracts_sk.admin.user_roles.index.grant_link"), new_admin_user_role_path,
+                  class: "button button__sm button__secondary" %>
+    </div>
+  </div>
+
+  <div class="card-section">
+    <p><%= t("decidim.contracts_sk.admin.user_roles.index.note") %></p>
+  </div>
+
+  <% if @holders.any? %>
+    <div class="table-scroll">
+      <table class="table-list cs-admin-roles">
+        <thead>
+          <tr>
+            <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.name") %></th>
+            <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.nickname") %></th>
+            <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.roles") %></th>
+            <th><%= t("decidim.contracts_sk.admin.user_roles.index.headers.revoke") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @holders.each do |user, rows| %>
+            <tr>
+              <td><%= user.name %></td>
+              <td><%= user.nickname %></td>
+              <td><%= rows.map { |row| role_label(row.role) }.join(", ") %></td>
+              <td class="table-list__actions">
+                <div class="cs-admin-role-actions">
+                  <% rows.each do |row| %>
+                    <%= button_to t("decidim.contracts_sk.admin.user_roles.index.revoke", role: role_label(row.role)),
+                                  admin_user_role_path(row),
+                                  method: :delete,
+                                  class: "button button__sm button__secondary alert",
+                                  data: { confirm: t("decidim.contracts_sk.admin.user_roles.index.revoke_confirm",
+                                                     role: role_label(row.role), name: user.name) } %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card-section">
+      <p><%= t("decidim.contracts_sk.admin.user_roles.index.empty") %></p>
+    </div>
+  <% end %>
+</div>
