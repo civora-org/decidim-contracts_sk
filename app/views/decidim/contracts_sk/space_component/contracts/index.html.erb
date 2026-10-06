@@ -1,0 +1,41 @@
+<%# The in-space contracts list (civora-org/civora-platform#89): the
+    organization's published contracts inside a participatory space. A
+    deliberately minimal view of the standalone catalogue's register: same
+    rows (the shared contracts/row partial), same pagination partial, same
+    engine-owned .cs- styles; no search, filters, open-data block or switch
+    to the statistics (those routes do not exist inside a space). The page
+    title is the component's own name, as set by the space admin.
+    Layout: the same centered single column the standalone views use. %>
+<% component_title = translated_attribute(current_component.name) %>
+<% page = @contracts.current_page %>
+<% contracts_meta_tags(
+     title: page > 1 ? "#{component_title} - #{t("decidim.contracts_sk.meta.page", page: page)}" : component_title,
+     description: t("decidim.contracts_sk.contracts.index.intro"),
+     url: page > 1 ? root_url(page: page) : root_url
+   ) %>
+<%= render "decidim/contracts_sk/shared/public_styles" %>
+<main class="layout-1col cols-10">
+  <div class="cs-page">
+    <h1 class="title-decorator"><%= component_title %></h1>
+    <p class="cs-lead"><%= t("decidim.contracts_sk.contracts.index.intro") %></p>
+
+    <%# Decidim's shared announcement (the component's global and step
+        settings); renders nothing when both are empty. %>
+    <%= render partial: "decidim/shared/component_announcement" %>
+
+    <% if @contracts.any? %>
+      <ol class="cs-list">
+        <% @contracts.each do |contract| %>
+          <%= render "decidim/contracts_sk/contracts/row", contract: contract %>
+        <% end %>
+      </ol>
+
+      <% if @contracts.total_pages > 1 %>
+        <%= render "decidim/contracts_sk/shared/pagination",
+                   collection: @contracts, filter_keys: [], carried_params: {} %>
+      <% end %>
+    <% else %>
+      <p class="cs-empty"><%= t("decidim.contracts_sk.contracts.index.empty") %></p>
+    <% end %>
+  </div>
+</main>

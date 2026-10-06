@@ -49,6 +49,17 @@ module Decidim
       initializer "decidim_contracts_sk.user_menu" do
         Decidim::ContractsSk::Menu.register_user_menu!
       end
+
+      # Decidim component registration (civora-org/civora-platform#89): the
+      # manifest lets a space admin add the contracts component to a
+      # participatory space. Purely additive; the standalone mount, its
+      # routes and its controllers do not depend on it. An initializer, not
+      # a load-time require: the registry lives in decidim-core, which a
+      # host has loaded by the time initializers run, and the spaces read
+      # the registry when their routes are drawn (after all initializers).
+      initializer "decidim_contracts_sk.component" do
+        require "decidim/contracts_sk/component"
+      end
     end
   end
 end
