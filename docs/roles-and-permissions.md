@@ -127,6 +127,17 @@ the `notification_candidates` seam **must** include them, otherwise eligible
 reviewers will not be notified about submissions. The seam is config-time only,
 like the resolver itself — see README § Configuration.
 
+## Contract templates (#127)
+
+Templates are organization-wide editorial configuration, so every template
+action (`:read`, `:create`, `:update`, `:destroy` on subject `:template`) is
+**editor only**: a reviewer neither sees nor changes them. Starting a draft
+from a template is not a permission of its own: it is the plain
+`:create :contract` check (editor), because a template only prefills the
+form and seeds the draft's object party. A template never publishes, never
+advances a state and never skips review; the draft enters the normal
+workflow. The create writes one `contract.create_from_template` audit row.
+
 ## State source (caller contract)
 
 State is read duck-typed from the permission context:

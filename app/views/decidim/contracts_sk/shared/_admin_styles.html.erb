@@ -41,7 +41,15 @@
       .cs-admin-roles    the role tables: left-aligned like a list of people, not centred
       .cs-admin-sr-only  visually hidden text for screen readers (the bundle has no show-for-sr)
       .cs-admin-import   the import preview table: left-aligned, tabular line numbers,
-                         right-aligned amounts (__num) and per-row error lists (__errors) %>
+                         right-aligned amounts (__num) and per-row error lists (__errors)
+      .cs-admin-template-note     muted explanatory line on the template pages and the new-contract chooser
+      .cs-admin-template-section  the small heading above a group of template fields or choices
+      .cs-admin-choice--idle      an unselected option in a one-of chooser (outlined; the current one stays solid
+                                  — the bundle renders button__primary red, which reads as danger)
+      .cs-admin-templates         the templates table: left-aligned, actions in one wrapping row
+      .cs-admin-template-name     a template's name in the list (heavier, long names wrap)
+      .cs-admin-template-ico      the muted IČO beside the object party in the list
+      .cs-admin-template-none     the muted "no party" placeholder in the list %>
 <% unless @cs_admin_styles_rendered %>
   <% @cs_admin_styles_rendered = true %>
   <% css = capture do %>
@@ -59,6 +67,14 @@
   .cs-admin-note-visibility { margin: 0; font-size: .875rem; color: #3e4c5c; }
   .cs-admin-note-form { max-width: 72ch; }
   .cs-admin-note-form label { display: block; }
+  .cs-admin-template-note { margin: .75rem 0 0; font-size: .875rem; color: #3e4c5c; max-width: 72ch; }
+  .cs-admin-template-section { margin: 0 0 .5rem; }
+  .table-list.cs-admin-templates th, .table-list.cs-admin-templates td { text-align: left; vertical-align: middle; }
+  .cs-admin-templates .table-list__actions > div { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .cs-admin-templates .table-list__actions form { margin: 0; }
+  .cs-admin-choice--idle, .cs-admin-choice--idle:hover { background: #fff; color: rgb(21, 90, 191); box-shadow: inset 0 0 0 1px rgb(21, 90, 191); }
+  .cs-admin-template-name { font-weight: 600; overflow-wrap: anywhere; }
+  .cs-admin-template-ico, .cs-admin-template-none { color: #3e4c5c; font-variant-numeric: tabular-nums; }
   .cs-admin-note-form textarea { display: block; width: 100%; margin: .375rem 0 .75rem; }
   .cs-admin-search { max-width: 72ch; }
   .cs-admin-search label { display: block; }

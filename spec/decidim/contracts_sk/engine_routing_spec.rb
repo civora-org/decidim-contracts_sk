@@ -130,6 +130,13 @@ module EngineRoutingContract
     ["DELETE", "/admin/contracts/:contract_id/links/:id(.:format)", "#{LINKS_CONTROLLER}#destroy"],
     ["GET", "/admin/contracts/:contract_id/notes(.:format)", "decidim/contracts_sk/admin/notes#index"],
     ["POST", "/admin/contracts/:contract_id/notes(.:format)", "decidim/contracts_sk/admin/notes#create"],
+    ["GET", "/admin/templates(.:format)", "decidim/contracts_sk/admin/templates#index"],
+    ["POST", "/admin/templates(.:format)", "decidim/contracts_sk/admin/templates#create"],
+    ["GET", "/admin/templates/new(.:format)", "decidim/contracts_sk/admin/templates#new"],
+    ["GET", "/admin/templates/:id/edit(.:format)", "decidim/contracts_sk/admin/templates#edit"],
+    ["PATCH", "/admin/templates/:id(.:format)", "decidim/contracts_sk/admin/templates#update"],
+    ["PUT", "/admin/templates/:id(.:format)", "decidim/contracts_sk/admin/templates#update"],
+    ["DELETE", "/admin/templates/:id(.:format)", "decidim/contracts_sk/admin/templates#destroy"],
     ["GET", "/admin/audit_events(.:format)", "#{AUDIT_EVENTS_CONTROLLER}#index"],
     ["GET", "/admin/user_roles(.:format)", "#{USER_ROLES_CONTROLLER}#index"],
     ["POST", "/admin/user_roles(.:format)", "#{USER_ROLES_CONTROLLER}#create"],
@@ -847,8 +854,8 @@ RSpec.describe Decidim::ContractsSk::Engine do
         decidim/contracts_sk/admin/contract_imports decidim/contracts_sk/admin/contracts
         decidim/contracts_sk/admin/dashboard decidim/contracts_sk/admin/documents
         decidim/contracts_sk/admin/links decidim/contracts_sk/admin/notes decidim/contracts_sk/admin/parties
-        decidim/contracts_sk/admin/user_roles decidim/contracts_sk/contracts decidim/contracts_sk/feeds
-        decidim/contracts_sk/open_data
+        decidim/contracts_sk/admin/templates decidim/contracts_sk/admin/user_roles
+        decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
         decidim/contracts_sk/sitemaps decidim/contracts_sk/statistics decidim/contracts_sk/suppliers
       ].sort
 
@@ -859,7 +866,7 @@ RSpec.describe Decidim::ContractsSk::Engine do
     it "maps no admin-prefixed path to the public controller" do
       admin_prefixed = route_triples.select { |_, path, _| path.start_with?("/admin/") }
       admin_controllers = %w[amendments audit_events contract_imports contracts documents links notes parties
-                             user_roles]
+                             templates user_roles]
                           .map { |name| "decidim/contracts_sk/admin/#{name}" }
 
       expect(controllers_of(admin_prefixed)).to eq(admin_controllers)

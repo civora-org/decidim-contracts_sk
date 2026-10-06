@@ -1,3 +1,4 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
 <div class="item_show__header">
   <h1 class="item_show__header-title">
     <%= t("decidim.contracts_sk.admin.contracts.new.title") %>
@@ -6,8 +7,38 @@
 
 <p><%= link_to t("decidim.contracts_sk.admin.contracts.back_to_index"), admin_contracts_path %></p>
 
+<%# "Blank or from a template" (civora-org/civora-platform#127): a GET choice
+    that only reloads this form with the template's defaults; picking a
+    template creates nothing. Shown only when the organization has templates. %>
+<% if @templates.any? %>
+  <div class="card">
+    <div class="card-section">
+      <p class="cs-admin-template-section"><strong><%= t("decidim.contracts_sk.admin.contracts.new.start_from") %></strong></p>
+      <div class="cs-admin-chips">
+        <%= link_to t("decidim.contracts_sk.admin.contracts.new.blank"), new_admin_contract_path,
+                    class: "button button__sm button__secondary#{' cs-admin-choice--idle' if @template}",
+                    "aria-current": (@template ? nil : "true") %>
+        <% @templates.each do |template| %>
+          <%= link_to template.name, new_admin_contract_path(template_id: template.id),
+                      class: "button button__sm button__secondary#{' cs-admin-choice--idle' unless template == @template}",
+                      "aria-current": (template == @template ? "true" : nil) %>
+        <% end %>
+      </div>
+      <% if @template %>
+        <p class="cs-admin-template-note">
+          <%= t("decidim.contracts_sk.admin.contracts.new.template_note", name: @template.name) %>
+          <% if @template.party_skeleton %>
+            <%= t("decidim.contracts_sk.admin.contracts.new.template_party",
+                  party: [@template.object_party_name, @template.object_party_ico.presence].compact.join(", ")) %>
+          <% end %>
+        </p>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
 <div class="item__edit item__edit-1col">
   <div class="item__edit-form">
-    <%= render "form", url: admin_contracts_path, method: :post, submit_label: t("decidim.contracts_sk.admin.contracts.new.title") %>
+    <%= render "form", url: admin_contracts_path, method: :post, submit_label: t("decidim.contracts_sk.admin.contracts.new.title"), template: @template %>
   </div>
 </div>

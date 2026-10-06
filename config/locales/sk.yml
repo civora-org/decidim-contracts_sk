@@ -278,6 +278,10 @@ sk:
               unknown: "Lehota na zverejnenie v CRZ je neznáma — doplňte dátum podpisu"
           new:
             title: "Nová zmluva"
+            start_from: "Začať z"
+            blank: "Prázdna zmluva"
+            template_note: "Formulár je predvyplnený zo šablóny „%{name}“. Všetko možno upraviť a nič sa nevytvorí, kým koncept neuložíte."
+            template_party: "Pri uložení konceptu sa pridá aj predmetná strana (%{party})."
           edit:
             title: "Upraviť zmluvu"
           create:
@@ -533,6 +537,7 @@ sk:
             grant_reviewer: "Udelená rola recenzenta"
             revoke_editor: "Odobratá rola editora"
             revoke_reviewer: "Odobratá rola recenzenta"
+            create_from_template: "Koncept zmluvy vytvorený zo šablóny"
           amendment_target: "Dodatok č. %{version}"
           deleted_target: "Záznam už neexistuje"
           filter_banner: "Zobrazujú sa udalosti auditnej stopy pre: %{title}"
@@ -646,6 +651,48 @@ sk:
             target_type: "Typ cieľa"
             target_id: "ID cieľa"
             submit: "Pridať odkaz"
+        templates:
+          link: "Šablóny"
+          back_to_list: "Späť na šablóny"
+          back_to_contracts: "Späť na zmluvy"
+          index:
+            title: "Šablóny zmlúv"
+            intro: "Šablóna predvyplní nový koncept zmluvy (názov, predmet, menu a obec ako predmetnú stranu). Nič nezverejňuje: koncept prechádza bežným schvaľovacím postupom a úprava alebo odstránenie šablóny nemení zmluvy, ktoré už z nej vznikli."
+            empty: "Zatiaľ nebola vytvorená žiadna šablóna."
+            headers:
+              object_party: "Predmetná strana"
+            ico: "IČO"
+            no_party: "Žiadna"
+            use: "Nová zmluva"
+          new:
+            title: "Nová šablóna"
+          edit:
+            title: "Upraviť šablónu"
+            submit: "Uložiť šablónu"
+            copy_note: "Zmeny sa týkajú len zmlúv vytvorených z tejto šablóny neskôr."
+          form:
+            name: "Názov šablóny"
+            name_hint: "Zobrazuje sa pri výbere šablóny, napríklad „Nájomná zmluva – nebytové priestory“. Musí byť jedinečný."
+            title_pattern: "Vzor názvu"
+            title_pattern_hint: "Predvyplní názov zmluvy. Redaktor ho pri každej zmluve doplní."
+            subject_matter: "Predmet zmluvy"
+            currency: "Mena"
+            party_section: "Predmetná strana"
+            party_hint: "Zvyčajne obec. Pridá sa do každého nového konceptu; zmluvný partner sa zadáva priamo pri zmluve."
+            object_party_name: "Názov"
+            object_party_ico: "IČO"
+            object_party_address: "Adresa"
+          create:
+            success: "Šablóna bola vytvorená."
+            error: "Šablónu sa nepodarilo vytvoriť."
+          update:
+            success: "Šablóna bola upravená."
+            error: "Šablónu sa nepodarilo upraviť."
+          destroy:
+            link: "Odstrániť"
+            confirm: "Odstrániť túto šablónu? Zmluvy, ktoré už z nej vznikli, ostanú nezmenené."
+            success: "Šablóna bola odstránená."
+            error: "Šablónu sa nepodarilo odstrániť."
         notes:
           index:
             title: "Interné poznámky"

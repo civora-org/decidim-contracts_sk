@@ -95,21 +95,28 @@ module Decidim
                                          .per(Decidim::ContractsSk::CONTRACTS_PER_PAGE)
         end
 
+        # "Blank" or from a template (civora-org/civora-platform#127): a
+        # ?template_id= prefills the form with the template's defaults and
+        # nothing more - the permission is the plain :create :contract
+        # check, since a template never publishes or advances anything.
         def new
           enforce_permission_to :create, :contract
 
-          @form = ContractForm.new
+          load_templates
+          @form = @template ? template_form(@template) : ContractForm.new
         end
 
         def create
           enforce_permission_to :create, :contract
 
           @form = ContractForm.new(form_params)
+          load_templates
 
-          CreateContract.call(@form, user: current_user, organization: current_organization) do
+          handlers = proc do
             on(:ok) { create_succeeded }
             on(:invalid) { create_failed }
           end
+          create_command_call(&handlers)
         end
 
         def edit
@@ -354,6 +361,35 @@ module Decidim
             redirect_to crz_filing_admin_contract_path(@contract, crz_id: crz_id)
           else
             redirect_to crz_filing_admin_contract_path(@contract)
+          end
+        end
+
+        # The organization's templates for the new-contract chooser, and the
+        # one picked through ?template_id= (hidden field on the re-render).
+        # The id is looked up in the tenant scope, so a foreign or unknown
+        # template is a 404, never a silent blank draft.
+        def load_templates
+          @templates = Template.where(organization: current_organization).order(:name, :id)
+          @template = params[:template_id].present? ? @templates.find(params[:template_id].to_s) : nil
+        end
+
+        # The new-contract form prefilled from a template: title pattern,
+        # subject matter and currency (the reference, amount, dates and CRZ
+        # link are always the editor's own input).
+        def template_form(template)
+          ContractForm.new(title: template.title_pattern,
+                           subject_matter: template.subject_matter,
+                           currency: template.currency)
+        end
+
+        # A blank draft or a draft from the picked template: one command
+        # each, the same form and the same outcomes.
+        def create_command_call(&)
+          if @template
+            CreateContractFromTemplate.call(@form, @template, user: current_user,
+                                                              organization: current_organization, &)
+          else
+            CreateContract.call(@form, user: current_user, organization: current_organization, &)
           end
         end
 

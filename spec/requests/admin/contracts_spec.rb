@@ -502,6 +502,10 @@ RSpec.describe "admin contracts CRUD", type: :request do
   describe "contract form rendering (offline, DB-free, civora-org/civora-platform#78, #79)" do
     it "renders the accessible amount hint, the decimal input mode and the currency select" do
       sign_in(roles: %i[editor])
+      # No templates (#127): the offline group has no connection, so the
+      # tenant-scoped template lookup is stubbed to an empty relation.
+      no_templates = Struct.new(:rows) { def order(*) = rows }.new([])
+      allow(Decidim::ContractsSk::Template).to receive(:where).and_return(no_templates)
 
       get "/admin/contracts/new"
 
