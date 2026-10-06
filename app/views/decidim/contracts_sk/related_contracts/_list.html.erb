@@ -1,0 +1,50 @@
+<%# "Related contracts" for a Decidim resource (civora-org/civora-platform
+    #131): the published contracts of the resource's organization that are
+    linked to it through the engine-owned join, for a HOST view to embed on
+    an accountability result or a budgets project page (docs/related-
+    contracts.md has the wiring).
+
+    Locals: resource (required), limit (optional).
+
+    Renders NOTHING when there is nothing to show — no heading, no empty
+    state, no stylesheet — so embedding it unconditionally is safe. Rows
+    link to the contract detail on the engine's standalone mount through the
+    decidim_contracts_sk route proxy (the mount name a host gets from
+    `mount Decidim::ContractsSk::Engine`). Layout is Decidim's own classes
+    plus the engine's .cs-related* rules (shared/_related_contracts_styles);
+    never Tailwind utilities, which the host bundle may not contain. All
+    text is auto-escaped; the only party data shown is a contractor with an
+    IČO (RelatedContractsQuery::Item). %>
+<% related_items = Decidim::ContractsSk::RelatedContractsQuery.items(resource, **local_assigns.slice(:limit)) %>
+<% if related_items.any? %>
+  <%= render "decidim/contracts_sk/shared/related_contracts_styles" %>
+  <section class="cs-related" aria-labelledby="cs-related-heading">
+    <h2 class="h4 decorator" id="cs-related-heading"><%= t("decidim.contracts_sk.related_contracts.title") %></h2>
+    <ul class="cs-related__list">
+      <% related_items.each do |item| %>
+        <li class="cs-related__item">
+          <div class="cs-related__main">
+            <%= link_to item.title, decidim_contracts_sk.contract_path(item.id), class: "cs-related__title" %>
+            <div class="cs-related__meta">
+              <span><%= item.reference %></span>
+              <% item.suppliers.each do |supplier| %>
+                <span><%= link_to supplier.name, decidim_contracts_sk.supplier_path(ico: supplier.ico), class: "cs-related__supplier" %></span>
+              <% end %>
+              <% if item.mirror? %>
+                <span class="label">
+                  <%= t("decidim.contracts_sk.provenance.badge") %>
+                  <% if item.mirrored_on_text.present? %>
+                    · <%= item.mirrored_on_text %>
+                  <% end %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+          <% if item.amount_text.present? %>
+            <div class="cs-related__amount"><%= item.amount_text %></div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

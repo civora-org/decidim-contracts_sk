@@ -61,6 +61,8 @@ en:
         supplier:
           title: "%{name} (IČO %{ico})"
           description: "Published contracts of %{name} (IČO %{ico}) in the catalogue: %{count}."
+      related_contracts:
+        title: "Related contracts"
       provenance:
         badge: "Externally confirmed"
         imported_on: "Mirrored from the CRZ register on"

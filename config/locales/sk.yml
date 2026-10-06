@@ -61,6 +61,8 @@ sk:
         supplier:
           title: "%{name} (IČO %{ico})"
           description: "Zverejnené zmluvy dodávateľa %{name} (IČO %{ico}) v katalógu: %{count}."
+      related_contracts:
+        title: "Súvisiace zmluvy"
       provenance:
         badge: "Externe potvrdené údaje"
         imported_on: "Zrkadlené z registra CRZ dňa"

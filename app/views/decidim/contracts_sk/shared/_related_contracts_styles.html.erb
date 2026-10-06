@@ -1,0 +1,29 @@
+<%# Engine-owned styles for the embeddable "Related contracts" block
+    (civora-org/civora-platform#131). Kept apart from _public_styles on
+    purpose: that sheet carries the whole catalogue's rules, and the block
+    is embedded in HOST pages (a result, a project) where only its own few
+    rules should land. Everything is scoped under .cs-related and uses
+    Decidim's palette tokens (--secondary for links) and the same rule/ink
+    values as the catalogue rows. Delivered through the :css_content slot
+    (see _public_styles for why), once per page even when embedded twice. %>
+<% unless @cs_related_styles_rendered %>
+  <% @cs_related_styles_rendered = true %>
+  <% content_for :css_content do %>
+<style>
+  .cs-related { margin-top: 2rem; }
+  .cs-related__list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; }
+  .cs-related__item { display: grid; gap: .5rem; padding: 1rem 0; }
+  .cs-related__item + .cs-related__item { border-top: 1px solid #e1e5ef; }
+  .cs-related__main { min-width: 0; }
+  .cs-related__title { font-weight: 600; line-height: 1.35; color: var(--secondary); text-decoration: none; overflow-wrap: anywhere; }
+  .cs-related__title:hover { text-decoration: underline; text-underline-offset: .2em; }
+  .cs-related__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin-top: .25rem; font-size: .875rem; color: #3e4c5c; }
+  .cs-related__supplier { color: inherit; text-decoration: underline; text-underline-offset: .2em; }
+  .cs-related__amount { font-weight: 600; color: #020203; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  @media (min-width: 640px) {
+    .cs-related__item { grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; align-items: start; }
+    .cs-related__amount { text-align: right; }
+  }
+</style>
+  <% end %>
+<% end %>
