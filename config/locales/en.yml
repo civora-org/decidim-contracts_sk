@@ -577,3 +577,32 @@ en:
             success: "CRZ handoff PDF generated successfully."
             error: "CRZ handoff PDF could not be generated."
           download_missing: "The CRZ handoff PDF has not been generated yet."
+      # Workflow notification texts (civora-org/civora-platform#94, M03-05-A). Only title,
+      # reference, link and the reviewer's reason may appear here (privacy rule); the scope
+      # is set by ContractTransitionEvent.
+      events:
+        contract_submitted:
+          email_subject: "Contract submitted for review: %{reference}"
+          email_intro: "The contract %{resource_title} (%{reference}) was submitted for review."
+          email_outro: "You received this notification because you hold a contracts role in this organization."
+          notification_title: "The contract <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) was submitted for review."
+        contract_returned:
+          email_subject: "Contract returned for changes: %{reference}"
+          email_intro: "The contract %{resource_title} (%{reference}) was returned for changes. Reason: %{reason}"
+          email_outro: "You received this notification because you hold a contracts role in this organization."
+          notification_title: "The contract <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) was returned for changes. Reason: %{reason}"
+        contract_approved:
+          email_subject: "Contract approved: %{reference}"
+          email_intro: "The contract %{resource_title} (%{reference}) was approved."
+          email_outro: "You received this notification because you hold a contracts role in this organization."
+          notification_title: "The contract <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) was approved."
+        contract_rejected:
+          email_subject: "Contract rejected: %{reference}"
+          email_intro: "The contract %{resource_title} (%{reference}) was rejected. Reason: %{reason}"
+          email_outro: "You received this notification because you hold a contracts role in this organization."
+          notification_title: "The contract <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) was rejected. Reason: %{reason}"
+        contract_published:
+          email_subject: "Contract published: %{reference}"
+          email_intro: "The contract %{resource_title} (%{reference}) was published."
+          email_outro: "You received this notification because you hold a contracts role in this organization."
+          notification_title: "The contract <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) was published."

@@ -577,3 +577,32 @@ sk:
             success: "Pomôcka na odovzdanie do CRZ bola vygenerovaná."
             error: "Pomôcku na odovzdanie do CRZ sa nepodarilo vygenerovať."
           download_missing: "Pomôcka na odovzdanie do CRZ ešte nebola vygenerovaná."
+      # Workflow notification texts (civora-org/civora-platform#94, M03-05-A). Only title,
+      # reference, link and the reviewer's reason may appear here (privacy rule); the scope
+      # is set by ContractTransitionEvent.
+      events:
+        contract_submitted:
+          email_subject: "Zmluva odoslaná na kontrolu: %{reference}"
+          email_intro: "Zmluva %{resource_title} (%{reference}) bola odoslaná na kontrolu."
+          email_outro: "Túto notifikáciu ste dostali, pretože v tejto organizácii zastávate rolu v module zmlúv."
+          notification_title: "Zmluva <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) bola odoslaná na kontrolu."
+        contract_returned:
+          email_subject: "Zmluva vrátená na doplnenie: %{reference}"
+          email_intro: "Zmluva %{resource_title} (%{reference}) bola vrátená na doplnenie. Dôvod: %{reason}"
+          email_outro: "Túto notifikáciu ste dostali, pretože v tejto organizácii zastávate rolu v module zmlúv."
+          notification_title: "Zmluva <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) bola vrátená na doplnenie. Dôvod: %{reason}"
+        contract_approved:
+          email_subject: "Zmluva schválená: %{reference}"
+          email_intro: "Zmluva %{resource_title} (%{reference}) bola schválená."
+          email_outro: "Túto notifikáciu ste dostali, pretože v tejto organizácii zastávate rolu v module zmlúv."
+          notification_title: "Zmluva <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) bola schválená."
+        contract_rejected:
+          email_subject: "Zmluva zamietnutá: %{reference}"
+          email_intro: "Zmluva %{resource_title} (%{reference}) bola zamietnutá. Dôvod: %{reason}"
+          email_outro: "Túto notifikáciu ste dostali, pretože v tejto organizácii zastávate rolu v module zmlúv."
+          notification_title: "Zmluva <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) bola zamietnutá. Dôvod: %{reason}"
+        contract_published:
+          email_subject: "Zmluva zverejnená: %{reference}"
+          email_intro: "Zmluva %{resource_title} (%{reference}) bola zverejnená."
+          email_outro: "Túto notifikáciu ste dostali, pretože v tejto organizácii zastávate rolu v module zmlúv."
+          notification_title: "Zmluva <a href=\"%{resource_path}\">%{resource_title}</a> (%{reference}) bola zverejnená."
