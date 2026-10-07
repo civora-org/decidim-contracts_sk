@@ -6,7 +6,7 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 
 ## Status
 
-**v1.5.0** — pilot release. Running in the Civora host ([`civora-org/civora-host`](https://github.com/civora-org/civora-host)) as the version offered to the first municipalities; v1.0.0 was the first stable release. Release notes per version are in [CHANGELOG.md](CHANGELOG.md). In place:
+**v1.7.1** — pilot release (latest; see [Releases](https://github.com/civora-org/decidim-contracts_sk/releases)). Running in the Civora host ([`civora-org/civora-host`](https://github.com/civora-org/civora-host)) as the version offered to the first municipalities; v1.0.0 was the first stable release. Release notes per version are in [CHANGELOG.md](CHANGELOG.md). In place:
 
 - Engine registration — isolated `Decidim::ContractsSk` namespace, `en`/`sk` locales;
 - Routes — public contracts catalogue (`index`/`show`), the open-data export (`export.csv`/`export.json`) and an admin CRUD namespace;
@@ -42,10 +42,10 @@ Part of the [Civora](https://github.com/civora-org) platform, usable independent
 Add to your application's `Gemfile` (the gem is not yet published to RubyGems.org):
 
 ```ruby
-gem "decidim-contracts_sk", github: "civora-org/decidim-contracts_sk", tag: "v1.5.0"
+gem "decidim-contracts_sk", github: "civora-org/decidim-contracts_sk", tag: "v1.7.1"
 ```
 
-Pin a release tag: the host should always boot a reproducible engine version. Then:
+Pin a release tag (the latest one from [Releases](https://github.com/civora-org/decidim-contracts_sk/releases)): the host should always boot a reproducible engine version. Then:
 
 ```bash
 bundle install
