@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [1.7.2](https://github.com/civora-org/decidim-contracts_sk/compare/v1.7.1...v1.7.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **privacy:** party filter matches names only of parties with an IČO ([657eb5f](https://github.com/civora-org/decidim-contracts_sk/commit/657eb5f2c93c0ef6422b1e8c071fcc781e55d820))
+* **privacy:** party filter matches names only of parties with an IČO ([1187927](https://github.com/civora-org/decidim-contracts_sk/commit/118792715602605de36f0a33e47ddc830729bd1a))
+
 ## [1.7.1](https://github.com/civora-org/decidim-contracts_sk/compare/v1.7.0...v1.7.1) (2026-10-06)
 
 
