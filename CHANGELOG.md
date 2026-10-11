@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.8.1](https://github.com/civora-org/decidim-contracts_sk/compare/v1.8.0...v1.8.1) (2026-10-11)
+
+
+### Bug Fixes
+
+* **urls:** keep emitted URLs locale-correct on Decidim 0.31 and 0.32 (civora-org/civora-platform[#183](https://github.com/civora-org/decidim-contracts_sk/issues/183)) ([3cf9a4e](https://github.com/civora-org/decidim-contracts_sk/commit/3cf9a4e0dcd83bb90304af32155b859048deb0d7))
+
 ## [1.8.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.7.1...v1.8.0) (2026-10-11)
 
 
