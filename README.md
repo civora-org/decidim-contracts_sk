@@ -94,6 +94,8 @@ Mount the engine in `config/routes.rb`. The mount point is your choice; the exam
 mount Decidim::ContractsSk::Engine, at: "/zmluvy"
 ```
 
+On Decidim 0.32 the locale also becomes part of core URLs (`/sk/...`); see [docs/locale-urls.md](docs/locale-urls.md) for the two mount styles and the legacy-path redirects.
+
 Then review the [configuration seams](#configuration). A host should set at least the CRZ IČO resolver (if it runs the import) and its own role resolver, if the default does not fit.
 
 ## Configuration
@@ -168,6 +170,7 @@ The demo seed and its walkthroughs are in [docs/manual-test-scenarios.md](docs/m
 | [contracts-domain-notes.md](docs/contracts-domain-notes.md) | Domain decisions and the statistics, supplier and filter designs |
 | [crz-import.md](docs/crz-import.md) | CRZ mirror: triggers, scheduling, failure modes, collisions |
 | [open-data.md](docs/open-data.md) | CSV and JSON export, Atom feed, field list, licence |
+| [locale-urls.md](docs/locale-urls.md) | Locale in URLs on Decidim 0.31 and 0.32: what the engine emits, mount styles, legacy redirects |
 | [search-alerts.md](docs/search-alerts.md) | E-mail alerts: privacy design and operations |
 | [spreadsheet-import.md](docs/spreadsheet-import.md) | CSV import format and rules |
 | [decidim-component.md](docs/decidim-component.md) | The `contracts_sk` participatory-space component |

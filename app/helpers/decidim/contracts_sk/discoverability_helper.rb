@@ -55,7 +55,7 @@ module Decidim
       def contract_meta_tags(contract)
         title = t("decidim.contracts_sk.meta.contract.title", title: contract.title, reference: contract.reference)
         contracts_meta_tags(title: title, description: contract_meta_description(contract),
-                            url: contract_url(contract))
+                            url: contract_url(contract, locale: nil))
         add_decidim_page_title(t("decidim.contracts_sk.provenance.badge")) if imported_contract?(contract)
       end
 
@@ -75,20 +75,20 @@ module Decidim
         contracts_meta_tags(
           title: t("decidim.contracts_sk.meta.supplier.title", name: name, ico: ico),
           description: t("decidim.contracts_sk.meta.supplier.description", name: name, ico: ico, count: count),
-          url: supplier_url(ico: ico)
+          url: supplier_url(ico: ico, locale: nil)
         )
       end
 
       def statistics_meta_tags
         contracts_meta_tags(title: t("decidim.contracts_sk.statistics.show.title"),
                             description: t("decidim.contracts_sk.statistics.show.lead"),
-                            url: statistics_url)
+                            url: statistics_url(locale: nil))
       end
 
       private
 
       def catalogue_meta_url_params(page)
-        params = catalogue_query.to_params.symbolize_keys
+        params = catalogue_query.to_params.symbolize_keys.merge(locale: nil)
         page > 1 ? params.merge(page: page) : params
       end
 
