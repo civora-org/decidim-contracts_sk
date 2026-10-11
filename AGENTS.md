@@ -37,6 +37,7 @@ Issues for this engine are tracked in the platform repository, **not** in this r
 - Commits follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`) with the milestone tag, e.g. `feat(controllers): ... (M01-01-D)`.
 - **Every PR must link to its driving issue** in `civora-org/civora-platform` (full cross-repo reference, e.g. `civora-org/civora-platform#45`).
 - **Close issues when development finishes.** GitHub closing keywords (`Closes #n`) do **not** work across repositories — close the issue explicitly (`gh issue close --repo civora-org/civora-platform`) after the PR is merged. For multi-item issues, close only when every item is done (or split items first).
+- **Track by stage, keep epics honest** (since 2026-10-11). Milestones in `civora-org/civora-platform` are stages: exactly one is marked `(NOW)` (`Stage 1 — Pilot launch (NOW)`), then `Stage 2 — Multi-city scale`, then `Later — future modules (blocked)`. Each stage has one epic whose body is a checklist of its issues (#15, #16). Every new issue gets a stage milestone when it is created and a line in that epic's checklist; after a PR merges, close its issue and tick its box in the same session; an epic closes when its checklist is fully ticked, and its milestone closes with it. Founder-only work (legal entity, lawyer, signatures, manual accessibility pass) is tracked as issues too. Run `/track` to see the current stage and fix drift.
 - `CHANGELOG.md` is managed by release-please from commit messages — **do not edit it manually**.
 - As a gem, `Gemfile.lock` stays uncommitted.
 
@@ -181,6 +182,7 @@ Use findings grouped as:
 | `/review <number>` | Read-only current-diff review tied to Issue or current diff |
 | `/verify` | Runs only safe, applicable local tests/lints |
 | `/retro <number>` | Router self-review of an arc; distills lessons into `AGENTS.md` *Process Lessons* (pre-approved) |
+| `/track` | Where the project stands (current stage, what blocks go-live, in-flight PRs) and fixing tracking drift (missing milestones, merged-but-open issues, stale epic checklists) |
 
 ## Model Verification
 
