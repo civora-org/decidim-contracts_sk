@@ -1257,6 +1257,66 @@ RSpec.describe "public contracts catalogue", type: :request do
       end
     end
 
+    describe "Documents section on CRZ mirrors (civora-org/civora-platform#189 follow-up)" do
+      let(:documents_heading) { %(<h2 class="h3 decorator">Documents</h2>) }
+
+      def mirror_contract!(overrides = {})
+        create_contract!({ title: "Mirrored road", reference: "ZP-IMP-DOC", source: "crz", source_id: "900000190",
+                           imported_at: Time.current, import_status: "succeeded",
+                           crz_url: "https://crz.gov.sk/zmluva/900000190/" }.merge(overrides))
+      end
+
+      it "hides the Documents section on a mirror without documents" do
+        contract = mirror_contract!
+
+        get "/#{contract.id}"
+
+        expect(response).to have_http_status(:ok)
+        aggregate_failures do
+          expect(response.body).not_to include(documents_heading)
+          expect(response.body).not_to include("No documents have been attached to this contract.")
+          # The CRZ attachments section is the mirror's files home and stays.
+          expect(response.body).to include("Attachments (in CRZ)")
+        end
+      end
+
+      it "hides the Documents section on a mirror whose only document has no attached file" do
+        contract = mirror_contract!
+        contract.documents.create!(title: "Placeholder", kind: "other")
+
+        get "/#{contract.id}"
+
+        expect(response.body).not_to include(documents_heading)
+      end
+
+      # Mutation check: reverting the view's `documents.any? || !imported_contract?`
+      # guard to an unconditional section makes this example go red.
+      it "shows the Documents section on a mirror that has an attached document" do
+        contract = mirror_contract!
+        attach!(contract, title: "Mirror scan", kind: "contract",
+                          fixture: "sample.pdf", type: "application/pdf")
+
+        get "/#{contract.id}"
+
+        aggregate_failures do
+          expect(response.body).to include(documents_heading)
+          expect(response.body).to include("Mirror scan")
+          expect(response.body).not_to include("No documents have been attached to this contract.")
+        end
+      end
+
+      it "keeps the Documents section and its empty state on an editorial record" do
+        contract = create_contract!
+
+        get "/#{contract.id}"
+
+        aggregate_failures do
+          expect(response.body).to include(documents_heading)
+          expect(response.body).to include("No documents have been attached to this contract.")
+        end
+      end
+    end
+
     it "renders the provenance block end-to-end for a real crz-sourced record (civora-org/civora-platform#88)" do
       imported_at = Time.current
       contract = create_contract!(

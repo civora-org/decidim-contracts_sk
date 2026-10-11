@@ -179,19 +179,26 @@
           <% end %>
         </section>
 
+        <%# Only attached documents render: a metadata-only row has neither
+            a file to link nor a size to show, so it is skipped rather than
+            rendered as a dead entry. Materialized once: the presence check
+            and the iteration share a single loaded collection. %>
+        <% documents = @contract.documents.select { |document| document.file.attached? } %>
+        <%# CRZ mirrors (civora-org/civora-platform#189 follow-up): the
+            official files render in the CRZ attachments section below, so an
+            empty editorial Documents section would only repeat "none" next
+            to them. A mirror shows Documents only when it has an attached
+            document; editorial records always keep the section and its
+            empty state. %>
+        <% if documents.any? || !imported_contract?(@contract) %>
         <section>
           <h2 class="h3 decorator"><%= t("decidim.contracts_sk.contracts.show.documents") %></h2>
-          <%# Only attached documents render: a metadata-only row has neither
-              a file to link nor a size to show, so it is skipped rather than
-              rendered as a dead entry. Materialized once: the presence check
-              and the iteration share a single loaded collection. The
-              download link goes through main_app — ActiveStorage's
+          <%# The download link goes through main_app — ActiveStorage's
               `direct :rails_blob` helper lives on the host application's
               route set, not on the isolated engine's, and the request-bound
               main_app proxy supplies the URL context (safe for any mount
               point). The size comes from the synced metadata columns, never
               from the blob service (civora-org/civora-platform#73). %>
-          <% documents = @contract.documents.select { |document| document.file.attached? } %>
           <% if documents.any? %>
             <ul class="cs-list">
               <% documents.each do |document| %>
@@ -208,6 +215,7 @@
             <p class="cs-empty cs-empty--inline"><%= t("decidim.contracts_sk.contracts.show.documents_empty") %></p>
           <% end %>
         </section>
+        <% end %>
 
         <%# Official CRZ attachments (civora-org/civora-platform#189): a
             CRZ mirror only; editorial records keep their own Documents
