@@ -78,7 +78,7 @@
   <% end %>
 
   <% if @contract.documents.any? %>
-    <div class="table-scroll">
+    <div class="table-scroll" tabindex="0" role="region" aria-labelledby="cs-documents-title">
       <table class="table-list" aria-labelledby="cs-documents-title">
         <thead>
           <tr>
@@ -165,7 +165,7 @@
       one assignment, one ordering, no divergent re-loads. %>
   <% links = @contract.links.order(:id) %>
   <% if links.any? %>
-    <div class="table-scroll">
+    <div class="table-scroll" tabindex="0" role="region" aria-labelledby="cs-links-title">
       <table class="table-list" aria-labelledby="cs-links-title">
         <thead>
           <tr>
@@ -189,7 +189,7 @@
                 <% else %>
                   <%# Dangling or unresolvable target: flagged for cleanup,
                       never silently rendered as a working link. %>
-                  <span class="text-warning"><%= t("decidim.contracts_sk.admin.links.index.dangling") %></span>
+                  <span class="cs-admin-dangling"><%= t("decidim.contracts_sk.admin.links.index.dangling") %></span>
                 <% end %>
               </td>
               <td class="table-list__actions">

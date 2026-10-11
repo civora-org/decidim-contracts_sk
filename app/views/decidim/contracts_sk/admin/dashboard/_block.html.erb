@@ -15,7 +15,7 @@
   <% if block.records.empty? %>
     <p><%= t("decidim.contracts_sk.admin.dashboard.blocks.#{key}.empty") %></p>
   <% else %>
-    <div class="table-scroll">
+    <div class="table-scroll" tabindex="0" role="region" aria-labelledby="dashboard-<%= key.dasherize %>-title">
       <table class="table-list table-list--selectable" aria-labelledby="dashboard-<%= key.dasherize %>-title">
         <thead>
           <tr>

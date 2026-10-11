@@ -34,7 +34,7 @@
 
   <% unless @candidates.nil? %>
     <% if @candidates.any? %>
-      <div class="table-scroll">
+      <div class="table-scroll" tabindex="0" role="region" aria-label="<%= t("decidim.contracts_sk.admin.user_roles.search.results") %>">
         <table class="table-list cs-admin-roles">
           <caption class="cs-admin-sr-only"><%= t("decidim.contracts_sk.admin.user_roles.search.results") %></caption>
           <thead>
