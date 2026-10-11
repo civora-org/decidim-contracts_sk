@@ -197,6 +197,24 @@ CONFIRM=1 bin/rails "decidim_contracts_sk:crz_import:backfill_published_on[<orga
   listed, payloads are never logged. Re-running is safe: only mirrors still
   without a date are candidates.
 
+#### Attachment links (civora-org/civora-platform#189)
+
+A mirrored contract's public page lists its official CRZ attachments under "Prílohy (v CRZ)". **Link only**: the engine stores metadata (title, kind, CRZ file name, size and `changed_at` when given) in `decidim_contracts_sk_crz_attachments` and links to `https://www.crz.gov.sk/data/att/<file name>`. No file is downloaded or stored, so CRZ stays the source of truth and a CRZ redaction or removal shows on the next sync.
+
+- **Source:** the payload's `attachments: [{id, title, file_name, file_size, scan_file_name, scan_file_size, changed_at}]`. An attachment with both `file_name` (kind `text`) and `scan_file_name` (kind `scan`) yields two rows, labelled "Textová verzia" and "Sken".
+- **URL allowlist:** `CrzImport::AttachmentUrl` builds a URL only from a name of digits, one dot and a known extension (pdf, doc(x), xls(x), ppt(x), odt/ods/odp, rtf, txt, zip, jpg/jpeg, png, tif(f), xml). Anything else is dropped by the mapper and, defensively, yields no link at render time. No payload string reaches an `href`.
+- **Re-sync:** the checksum covers the whole payload, so an added, changed or removed attachment changes it; the update replaces the link rows wholesale (vanished ones are removed) inside the same transaction as the parties.
+- **Privacy:** logs and task output carry source ids and counts only, never titles.
+
+Mirrors imported before this existed have no rows, and an unchanged payload is not re-written by the sync. Backfill them:
+
+```bash
+bin/rails "decidim_contracts_sk:crz_import:backfill_attachments[<organization_id>]"            # dry run: count and source ids, nothing fetched
+CONFIRM=1 bin/rails "decidim_contracts_sk:crz_import:backfill_attachments[<organization_id>]"  # fetch and write
+```
+
+Dry run by default; `CONFIRM=1` writes; `PAUSE` seconds between fetches (default 1.1 s, about 54 requests a minute, under ekosystem's 60; `PAUSE=0` disables). Only the attachment rows are written (under the row's lock, with an in-lock re-check); `updated_at`, `checksum`, `imported_at`, parties and the audit trail are untouched. Candidates are the organization's mirrors with no attachment rows; a mirror whose CRZ record has none stays a candidate, so a re-run refetches it (the task is a one-off). Per-record errors are counted as `failed` (retry by re-running) or `skipped` (no valid attachment); they never abort the run.
+
 ### 2. Admin action (single record, interactive)
 
 `POST /admin/contracts/import_crz` with `source_id` (the CRZ numeric id) —

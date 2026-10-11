@@ -159,6 +159,7 @@ module Decidim
         def create!
           contract = Contract.create!(create_attributes)
           replace_parties!(contract)
+          replace_attachments!(contract)
           write_audit!(AUDIT_ACTIONS.fetch(:created), contract)
 
           ok_outcome(:created, contract)
@@ -254,6 +255,7 @@ module Decidim
           # currency are never written by the import (ADR-008).
           contract.update!(update_attributes)
           replace_parties!(contract)
+          replace_attachments!(contract)
           write_audit!(AUDIT_ACTIONS.fetch(:updated), contract)
         end
 
@@ -295,6 +297,19 @@ module Decidim
         def replace_parties!(contract)
           contract.parties.destroy_all
           record[:parties].each { |attrs| contract.parties.create!(attrs) }
+        end
+
+        # The mirror replaces its CRZ attachment LINKS wholesale (civora-org/
+        # civora-platform#189): added and changed ones are written, ones that
+        # vanished upstream are removed. The checksum covers the whole raw
+        # payload, so any attachment change reaches this path. A record
+        # without an :attachments key (hand-built, pre-#189) leaves the
+        # links alone. Runs inside the caller's transaction.
+        def replace_attachments!(contract)
+          return unless record.key?(:attachments)
+
+          contract.crz_attachments.destroy_all
+          record[:attachments].each { |attrs| contract.crz_attachments.create!(attrs) }
         end
 
         def write_audit!(action, contract)

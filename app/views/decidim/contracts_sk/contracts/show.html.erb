@@ -209,6 +209,43 @@
           <% end %>
         </section>
 
+        <%# Official CRZ attachments (civora-org/civora-platform#189): a
+            CRZ mirror only; editorial records keep their own Documents
+            section above. LINK ONLY: every href is built by
+            CrzAttachment#url from the strict file-name allowlist (nil, so
+            skipped, for anything else); nothing is stored here. The links
+            leave the site, so they carry rel="noopener noreferrer", an
+            external-link icon and a screen-reader-only hint. %>
+        <% if imported_contract?(@contract) %>
+          <% crz_files = @contract.crz_attachments.select(&:url) %>
+          <section aria-labelledby="contract-crz-attachments">
+            <h2 id="contract-crz-attachments" class="h3 decorator"><%= t("decidim.contracts_sk.contracts.show.crz_attachments") %></h2>
+            <% if crz_files.any? %>
+              <p class="cs-small cs-att-note"><%= t("decidim.contracts_sk.contracts.show.crz_attachments_note") %></p>
+              <ul class="cs-list">
+                <% crz_files.each do |file| %>
+                  <li class="cs-doc">
+                    <%= contracts_icon(:document) %>
+                    <div class="cs-doc__body">
+                      <%= link_to file.url, class: "cs-link cs-att-link", rel: "noopener noreferrer" do %>
+                        <%= file.title.presence || t("decidim.contracts_sk.contracts.show.crz_attachment_untitled") %>
+                        <%= contracts_icon(:external) %>
+                        <span class="cs-sr">(<%= t("decidim.contracts_sk.contracts.show.crz_attachment_opens") %>)</span>
+                      <% end %>
+                      <p class="cs-small">
+                        <%= t("decidim.contracts_sk.contracts.show.crz_attachment_kind.#{file.kind}") %>,
+                        <%= file.format_label %><% if file.file_size.present? %>, <%= number_to_human_size(file.file_size) %><% end %>
+                      </p>
+                    </div>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="cs-empty cs-empty--inline"><%= t("decidim.contracts_sk.contracts.show.crz_attachments_empty") %></p>
+            <% end %>
+          </section>
+        <% end %>
+
         <%# Related links (M01-87, civora-org/civora-platform#87): the
             record's links to platform-level project/result entities,
             resolved LIVE through the config-time link_target_resolver seam
