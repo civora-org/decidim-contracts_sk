@@ -15,12 +15,12 @@ module Decidim
       # The serializer runs while the response body streams, i.e. AFTER the
       # controller action (and Decidim's switch_locale / time-zone
       # around_actions) has returned. It therefore uses no I18n and no
-      # Time.zone: dates are Date#iso8601 and published_at is rendered in UTC.
+      # Time.zone: dates (crz_published_on included) are Date#iso8601 and published_at is rendered in UTC.
       class ContractRecord
         # CSV columns, in order. The names are a stability promise.
         FIELDS = %w[
           reference title subject_matter amount currency signed_on effective_from
-          published_at source crz_url party_roles party_icos party_names url
+          published_at source crz_url party_roles party_icos party_names url crz_published_on
         ].freeze
 
         # The parallel party columns and the party attribute each one lists.
@@ -102,7 +102,7 @@ module Decidim
         # empty cell, JSON keeps null).
         def scalar(field)
           case field
-          when "signed_on", "effective_from" then contract.public_send(field)&.iso8601
+          when "signed_on", "effective_from", "crz_published_on" then contract.public_send(field)&.iso8601
           when "published_at" then contract.published_at&.utc&.iso8601
           when "url" then url
           else contract.public_send(field)
