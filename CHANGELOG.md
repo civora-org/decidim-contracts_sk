@@ -1,5 +1,24 @@
 ## [Unreleased]
 
+## [1.8.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.7.1...v1.8.0) (2026-10-11)
+
+
+### Features
+
+* **crz:** show CRZ attachments as links to the official files (civora-org/civora-platform[#189](https://github.com/civora-org/decidim-contracts_sk/issues/189)) ([55baa32](https://github.com/civora-org/decidim-contracts_sk/commit/55baa32b5934cb168faf875c5c40904ea86cc701))
+* **open-data:** export the CRZ publication date (civora-org/civora-platform[#160](https://github.com/civora-org/decidim-contracts_sk/issues/160)) ([d29a020](https://github.com/civora-org/decidim-contracts_sk/commit/d29a02075d2131d1525fd971a432ba6296603cb8))
+* support Decidim 0.31 and 0.32 with a Ruby 3.3/3.4 CI matrix (civora-org/civora-platform[#182](https://github.com/civora-org/decidim-contracts_sk/issues/182)) ([6df3f8b](https://github.com/civora-org/decidim-contracts_sk/commit/6df3f8b7b16452dd42ce68c721a369b5813d57a3))
+
+
+### Bug Fixes
+
+* **a11y:** focusable named table scroll regions and a readable dangling-target mark (civora-org/civora-platform[#133](https://github.com/civora-org/decidim-contracts_sk/issues/133)) ([1aebafb](https://github.com/civora-org/decidim-contracts_sk/commit/1aebafb6458ea452ca9676236179a61ea1429d9a))
+* **a11y:** focusable named table scroll regions and readable dangling-target mark ([597da0d](https://github.com/civora-org/decidim-contracts_sk/commit/597da0db7594e4688ef67ba42b96c0b4ff31df42))
+* **privacy:** party filter matches names only of parties with an IČO ([657eb5f](https://github.com/civora-org/decidim-contracts_sk/commit/657eb5f2c93c0ef6422b1e8c071fcc781e55d820))
+* **privacy:** party filter matches names only of parties with an IČO ([1187927](https://github.com/civora-org/decidim-contracts_sk/commit/118792715602605de36f0a33e47ddc830729bd1a))
+* **views:** hide the empty documents section on CRZ mirrors ([7a23684](https://github.com/civora-org/decidim-contracts_sk/commit/7a2368408710ea2d066c7b38574abf8bb440254a))
+* **views:** hide the empty documents section on CRZ mirrors ([9934f3b](https://github.com/civora-org/decidim-contracts_sk/commit/9934f3b6e4b0bd4ad6acf23a0843ec13ade084e6))
+
 ## [1.7.1](https://github.com/civora-org/decidim-contracts_sk/compare/v1.7.0...v1.7.1) (2026-10-06)
 
 
