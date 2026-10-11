@@ -13,11 +13,21 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Job names keep the pre-matrix `Ruby 3.3.4` / `bundler-audit` form so the
+    # branch-protection required checks still match the Decidim 0.31 legs.
     name: Ruby ${{ matrix.ruby }}
     strategy:
+      fail-fast: false
       matrix:
-        ruby:
-          - '3.3.4'
+        include:
+          - decidim: '0.31'
+            ruby: '3.3.4'
+          - decidim: '0.32'
+            ruby: '3.4.7'
+    env:
+      # Read by the Gemfile to pin the Decidim line (fresh resolution; the
+      # engine does not commit Gemfile.lock).
+      DECIDIM_VERSION: ${{ matrix.decidim }}
 
     steps:
       - uses: actions/checkout@v7
@@ -36,7 +46,19 @@ jobs:
 
   audit:
     runs-on: ubuntu-latest
-    name: bundler-audit
+    name: ${{ matrix.audit_name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - decidim: '0.31'
+            ruby: '3.3.4'
+            audit_name: bundler-audit
+          - decidim: '0.32'
+            ruby: '3.4.7'
+            audit_name: bundler-audit (Decidim 0.32)
+    env:
+      DECIDIM_VERSION: ${{ matrix.decidim }}
     # The engine intentionally does not commit Gemfile.lock (gem convention),
     # so this audits the current CI-time resolution.
     steps:
@@ -46,7 +68,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3.4'
+          ruby-version: ${{ matrix.ruby }}
       - name: Install dependencies
         run: bundle install --jobs 4
       - name: Audit gems

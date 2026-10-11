@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
   spec.homepage = "https://github.com/civora-org/decidim-contracts_sk"
   spec.license = "AGPL-3.0"
 
-  spec.required_ruby_version = ">= 3.2.0"
+  spec.required_ruby_version = ">= 3.3"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
@@ -32,9 +32,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Runtime dependencies
-  # 0.31.x is the current Decidim major. It supports Ruby 3.3 (verified
-  # against the installed 0.31.7 gemset), and this engine targets it
-  # (civora-org/civora-platform#46).
+  # Dual-line support (civora-org/civora-platform#182): Decidim 0.31.x (Ruby
+  # 3.3, Rails 7.2) and 0.32.x (Ruby 3.4, Rails 8.1) so the host can move on
+  # its own timeline. Both lines are exercised by the CI matrix.
   # Floor is 0.31.5: earlier 0.31.x carries CVE-2026-45573 (decidim-core push
   # subscriptions SSRF, Medium), and Decidim's meta-gems pin each other with
   # `=`, so a loose floor lets fresh resolutions settle on unpatched lines.
@@ -49,8 +49,8 @@ Gem::Specification.new do |spec|
   # generate_line / col_sep API the export uses on every supported Ruby.
   spec.add_dependency "csv", "~> 3.0"
 
-  spec.add_dependency "decidim-admin", "~> 0.31.5"
-  spec.add_dependency "decidim-core", "~> 0.31.5"
+  spec.add_dependency "decidim-admin", ">= 0.31.5", "< 0.33"
+  spec.add_dependency "decidim-core", ">= 0.31.5", "< 0.33"
 
   # json 3.0 removed the `quirks_mode` keyword that ActiveSupport 7.2 still
   # passes to both JSON.parse and JSON.generate
