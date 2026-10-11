@@ -144,6 +144,33 @@ RSpec.describe "open data export", :db, type: :request do
       end
     end
 
+    it "exports crz_published_on: an ISO date for a filed editorial record, empty for a plain one" do
+      create_contract!(reference: "FILED", crz_filed_at: Time.utc(2026, 9, 5), crz_published_on: Date.new(2026, 9, 3))
+      create_contract!(reference: "PLAIN")
+
+      get "/export.csv"
+      csv_table = csv_rows
+      csv = csv_table.to_h { |r| [r["reference"], r] }
+      get "/export.json"
+      json = json_rows.to_h { |r| [r["reference"], r] }
+
+      aggregate_failures do
+        expect(csv_table.headers.last).to eq("crz_published_on")
+        expect(csv["FILED"]["crz_published_on"]).to eq("2026-09-03")
+        expect(csv["PLAIN"]["crz_published_on"]).to be_nil
+        expect(json["FILED"]["crz_published_on"]).to eq("2026-09-03")
+        expect(json["PLAIN"]).to have_key("crz_published_on").and include("crz_published_on" => nil)
+      end
+    end
+
+    it "does not export a CRZ mirror even though it carries a publication date" do
+      create_contract!(reference: "MIRROR", source: "crz", source_id: "crz-1", crz_published_on: Date.new(2026, 9, 3))
+
+      get "/export.json"
+
+      expect(json_rows).to eq([])
+    end
+
     it "serves an empty array when nothing is published" do
       get "/export.json"
 

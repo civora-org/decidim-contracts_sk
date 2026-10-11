@@ -11,7 +11,7 @@ RSpec.describe Decidim::ContractsSk::OpenData::ContractRecord do
   let(:party_struct) { Struct.new(:id, :role, :ico, :name, :address, keyword_init: true) }
   let(:contract_struct) do
     Struct.new(:id, :reference, :title, :subject_matter, :amount, :currency, :signed_on, :effective_from,
-               :published_at, :source, :crz_url, :parties, :review_reason, keyword_init: true)
+               :published_at, :source, :crz_url, :parties, :review_reason, :crz_published_on, keyword_init: true)
   end
   let(:parties) { [] }
   let(:overrides) { {} }
@@ -29,14 +29,14 @@ RSpec.describe Decidim::ContractsSk::OpenData::ContractRecord do
     it "pins the CSV columns in order" do
       expect(described_class::FIELDS).to eq(
         %w[reference title subject_matter amount currency signed_on effective_from published_at source
-           crz_url party_roles party_icos party_names url]
+           crz_url party_roles party_icos party_names url crz_published_on]
       )
     end
 
     it "folds the party columns into one parties key for JSON, at the first party column's place" do
       expect(described_class::JSON_KEYS).to eq(
         %w[reference title subject_matter amount currency signed_on effective_from published_at source
-           crz_url parties url]
+           crz_url parties url crz_published_on]
       )
     end
 
@@ -70,6 +70,18 @@ RSpec.describe Decidim::ContractsSk::OpenData::ContractRecord do
 
       expect(row.values_at("signed_on", "effective_from", "published_at"))
         .to eq(["2026-09-01", nil, "2026-09-01T12:00:00Z"])
+    end
+
+    it "renders crz_published_on as an ISO date and keeps it empty (CSV) or null (JSON) when unknown" do
+      dated = described_class.new(contract_struct.new(contract.to_h.merge(crz_published_on: Date.new(2026, 8, 20))),
+                                  url: "u")
+
+      aggregate_failures do
+        expect(dated.csv_row.last).to eq("2026-08-20")
+        expect(dated.as_json_hash["crz_published_on"]).to eq("2026-08-20")
+        expect(record.csv_row.last).to be_nil
+        expect(record.as_json_hash["crz_published_on"]).to be_nil
+      end
     end
 
     it "formats the amount with two decimals, never scientific, with an optional decimal comma" do
