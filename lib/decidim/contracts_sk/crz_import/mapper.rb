@@ -50,6 +50,9 @@ module Decidim
         # clipped (capture, don't crash).
         MAX_STRING_LENGTH = 255
 
+        # kind => [file-name key, size key] of a CRZ attachment's two files.
+        ATTACHMENT_FILES = [%w[text file_name file_size], %w[scan scan_file_name scan_file_size]].freeze
+
         class << self
           # Maps one raw payload Hash into the upsert record:
           #   { source_id:, attributes: {...}, parties: [...], checksum:,
@@ -63,6 +66,11 @@ module Decidim
           # crz_published_on column. Both deliberately sit beside — never
           # inside — :attributes, so the import's attribute set and the
           # checksum (a digest of the raw payload) are unchanged by them.
+          # attachments (civora-org/civora-platform#189) is the list of
+          # LINK-ONLY attachment rows, also beside :attributes: at most two
+          # per CRZ attachment (text version, scan), each only when its file
+          # name passes the AttachmentUrl allowlist. Malformed names are
+          # dropped; nothing is downloaded.
           # Raises Mapper::Error on structural invalidity.
           def map(payload)
             raise Error, "CRZ record is not a JSON object" unless payload.is_a?(Hash)
@@ -74,6 +82,7 @@ module Decidim
               source_id: source_id,
               attributes: contract_attributes(payload, source_id),
               parties: parties_for(payload),
+              attachments: attachments_for(payload),
               checksum: checksum(payload)
             }.merge(filing_fields(payload))
           end
@@ -129,6 +138,45 @@ module Decidim
                           payload["supplier_name"],
                           payload["supplier_cin"],
                           payload["supplier_formatted_address"])].compact
+          end
+
+          # CRZ attachments → link rows. An attachment with both a text file
+          # (`file_name`) and a scan (`scan_file_name`) yields two rows,
+          # kind "text" / "scan". A file whose name is not on the
+          # AttachmentUrl allowlist yields no row (never a link); a non-Array
+          # `attachments`, or non-Hash entries, yield nothing. Titles are
+          # clipped; only ids, never titles, are ever logged.
+          def attachments_for(payload)
+            list = payload["attachments"]
+            return [] unless list.is_a?(Array)
+
+            list.grep(Hash).flat_map { |attachment| attachment_rows(attachment) }
+          end
+
+          def attachment_rows(attachment)
+            ATTACHMENT_FILES.filter_map do |kind, name_key, size_key|
+              name = text(attachment[name_key])
+              next unless AttachmentUrl.allowed?(name)
+
+              { crz_id: text(attachment["id"]).presence&.[](0, 20), title: clip(text(attachment["title"]).presence),
+                kind: kind, file_name: name, file_size: parse_size(attachment[size_key]),
+                changed_at: parse_time(attachment["changed_at"]) }
+            end
+          end
+
+          # A non-negative whole number of bytes, else nil.
+          def parse_size(raw)
+            value = text(raw)
+            value.match?(/\A\d{1,15}\z/) ? value.to_i : nil
+          end
+
+          def parse_time(raw)
+            value = text(raw)
+            return nil if value.blank? || DATE_SENTINELS.any? { |s| value.start_with?(s) }
+
+            Time.find_zone!("UTC").parse(value)
+          rescue ArgumentError
+            nil
           end
 
           # A party is mirrored only when it has a name; a blank name skips

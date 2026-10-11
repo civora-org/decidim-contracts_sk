@@ -112,6 +112,11 @@ module Decidim
       has_many :documents, dependent: :destroy
       has_many :amendments, dependent: :destroy
 
+      # Links to the official CRZ attachments of a mirrored contract
+      # (civora-org/civora-platform#189); empty for editorial records.
+      has_many :crz_attachments, -> { order(:id) },
+               class_name: "Decidim::ContractsSk::CrzAttachment", dependent: :destroy
+
       # Platform-level project/result links (civora-org/civora-platform#87):
       # record content like the child records above, so they die with the
       # contract (unlike the audit trail). The association name deliberately

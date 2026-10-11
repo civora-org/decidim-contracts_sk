@@ -40,6 +40,7 @@ require_relative "contracts_sk/subscription_throttle"
 # upsert command lives in app/commands and reaches these through the
 # autoloader.
 require_relative "contracts_sk/crz_import/transport"
+require_relative "contracts_sk/crz_import/attachment_url"
 require_relative "contracts_sk/crz_import/mapper"
 require_relative "contracts_sk/crz_import/client"
 require_relative "contracts_sk/crz_import/filing_comparison"
@@ -47,6 +48,7 @@ require_relative "contracts_sk/crz_import/filing_lookup"
 require_relative "contracts_sk/crz_import/sync"
 require_relative "contracts_sk/crz_import/prune"
 require_relative "contracts_sk/crz_import/backfill_published_on"
+require_relative "contracts_sk/crz_import/backfill_attachments"
 
 # The spreadsheet (CSV) bulk import (civora-org/civora-platform#129): the
 # reader and the dry-run preview are plain Ruby over the autoloaded forms

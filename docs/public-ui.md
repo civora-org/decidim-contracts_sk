@@ -75,6 +75,10 @@ Privacy rules: a description names only contractors **with an IČO** (at most th
 
 Spec harness: the dummy app renders the head through a layout that mirrors decidim-core's `_head` meta lines and runs the real `Decidim::MetaTagsHelper` (`spec/dummy/app/views/layouts/application.html.erb`).
 
+## CRZ attachments on a mirrored contract (civora-org/civora-platform#189)
+
+`contracts/show.html.erb` renders a "Prílohy (v CRZ)" section for CRZ mirrors only (`imported_contract?`), after the editorial Documents section, which is unchanged. It is a hairline `.cs-list` of `.cs-doc` rows (the Documents pattern): the document icon, the title as a `.cs-link` with a trailing external-link icon (`contracts_icon(:external)`, `.cs-att-link svg`) and a screen-reader-only "(otvorí súbor na crz.gov.sk)", and a muted line with the kind ("Textová verzia" / "Sken"), the format (PDF) and the size when CRZ gave one. A one-line note says the files stay in CRZ. A mirror without attachments shows the inline empty state. Links carry `rel="noopener noreferrer"` and no `target` (same convention as the other CRZ links on the page). Every `href` comes from `CrzAttachment#url` (strict file-name allowlist, see [crz-import.md](crz-import.md)); a row that fails it is not rendered. Decidim classes plus `.cs-` rules only, no Tailwind utilities.
+
 ## Heading decorators need room below
 
 `.title-decorator` and `.decorator` draw a 0.25rem bar at `top: calc(100% + 0.25rem)`, below the heading's box. The bar takes no space in the layout, so the next element must keep at least ~0.75rem of clearance or the bar strikes through it. The engine stylesheet gives decorated headings their own bottom margin (`.cs-page .title-decorator`, `.cs-main .decorator`). Never place a meta line directly under a decorated heading without that margin.

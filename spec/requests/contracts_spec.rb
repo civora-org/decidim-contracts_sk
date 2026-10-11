@@ -655,6 +655,7 @@ RSpec.describe "public contracts catalogue", type: :request do
         import_status: nil,
         parties: parties,
         documents: documents,
+        crz_attachments: [],
         amendments: double(published: double(order: amendments)),
         links: links,
         **overrides
@@ -1188,6 +1189,71 @@ RSpec.describe "public contracts catalogue", type: :request do
         expect(response.body).to include("Obec Zelen")
         expect(response.body).to include("Contractor")
         expect(response.body).to include("Zeleň a.s.")
+      end
+    end
+
+    describe "CRZ attachment links (civora-org/civora-platform#189)" do
+      def mirror!(overrides = {})
+        create_contract!({ title: "Mirrored road", reference: "ZP-IMP-189", source: "crz", source_id: "900000189",
+                           imported_at: Time.current, import_status: "succeeded",
+                           crz_url: "https://crz.gov.sk/zmluva/900000189/" }.merge(overrides))
+      end
+
+      it "lists the official files with kind, format and size, as hardened external links" do
+        contract = mirror!
+        contract.crz_attachments.create!(kind: "scan", file_name: "7065995.pdf", title: "Dohoda", file_size: 2048)
+        contract.crz_attachments.create!(kind: "text", file_name: "7065996.docx", title: "Dohoda")
+
+        get "/#{contract.id}"
+
+        body = response.body
+        aggregate_failures do
+          expect(body).to include("Attachments (in CRZ)")
+          expect(body).to match(%r{<a [^>]*href="https://www\.crz\.gov\.sk/data/att/7065995\.pdf"})
+          expect(body).to match(%r{<a [^>]*href="https://www\.crz\.gov\.sk/data/att/7065996\.docx"})
+          expect(body).to include('rel="noopener noreferrer"')
+          expect(body).to include("opens the file on crz.gov.sk")
+          expect(body).to match(/Scan,\s+PDF, 2 KB/)
+          expect(body).to match(/Text version,\s+DOCX/)
+          expect(body).not_to include("No attachments are published in CRZ")
+        end
+      end
+
+      it "shows the empty state for a mirror without attachments" do
+        contract = mirror!
+
+        get "/#{contract.id}"
+
+        expect(response.body).to include("Attachments (in CRZ)", "No attachments are published in CRZ")
+      end
+
+      it "does not render the section for an editorial record" do
+        contract = create_contract!(title: "Own road", reference: "ZP-OWN-189")
+
+        get "/#{contract.id}"
+
+        expect(response.body).not_to include("Attachments (in CRZ)")
+      end
+
+      # Mutation check: with the allowlist guard removed from
+      # CrzAttachment#url (or from the view's select(&:url)) this example
+      # goes red, because the stored hostile name reaches an href.
+      it "never renders a hostile stored file name into an href, even when a row bypassed validation" do
+        contract = mirror!
+        good = contract.crz_attachments.create!(kind: "scan", file_name: "1.pdf", title: "Good")
+        evil = contract.crz_attachments.create!(kind: "scan", file_name: "2.pdf", title: "<script>alert(1)</script>")
+        evil.update_column(:file_name, "javascript:alert(1)")
+        raw = contract.crz_attachments.create!(kind: "text", file_name: "3.pdf", title: "Traversal")
+        raw.update_column(:file_name, "../../etc/passwd")
+
+        get "/#{contract.id}"
+
+        body = response.body
+        aggregate_failures do
+          expect(good.url).to be_present
+          expect(body).to include("https://www.crz.gov.sk/data/att/1.pdf")
+          expect(body).not_to include("javascript:alert", "etc/passwd", "<script>alert(1)</script>", "Traversal")
+        end
       end
     end
 
