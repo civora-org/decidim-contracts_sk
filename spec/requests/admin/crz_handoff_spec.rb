@@ -280,7 +280,7 @@ RSpec.describe "admin CRZ handoff", type: :request do
       patch "/admin/contracts/#{contract.id}",
             params: { contract: { title: "Road reconstruction", reference: "ZP-2026-001", amount: "abc" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       aggregate_failures do
         expect(response.body).to include(%(href="/admin/contracts/#{contract.id}/crz_handoff"))
         expect(response.body).to include(%(action="/admin/contracts/#{contract.id}/crz_handoff"))

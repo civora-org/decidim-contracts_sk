@@ -296,7 +296,7 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
       patch "/admin/contracts/#{record.id}",
             params: { contract: { title: "Road-REJECTED", reference: "ZP-DL-900", signed_on: "2026-01-01" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(response.body).to include("CRZ filing deadline: 2026-06-08 (7 days left)")
       expect(response.body).to include("Road-REJECTED")
       expect(record.reload.signed_on).to eq(Date.new(2026, 3, 8))

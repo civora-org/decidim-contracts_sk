@@ -642,7 +642,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
         contract: { title: "Road reconstruction", reference: "ZP-2026-006", amount: "-5" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(flash[:alert]).to be_present
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
     end
@@ -654,7 +654,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
         contract: { title: "Road reconstruction", reference: "ZP-2026-007", amount: "abc" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(flash[:alert]).to be_present
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
     end
@@ -666,7 +666,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
         contract: { title: "Road reconstruction", reference: "ZP-2026-001", amount: "abc" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
 
       record.reload
       expect(record.title).to eq("Road reconstruction")
@@ -678,7 +678,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
         contract: { title: "Road reconstruction", reference: "ZP-2026-008", currency: "USD" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
     end
 
@@ -687,7 +687,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
         contract: { title: "Road reconstruction", reference: "ZP-2026-010", crz_url: "javascript:alert(1)" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
     end
 
@@ -706,7 +706,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
     it "answers 422 and persists nothing when the title is missing" do
       post "/admin/contracts", params: { contract: { title: "", reference: "ZP-2026-004" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
       # The re-rendered form's error summary is announced and focused
       # (civora-org/civora-platform#78) — a bare ul is an a11y regression.
@@ -722,7 +722,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
 
       post "/admin/contracts", params: { contract: { title: "Another road", reference: "ZP-2026-001" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Contract.count).to eq(1)
     end
 

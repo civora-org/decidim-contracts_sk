@@ -343,7 +343,7 @@ RSpec.describe "admin amendment management", type: :request do
       post "/admin/contracts/#{contract.id}/amendments",
            params: { amendment: { summary: "" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(flash[:alert]).to be_present
       expect(Decidim::ContractsSk::Amendment.count).to eq(0)
       # The re-rendered form (civora-org/civora-platform#78): the announced,

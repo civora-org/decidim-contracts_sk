@@ -86,12 +86,12 @@ module Decidim
 
         def create_failed
           flash.now[:alert] = t("decidim.contracts_sk.admin.templates.create.error")
-          render :new, status: :unprocessable_entity
+          render :new, status: 422
         end
 
         def update_failed
           flash.now[:alert] = t("decidim.contracts_sk.admin.templates.update.error")
-          render :edit, status: :unprocessable_entity
+          render :edit, status: 422
         end
 
         def destroy_succeeded

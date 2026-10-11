@@ -50,7 +50,7 @@ module Decidim
         def create_failed
           load_notes
           flash.now[:alert] = t("decidim.contracts_sk.admin.notes.create.error")
-          render :index, status: :unprocessable_entity
+          render :index, status: 422
         end
 
         def load_notes

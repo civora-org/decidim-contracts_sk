@@ -203,7 +203,7 @@ RSpec.describe "e-mail alert subscriptions", :db, type: :request do
     it "rejects a malformed address with 422, an error on the field, no row and no mail" do
       subscribe("not-an-address")
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       html = Nokogiri::HTML(response.body)
       expect(html.at_css("#alert-error[role=alert]").text).to include("valid e-mail")
       expect(html.at_css("#alert_email")["aria-invalid"]).to eq("true")
@@ -214,14 +214,14 @@ RSpec.describe "e-mail alert subscriptions", :db, type: :request do
     it "echoes a rejected address back only escaped" do
       subscribe("\"><script>alert(1)</script>")
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(response.body).not_to include("<script>alert(1)</script>")
     end
 
     it "rejects a CRZ-only search with 422" do
       subscribe(email, { "source" => "crz" })
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(subscription_class.count).to eq(0)
     end
 
@@ -238,14 +238,14 @@ RSpec.describe "e-mail alert subscriptions", :db, type: :request do
 
       post "/subscriptions", params: { email: ["a@example.org"] }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::CreateSubscription).to have_received(:call).with(hash_including(email: ""))
     end
 
     it "re-renders a rejected post with the search but without the posted sort or foreign params" do
       subscribe("nope", { "q" => "cesta", "sort" => "amount_asc", "bogus" => "1" })
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(response.body).to include("Search: cesta")
       expect(response.body).not_to include("Sort:")
       hidden = Nokogiri::HTML(response.body).css("form input[type=hidden]").map { |input| input["name"] }

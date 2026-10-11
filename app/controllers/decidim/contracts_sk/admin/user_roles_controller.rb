@@ -48,7 +48,7 @@ module Decidim
           @query = normalized_query
           if @query.length < MIN_QUERY_LENGTH
             flash.now[:alert] = t("decidim.contracts_sk.admin.user_roles.search.too_short", min: MIN_QUERY_LENGTH)
-            render :new, status: :unprocessable_entity
+            render :new, status: 422
           else
             @candidates = candidates(@query)
             @held_roles = held_roles(@candidates)

@@ -154,7 +154,7 @@ RSpec.describe "admin contract templates", type: :request do
 
         expect { post "/admin/templates", params: { template: invalid } }.not_to change(template_class, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
         expect(flash[:alert]).to eq("The template could not be created.")
         doc = Nokogiri::HTML(response.body)
         expect(doc.css(".flash.alert li").size).to be >= 2
@@ -166,17 +166,17 @@ RSpec.describe "admin contract templates", type: :request do
 
         post "/admin/templates", params: { template: template_params }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
         messages = Nokogiri::HTML(response.body).css(".flash.alert li").map(&:text).join
         expect(messages).to include("Name has already been taken")
       end
 
       it "rejects an unsupported currency and an over-long name" do
         post "/admin/templates", params: { template: template_params.merge(currency: "USD") }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
 
         post "/admin/templates", params: { template: template_params.merge(name: "n" * 256) }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
         expect(template_class.count).to eq(0)
       end
 
@@ -185,7 +185,7 @@ RSpec.describe "admin contract templates", type: :request do
 
         patch "/admin/templates/#{template.id}", params: { template: { name: "" } }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
         expect(flash[:alert]).to eq("The template could not be updated.")
         expect(template.reload.name).to eq("Works")
       end
@@ -193,7 +193,7 @@ RSpec.describe "admin contract templates", type: :request do
       it "survives a malformed template param without a 500" do
         expect { post "/admin/templates", params: { template: "oops" } }.not_to change(template_class, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity).or have_http_status(:bad_request)
+        expect(response).to have_http_status(422).or have_http_status(:bad_request)
       end
     end
 

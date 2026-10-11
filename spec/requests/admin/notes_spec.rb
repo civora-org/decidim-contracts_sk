@@ -105,13 +105,13 @@ RSpec.describe "admin internal review notes", type: :request do
     it "rejects a blank body and keeps the thread unchanged" do
       expect { add_note("   ") }.not_to change(note_class, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(flash[:alert]).to include("The note could not be added")
     end
 
     it "rejects a body over 2000 characters, keeps the typed text and accepts exactly 2000" do
       expect { add_note("b" * 2001) }.not_to change(note_class, :count)
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(response.body).to include("b" * 2001)
 
       expect { add_note("c" * 2000) }.to change(note_class, :count).by(1)
@@ -133,7 +133,7 @@ RSpec.describe "admin internal review notes", type: :request do
       expect { post "/admin/contracts/#{contract.id}/notes", params: { note: "oops" } }
         .not_to change(note_class, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
     end
 
     it "hides another organization's contract from both verbs (scoped find raises)" do

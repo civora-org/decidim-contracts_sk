@@ -372,7 +372,7 @@ RSpec.describe "admin document management", type: :request do
         document: { title: "", kind: "contract", file: upload("sample.pdf", "application/pdf") }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(flash[:alert]).to be_present
       expect(Decidim::ContractsSk::Document.count).to eq(0)
     end
@@ -384,7 +384,7 @@ RSpec.describe "admin document management", type: :request do
         document: { title: "Signed contract scan", kind: "contract" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Document.count).to eq(0)
       # The re-rendered form (civora-org/civora-platform#78): the announced
       # error summary and the required attribute on the presence-validated
@@ -403,7 +403,7 @@ RSpec.describe "admin document management", type: :request do
         document: { title: "Signed contract scan", kind: "bogus", file: upload("sample.pdf", "application/pdf") }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Document.count).to eq(0)
     end
 
@@ -417,7 +417,7 @@ RSpec.describe "admin document management", type: :request do
         document: { title: "Impostor export", kind: "crz_export", file: upload("sample.pdf", "application/pdf") }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Document.count).to eq(0)
     end
 
@@ -436,7 +436,7 @@ RSpec.describe "admin document management", type: :request do
 
       document.reload
       aggregate_failures do
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
         expect(document.file_name).to eq("sample.pdf")
         expect(document.content_type).to eq("application/pdf")
       end
