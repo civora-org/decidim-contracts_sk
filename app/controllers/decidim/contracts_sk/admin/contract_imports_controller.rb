@@ -27,7 +27,7 @@ module Decidim
           enforce_permission_to :import_file, :contract
 
           @preview = SpreadsheetImport::Preview.new(uploaded_bytes, organization: current_organization)
-          return render(:new, status: :unprocessable_entity) if @preview.problems.any?
+          return render(:new, status: 422) if @preview.problems.any?
 
           render :preview
         end
@@ -64,9 +64,9 @@ module Decidim
 
         def import_failed
           flash.now[:alert] = t("decidim.contracts_sk.admin.contract_imports.create.invalid")
-          return render(:new, status: :unprocessable_entity) if @preview.problems.any?
+          return render(:new, status: 422) if @preview.problems.any?
 
-          render :preview, status: :unprocessable_entity
+          render :preview, status: 422
         end
       end
     end

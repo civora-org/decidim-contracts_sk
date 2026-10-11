@@ -175,7 +175,7 @@ RSpec.describe "admin new contract from a template", :db, type: :request do
     it "re-renders the form with the chosen template kept when the draft is invalid, creating nothing" do
       expect { create_from_template(reference: "") }.not_to change(contract_class, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       doc = Nokogiri::HTML(response.body)
       expect(doc.at_css("input[type=hidden][name='template_id']")["value"]).to eq(template.id.to_s)
       expect(doc.at_css("#contract_title")["value"]).to eq("Rental - Shop 4")
@@ -187,7 +187,7 @@ RSpec.describe "admin new contract from a template", :db, type: :request do
       create_from_template
       expect { create_from_template }.not_to change(contract_class, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Party.count).to eq(1)
       expect(audit_class.count).to eq(1)
     end

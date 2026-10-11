@@ -106,7 +106,7 @@ module Decidim
       def render_invalid(result)
         @email = result.subscription.email
         @error = result.subscription.errors.key?(:filter_params) ? :search : :email
-        render :new, status: :unprocessable_entity
+        render :new, status: 422
       end
 
       # The confirmation goes out synchronously (deliver_now): the raw token

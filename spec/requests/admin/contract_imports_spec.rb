@@ -165,7 +165,7 @@ RSpec.describe "admin spreadsheet import", type: :request do
       dump_evidence("reimport-refused.html")
 
       aggregate_failures do
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
         expect(response.body).to include("reference: this reference already exists in your organization")
         expect(contract_model.count).to eq(3)
         expect(Decidim::ContractsSk::AuditEvent.count).to eq(3)
@@ -176,7 +176,7 @@ RSpec.describe "admin spreadsheet import", type: :request do
       post "/admin/contracts/import", params: { payload: fixture_bytes("mixed-contracts.csv").force_encoding("UTF-8") }
 
       aggregate_failures do
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
         expect(flash[:alert]).to include("Nothing was imported")
         expect(response.body).to include("2 of 5 rows have errors")
         expect(contract_model.count).to eq(0)
@@ -212,7 +212,7 @@ RSpec.describe "admin spreadsheet import", type: :request do
       it "answers #{label} with a readable 422 and writes nothing" do
         post "/admin/contracts/import/preview", params: { file: upload(bytes) }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(422)
         expect(response.body).to include(message)
         expect(response.body).to include("The file could not be read")
         expect(contract_model.count).to eq(0)
@@ -243,7 +243,7 @@ RSpec.describe "admin spreadsheet import", type: :request do
     it "refuses an oversized re-posted payload" do
       post "/admin/contracts/import", params: { payload: "reference,title\n#{"DEMO-1,Cesta\n" * 120_000}" }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(response.body).to include("The file is larger than 1024 KB.")
       expect(contract_model.count).to eq(0)
     end

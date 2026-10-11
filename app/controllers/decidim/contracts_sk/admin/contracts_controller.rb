@@ -408,7 +408,7 @@ module Decidim
         # (flash.now so it survives only this render).
         def create_failed
           flash.now[:alert] = t("decidim.contracts_sk.admin.contracts.create.error")
-          render :new, status: :unprocessable_entity
+          render :new, status: 422
         end
 
         def update_failed
@@ -418,7 +418,7 @@ module Decidim
           # so drop the unsaved changes (the form re-renders from @form).
           @contract.restore_attributes
           flash.now[:alert] = t("decidim.contracts_sk.admin.contracts.update.error")
-          render :edit, status: :unprocessable_entity
+          render :edit, status: 422
         end
 
         # The handoff section reads the record's single crz_export document

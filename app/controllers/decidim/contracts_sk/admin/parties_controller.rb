@@ -102,12 +102,12 @@ module Decidim
         # (flash.now so it survives only this render).
         def create_failed
           flash.now[:alert] = t("decidim.contracts_sk.admin.parties.create.error")
-          render :new, status: :unprocessable_entity
+          render :new, status: 422
         end
 
         def update_failed
           flash.now[:alert] = t("decidim.contracts_sk.admin.parties.update.error")
-          render :edit, status: :unprocessable_entity
+          render :edit, status: 422
         end
 
         # Both outcomes are PRG redirects: a destroy failure means the row

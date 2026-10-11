@@ -287,7 +287,7 @@ RSpec.describe "admin party management", type: :request do
       post "/admin/contracts/#{contract.id}/parties",
            params: { party: { role: "object", name: "Obec Zelen", ico: "1234" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(flash[:alert]).to be_present
       expect(Decidim::ContractsSk::Party.count).to eq(0)
       # The re-rendered form (civora-org/civora-platform#78, #79): the
@@ -308,7 +308,7 @@ RSpec.describe "admin party management", type: :request do
       post "/admin/contracts/#{contract.id}/parties",
            params: { party: { role: "bogus", name: "Obec Zelen" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(Decidim::ContractsSk::Party.count).to eq(0)
     end
 
@@ -319,7 +319,7 @@ RSpec.describe "admin party management", type: :request do
       patch "/admin/contracts/#{contract.id}/parties/#{party.id}",
             params: { party: { role: "contractor", name: "Obec Zelen", ico: "1234" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(flash[:alert]).to be_present
       party.reload
       expect(party.role).to eq("object")

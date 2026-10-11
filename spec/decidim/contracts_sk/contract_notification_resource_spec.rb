@@ -85,6 +85,9 @@ RSpec.describe Decidim::ContractsSk::Contract, :db do
         def t(*, **) = I18n.t(*, **)
       end)
       # Mailer stand-in: the real mailer classes run, #mail returns headers.
+      # The dummy app may already define Decidim::ApplicationMailer at boot;
+      # drop it first so the stand-in replaces it without a redefinition warning.
+      Decidim.send(:remove_const, :ApplicationMailer) if const_defined?(:ApplicationMailer, false)
       const_set(:ApplicationMailer, Class.new(ActionMailer::Base) do
         def with_user(_user) = yield
 
