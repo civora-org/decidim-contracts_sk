@@ -204,10 +204,69 @@ end
 class DummyAdminPermissions < Decidim::DefaultPermissions; end
 class DummyPublicPermissions < Decidim::DefaultPermissions; end
 
+# The Decidim line the suite runs on (CI matrix: DECIDIM_VERSION=0.31 / 0.32).
+# Specs and the harness layout branch on it where the lines differ in how
+# they treat locales in URLs (civora-org/civora-platform#183).
+module DummyDecidimLine
+  VERSION = Gem::Version.new(Gem.loaded_specs.fetch("decidim-core").version.to_s)
+
+  module_function
+
+  def locale_prefixed?
+    Gem::Version.new("0.32.0") <= VERSION
+  end
+end
+
+# The REAL Decidim::LocaleSwitcher of the pinned decidim-core (0.31.x or
+# 0.32.x, whichever the line resolves), included into the stand-in below but
+# switched OFF by default: with it off the stand-in behaves as before (no
+# locale detection, no default_url_options), so the bulk of the suite is
+# unaffected. A spec switches it on with `:decidim_locale_switcher` (see
+# spec/support/decidim_locale_switcher.rb) to see every URL the engine emits
+# exactly as a host of that line would build it: 0.31 adds `?locale=` for a
+# non-default locale only, 0.32 adds it always (and prefixes core paths).
+require File.join(decidim_core, "app/controllers/concerns/decidim/locale_switcher.rb")
+
+if DummyDecidimLine.locale_prefixed?
+  # The 0.32 redirect DSL the dummy routes use (see routes.rb). Not in 0.31.
+  require File.join(decidim_core, "lib/decidim/locale_router_detector.rb")
+  require File.join(decidim_core, "lib/decidim/routes/locale_redirects.rb")
+end
+
+module DummyLocaleSwitching
+  class << self
+    attr_accessor :enabled
+  end
+end
+
 # Minimal stand-in for decidim-core's Decidim::ApplicationController.
 unless defined?(Decidim::ApplicationController)
   module Decidim
     class ApplicationController < ActionController::Base
+      include Decidim::LocaleSwitcher
+
+      # LocaleSwitcher defines its methods on the including class itself
+      # (inside `included`), so the real implementations are captured here and
+      # then wrapped by the opt-in switch.
+      REAL_SWITCH_LOCALE = instance_method(:switch_locale)
+      REAL_DEFAULT_URL_OPTIONS = instance_method(:default_url_options)
+      private_constant :REAL_SWITCH_LOCALE, :REAL_DEFAULT_URL_OPTIONS
+
+      def switch_locale(&)
+        return yield unless DummyLocaleSwitching.enabled
+
+        REAL_SWITCH_LOCALE.bind_call(self, &)
+      end
+
+      def default_url_options
+        DummyLocaleSwitching.enabled ? REAL_DEFAULT_URL_OPTIONS.bind_call(self) : {}
+      end
+
+      # Devise-ish seam the real detect_locale reads (nil: nobody is signed in).
+      def current_user
+        nil
+      end
+
       # The real one protects every controller from forgery; the e-mail
       # alert forms (#121) are the first public POSTs, so the harness does too
       # (the enforcement itself is switched off below, like Rails' test env,

@@ -12,6 +12,20 @@
 <html lang="<%= I18n.locale %>">
   <head>
     <title><%= decidim_page_title %></title>
+    <%# The alternate-language links of decidim-core's _head, per Decidim line
+        (copied from 0.31.7 and 0.32.1). Rendered only with the opt-in
+        LocaleSwitcher on (:decidim_locale_switcher), whose helpers they need. %>
+    <% if DummyLocaleSwitching.enabled %>
+      <% if DummyDecidimLine.locale_prefixed? %>
+        <% available_locales.excluding(current_locale).each do |locale| %>
+          <link rel="alternate" href="<%= canonical_url(request.url, locale) %>" hreflang="<%= locale %>">
+        <% end %>
+      <% else %>
+        <% available_locales.each do |locale| %>
+          <link rel="alternate" href="<%= url_for(request.parameters.merge(locale: locale, only_path: false)) %>" hreflang="<%= locale %>">
+        <% end %>
+      <% end %>
+    <% end %>
     <%= tag :meta, name: "twitter:card", content: "summary_large_image" %>
     <%= tag :meta, name: "twitter:title", content: decidim_page_title %>
     <%= tag :meta, name: "twitter:description", content: decidim_meta_description %>

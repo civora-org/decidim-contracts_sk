@@ -11,7 +11,7 @@
 <% contracts_meta_tags(
      title: page > 1 ? "#{component_title} - #{t("decidim.contracts_sk.meta.page", page: page)}" : component_title,
      description: t("decidim.contracts_sk.contracts.index.intro"),
-     url: page > 1 ? root_url(page: page) : root_url
+     url: page > 1 ? root_url(page: page, locale: nil) : root_url(locale: nil)
    ) %>
 <%= render "decidim/contracts_sk/shared/public_styles" %>
 <main class="layout-1col cols-10">
