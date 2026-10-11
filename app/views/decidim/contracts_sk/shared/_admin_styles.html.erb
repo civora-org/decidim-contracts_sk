@@ -39,6 +39,7 @@
       .cs-admin-search   the role-grant user search: label above a full-width field (#112)
       .cs-admin-role-actions  a row of per-role button_to forms in a table actions cell (wraps)
       .cs-admin-roles    the role tables: left-aligned like a list of people, not centred
+      .cs-admin-dangling  a target that no longer resolves: dark red, bold (the bundle's text-warning yellow is 1.7:1)
       .cs-admin-sr-only  visually hidden text for screen readers (the bundle has no show-for-sr)
       .cs-admin-import   the import preview table: left-aligned, tabular line numbers,
                          right-aligned amounts (__num) and per-row error lists (__errors)
@@ -83,6 +84,7 @@
   .table-list.cs-admin-roles th, .table-list.cs-admin-roles td { text-align: left; vertical-align: middle; }
   .cs-admin-role-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
   .cs-admin-role-actions form { margin: 0; }
+  .cs-admin-dangling { color: #8a1c1c; font-weight: 600; }
   .cs-admin-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .cs-admin-rules { list-style: disc; margin: .5rem 0 0 1.25rem; padding: 0; max-width: 72ch; }
   .cs-admin-rules li { margin-bottom: .5rem; line-height: 1.5; }

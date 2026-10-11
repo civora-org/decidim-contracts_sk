@@ -107,6 +107,37 @@ RSpec.describe "admin accessibility markup (#133)", :db, type: :request do
       expect(doc.at_css("#cs-audit-title")).not_to be_nil
     end
 
+    it "makes every scrolling table wrapper keyboard-focusable and named (WCAG 2.1.1)" do
+      draft.parties.create!(role: "contractor", name: "Dodávateľ s.r.o.")
+      draft.documents.create!(title: "Scan", kind: "annex")
+      Decidim::ContractsSk::AuditEvent.create!(action: "contract.submit", target: draft, organization: organization,
+                                               actor: me)
+
+      ["/admin/audit_events", "/admin/contracts", "/admin/contracts/#{draft.id}/parties",
+       "/admin/contracts/#{draft.id}/edit"].each do |path|
+        get path
+        wrappers = doc.css(".table-scroll")
+        expect(wrappers).not_to be_empty, path
+        wrappers.each do |wrapper|
+          expect(wrapper["tabindex"]).to eq("0"), path
+          expect(wrapper["role"]).to eq("region"), path
+          label_id = wrapper["aria-labelledby"]
+          expect(wrapper["aria-label"].presence || doc.at_css("##{label_id}")&.text&.strip).to be_present, path
+        end
+      end
+    end
+
+    it "renders an unresolvable audit target in an engine class, not the 1.7:1 text-warning" do
+      Decidim::ContractsSk::AuditEvent.create!(action: "contract.submit", target_type: draft.class.name,
+                                               target_id: 0, organization: organization, actor: me)
+
+      get "/admin/audit_events"
+
+      dangling = doc.at_css("td .cs-admin-dangling")
+      expect(dangling.text.strip).to eq("Record no longer exists")
+      expect(doc.at_css(".text-warning")).to be_nil
+    end
+
     it "scopes the parties table headers and names it by the page heading" do
       draft.parties.create!(role: "contractor", name: "Dodávateľ s.r.o.")
 
