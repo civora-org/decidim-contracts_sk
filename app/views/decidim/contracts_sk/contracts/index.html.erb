@@ -43,6 +43,8 @@
         <%= render "decidim/contracts_sk/shared/register_pagination",
                    collection: @contracts, carried_params: query.to_params.symbolize_keys %>
       <% end %>
+      <%# CRZ licence attribution (#198): only when a mirrored row is on the page. %>
+      <%= render "decidim/contracts_sk/shared/crz_attribution", contracts: @contracts %>
     <% else %>
       <%# Two distinct empty states: a search that finds nothing is a
           different situation from an empty catalogue — the record exists,

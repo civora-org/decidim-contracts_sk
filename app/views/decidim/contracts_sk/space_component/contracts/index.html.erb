@@ -34,6 +34,7 @@
         <%= render "decidim/contracts_sk/shared/register_pagination",
                    collection: @contracts, carried_params: {} %>
       <% end %>
+      <%= render "decidim/contracts_sk/shared/crz_attribution", contracts: @contracts %>
     <% else %>
       <p class="cs-empty"><%= t("decidim.contracts_sk.contracts.index.empty") %></p>
     <% end %>

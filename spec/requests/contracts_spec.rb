@@ -610,6 +610,39 @@ RSpec.describe "public contracts catalogue", type: :request do
       end
     end
 
+    it "shows the CRZ licence attribution once when a mirrored card is listed (civora-org/civora-platform#198)" do
+      stub_published_contracts(
+        PaginableStub.new([published_contract_double(source: "crz", imported_at: Time.new(2026, 9, 10, 8, 0, 0)),
+                           published_contract_double(source: "crz", to_param: "8")])
+      )
+
+      get "/"
+
+      aggregate_failures do
+        expect(response.body.scan("data-crz-attribution").size).to eq(1)
+        expect(response.body).to include("licensed under")
+        expect(response.body).to include(%(href="https://creativecommons.org/licenses/by/4.0/deed.en"))
+        expect(response.body).to include(%(href="https://www.crz.gov.sk/"))
+      end
+    end
+
+    it "localizes the CRZ licence attribution (civora-org/civora-platform#198)" do
+      stub_published_contracts(PaginableStub.new([published_contract_double(source: "crz")]))
+
+      I18n.with_locale(:sk) { get "/" }
+
+      expect(response.body).to include("licencia", "deed.sk")
+    end
+
+    it "shows no CRZ licence attribution for editorial-only listings (civora-org/civora-platform#198)" do
+      stub_published_contracts(PaginableStub.new([published_contract_double]))
+
+      get "/"
+
+      expect(response.body).not_to include("data-crz-attribution")
+      expect(response.body).not_to include("CC BY 4.0")
+    end
+
     it "renders no provenance label on an editorial card (civora-org/civora-platform#88)" do
       stub_published_contracts(PaginableStub.new([published_contract_double]))
 
@@ -866,6 +899,30 @@ RSpec.describe "public contracts catalogue", type: :request do
           # Fresh within the default 48 h stale_after: no stale notice.
           expect(response.body).not_to include("may be out of date")
         end
+      end
+
+      it "carries the CRZ licence attribution inside the provenance block (civora-org/civora-platform#198)" do
+        stub_published_contracts(
+          double(find: detail_contract_double(source: "crz", imported_at: 1.hour.ago,
+                                              import_status: "succeeded"))
+        )
+
+        get "/7"
+
+        aggregate_failures do
+          expect(response.body.scan("data-crz-attribution").size).to eq(1)
+          expect(response.body).to include("CC BY 4.0")
+          expect(response.body).to include(%(href="https://creativecommons.org/licenses/by/4.0/deed.en"))
+        end
+      end
+
+      it "renders no licence attribution for an editorial record (civora-org/civora-platform#198)" do
+        stub_published_contracts(double(find: contract))
+
+        get "/7"
+
+        expect(response.body).not_to include("data-crz-attribution")
+        expect(response.body).not_to include("CC BY 4.0")
       end
 
       it "renders no provenance content for an editorial record" do

@@ -143,6 +143,8 @@
                 <p class="cs-small"><span class="label warning"><%= t("decidim.contracts_sk.provenance.stale") %></span></p>
               <% end %>
               <p class="cs-small"><%= t("decidim.contracts_sk.provenance.note") %></p>
+              <%# Licence attribution (#198), the quiet last line of the block. %>
+              <%= render "decidim/contracts_sk/shared/crz_attribution", contract: @contract %>
             </div>
           </section>
         <% end %>

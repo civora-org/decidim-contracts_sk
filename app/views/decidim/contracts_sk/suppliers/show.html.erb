@@ -51,6 +51,7 @@
           <%= render "decidim/contracts_sk/contracts/row", contract: contract %>
         <% end %>
       </ol>
+      <%= render "decidim/contracts_sk/shared/crz_attribution", contracts: @contracts %>
     <% else %>
       <%# Only reachable with a page number past the last page (the supplier
           has contracts, or the page would have been a 404). %>

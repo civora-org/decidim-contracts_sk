@@ -13,7 +13,9 @@ Read-only, no authentication (a host that forces sign-in for the whole site forc
 
 **The organization's own records only.** Exactly the contracts that are lifecycle-published, belong to the current organization and have `source: "editorial"`. Never exported: drafts, records in review, archived or rejected records, other organizations' records, and **records mirrored from CRZ**.
 
-Why mirrors are excluded: ADR-008 decision 6 makes the CRZ mirror a link-only pointer to the canonical record, and the #83 spike found that CRZ declares no reuse licence (publication is statutory: zákon 211/2000 §5a, nariadenie vlády 498/2011) while the ekosystem.slovensko.digital terms require attribution to be preserved. Until the reuse basis is settled with a lawyer, mirrors are linked back to crz.gov.sk, not re-published as data. `?source=crz` therefore yields an honest empty export (header only for CSV, `[]` for JSON), and the catalogue hides its download links and points to crz.gov.sk when that filter is active.
+Why mirrors are excluded: ADR-008 decision 6 makes the CRZ mirror a link-only pointer to the canonical record, and the ekosystem.slovensko.digital terms require attribution to be preserved. Since 2026-10-12 it is verified that crz.gov.sk licenses its XML exports under **CC BY 4.0** (civora-org/civora-platform#198; evidence in [crz-import.md](crz-import.md#attribution--license-notes-adr-008-decision-6-civora-org-civora-platform198)), so re-publishing mirrors would be possible with attribution and an indication of changes. It is not done yet: that is a product decision with a schema impact, and the catalogue pages already carry the attribution wherever mirrors are shown. Until then mirrors are linked back to crz.gov.sk, not re-published as data. `?source=crz` therefore yields an honest empty export (header only for CSV, `[]` for JSON), and the catalogue hides its download links and points to crz.gov.sk when that filter is active.
+
+**No CRZ licence metadata in the exports.** Because they hold the organization's own records only, the CSV, JSON and Atom outputs make no CRZ licence claim: the CSV header and JSON array are unchanged, and the feed has no `<rights>` element. Adding one would wrongly put the organization's own data under the CRZ licence. When mirrors are exported, add the attribution (an Atom `<rights>` element, a documented response header or a companion note; the CSV/JSON schemas must stay as they are).
 
 ## Parameters
 
@@ -80,7 +82,7 @@ The same own-records scope and the catalogue's filters also drive the e-mail ale
 
 ## Licence
 
-The municipality decides under which licence it publishes this data; the engine states none. A sensible default is **Creative Commons Attribution 4.0 (CC BY 4.0)** with an attribution such as: "Contract data of <organization name>, published at <catalogue URL>, licensed under CC BY 4.0." Put the chosen licence on the page your organization links from Decidim's Open Data page (below) and in any dataset listing.
+Mirrored CRZ data shown in the catalogue is attributed to the Central Register of Contracts under CC BY 4.0 (see above); that licence does not apply to the exports. The municipality decides under which licence it publishes this data; the engine states none. A sensible default is **Creative Commons Attribution 4.0 (CC BY 4.0)** with an attribution such as: "Contract data of <organization name>, published at <catalogue URL>, licensed under CC BY 4.0." Put the chosen licence on the page your organization links from Decidim's Open Data page (below) and in any dataset listing.
 
 ## Host follow-up: Decidim's Open Data page
 
