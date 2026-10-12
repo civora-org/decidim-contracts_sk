@@ -69,6 +69,9 @@ en:
         imported_on: "Mirrored from the CRZ register on"
         stale: "This mirror may be out of date — verify the canonical record at crz.gov.sk."
         note: "These fields mirror public metadata of the Slovak Central Register of Contracts (CRZ), obtained via ekosystem.slovensko.digital. They are externally confirmed information, not a legal publication; the canonical record lives at crz.gov.sk. Source data is provided for informational purposes only."
+        attribution_crz: "Central Register of Contracts (crz.gov.sk)"
+        attribution_html: "Source of mirrored data: %{crz}, licensed under %{licence}. Selected fields only, mediated by %{hub}."
+        licence_url: "https://creativecommons.org/licenses/by/4.0/deed.en"
       contracts:
         index:
           title: "Contracts"

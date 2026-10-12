@@ -69,6 +69,9 @@ sk:
         imported_on: "Zrkadlené z registra CRZ dňa"
         stale: "Toto zrkadlenie môže byť neaktuálne — overte pôvodný záznam na crz.gov.sk."
         note: "Tieto polia zrkadlia verejné metadáta Slovenského centra zmluv (CRZ) získané cez ekosystem.slovensko.digital. Sú externe potvrdeným údajom, nie právnou publikáciou; autoritatívny záznam sa nachádza na crz.gov.sk. Zdrojové údaje majú len informatívny charakter."
+        attribution_crz: "Centrálny register zmlúv (crz.gov.sk)"
+        attribution_html: "Zdroj zrkadlených údajov: %{crz}, licencia %{licence}. Len vybrané polia, sprostredkované cez %{hub}."
+        licence_url: "https://creativecommons.org/licenses/by/4.0/deed.sk"
       contracts:
         index:
           title: "Zmluvy"

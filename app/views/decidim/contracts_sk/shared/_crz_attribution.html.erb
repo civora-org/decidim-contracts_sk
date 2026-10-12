@@ -1,0 +1,16 @@
+<%# CRZ data licence attribution (civora-org/civora-platform#198).
+    crz.gov.sk licenses its XML exports under CC BY 4.0 and the ekosystem
+    terms require the source to be named, so wherever CRZ-mirrored data is
+    shown one quiet line names the source, the licence, that the fields are
+    a selection, and the intermediary. Renders nothing unless a mirrored
+    record is in view: pass `contracts:` (a list) or `contract:` (one).
+    Plain link colour from the organization's palette; no new chrome. %>
+<% records = Array(local_assigns[:contract] || local_assigns[:contracts]&.to_a) %>
+<% if records.any? { |record| imported_contract?(record) } %>
+  <p class="cs-small cs-attrib" data-crz-attribution>
+    <%= t("decidim.contracts_sk.provenance.attribution_html",
+          crz: link_to(t("decidim.contracts_sk.provenance.attribution_crz"), "https://www.crz.gov.sk/", rel: "noopener"),
+          licence: link_to("CC BY 4.0", t("decidim.contracts_sk.provenance.licence_url"), rel: "license noopener"),
+          hub: link_to("Slovensko.Digital", "https://ekosystem.slovensko.digital/", rel: "noopener")) %>
+  </p>
+<% end %>

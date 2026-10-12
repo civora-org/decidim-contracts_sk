@@ -366,19 +366,18 @@ import writes — mirrors are labelled, never implied to be real-time
 - Fixtures and demo data are synthetic ("Obec Ukážková", fake IČO
   patterns) — no real persons or companies.
 
-## Attribution / license notes (ADR-008 decision 6)
+## Attribution / license notes (ADR-008 decision 6, civora-org/civora-platform#198)
 
-- CRZ content is published under Act No. 211/2000 §5a as amended; **no
-  reuse license is declared** by the register. Mirroring *metadata* is the
-  settled V0 scope; any republication beyond metadata mirroring (e.g.
-  document mirroring) must settle the license question first.
-- ekosystem.slovensko.digital's dataset terms require preserving
-  attribution clauses; the CRZ dataset there is under the general minimal
-  terms, not a named CC license. Keep the source attribution when
-  presenting imported data, and present it as externally confirmed — never
-  as a legal publication. The catalogue's provenance block surfaces this
-  attribution verbatim in both shipped locales (civora-org/civora-platform
-  #88).
+**Verified 2026-10-12.** The CRZ page "Sťahovanie údajov z CRZ" (<https://www.crz.gov.sk/stahovanie-udajov-z-crz/>) states, about the nightly difference files `https://www.crz.gov.sk/export/rrrr-mm-dd.zip`: "Na rozdielové XML súbory sa vzťahuje licencia Creative Commons Attribution 4.0 International (CC BY 4.0) licence. To znamená, že opakované použitie je povolené pod podmienkou, že sa náležite uvedie zdroj a označia prípadné zmeny." (links to <https://creativecommons.org/licenses/by/4.0/deed.sk>). This supersedes the 2026-09-09 spike (#83), which found no licence. The statement names the XML difference files; the ekosystem datahub dataset `crz.contracts` is the same register data, and we treat it under the same licence.
+
+The ekosystem terms (<https://ekosystem.slovensko.digital/podmienky>) state no licence of their own for the CRZ dataset: they grant minimal reuse terms and require every redistribution or derived product to name the sources (clause 4.9 lists "Centrálny register zmlúv" and "Služby Slovensko.Digital"), to keep the attribution clauses, and, for derived products, to state that changes were made and their date.
+
+What the engine does:
+
+- Wherever mirrored data is shown, one quiet line (`shared/_crz_attribution`) names the source (linked to crz.gov.sk), the licence (CC BY 4.0, linked, locale-specific deed), that only selected fields are shown (the indication of changes) and the intermediary (Slovensko.Digital). It renders on the catalogue, the supplier page and the in-space list **when a mirrored row is on the page**, and inside the provenance block of a mirrored record's detail page (the import date sits just above it). Editorial-only pages render nothing.
+- CRZ remains the legal publication: the records stay labelled externally confirmed, never a legal publication (civora-org/civora-platform#88).
+- The open-data exports (CSV, JSON, Atom) contain **no mirrored data** (see [open-data.md](open-data.md)), so they carry no CRZ attribution. If mirrors are ever exported, the CRZ attribution and the licence must travel with them.
+- Document mirroring stays out of scope; the licence statement covers the XML metadata files only.
 
 ## Non-goals (V0)
 
