@@ -10,6 +10,7 @@ Milestones are **stages**, not themes. Exactly one stage is current, marked `(NO
 |---|---|
 | `Stage 1 — Pilot launch (NOW)` | Everything needed before the first municipality goes live. Epic #15 is its checklist. |
 | `Stage 2 — Multi-city scale (after the first pilot)` | Running several towns. Epic #16. |
+| `Candidates — validate with towns` | Prototyped feature ideas (spec + clickable prototype). Epic #206. An idea leaves this milestone when it is decided: built → moved to a stage, or killed with the reason. |
 | `Later — future modules (blocked)` | Discovery-only ideas, blocked until a paying pilot asks. |
 | `00`–`10` (closed) | History of the theme milestones that are finished. |
 
@@ -28,7 +29,7 @@ Read-only by default. Report first, then fix drift only where the fix is mechani
    gh pr list --repo civora-org/civora-platform --state open --json number,title,url
    ```
 2. **Drift checks**:
-   - Open issues with **no milestone** → assign the stage they belong to (an upgrade/hosting/legal blocker of go-live is Stage 1; multi-city is Stage 2; discovery is Later).
+   - Open issues with **no milestone** → assign the stage they belong to (an upgrade/hosting/legal blocker of go-live is Stage 1; multi-city is Stage 2; a prototyped idea awaiting town validation is Candidates; discovery is Later).
    - Open issues whose fix is **already merged** (search merged PRs in the three code repos for `civora-platform#<n>`) → close with a comment naming the PR.
    - **Epics** whose children are all closed → close, then close the milestone if it is empty.
    - **Epic checklists** where a box is unticked but the issue is closed (or the reverse) → re-tick the body.
