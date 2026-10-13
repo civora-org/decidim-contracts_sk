@@ -520,16 +520,16 @@ sk:
           title: "Čo treba dnes urobiť"
           lead: "Dnes je %{date}. Nižšie je len to, čo môžete urobiť vy."
           more_urgent:
-            one: "a ďalšia %{count} zmluva s blížiacou sa lehotou"
-            few: "a ďalšie %{count} zmluvy s blížiacou sa lehotou"
-            other: "a ďalších %{count} zmlúv s blížiacou sa lehotou"
+            one: "a ďalšia %{count} zmluva s lehotou CRZ"
+            few: "a ďalšie %{count} zmluvy s lehotou CRZ"
+            other: "a ďalších %{count} zmlúv s lehotou CRZ"
           empty:
             title: "Všetko je hotové"
             body: "Nič na vás dnes nečaká. Ďakujeme, môžete si vydýchnuť."
           groups:
             urgent:
-              title: "Lehota CRZ sa blíži"
-              hint: "Zmluvy, ktoré treba čo najskôr vložiť do Centrálneho registra zmlúv (CRZ)."
+              title: "Lehoty CRZ"
+              hint: "Zmluvy, ktorým uplynula alebo sa blíži lehota na vloženie do Centrálneho registra zmlúv (CRZ). Najprv tie po termíne."
             waiting:
               title: "Čaká na vás"
               hint: "Kroky, ktoré môžete urobiť práve vy."

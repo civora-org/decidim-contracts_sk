@@ -234,7 +234,7 @@ module LocaleContract
     en: {
       "admin.dashboard.overview_link" => "What needs doing today",
       "admin.today.title" => "What needs doing today",
-      "admin.today.groups.urgent.title" => "CRZ deadline is near",
+      "admin.today.groups.urgent.title" => "CRZ deadlines",
       "admin.today.groups.waiting.title" => "Waiting for you",
       "admin.today.empty.title" => "All done",
       "admin.today.tasks.review.sentence" => "%{count} contracts are waiting for your review",
@@ -248,7 +248,7 @@ module LocaleContract
     sk: {
       "admin.dashboard.overview_link" => "Čo treba dnes urobiť",
       "admin.today.title" => "Čo treba dnes urobiť",
-      "admin.today.groups.urgent.title" => "Lehota CRZ sa blíži",
+      "admin.today.groups.urgent.title" => "Lehoty CRZ",
       "admin.today.groups.waiting.title" => "Čaká na vás",
       "admin.today.empty.title" => "Všetko je hotové",
       "admin.today.tasks.review.sentence" => "%{count} zmlúv čaká na vašu kontrolu",

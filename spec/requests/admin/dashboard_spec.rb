@@ -316,7 +316,7 @@ RSpec.describe "admin dashboard", type: :request do
         expect(task_button("crz-overdue-#{published.id}").text.strip).to eq("Confirm filing")
         expect(task_button("crz-due-soon-#{waiting.id}").text.strip).to eq("Review")
         expect(body.index("Late draft")).to be < body.index("Late published")
-        expect(body).to include("CRZ deadline is near")
+        expect(body).to include("CRZ deadlines")
       end
 
       it "words a deadline with days left" do
@@ -357,7 +357,7 @@ RSpec.describe "admin dashboard", type: :request do
         get "/admin"
 
         expect(body.scan(/Late row \d/).uniq.size).to eq(5)
-        expect(body).to include("and 2 more contracts with a deadline coming up")
+        expect(body).to include("and 2 more contracts with a CRZ deadline")
         expect(body).to include(%(href="/admin/contracts?deadline=unfiled"))
       end
     end

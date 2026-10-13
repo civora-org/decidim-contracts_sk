@@ -109,7 +109,7 @@ Rules that hold across both pages:
 
 | Group | Tasks | Button |
 |---|---|---|
-| Lehota CRZ sa blíži (urgent) | one per overdue / due-soon record (at most five, then "and N more" linking to `?deadline=unfiled`); the action is that record's own next step for this person | Pripraviť podklad pre CRZ (draft/returned, editor), Skontrolovať (in review, not the submitter), Zverejniť (approved, editor), Potvrdiť vklad (published, editor) |
+| Lehoty CRZ (urgent; overdue first) | one per overdue / due-soon record (at most five, then "and N more" linking to `?deadline=unfiled`); the action is that record's own next step for this person | Pripraviť podklad pre CRZ (draft/returned, editor), Skontrolovať (in review, not the submitter), Zverejniť (approved, editor), Potvrdiť vklad (published, editor) |
 | Čaká na vás | records to review, returned drafts, approved records to publish (with how many lack the redaction confirmation), published records whose CRZ filing is not confirmed | Skontrolovať, Upraviť, Zverejniť, Potvrdiť vklad |
 | Dá sa doplniť | drafts without an amount / without a signing date | Doplniť |
 
