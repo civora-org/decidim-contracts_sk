@@ -49,7 +49,8 @@ module Decidim
             title: @form.title, reference: @form.reference,
             subject_matter: @form.subject_matter, amount: @form.amount,
             currency: @form.currency, signed_on: @form.signed_on,
-            effective_from: @form.effective_from, crz_url: @form.crz_url
+            effective_from: @form.effective_from, crz_url: @form.crz_url,
+            agreed_effective_on: @form.agreed_effective_on
           }
         end
 

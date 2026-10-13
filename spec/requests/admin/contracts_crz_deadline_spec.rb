@@ -225,7 +225,7 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
 
     it "renders no badge for filed, mirror and terminal rows" do
       create_contract!(reference: "ZP-DL-201", signed_on: Date.new(2026, 1, 1),
-                       crz_filed_at: Time.current, state: "published")
+                       crz_filed_at: 3.days.ago, state: "published")
       create_contract!(reference: "ZP-DL-202", signed_on: Date.new(2026, 1, 1), source: "crz",
                        source_id: "900000001", state: "published")
       create_contract!(reference: "ZP-DL-203", signed_on: Date.new(2026, 1, 1), state: "archived")

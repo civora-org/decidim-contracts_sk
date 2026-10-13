@@ -145,6 +145,39 @@ module Decidim
           crz_filed_at.nil?
       end
 
+      # The effectiveness of a contract that must be published in the CRZ
+      # (civora-org/civora-platform#202, § 47a ods. 1 and 2 OZ), DERIVED and
+      # never stored. +contract+ answers #source, #state, #crz_filed_at,
+      # #crz_published_on and #agreed_effective_on:
+      #
+      # * :not_applicable - a CRZ mirror (already published by definition)
+      #   or a terminal-state record: nothing to say;
+      # * :not_effective  - "zatiaľ neúčinná": the filing in the CRZ is not
+      #   confirmed (crz_filed_at NULL), or it is but the effective date
+      #   (see effective_on) has not arrived yet;
+      # * :effective      - confirmed in the CRZ and the effective date has
+      #   come.
+      #
+      # An aid for the editors, not legal advice.
+      def effectiveness(contract, today:)
+        return :not_applicable if contract.source.to_s == mirror_source
+        return :not_applicable unless Decidim::ContractsSk::ContractLifecycle::DEADLINE_TRACKED_STATES
+                                      .include?(contract.state&.to_sym)
+        return :not_effective if contract.crz_filed_at.nil?
+
+        effective_on(contract) <= today ? :effective : :not_effective
+      end
+
+      # The day a CONFIRMED-filed contract takes effect: the day after its
+      # CRZ publication (crz_published_on, else the filing day), or the
+      # agreed later date when that is later. nil when not confirmed filed.
+      def effective_on(contract)
+        return nil if contract.crz_filed_at.nil?
+
+        by_law = (contract.crz_published_on || contract.crz_filed_at.to_date) + 1
+        [by_law, contract.agreed_effective_on].compact.max
+      end
+
       # The provenance value of CRZ mirror rows (single source: the import
       # mapper's constant).
       def mirror_source

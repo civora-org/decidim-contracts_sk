@@ -47,12 +47,10 @@ module Decidim
         # organization, author and the system-stamped published_at are
         # untouchable through this command.
         def update_attributes
-          {
-            title: form.title, reference: form.reference,
-            subject_matter: form.subject_matter, amount: form.amount,
-            currency: form.currency, signed_on: form.signed_on,
-            effective_from: form.effective_from, crz_url: form.crz_url
-          }
+          form.attributes.symbolize_keys.slice(
+            :title, :reference, :subject_matter, :amount, :currency, :signed_on,
+            :effective_from, :crz_url, :agreed_effective_on
+          )
         end
       end
     end

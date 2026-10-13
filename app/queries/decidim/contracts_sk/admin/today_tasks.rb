@@ -105,7 +105,7 @@ module Decidim
         # forward, most overdue first. Memoized: urgent_total reuses it.
         def urgent_candidates
           @urgent_candidates ||= begin
-            records = @scope.crz_overdue(@today).or(@scope.crz_due_soon(@today))
+            records = @scope.crz_attention(@today)
                             .order(signed_on: :asc, id: :asc).limit(URGENT_FETCH_LIMIT).to_a
             records.filter_map do |contract|
               action = urgent_action(contract)

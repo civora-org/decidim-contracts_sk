@@ -140,6 +140,7 @@
             <th scope="col"><%= t("decidim.contracts_sk.contract.reference_number") %></th>
             <th scope="col"><%= t("decidim.contracts_sk.contract.status") %></th>
             <th scope="col"><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></th>
+            <th scope="col"><%= t("decidim.contracts_sk.admin.contracts.effectiveness.heading") %></th>
             <%= actions_column_header %>
           </tr>
         </thead>
@@ -151,6 +152,7 @@
               <td data-label="<%= t("decidim.contracts_sk.contract.status") %>"><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
               <%# CRZ deadline badge (civora-org/civora-platform#124): empty for filed, mirror and terminal rows. %>
               <td data-label="<%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %>"><%= crz_deadline_badge(contract, today: index_today) %></td>
+              <td data-label="<%= t("decidim.contracts_sk.admin.contracts.effectiveness.heading") %>"><%= crz_effectiveness_badge(contract, today: index_today) %></td>
               <td class="table-list__actions">
                 <%# ONE visible action per row: open the contract page, where the
                     next step lives. A GET button_to, not a link: see the CRZ

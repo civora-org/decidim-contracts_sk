@@ -56,12 +56,19 @@
       <% if deadline_line %>
         <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></dt><dd><%= deadline_line %></dd></div>
       <% end %>
+      <% effectiveness_line = crz_effectiveness_line(@contract) %>
+      <% if effectiveness_line %>
+        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.admin.contracts.effectiveness.heading") %></dt><dd><%= crz_effectiveness_badge(@contract) %> <%= effectiveness_line %></dd></div>
+      <% end %>
       <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.amount") %></dt>
         <dd><%= @contract.amount.present? ? format_amount(@contract.amount, @contract.currency) : t("#{scope}.missing") %></dd></div>
       <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
         <dd><%= @contract.signed_on.present? ? format_date(@contract.signed_on) : t("#{scope}.missing") %></dd></div>
       <% if @contract.effective_from.present? %>
         <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.effective_from") %></dt><dd><%= format_date(@contract.effective_from) %></dd></div>
+      <% end %>
+      <% if @contract.agreed_effective_on.present? %>
+        <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.admin.contracts.effectiveness.agreed") %></dt><dd><%= format_date(@contract.agreed_effective_on) %></dd></div>
       <% end %>
       <% if @contract.subject_matter.present? %>
         <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.contract.subject_matter") %></dt><dd><%= @contract.subject_matter %></dd></div>

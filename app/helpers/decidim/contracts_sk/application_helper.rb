@@ -196,6 +196,33 @@ module Decidim
         crz_deadline_wording(contract, status, today)
       end
 
+      # The admin index's "Účinnosť" cell (civora-org/civora-platform#202):
+      # a warning label "Zatiaľ neúčinná" while the contract is not yet
+      # effective, a plain "Účinná" once it is, nothing for CRZ mirrors and
+      # terminal records. Derived by Contract#crz_effectiveness.
+      def crz_effectiveness_badge(contract, today: Date.current)
+        case contract.crz_effectiveness(today: today)
+        when :not_effective then tag.span(effectiveness_t("badge.not_effective"), class: "label warning")
+        when :effective then tag.span(effectiveness_t("badge.effective"), class: "label")
+        end
+      end
+
+      # The contract page's effectiveness sentence; nil when not applicable.
+      # Names the reason (not confirmed in the CRZ vs. an agreed later date)
+      # and the date it takes effect.
+      def crz_effectiveness_line(contract, today: Date.current)
+        case contract.crz_effectiveness(today: today)
+        when :effective then effectiveness_t("line.effective", date: format_date(contract.crz_effective_on))
+        when :not_effective
+          if contract.crz_filed_at.nil?
+            effectiveness_t("line.not_filed")
+          else
+            key = contract.agreed_effective_on == contract.crz_effective_on ? "agreed_date" : "day_after_publication"
+            effectiveness_t("line.#{key}", date: format_date(contract.crz_effective_on))
+          end
+        end
+      end
+
       # Accessible name of a per-row admin control ("Poznámky: <title>"): the
       # visible label stays first (WCAG 2.5.3), the record follows, so a
       # screen-reader user tabbing a table of identical "Edit" or "Notes"
@@ -233,6 +260,10 @@ module Decidim
         return crz_t("badge.today") if count.zero?
 
         I18n.t("decidim.contracts_sk.admin.contracts.deadline.days", count: count)
+      end
+
+      def effectiveness_t(key, **options)
+        I18n.t("decidim.contracts_sk.admin.contracts.effectiveness.#{key}", **options)
       end
 
       def crz_t(key, **options)
