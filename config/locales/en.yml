@@ -520,16 +520,16 @@ en:
           title: "What needs doing today"
           lead: "Today is %{date}. Below is only what you can do yourself."
           more_urgent:
-            one: "and %{count} more contract with a deadline coming up"
-            few: "and %{count} more contracts with a deadline coming up"
-            other: "and %{count} more contracts with a deadline coming up"
+            one: "and %{count} more contract with a CRZ deadline"
+            few: "and %{count} more contracts with a CRZ deadline"
+            other: "and %{count} more contracts with a CRZ deadline"
           empty:
             title: "All done"
             body: "Nothing is waiting for you today. Thank you, take a breath."
           groups:
             urgent:
-              title: "CRZ deadline is near"
-              hint: "Contracts that should go into the Central Register of Contracts (CRZ) as soon as possible."
+              title: "CRZ deadlines"
+              hint: "Contracts whose deadline for filing in the Central Register of Contracts (CRZ) has passed or is near. Overdue ones first."
             waiting:
               title: "Waiting for you"
               hint: "Steps only you can take."
