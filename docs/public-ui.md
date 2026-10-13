@@ -103,9 +103,23 @@ Rules that hold across both pages:
 
 `admin/audit_events/index` stays on Decidim admin's own classes. `table-list--selectable` is the admin modifier that left-aligns the second column (the record titles); plain `table-list` centres every column after the first. Rows show date **and** time (`format_datetime`, application time zone), and an empty decision reason renders as a muted `—`.
 
-## Admin overview
+## Admin home: "Čo treba dnes urobiť" (civora-org/civora-platform#126, reworked)
 
-`admin/dashboard/show` (civora-org/civora-platform#126) is built from Decidim admin's own classes only: `card` / `card-section`, `item_show__header`, `table-list table-list--selectable`, `label warning` (redaction not confirmed) and `button button__sm button__secondary` links. Every block is one `card-section` with a heading, a one-line hint, either the table or its own empty state, and a "Show all (N)" link; the audit block reuses the audit trail's table partial (`admin/audit_events/_table`). No engine-only Tailwind utilities, per the build-time rule above.
+`admin/dashboard/show` is a short, prioritised list of ACTIONS for the signed-in person only, not a set of tables. `Admin::TodayTasks` (`app/queries`) builds the list; it asks the permission layer for every task (four-eyes, editor-only filing and publishing, reviewer-only judgment all follow), so a role without a next step sees nothing for it. Three groups, each task one sentence and ONE button (`a.button.cs-today__button`, accessible name starts with the visible verb):
+
+| Group | Tasks | Button |
+|---|---|---|
+| Lehota CRZ sa blíži (urgent) | one per overdue / due-soon record (at most five, then "and N more" linking to `?deadline=unfiled`); the action is that record's own next step for this person | Pripraviť podklad pre CRZ (draft/returned, editor), Skontrolovať (in review, not the submitter), Zverejniť (approved, editor), Potvrdiť vklad (published, editor) |
+| Čaká na vás | records to review, returned drafts, approved records to publish (with how many lack the redaction confirmation), published records whose CRZ filing is not confirmed | Skontrolovať, Upraviť, Zverejniť, Potvrdiť vklad |
+| Dá sa doplniť | drafts without an amount / without a signing date | Doplniť |
+
+A many-record task links to the contracts index narrowed to exactly what it counted (`?state=in_review&submitter=others`, `?state=returned&submitter=me`, `?state=approved`, `?state=published&deadline=unfiled`, `?missing=amount|signed_on`); a one-record task links to the record (contract page, edit page or CRZ filing page). Nothing waiting: "Všetko je hotové". The state counts and the last audit events are collapsed `<details>` below.
+
+The **contract page** (`admin/contracts/show`, read-only, any engine role) is the one place a record is seen whole: the five-step indicator (`contracts/_progress`, `ContractProgress`: Koncept, Kontrola, Schválené, Zverejnené, Vložené do CRZ; current step `aria-current="step"`, a tick or number and a screen-reader word per step, never colour alone; a returned draft is flagged on step 1, a rejected one stops at step 2; CRZ mirrors show none), a "your turn" label and one sentence on what comes next and who does it, the next-step controls (`contracts/_next_step`, shared with the edit page: lifecycle buttons the person may fire, reason forms for return/reject, the CRZ filing link, the handoff download), the redaction confirmation with its explanation, the facts, and a collapsed "Poznámky, história zmien a ďalšie" block (notes, change history, parties, amendments). The edit page carries the same indicator and next-step block at the top, with notes and project links collapsed.
+
+The **contracts list** keeps the search visible and collapses the rest: one `<details>` for the other filters and the CRZ deadline chips (open when one is in use), one for templates and the two imports. Each row shows the title (a link to the contract page), number, state, deadline badge and ONE button, "Otvoriť"; the old per-row controls sit in a collapsed "Ďalšie akcie" block. Under 640px the table is stacked into one block per contract (`.cs-rows`, labels from `data-label`).
+
+Language rules for admin copy: say what the person does ("Skontrolovať", "Potvrdiť vklad do CRZ"), not what the system does; no ADR numbers, rake tasks or file paths in the UI; "kontrola" for the second-person check (four-eyes is explained as "zmluvu vždy kontrolujú dvaja ľudia"); "História zmien" for the audit trail.
 
 ### Admin layout classes
 
@@ -115,6 +129,7 @@ The admin pages (overview, contracts index, audit trail) lay out their button ro
 - `.cs-admin-chips` — wrapping chip/filter button rows with a gap;
 - `.cs-admin-more` — space above a "show all" button;
 - `.cs-admin-hint` — small top margin for a hint line under a button row.
+- `.cs-today*`, `.cs-steps*`, `.cs-show*`, `.cs-row-more`, `.cs-rows` — the admin home, the step indicator, the contract page and the collapsed list controls (see above). `summary` markers are drawn by the engine (`.cs-today__details`), because the bundle's reset leaves them inconsistent.
 
 Per-screen admin classes added in the 2026-10-06 arc (all in `shared/_admin_styles`): `.cs-admin-note*` (internal notes thread and form, #128), `.cs-admin-rules` (readable bulleted rules), `.cs-admin-import*` (import preview table, #129), `.cs-admin-search`, `.cs-admin-role-actions`, `.cs-admin-roles` (role screens, #112), `.cs-admin-templates`, `.cs-admin-template-*`, `.cs-admin-choice--idle` (templates, #127), `.cs-admin-sr-only`. The left-aligned-table rules repeat per screen; folding them into one `.cs-admin-table` is a known cleanup.
 

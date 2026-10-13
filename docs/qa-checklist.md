@@ -48,15 +48,21 @@ ideally in both `en` and `sk` where noted.
 - [ ] 375px wide: no horizontal scroll; the facts stack in one column; en and sk both render.
 - [ ] Privacy: the page shows only names and IČOs the register already publishes; for a sole trader (SZČO) confirm the organization accepts the page before linking to it widely.
 
-## Admin overview (#126)
+## Admin home: "What needs doing today" (#126)
 
-- [ ] `/admin` is the sidebar entry's target; the entry stays highlighted on every engine admin page; "Overview" links on the contracts index and the audit trail lead back.
-- [ ] Role matrix: editor-only sees returned / approved / deadlines / counts / recent activity but no review queue; reviewer-only sees the review queue (own submissions excluded, no-stamp records included), deadlines, counts, recent activity but no returned/approved; both roles see every block; a roleless user gets the permission alert, an anonymous visitor the sign-in redirect.
-- [ ] Each rendered block: localized title and hint (en + sk, proper diacritics), at most 10 rows, a "Show all (N)" link whose index shows exactly N rows (`?state=in_review&submitter=others`, `?state=returned&submitter=me`, `?state=approved`, `?deadline=overdue|due_soon`), and its own empty state.
-- [ ] Approved rows without a redaction confirmation carry the "Redaction not confirmed" warning label; deadline rows carry the deadline badge.
-- [ ] State counts list every lifecycle state in lifecycle order (zeros included), each linking to its state filter; "All" links to the bare index.
-- [ ] Recent activity shows the last 10 audit events of this organization only, same labels as the audit trail; another organization's records never appear.
-- [ ] One `h1`; `h2` per block; no horizontal scroll at 375px.
+- [ ] `/admin` is the sidebar entry's target; the entry stays highlighted on every engine admin page; "What needs doing today" links on the contracts index and the audit trail lead back.
+- [ ] Role matrix: reviewer-only sees the review task (own submissions excluded, no-stamp records included) and urgent records it can judge, no returned / publish / filing / data tasks; editor-only sees returned drafts, publish, filing and data tasks but no review task; both see everything; nobody-with-a-task sees "All done"; a roleless user gets the permission alert, an anonymous visitor the sign-in redirect.
+- [ ] Every task is one sentence (en + sk, proper diacritics, correct Slovak plural) and exactly ONE button; a one-record task goes straight to the record, a many-record task to the list with exactly the counted rows (`?state=in_review&submitter=others`, `?state=returned&submitter=me`, `?state=approved`, `?state=published&deadline=unfiled`, `?missing=amount|signed_on`).
+- [ ] CRZ deadline tasks: at most five, most overdue first, each with its own next step (prepare handoff / review / publish / confirm filing) and the deadline badge; "and N more" links to `?deadline=unfiled`; mirrors, filed and terminal records never appear.
+- [ ] State counts and recent changes are collapsed; recent changes show the last 10 audit events of this organization only.
+- [ ] One `h1`; one `h2` per group; no horizontal scroll at 375px.
+
+## Contract page and step indicator
+
+- [ ] `/admin/contracts/:id` opens for every engine role; the indicator shows Koncept, Kontrola, Schválené, Zverejnené, Vložené do CRZ with the current step marked (tick / number plus a screen-reader word, not colour alone); returned drafts are flagged, rejected records stop at Kontrola, CRZ mirrors show no indicator.
+- [ ] "Na rade ste vy" appears only when the person has a step; the submitter never gets approve / return / reject (four-eyes).
+- [ ] The redaction confirmation explains why it is needed; publishing without it is refused with a plain message.
+- [ ] The list shows one "Otvoriť" button per row; other controls are under "Ďalšie akcie"; at 375px each contract is one block.
 
 ## Admin contracts (new / edit / index / transitions)
 

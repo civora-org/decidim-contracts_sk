@@ -252,35 +252,22 @@ end
 - **Non-goals.** No per-record ownership, no role hierarchy, no invitations:
   the user must already have a confirmed account.
 
-## Admin overview: block visibility (#126)
+## Admin home: task visibility (#126)
 
-The admin overview (`/admin`) is gated by the contracts index's own
-permission (`:read :contract` — any engine role; a roleless user is redirected
-with the permission alert). It adds **no role logic**: each role-specific
-block asks the permission layer whether the user may perform the event the
-block is about, with a bare-state context, so the page can never drift from
-the permission table above.
+The admin home (`/admin`, "What needs doing today") is gated by the contracts index's own permission (`:read :contract`, any engine role; a roleless user is redirected with the permission alert). It adds **no role logic**: `Admin::TodayTasks` asks the permission layer whether the user may perform the action each task is about, so the page can never drift from the permission table above.
 
-| Block | Shown when (`allowed_to?`) | Editor only | Reviewer only | Both |
+| Task | Shown when (`allowed_to?`) | Editor only | Reviewer only | Both |
 |---|---|---|---|---|
-| Waiting for my review | `:approve :contract, state: :in_review` | hidden | shown | shown |
-| Returned to me | `:submit :contract, state: :returned` | shown | hidden | shown |
+| Records to review | `:approve :contract, state: :in_review` | hidden | shown | shown |
+| Returned drafts | `:submit :contract, state: :returned` | shown | hidden | shown |
 | Approved, ready to publish | `:publish :contract, state: :approved` | shown | hidden | shown |
-| CRZ deadline overdue / due within 14 days | any engine role (`:read :contract`) | shown | shown | shown |
-| Counts per state | any engine role | shown | shown | shown |
-| Recent activity (last 10 audit events) | `:read :audit_event` | shown | shown | shown |
+| Filing to confirm | `:create :contract` (editor), published unfiled editorial records | shown | hidden | shown |
+| Missing amount / signing date | `:update :contract, state: :draft` (editable states only) | shown | hidden | shown |
+| CRZ deadline, per record | the record's own next step: `:update` (draft, returned), `:approve` (in review), `:publish` (approved), `:confirm_crz_filing` (published), each with the record in context | per state | per state | per state |
 
-The review queue is the set twin of the four-eyes predicate: it lists
-`in_review` records for which `self_review_blocked?(record, user, :approve)`
-is false — the user's own submissions are excluded (records with no submitter
-stamp are included), unless `allow_self_review` is on. Everything is scoped to
-the current organization. The contracts index gained the matching
-`submitter=me|others` filter so every list's "Show all (N)" link lands on the
-same set.
+The review task is the set twin of the four-eyes predicate: it counts `in_review` records for which `self_review_blocked?(record, user, :approve)` is false: the user's own submissions are excluded (records with no submitter stamp are included), unless `allow_self_review` is on. The returned task is the person's own submissions only. Everything is scoped to the current organization. The contracts index gained the matching `submitter=me|others`, `deadline=unfiled` and `missing=amount|signed_on` filters so every many-record task lands on exactly the set it counted.
 
-Cost note: the dashboard calls `allowed_to?(:update, …)` once per listed row
-(to pick the title link), so a host `role_resolver` that hits the database
-costs one query per row (at most 10 per list).
+Cost note: the urgent group loads at most 200 tracked records and checks the permission per record on the loaded row, so a host `role_resolver` that hits the database costs one query per checked record.
 
 ## Four-eyes rule (per-person segregation, #123)
 
