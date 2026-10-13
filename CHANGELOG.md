@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [1.9.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.8.1...v1.9.0) (2026-10-13)
+
+
+### Features
+
+* **public:** CC BY 4.0 attribution for mirrored CRZ data (civora-platform[#198](https://github.com/civora-org/decidim-contracts_sk/issues/198)) ([2771944](https://github.com/civora-org/decidim-contracts_sk/commit/2771944e65f84200b3d43d86d767370b695d16a2))
+* **public:** CC BY 4.0 attribution where CRZ mirrors are shown (civora-org/civora-platform[#198](https://github.com/civora-org/decidim-contracts_sk/issues/198)) ([debf228](https://github.com/civora-org/decidim-contracts_sk/commit/debf22895859089111439d4a15eac001c03e2e2b))
+
+
+### Bug Fixes
+
+* **admin:** name the CRZ deadline group for overdue and upcoming deadlines ([1a8c21f](https://github.com/civora-org/decidim-contracts_sk/commit/1a8c21f62030a5bec4520c3912334e53ac795ae7))
+
 ## [1.8.1](https://github.com/civora-org/decidim-contracts_sk/compare/v1.8.0...v1.8.1) (2026-10-11)
 
 
