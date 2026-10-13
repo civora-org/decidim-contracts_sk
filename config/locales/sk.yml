@@ -27,8 +27,8 @@ sk:
           other: "Iný dokument"
       contract_states:
         draft: "Koncept"
-        in_review: "V recenzii"
-        returned: "Vrátená na doplnenie"
+        in_review: "Na kontrole"
+        returned: "Vrátená na úpravu"
         approved: "Schválená"
         rejected: "Zamietnutá"
         published: "Zverejnená"
@@ -329,32 +329,40 @@ sk:
           index:
             title: "Zmluvy"
             empty: "Zatiaľ nebola vytvorená žiadna zmluva."
+            tools: "Ďalšie nástroje (šablóny, importy)"
+            open: "Otvoriť"
+            more_actions: "Ďalšie akcie"
             counters:
               all: "Všetky"
-              crz_due_soon: "CRZ do %{days} dní"
-              crz_overdue: "CRZ po termíne"
+              crz_due_soon: "Lehota CRZ do %{days} dní"
+              crz_overdue: "Lehota CRZ uplynula"
             filters:
               state: "Stav"
               source: "Zdroj"
               q: "Hľadať"
               submit: "Filtrovať"
               clear: "Zrušiť filtre"
+              more: "Ďalšie filtre a lehoty CRZ"
+              missing:
+                amount: "Zobrazené sú koncepty bez sumy."
+                signed_on: "Zobrazené sú koncepty bez dátumu podpisu."
               states:
                 any: "Ľubovolný stav"
               sources:
                 all: "Všetky zdroje"
                 crz: "Import z CRZ"
-                editorial: "Redakčná"
+                editorial: "Vlastné zmluvy"
               submitter: "Odosielateľ"
               submitters:
                 any: "Ľubovoľný odosielateľ"
                 me: "Odoslané mnou"
                 others: "Odoslané inými"
-              deadline: "Lehota CRZ (nepotvrdené ako zverejnené)"
+              deadline: "Lehota CRZ (zmluvy zatiaľ nevložené do CRZ)"
               deadlines:
                 any: "Ľubovoľná lehota"
                 due_soon: "Do %{days} dní"
-                overdue: "Po termíne"
+                overdue: "Uplynula"
+                unfiled: "Zatiaľ nevložené do CRZ"
             headers:
               crz_deadline: "Lehota CRZ"
             no_matches:
@@ -362,7 +370,7 @@ sk:
               body: "Upravte alebo zrušte filtre a skúste to znova."
               clear: "Zrušiť filtre a zobraziť všetky zmluvy"
           deadline:
-            hint: "Zobrazuje sa, kým zmluva nie je potvrdená ako zverejnená v CRZ (použite akciu Zaznamenať zverejnenie v CRZ, keď už je). Pomôcka podľa dátumu podpisu, nie právne poradenstvo."
+            hint: "Zobrazuje sa, kým zmluva nie je potvrdená ako vložená do CRZ (použite „Potvrdiť vklad do CRZ“, keď už je). Ide o pomôcku podľa dátumu podpisu, nie o právne poradenstvo."
             badge:
               overdue: "Po termíne"
               today: "Dnes"
@@ -395,7 +403,7 @@ sk:
               amounts: "sumy spájajúce zmluvu s identifikovateľnými osobami"
               document_content: "citlivý obsah v pripojených dokumentoch"
             confirmed_on: "Skrytie údajov bolo potvrdené dňa %{confirmed_at}."
-            description: "Pred zverejnením tejto zmluvy potvrďte, že zo záznamu a pripojených dokumentov boli skryté osobné údaje (ADR-007):"
+            description: "Zverejnená zmluva je verejná, preto pred zverejnením skontrolujte, že v zmluve a v jej prílohách sú skryté osobné údaje:"
             invalid: "Potvrdenie skrytia údajov sa nepodarilo zaznamenať."
             submit: "Potvrdiť skrytie údajov"
             success: "Potvrdenie skrytia údajov bolo zaznamenané."
@@ -404,27 +412,27 @@ sk:
             success: "Zmluva bola úspešne upravená."
             error: "Zmluvu sa nepodarilo upraviť."
           review_decision:
-            heading: "Rozhodnutie recenzenta"
+            heading: "Pripomienka kontrolóra"
             decided_on: "Rozhodnuté dňa %{reviewed_at}."
           transition:
             submit: "Odoslať na kontrolu"
-            return: "Vrátiť na doplnenie"
+            return: "Vrátiť na úpravu"
             approve: "Schváliť"
             reject: "Zamietnuť"
-            publish: "Zverejniť"
+            publish: "Zverejniť v katalógu"
             archive: "Archivovať"
             success: "Prechod stavu zmluvy bol úspešne vykonaný."
             invalid: "Prechod stavu zmluvy sa nepodarilo vykonať."
-            redaction_required: "Zverejnenie najprv vyžaduje potvrdenie skrytia osobných údajov — potvrďte ho na stránke úprav zmluvy."
+            redaction_required: "Pred zverejnením treba potvrdiť skrytie osobných údajov. Urobíte to na stránke zmluvy."
             review_reason_required: "Pre vrátenie alebo zamietnutie zmluvy je potrebný dôvod."
             review_reason_rejected: "Odoslaný dôvod nebol prijatý — pri vrátení alebo zamietnutí je povinný (najviac 1000 znakov) a pri iných prechodoch nie je dovolený."
-            self_review: "Túto zmluvu ste odoslali na posúdenie vy, preto ju musí vrátiť, schváliť alebo zamietnuť iný posudzovateľ (pravidlo štyroch očí)."
+            self_review: "Túto zmluvu ste odoslali vy, preto ju musí skontrolovať iná osoba: vrátiť ju, schváliť alebo zamietnuť (zmluvu vždy kontrolujú dvaja ľudia)."
             review_reason:
               label: "Dôvod rozhodnutia"
               placeholder: "Uveďte dôvod tohto rozhodnutia (povinný, najviac 1000 znakov)."
             confirm:
-              submit: "Odoslať túto zmluvu do recenzie?"
-              return: "Vrátiť túto zmluvu na doplnenie?"
+              submit: "Odoslať túto zmluvu na kontrolu?"
+              return: "Vrátiť túto zmluvu na úpravu?"
               approve: "Schváliť túto zmluvu?"
               reject: "Zamietnuť túto zmluvu? Toto rozhodnutie je záväzné."
               publish: "Zverejniť túto zmluvu? Zmluva bude verejne dostupná."
@@ -432,16 +440,19 @@ sk:
           form:
             title: "Názov"
             reference: "Číslo zmluvy"
+            reference_hint: "Číslo, pod ktorým zmluvu evidujete. V rámci obce musí byť jedinečné."
             subject_matter: "Predmet zmluvy"
             amount: "Hodnota"
             amount_hint: "Použite bodku ako oddeľovač desatinných miest (napr. 1250.50) — desatinná čiarka nie je prijateľná."
             currency: "Mena"
             signed_on: "Dátum podpisu"
+            signed_on_hint: "Podľa tohto dátumu sa počíta lehota na vloženie zmluvy do CRZ."
             effective_from: "Dátum účinnosti"
             crz_url: "Odkaz na CRZ"
+            crz_url_hint: "Nepovinné. Vyplňte, ak už zmluvu v CRZ máte."
           crz_filing:
-            link: "Zaznamenať zverejnenie v CRZ"
-            title: "Zaznamenať zverejnenie v CRZ"
+            link: "Potvrdiť vklad do CRZ"
+            title: "Potvrdiť vklad do CRZ"
             description: "Potvrďte, že táto zmluva bola zverejnená v Centrálnom registri zmlúv (CRZ). Zadajte ID z CRZ; systém si úradný záznam len na čítanie stiahne a porovná ho s týmto záznamom. Záznam zostane redakčným záznamom — stane sa prepojeným záznamom daného ID z CRZ."
             crz_id_label: "ID zmluvy v CRZ"
             lookup: "Porovnať s CRZ"
@@ -491,7 +502,7 @@ sk:
             label: "ID zmluvy v CRZ"
             submit: "Importovať zmluvu"
             submitting: "Importujem… zdroj obmedzuje frekvenciu; môže to trvať až minútu."
-            hint: "Import sa sťahuje naživo z otvoreného API verejného registra a môže trvať až minútu. Pre hromadnú synchronizáciu použite plánovanú rake úlohu (docs/crz-import.md) — tá nie je viazaná na časový limit požiadavku."
+            hint: "Import sa sťahuje naživo z otvoreného API verejného registra a môže trvať až minútu. Pre hromadnú synchronizáciu požiadajte správcu systému."
             blank_id: "Zadajte číselné ID zmluvy z CRZ."
             created: "Zmluva %{source_id} bola importovaná a zverejnená."
             updated: "Zmluva %{source_id} bola aktualizovaná podľa údajov z CRZ."
@@ -505,51 +516,132 @@ sk:
             quarantined: "Zmluvu %{source_id} sa nepodarilo načítať zo zdroja; bola preskočená."
             out_of_scope: "Zmluva %{source_id} sa netýka tejto organizácie (jej IČO nie je ani pri jednej zmluvnej strane); neimportovala sa."
             not_configured: "Import z CRZ nie je pre túto organizáciu nastavený (chýba IČO). Nič sa neimportovalo."
-        dashboard:
-          title: "Prehľad"
-          overview_link: "Prehľad"
-          all_contracts: "Všetky zmluvy"
-          audit_trail: "Auditná stopa"
-          show_all: "Zobraziť všetky (%{count})"
-          unknown_submitter: "Neznámy používateľ"
-          redaction_missing: "Skrytie údajov nepotvrdené"
-          columns:
-            submitter: "Odosielateľ"
-            updated: "Posledná zmena"
-            reviewed: "Vrátené dňa"
-            reason: "Dôvod recenzenta"
-            redaction: "Skrytie údajov"
-            state: "Stav"
-            deadline: "Lehota CRZ"
-          blocks:
-            review_queue:
-              title: "Čakajú na moje posúdenie"
-              hint: "Zmluvy v recenzii, ktoré môžete vrátiť, schváliť alebo zamietnuť — najstaršie prvé. Vaše vlastné odoslané zmluvy sa nezobrazujú (pravidlo štyroch očí)."
-              hint_self_review: "Zmluvy v recenzii, ktoré môžete vrátiť, schváliť alebo zamietnuť — najstaršie prvé. Vlastné posudzovanie je povolené, preto sa zobrazujú aj vaše vlastné odoslané zmluvy."
-              empty: "Na vaše posúdenie nič nečaká."
+        today:
+          title: "Čo treba dnes urobiť"
+          lead: "Dnes je %{date}. Nižšie je len to, čo môžete urobiť vy."
+          more_urgent:
+            one: "a ďalšia %{count} zmluva s blížiacou sa lehotou"
+            few: "a ďalšie %{count} zmluvy s blížiacou sa lehotou"
+            other: "a ďalších %{count} zmlúv s blížiacou sa lehotou"
+          empty:
+            title: "Všetko je hotové"
+            body: "Nič na vás dnes nečaká. Ďakujeme, môžete si vydýchnuť."
+          groups:
+            urgent:
+              title: "Lehota CRZ sa blíži"
+              hint: "Zmluvy, ktoré treba čo najskôr vložiť do Centrálneho registra zmlúv (CRZ)."
+            waiting:
+              title: "Čaká na vás"
+              hint: "Kroky, ktoré môžete urobiť práve vy."
+            tidy:
+              title: "Dá sa doplniť"
+              hint: "Chýbajúce údaje, bez ktorých sa zmluva ťažšie spracuje."
+          actions:
+            review: "Skontrolovať"
+            edit_returned: "Upraviť"
+            publish: "Zverejniť"
+            confirm_filing: "Potvrdiť vklad"
+            prepare_crz: "Pripraviť podklad pre CRZ"
+            fill_in: "Doplniť"
+          urgent_hints:
+            prepare_crz: "Dokončite zmluvu a pripravte podklad, ktorý z nej vložíte do CRZ."
+            review: "Čaká na kontrolu. Skontrolujte ju čo najskôr."
+            publish: "Je schválená. Zverejnite ju."
+            confirm_filing: "Je zverejnená. Vložte ju do CRZ a potvrďte vklad."
+          tasks:
+            crz_overdue:
+              sentence: "Lehota CRZ uplynula: zmluva „%{title}“ je po termíne (%{days})."
+            crz_due_soon:
+              sentence: "Lehota CRZ: zmluva „%{title}“ musí byť zverejnená do %{left}."
+            crz_today:
+              sentence: "Lehota CRZ: zmluva „%{title}“ musí byť zverejnená ešte dnes."
+            review:
+              sentence:
+                one: "%{count} zmluva čaká na vašu kontrolu"
+                few: "%{count} zmluvy čakajú na vašu kontrolu"
+                other: "%{count} zmlúv čaká na vašu kontrolu"
+              hint: "Prečítajte si zmluvu a rozhodnite: schváliť, vrátiť na úpravu alebo zamietnuť."
             returned:
-              title: "Vrátené mne na úpravu"
-              hint: "Zmluvy, ktoré ste odoslali a recenzent ich vrátil na doplnenie — naposledy vrátené prvé."
-              empty: "Žiadna z vašich odoslaných zmlúv nebola vrátená."
-            approved:
-              title: "Schválené, pripravené na zverejnenie"
-              hint: "Schválené zmluvy čakajúce na zverejnenie — najdlhšie čakajúce prvé. Zverejnenie vyžaduje potvrdenie skrytia osobných údajov."
-              empty: "Na zverejnenie nečakajú žiadne schválené zmluvy."
-            overdue:
-              title: "Lehota CRZ po termíne"
-              hint: "Zmluvy nepotvrdené ako zverejnené v CRZ, ktorým lehota uplynula — najskôr podpísané prvé."
-              empty: "Žiadna lehota CRZ nie je po termíne."
-            due_soon:
-              title: "Lehota CRZ do %{days} dní"
-              hint: "Zmluvy nepotvrdené ako zverejnené v CRZ, ktorým lehota uplynie do %{days} dní — pomôcka, nie právna rada."
-              empty: "Žiadna lehota CRZ sa nekončí v najbližšom čase."
+              sentence:
+                one: "%{count} koncept vám vrátili s pripomienkou"
+                few: "%{count} koncepty vám vrátili s pripomienkou"
+                other: "%{count} konceptov vám vrátili s pripomienkou"
+              hint: "Prečítajte si pripomienku, zmluvu opravte a odošlite ju na kontrolu znova."
+            publish:
+              sentence:
+                one: "%{count} schválená zmluva čaká na zverejnenie"
+                few: "%{count} schválené zmluvy čakajú na zverejnenie"
+                other: "%{count} schválených zmlúv čaká na zverejnenie"
+              hint: "Pred zverejnením treba potvrdiť, že sú v zmluve skryté osobné údaje."
+              unconfirmed:
+                one: "%{count} ešte nemá potvrdené skrytie osobných údajov."
+                few: "%{count} ešte nemajú potvrdené skrytie osobných údajov."
+                other: "%{count} ešte nemá potvrdené skrytie osobných údajov."
+            confirm_filing:
+              sentence:
+                one: "%{count} zverejnená zmluva čaká na potvrdenie vkladu do CRZ"
+                few: "%{count} zverejnené zmluvy čakajú na potvrdenie vkladu do CRZ"
+                other: "%{count} zverejnených zmlúv čaká na potvrdenie vkladu do CRZ"
+              hint: "Vložte zmluvu do CRZ a potom tu potvrďte jej číslo z CRZ."
+            missing_amount:
+              sentence:
+                one: "%{count} koncept nemá uvedenú sumu"
+                few: "%{count} koncepty nemajú uvedenú sumu"
+                other: "%{count} konceptov nemá uvedenú sumu"
+              hint: "Suma sa zobrazuje v zozname zmlúv a v štatistikách."
+            missing_signed_on:
+              sentence:
+                one: "%{count} koncept nemá dátum podpisu"
+                few: "%{count} koncepty nemajú dátum podpisu"
+                other: "%{count} konceptov nemá dátum podpisu"
+              hint: "Bez dátumu podpisu sa nedá sledovať lehota na vloženie do CRZ."
+        progress:
+          title: "Priebeh zmluvy"
+          steps:
+            draft: "Koncept"
+            review: "Kontrola"
+            approved: "Schválené"
+            published: "Zverejnené"
+            filed: "Vložené do CRZ"
+            rejected: "Zamietnuté"
+          status:
+            done: "hotové"
+            current: "aktuálny krok"
+            upcoming: "ešte nenastalo"
+            stopped: "zastavené"
+          returned_flag: "vrátené na úpravu"
+          turn:
+            you: "Na rade ste vy"
+          next:
+            draft: "Ďalší krok: zmluvu dokončí a na kontrolu odošle ten, kto ju pripravuje."
+            returned: "Ďalší krok: ten, kto zmluvu pripravuje, zapracuje pripomienku a odošle ju na kontrolu znova."
+            in_review: "Ďalší krok: zmluvu skontroluje iná osoba než tá, ktorá ju odoslala (zmluvu vždy kontrolujú dvaja ľudia)."
+            approved: "Ďalší krok: potvrdiť, že sú v zmluve skryté osobné údaje, a zmluvu zverejniť v katalógu."
+            published: "Ďalší krok: vložiť zmluvu do CRZ a potvrdiť vklad."
+            filed: "Hotovo: zmluva je zverejnená v katalógu aj vložená do CRZ."
+            archived: "Zmluva je archivovaná. Nič ďalšie sa nevyžaduje."
+            rejected: "Zmluva bola zamietnutá. Nič ďalšie sa nevyžaduje."
+        show:
+          edit: "Upraviť údaje"
+          open_page: "Zobraziť zmluvu"
+          next_step: "Ďalší krok"
+          publish_needs_redaction: "Pred zverejnením treba najprv potvrdiť skrytie osobných údajov (nižšie)."
+          facts: "Údaje o zmluve"
+          missing: "chýba"
+          parties: "Zmluvné strany"
+          documents: "Prílohy"
+          more: "Poznámky, história zmien a ďalšie"
+          more_edit: "Poznámky a odkazy na projekty"
+        dashboard:
+          overview_link: "Čo treba dnes urobiť"
+          all_contracts: "Všetky zmluvy"
           counts:
-            title: "Zmluvy podľa stavu"
+            title: "Prehľad všetkých zmlúv podľa stavu"
             all: "Všetky"
             empty: "Zatiaľ nebola vytvorená žiadna zmluva."
           recent_activity:
-            title: "Posledná aktivita"
-            show_all: "Zobraziť celú auditnú stopu"
+            title: "Posledné zmeny"
+            show_all: "Zobraziť celú históriu zmien"
             empty: "Zatiaľ nebola zaznamenaná žiadna udalosť."
         contract_imports:
           entry_link: "Importovať zmluvy z tabuľky"
@@ -613,7 +705,7 @@ sk:
             duplicate_in_file: "reference: opakuje sa, prvýkrát použitá v riadku %{line}"
         audit_events:
           index:
-            title: "Auditná stopa"
+            title: "História zmien"
             empty: "Zatiaľ nebola zaznamenaná žiadna udalosť auditnej stopy."
             headers:
               action: "Akcia"

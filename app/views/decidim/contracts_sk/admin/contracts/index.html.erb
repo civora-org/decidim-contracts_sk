@@ -4,15 +4,16 @@
     <h1 class="item_show__header-title" id="cs-contracts-title">
       <%= t("decidim.contracts_sk.admin.contracts.index.title") %>
     </h1>
-    <%# Admin overview (civora-org/civora-platform#126). %>
+    <%# The admin home ("What needs doing today") and, for editors, the one
+        thing they start from: a new contract. Templates, imports and the
+        CRZ lookup are rarely used and live in the collapsed tools below. %>
     <div class="cs-admin-actions">
-      <%= link_to t("decidim.contracts_sk.admin.dashboard.overview_link"), admin_root_path,
-                  class: "button button__sm button__secondary" %>
-      <%# Contract templates (civora-org/civora-platform#127): editor-only. %>
-      <% if allowed_to?(:read, :template) %>
-        <%= link_to t("decidim.contracts_sk.admin.templates.link"), admin_templates_path,
+      <% if allowed_to?(:create, :contract) %>
+        <%= link_to t("decidim.contracts_sk.admin.contracts.new.title"), new_admin_contract_path,
                     class: "button button__sm button__secondary" %>
       <% end %>
+      <%= link_to t("decidim.contracts_sk.admin.dashboard.overview_link"), admin_root_path,
+                  class: "button button__sm button__secondary" %>
     </div>
   </div>
 
@@ -35,83 +36,60 @@
     </div>
   </div>
 
-  <%# CRZ publication deadline counters (§ 47a OZ, civora-org/
-      civora-platform#124): editorial records NOT CONFIRMED AS FILED in CRZ
-      (crz_filed_at empty, #125) that are overdue or due within 14 days. Like the state
-      chips they count the UNFILTERED tenant scope and link to the deadline=
-      filter while preserving the other normalized filters. Aid only, not
-      legal advice (see the hint). %>
-  <div class="card-section">
-    <div class="cs-admin-chips">
-      <% %i[due_soon overdue].each do |deadline| %>
-        <%= link_to index_deadline_counter_label(deadline), index_deadline_counter_path(deadline),
-                    class: index_deadline_counter_classes(deadline),
-                    aria: { current: (index_filters.deadline == deadline ? "true" : nil) } %>
-      <% end %>
-    </div>
-    <p class="cs-admin-hint"><em><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></em></p>
-  </div>
-
-  <% if allowed_to?(:create, :contract) %>
-    <div class="card-section">
-      <p><%= link_to t("decidim.contracts_sk.admin.contracts.new.title"), new_admin_contract_path, class: "button button__sm button__secondary" %></p>
-    </div>
-  <% end %>
-
-  <%# Spreadsheet bulk import (civora-org/civora-platform#129). %>
-  <% if allowed_to?(:import_file, :contract) %>
-    <div class="card-section">
-      <p><%= link_to t("decidim.contracts_sk.admin.contract_imports.entry_link"), admin_new_contract_import_path, class: "button button__sm button__secondary" %></p>
-    </div>
-  <% end %>
-
-  <%# CRZ single-record import (ADR-008, civora-org/civora-platform#86):
-      a plain POST form with one numeric field — no builder label next to
-      a field helper (the FormBuilder wraps fields in labels itself). %>
-  <% if allowed_to?(:import_crz, :contract) %>
-    <div class="card-section">
-      <p><%= t("decidim.contracts_sk.admin.contracts.import_crz.description") %></p>
-      <%= form_with url: import_crz_admin_contracts_path, method: :post, local: true, html: { class: "form form-defaults" } do %>
-        <div class="form__wrapper">
-          <%= label_tag :source_id, t("decidim.contracts_sk.admin.contracts.import_crz.label") %>
-          <%= text_field_tag :source_id, nil, placeholder: "12345678" %>
-        </div>
-        <%= submit_tag t("decidim.contracts_sk.admin.contracts.import_crz.submit"),
-                       class: "button button__sm button__secondary",
-                       data: { disable_with: t("decidim.contracts_sk.admin.contracts.import_crz.submitting") } %>
-        <p><em><%= t("decidim.contracts_sk.admin.contracts.import_crz.hint") %></em></p>
-      <% end %>
-    </div>
-  <% end %>
-
-  <%# Index filters (civora-org/civora-platform#86b): a GET form, so the
+  <%# Search and filters (civora-org/civora-platform#86b): a GET form, so the
       filter state lives in the URL and survives pagination links. Plain
       Rails tag helpers — never a Decidim FormBuilder field next to a
       standalone label (the builder renders its own label around each
-      field); label_tag + select_tag is the safe pairing here. %>
+      field); label_tag + select_tag is the safe pairing here. Only the text
+      search is always visible; the other filters (and the CRZ deadline
+      chips, § 47a OZ, civora-org/civora-platform#124) sit in one collapsed
+      block that opens by itself when one of them is in use. %>
   <div class="card-section">
-    <%= form_tag admin_contracts_path, method: :get do %>
-      <div class="row column">
-        <%= label_tag :state, t("decidim.contracts_sk.admin.contracts.index.filters.state") %>
-        <%= select_tag :state, options_for_select(index_state_options, selected: index_filters.state) %>
-      </div>
-      <div class="row column">
-        <%= label_tag :source, t("decidim.contracts_sk.admin.contracts.index.filters.source") %>
-        <%= select_tag :source, options_for_select(index_source_options, selected: index_filters.source) %>
-      </div>
-      <div class="row column">
-        <%= label_tag :deadline, t("decidim.contracts_sk.admin.contracts.index.filters.deadline") %>
-        <%= select_tag :deadline, options_for_select(index_deadline_options, selected: index_filters.deadline) %>
-      </div>
-      <div class="row column">
-        <%= label_tag :submitter, t("decidim.contracts_sk.admin.contracts.index.filters.submitter") %>
-        <%= select_tag :submitter, options_for_select(index_submitter_options, selected: index_filters.submitter) %>
-      </div>
-      <div class="row column">
+    <%= form_tag admin_contracts_path, method: :get, class: "form form-defaults" do %>
+      <div class="row column cs-admin-search">
         <%= label_tag :q, t("decidim.contracts_sk.admin.contracts.index.filters.q") %>
         <%= text_field_tag :q, index_filters.q %>
       </div>
-      <div class="row column">
+      <% more_open = index_filters.state || index_filters.source || index_filters.deadline || index_filters.submitter || index_filters.missing %>
+      <details class="cs-today__details cs-admin-filters"<%= raw(" open") if more_open %>>
+        <summary><%= t("decidim.contracts_sk.admin.contracts.index.filters.more") %></summary>
+        <%# CRZ publication deadline counters: editorial records NOT CONFIRMED
+            AS FILED in CRZ (crz_filed_at empty, #125) that are overdue or due
+            within 14 days. Like the state chips they count the UNFILTERED
+            tenant scope and link to the deadline= filter while preserving the
+            other normalized filters. Aid only, not legal advice (see the hint). %>
+        <div class="cs-admin-chips">
+          <% %i[due_soon overdue].each do |deadline| %>
+            <%= link_to index_deadline_counter_label(deadline), index_deadline_counter_path(deadline),
+                        class: index_deadline_counter_classes(deadline),
+                        aria: { current: (index_filters.deadline == deadline ? "true" : nil) } %>
+          <% end %>
+        </div>
+        <p class="cs-admin-hint"><em><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></em></p>
+        <div class="row column">
+          <%= label_tag :state, t("decidim.contracts_sk.admin.contracts.index.filters.state") %>
+          <%= select_tag :state, options_for_select(index_state_options, selected: index_filters.state) %>
+        </div>
+        <div class="row column">
+          <%= label_tag :source, t("decidim.contracts_sk.admin.contracts.index.filters.source") %>
+          <%= select_tag :source, options_for_select(index_source_options, selected: index_filters.source) %>
+        </div>
+        <div class="row column">
+          <%= label_tag :deadline, t("decidim.contracts_sk.admin.contracts.index.filters.deadline") %>
+          <%= select_tag :deadline, options_for_select(index_deadline_options, selected: index_filters.deadline) %>
+        </div>
+        <div class="row column">
+          <%= label_tag :submitter, t("decidim.contracts_sk.admin.contracts.index.filters.submitter") %>
+          <%= select_tag :submitter, options_for_select(index_submitter_options, selected: index_filters.submitter) %>
+        </div>
+        <% if index_filters.missing %>
+          <%# Set from the admin home's data-quality tasks; carried through so a
+              re-filter keeps the list the person came for. %>
+          <%= hidden_field_tag :missing, index_filters.missing, id: "missing" %>
+          <p class="cs-admin-hint"><%= t("decidim.contracts_sk.admin.contracts.index.filters.missing.#{index_filters.missing}") %></p>
+        <% end %>
+      </details>
+      <div class="row column cs-admin-filter-actions">
         <%= submit_tag t("decidim.contracts_sk.admin.contracts.index.filters.submit"),
                        class: "button button__sm button__secondary" %>
         <%= link_to t("decidim.contracts_sk.admin.contracts.index.filters.clear"),
@@ -121,30 +99,79 @@
     <% end %>
   </div>
 
+  <%# Rarely used tools, collapsed: templates (civora-org/civora-platform#127,
+      editor-only), the spreadsheet import (#129) and the single-record CRZ
+      import (ADR-008, #86: a plain POST form with one numeric field — no
+      builder label next to a field helper). %>
+  <% if allowed_to?(:read, :template) || allowed_to?(:import_file, :contract) || allowed_to?(:import_crz, :contract) %>
+    <div class="card-section">
+      <details class="cs-today__details cs-admin-tools" id="cs-admin-tools">
+        <summary><%= t("decidim.contracts_sk.admin.contracts.index.tools") %></summary>
+        <% if allowed_to?(:read, :template) %>
+          <p><%= link_to t("decidim.contracts_sk.admin.templates.link"), admin_templates_path,
+                         class: "button button__sm button__secondary" %></p>
+        <% end %>
+        <% if allowed_to?(:import_file, :contract) %>
+          <p><%= link_to t("decidim.contracts_sk.admin.contract_imports.entry_link"), admin_new_contract_import_path, class: "button button__sm button__secondary" %></p>
+        <% end %>
+        <% if allowed_to?(:import_crz, :contract) %>
+          <p><%= t("decidim.contracts_sk.admin.contracts.import_crz.description") %></p>
+          <%= form_with url: import_crz_admin_contracts_path, method: :post, local: true, html: { class: "form form-defaults" } do %>
+            <div class="form__wrapper">
+              <%= label_tag :source_id, t("decidim.contracts_sk.admin.contracts.import_crz.label") %>
+              <%= text_field_tag :source_id, nil, placeholder: "12345678" %>
+            </div>
+            <%= submit_tag t("decidim.contracts_sk.admin.contracts.import_crz.submit"),
+                           class: "button button__sm button__secondary",
+                           data: { disable_with: t("decidim.contracts_sk.admin.contracts.import_crz.submitting") } %>
+            <p><em><%= t("decidim.contracts_sk.admin.contracts.import_crz.hint") %></em></p>
+          <% end %>
+        <% end %>
+      </details>
+    </div>
+  <% end %>
+
   <% if @contracts.any? %>
     <div class="table-scroll" tabindex="0" role="region" aria-labelledby="cs-contracts-title">
-      <table class="table-list" aria-labelledby="cs-contracts-title">
+      <table class="table-list cs-rows" aria-labelledby="cs-contracts-title">
         <thead>
           <tr>
             <th scope="col"><%= t("decidim.contracts_sk.contract.title") %></th>
             <th scope="col"><%= t("decidim.contracts_sk.contract.reference_number") %></th>
             <th scope="col"><%= t("decidim.contracts_sk.contract.status") %></th>
             <th scope="col"><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></th>
-            <th scope="col"><%= t("decidim.contracts_sk.admin.contracts.edit.title") %></th>
             <%= actions_column_header %>
           </tr>
         </thead>
         <tbody>
           <% @contracts.each do |contract| %>
             <tr>
-              <td><%= contract.title %></td>
-              <td><%= contract.reference %></td>
-              <td><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
+              <td><%= link_to contract.title, admin_contract_path(contract) %></td>
+              <td data-label="<%= t("decidim.contracts_sk.contract.reference_number") %>"><%= contract.reference %></td>
+              <td data-label="<%= t("decidim.contracts_sk.contract.status") %>"><%= t(contract.state, scope: "decidim.contracts_sk.contract_states") %></td>
               <%# CRZ deadline badge (civora-org/civora-platform#124): empty for filed, mirror and terminal rows. %>
-              <td><%= crz_deadline_badge(contract, today: index_today) %></td>
-              <td><%= link_to t("decidim.contracts_sk.admin.contracts.edit.title"), edit_admin_contract_path(contract),
-                          aria: { label: contract_row_label(t("decidim.contracts_sk.admin.contracts.edit.title"), contract) } %></td>
+              <td data-label="<%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %>"><%= crz_deadline_badge(contract, today: index_today) %></td>
               <td class="table-list__actions">
+                <%# ONE visible action per row: open the contract page, where the
+                    next step lives. A GET button_to, not a link: see the CRZ
+                    filing entry below for why a bare <a> in this table cell can
+                    render invisible. Everything else the row used to show is one
+                    click away in the collapsed block. %>
+                <%= button_to t("decidim.contracts_sk.admin.contracts.index.open"),
+                              admin_contract_path(contract),
+                              method: :get,
+                              class: "button button__sm button__secondary",
+                              aria: { label: contract_row_label(t("decidim.contracts_sk.admin.contracts.index.open"), contract) } %>
+                <details class="cs-row-more">
+                  <summary aria-label="<%= contract_row_label(t("decidim.contracts_sk.admin.contracts.index.more_actions"), contract) %>"><%= t("decidim.contracts_sk.admin.contracts.index.more_actions") %></summary>
+                <%# Edit entry (editors, editable states only). %>
+                <% if allowed_to?(:update, :contract, contract: contract) %>
+                  <%= button_to t("decidim.contracts_sk.admin.contracts.edit.title"),
+                                edit_admin_contract_path(contract),
+                                method: :get,
+                                class: "button button__sm button__secondary",
+                                aria: { label: contract_row_label(t("decidim.contracts_sk.admin.contracts.edit.title"), contract) } %>
+                <% end %>
                 <%# Internal review notes (civora-org/civora-platform#128): the
                     entry for every role holder (a reviewer has no edit page).
                     A GET button_to, not a link: see the CRZ filing entry
@@ -213,6 +240,7 @@
                 <% if contract.review_reason.present? && Decidim::ContractsSk::ContractLifecycle::DECISION_STATES.include?(contract.state&.to_sym) %>
                   <%= render "review_decision", contract: contract, collapsed: true %>
                 <% end %>
+                </details>
               </td>
             </tr>
           <% end %>
@@ -226,7 +254,7 @@
     <% if @contracts.total_pages > 1 %>
       <%= render "decidim/contracts_sk/shared/pagination",
                  collection: @contracts,
-                 filter_keys: %i[state source q deadline submitter] %>
+                 filter_keys: %i[state source q deadline submitter missing] %>
     <% end %>
   <% else %>
     <div class="card-section">

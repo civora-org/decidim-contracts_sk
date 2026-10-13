@@ -1,7 +1,24 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
 <div class="item_show__header">
   <h1 class="item_show__header-title">
-    <%= t("decidim.contracts_sk.admin.contracts.edit.title") %>
+    <%= @contract.title.presence || t("decidim.contracts_sk.admin.contracts.edit.title") %>
   </h1>
+  <div class="cs-admin-actions">
+    <%= link_to t("decidim.contracts_sk.admin.contracts.back_to_index"), admin_contracts_path,
+                class: "button button__sm button__secondary" %>
+    <%= link_to t("decidim.contracts_sk.admin.show.open_page"), admin_contract_path(@contract),
+                class: "button button__sm button__secondary" %>
+  </div>
+</div>
+
+<%# Where the record is in the process and what the person can do next (the
+    submit button lives here: an editor no longer has to go back to the list
+    to send a finished draft on). %>
+<div class="card">
+  <div class="card-section">
+    <%= render "progress", contract: @contract, yours: true %>
+  </div>
+  <%= render "next_step", contract: @contract %>
 </div>
 
 <%# CRZ publication deadline line (§ 47a OZ, civora-org/civora-platform#124):
@@ -13,16 +30,19 @@
   <p><strong><%= deadline_line %></strong><br><em><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></em></p>
 <% end %>
 
-<p><%= link_to t("decidim.contracts_sk.admin.parties.index.title"), admin_contract_parties_path(@contract) %></p>
-
-<p><%= link_to t("decidim.contracts_sk.admin.amendments.index.title"), admin_contract_amendments_path(@contract) %></p>
-
-<%# Read-only audit-trail viewer (civora-org/civora-platform#92): the same
-    hub-link pattern as the two siblings above — the link text is the
-    target page's index title, pre-filtered to this record through the
-    ?contract_id= GET param (visible to every engine role: the viewer's
-    :read gate is role-any, the same rule as this page's own index). %>
-<p><%= link_to t("decidim.contracts_sk.admin.audit_events.index.title"), admin_audit_events_path(contract_id: @contract) %></p>
+<%# Hub links, grouped: the two a clerk needs (the people on the contract and
+    later amendments) are visible; the audit trail is one click further. %>
+<div class="cs-admin-chips">
+  <%= link_to t("decidim.contracts_sk.admin.parties.index.title"), admin_contract_parties_path(@contract),
+              class: "button button__sm button__secondary" %>
+  <%= link_to t("decidim.contracts_sk.admin.amendments.index.title"), admin_contract_amendments_path(@contract),
+              class: "button button__sm button__secondary" %>
+  <%# Read-only audit-trail viewer (civora-org/civora-platform#92), pre-
+      filtered to this record through ?contract_id= (visible to every engine
+      role: the viewer's :read gate is role-any). %>
+  <%= link_to t("decidim.contracts_sk.admin.audit_events.index.title"), admin_audit_events_path(contract_id: @contract),
+              class: "button button__sm button__secondary" %>
+</div>
 
 <div class="item__edit item__edit-1col">
   <div class="item__edit-form">
@@ -119,6 +139,50 @@
     </div>
   <% end %>
 </div>
+
+<%# Manual CRZ-handoff export (M02-05-C, civora-org/civora-platform#74):
+    a generated, always-regenerable handoff aid for the clerical CRZ
+    record (ADR-002) — labelled on the page as an aid, never a legal
+    publication. The gates are split to mirror the controller: the
+    download link follows its own :download_crz_handoff permission
+    (editor on ANY lifecycle state), while generate/regenerate follow
+    :update (editor on an editable record) like the page's other writes. %>
+<div class="card" id="crz-handoff">
+  <div class="card-divider">
+    <h2 class="card-title">
+      <%= t("decidim.contracts_sk.admin.crz_handoff.title") %>
+    </h2>
+  </div>
+
+  <div class="card-section">
+    <p><%= t("decidim.contracts_sk.admin.crz_handoff.disclaimer") %></p>
+
+    <% if allowed_to?(:download_crz_handoff, :contract, contract: @contract) && @crz_handoff_document&.file&.attached? %>
+      <p><%= link_to t("decidim.contracts_sk.admin.crz_handoff.download"),
+                     download_crz_handoff_admin_contract_path(@contract),
+                     class: "button button__sm button__secondary" %></p>
+    <% end %>
+
+    <% if allowed_to?(:update, :contract, contract: @contract) %>
+      <% if @crz_handoff_document&.file&.attached? %>
+        <%= button_to t("decidim.contracts_sk.admin.crz_handoff.replace"),
+                      generate_crz_handoff_admin_contract_path(@contract),
+                      method: :post,
+                      class: "button button__sm button__secondary" %>
+      <% else %>
+        <%= button_to t("decidim.contracts_sk.admin.crz_handoff.generate"),
+                      generate_crz_handoff_admin_contract_path(@contract),
+                      method: :post,
+                      class: "button button__sm button__secondary" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# Rarely used on a record, so one click away rather than in the way: the
+    links to projects/results and the internal notes thread. %>
+<details class="cs-today__details" id="cs-edit-more">
+  <summary><%= t("decidim.contracts_sk.admin.show.more_edit") %></summary>
 
 <%# Per-contract project/result link management (M01-87,
     civora-org/civora-platform#87): the route set has no link index, so the
@@ -233,41 +297,4 @@
   </div>
 <% end %>
 
-<%# Manual CRZ-handoff export (M02-05-C, civora-org/civora-platform#74):
-    a generated, always-regenerable handoff aid for the clerical CRZ
-    record (ADR-002) — labelled on the page as an aid, never a legal
-    publication. The gates are split to mirror the controller: the
-    download link follows its own :download_crz_handoff permission
-    (editor on ANY lifecycle state), while generate/regenerate follow
-    :update (editor on an editable record) like the page's other writes. %>
-<div class="card">
-  <div class="card-divider">
-    <h2 class="card-title">
-      <%= t("decidim.contracts_sk.admin.crz_handoff.title") %>
-    </h2>
-  </div>
-
-  <div class="card-section">
-    <p><%= t("decidim.contracts_sk.admin.crz_handoff.disclaimer") %></p>
-
-    <% if allowed_to?(:download_crz_handoff, :contract, contract: @contract) && @crz_handoff_document&.file&.attached? %>
-      <p><%= link_to t("decidim.contracts_sk.admin.crz_handoff.download"),
-                     download_crz_handoff_admin_contract_path(@contract),
-                     class: "button button__sm button__secondary" %></p>
-    <% end %>
-
-    <% if allowed_to?(:update, :contract, contract: @contract) %>
-      <% if @crz_handoff_document&.file&.attached? %>
-        <%= button_to t("decidim.contracts_sk.admin.crz_handoff.replace"),
-                      generate_crz_handoff_admin_contract_path(@contract),
-                      method: :post,
-                      class: "button button__sm button__secondary" %>
-      <% else %>
-        <%= button_to t("decidim.contracts_sk.admin.crz_handoff.generate"),
-                      generate_crz_handoff_admin_contract_path(@contract),
-                      method: :post,
-                      class: "button button__sm button__secondary" %>
-      <% end %>
-    <% end %>
-  </div>
-</div>
+</details>

@@ -47,7 +47,8 @@ Admin pages sit under `<mount>/admin`. The overview is at `<mount>/admin`.
 
 | Area | What it does |
 |---|---|
-| Overview | Work waiting for the current user (reviews, returned records, records ready to publish), the CRZ deadline watch, counts per state and the last audit events |
+| Home ("What needs doing today") | A short list of actions for the signed-in person only, by urgency: CRZ deadlines, records to review, returned drafts, records to publish, filings to confirm, missing data; one sentence and one button each. Counts per state and recent changes are one click away |
+| Contract page | One read-only page per record: a five-step progress indicator (draft, check, approved, published, filed in the CRZ), whose turn it is, the next step as buttons, the facts |
 | Contracts | Create, edit and list records; filter by state, source and submitter; search by title or reference |
 | Lifecycle | One POST per transition: submit, return, approve, reject, publish, archive. Each transition is gated to the role that owns it |
 | Four-eyes review | The person who last submitted a record cannot return, approve or reject it. Hosts with one person can opt out |

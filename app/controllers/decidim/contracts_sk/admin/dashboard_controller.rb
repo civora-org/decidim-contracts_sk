@@ -3,43 +3,34 @@
 module Decidim
   module ContractsSk
     module Admin
-      # The admin landing page for role holders (civora-org/civora-platform
-      # #126): what waits for ME, per role, plus the organization-wide
-      # state counts, the CRZ deadline watch and the last audit events.
-      # Read-only; every list is a capped preview that links to the
-      # matching filtered contracts index (the "Show all (N)" counts are the
-      # index's own, because both sides use the same Contract scopes).
+      # The admin landing page for role holders: "What needs doing today"
+      # (the rework of civora-org/civora-platform#126). A short, prioritised
+      # list of ACTIONS for the signed-in person only, each with one plain
+      # sentence and ONE primary button (see Admin::TodayTasks for the
+      # groups and the rules). Below it, collapsed and one click away: the
+      # state counts of all contracts and the last audit events.
       #
       # Gate: the same :read :contract permission as the contracts index
       # (any engine role); a roleless user gets the usual NeedsPermission
-      # redirect + alert, an anonymous visitor the auth floor. The role-
-      # specific blocks are NOT gated by new role logic: each one asks the
-      # permission layer whether the user may perform the event the block
-      # is about (:approve on in_review, :submit on returned, :publish on
-      # approved, :read on the audit trail), so the dashboard can never
-      # drift from the permission table — and, being a read surface, shows
-      # nothing the index would not.
+      # redirect + alert, an anonymous visitor the auth floor. The tasks are
+      # NOT gated by role logic of their own: each one asks the permission
+      # layer whether the user may perform the action it is about, so the
+      # page can never drift from the permission table (four-eyes included)
+      # and, being a read surface, shows nothing the index would not.
       #
-      # Everything is tenant-scoped from the current organization. Query
-      # count is independent of the number of rows: per block one capped
-      # list query and one COUNT (the review queue adds one preload for the
-      # submitters), one grouped state count, and one audit list with
-      # bounded preloads (actors, targets, amendment parent contracts).
+      # Everything is tenant-scoped from the current organization. The query
+      # count is independent of the number of rows: one COUNT per task kind,
+      # one capped list for the CRZ deadlines, one grouped state count and
+      # one audit list with bounded preloads (actors, targets, amendment
+      # parent contracts).
       class DashboardController < Admin::ApplicationController
         include AuditEventPresentation
 
-        # Preview cap per list (the "Show all (N)" link covers the rest).
+        # Preview cap of the audit list.
         LIST_LIMIT = 10
 
-        # One block of the page: the capped rows, the full total and the
-        # filtered-index target. Blocks the user may not see are simply never
-        # built (the view gates them through the visibility predicates).
-        Block = Struct.new(:records, :total, :path, keyword_init: true)
-
-        helper_method :review_queue, :returned_list, :approved_list, :overdue_list,
-                      :due_soon_list, :state_counts, :total_count, :recent_events,
-                      :dashboard_today, :audit_trail_visible?,
-                      :review_queue_visible?, :returned_visible?, :approved_visible?
+        helper_method :today_tasks, :today_task_path, :state_counts, :total_count, :recent_events,
+                      :dashboard_today, :audit_trail_visible?, :can_create_contract?
 
         def show
           enforce_permission_to :read, :contract
@@ -55,69 +46,33 @@ module Decidim
           @dashboard_today ||= Date.current
         end
 
-        # --- visibility: the permission layer decides, no role logic here ---
-
-        def review_queue_visible?
-          allowed_to?(:approve, :contract, state: :in_review)
-        end
-
-        def returned_visible?
-          allowed_to?(:submit, :contract, state: :returned)
-        end
-
-        def approved_visible?
-          allowed_to?(:publish, :contract, state: :approved)
-        end
-
         def audit_trail_visible?
           allowed_to?(:read, :audit_event)
         end
 
-        # --- blocks ---
+        def can_create_contract?
+          allowed_to?(:create, :contract)
+        end
 
-        # In-review records the user may judge (four-eyes: own submissions
-        # excluded unless the allow_self_review seam is on, in which case the
-        # index link carries no submitter narrowing either).
-        def review_queue
-          @review_queue ||= begin
-            scope = contracts_scope.awaiting_review_by(current_user)
-            link = { state: :in_review }
-            link[:submitter] = :others unless Decidim::ContractsSk.allow_self_review
-            build_block(scope.includes(:submitted_by).order(updated_at: :asc, id: :asc), scope, link)
+        def today_tasks
+          permission = ->(action, subject, context = {}) { allowed_to?(action, subject, context) }
+          @today_tasks ||= TodayTasks.new(organization: current_organization, user: current_user,
+                                          can: permission, today: dashboard_today)
+        end
+
+        # The button's target: the record itself when the task is about one,
+        # otherwise the contracts index narrowed to exactly what the task
+        # counted (the counts and the lists use the same Contract scopes).
+        def today_task_path(task)
+          contract = task.contract
+          return admin_contracts_path(task.list) unless contract
+
+          case task.action
+          when :edit_returned, :fill_in then edit_admin_contract_path(contract)
+          when :prepare_crz then edit_admin_contract_path(contract, anchor: "crz-handoff")
+          when :confirm_filing then crz_filing_admin_contract_path(contract)
+          else admin_contract_path(contract)
           end
-        end
-
-        def returned_list
-          @returned_list ||= begin
-            scope = contracts_scope.returned_to(current_user)
-            build_block(scope.order(Arel.sql("reviewed_at IS NULL"), reviewed_at: :desc, id: :desc), scope,
-                        state: :returned, submitter: :me)
-          end
-        end
-
-        def approved_list
-          @approved_list ||= begin
-            scope = contracts_scope.approved
-            build_block(scope.order(updated_at: :asc, id: :asc), scope, state: :approved)
-          end
-        end
-
-        def overdue_list
-          @overdue_list ||= deadline_block(contracts_scope.crz_overdue(dashboard_today), :overdue)
-        end
-
-        def due_soon_list
-          @due_soon_list ||= deadline_block(contracts_scope.crz_due_soon(dashboard_today), :due_soon)
-        end
-
-        def deadline_block(scope, deadline)
-          build_block(scope.order(signed_on: :asc, id: :asc), scope, deadline: deadline)
-        end
-
-        def build_block(ordered, counted, link_params)
-          Block.new(records: ordered.limit(LIST_LIMIT).to_a,
-                    total: counted.count,
-                    path: admin_contracts_path(link_params))
         end
 
         # One grouped COUNT over the tenant scope, zeros included, in the
