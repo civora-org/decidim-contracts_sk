@@ -43,6 +43,8 @@ module Decidim
     # (ADR-008, docs/crz-import.md); editorial records keep them
     # untouched (source stays "editorial", import lifecycle fields nil).
     class Contract < ApplicationRecord
+      include Effectiveness
+
       include Decidim::ContractsSk::ContractState
 
       # Symbol => stored String mapping for the Rails enum, derived from the

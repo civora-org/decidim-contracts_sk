@@ -604,6 +604,7 @@ module Decidim
                            currency: @contract.currency,
                            signed_on: @contract.signed_on,
                            effective_from: @contract.effective_from,
+                           agreed_effective_on: @contract.agreed_effective_on,
                            crz_url: @contract.crz_url)
         end
 
@@ -867,7 +868,7 @@ module Decidim
         # bypass the command layer's ownership rules.
         def form_params
           params.require(:contract).permit(:title, :reference, :subject_matter, :amount,
-                                           :currency, :signed_on, :effective_from, :crz_url)
+                                           :currency, :signed_on, :effective_from, :agreed_effective_on, :crz_url)
         end
       end
       # rubocop:enable Metrics/ClassLength

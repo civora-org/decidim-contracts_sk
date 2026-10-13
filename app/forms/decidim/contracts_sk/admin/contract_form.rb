@@ -50,6 +50,7 @@ module Decidim
         attribute :currency, :string, default: "EUR"
         attribute :signed_on, :date
         attribute :effective_from, :date
+        attribute :agreed_effective_on, :date
         attribute :crz_url, :string
 
         # Raw amount capture, BEFORE the :decimal cast (ActiveModel::Attributes

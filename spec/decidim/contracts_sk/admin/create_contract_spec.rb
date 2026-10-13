@@ -74,7 +74,8 @@ RSpec.describe Decidim::ContractsSk::Admin::CreateContract, :db do
       currency: "EUR",
       signed_on: nil,
       effective_from: nil,
-      crz_url: nil
+      crz_url: nil,
+      agreed_effective_on: nil
     )
   end
 

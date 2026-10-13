@@ -314,6 +314,20 @@ en:
           more: "and %{count} more in the catalogue"
           why: "You get this e-mail because you subscribed to alerts."
           unsubscribe: "Unsubscribe"
+      crz_deadline_digest_mailer:
+        digest:
+          subject: "CRZ deadlines: contracts not yet effective - %{organization}"
+          hello: "Good morning,"
+          intro: "%{organization} has contracts that are not yet filed in the CRZ and so are not effective. The deadline has passed or falls within %{days} days: %{count}."
+          overdue: "Overdue: %{count}"
+          due_soon: "Deadline within %{days} days: %{count}"
+          reference: "no. %{reference}"
+          not_effective: "Not effective until published in the CRZ."
+          open: "Open the contract"
+          more: "And more in the contracts list: %{count}"
+          overview: "Open the overview"
+          disclaimer: "The dates are an aid based on the signing date, not legal advice."
+          why: "You receive this e-mail because you are a contracts admin or editor in the organization."
       feeds:
         show:
           title: "Contracts — %{organization}"
@@ -369,6 +383,17 @@ en:
               heading: "No contracts match the current filters."
               body: "Adjust or clear the filters and try again."
               clear: "Clear filters and show all contracts"
+          effectiveness:
+            heading: "Effectiveness"
+            agreed: "Agreed later effectiveness date"
+            badge:
+              not_effective: "Not yet effective"
+              effective: "Effective"
+            line:
+              not_filed: "The contract is not confirmed as filed in the CRZ, so it is not yet effective. An aid, not legal advice."
+              agreed_date: "The contract is in the CRZ but not yet effective: it takes effect on %{date} (agreed later start)."
+              day_after_publication: "The contract is in the CRZ but not yet effective: it takes effect on %{date} (the day after publication)."
+              effective: "Effective from %{date}."
           deadline:
             hint: "Shown while the contract is not confirmed as filed in CRZ (use the Record CRZ filing action once it is). An aid based on the signing date, not legal advice."
             badge:
@@ -447,6 +472,8 @@ en:
             currency: "Currency"
             signed_on: "Signed on"
             signed_on_hint: "The deadline for filing the contract in the CRZ is counted from this date."
+            agreed_effective_on: "Agreed later effectiveness date"
+            agreed_effective_on_hint: "Optional. Fill it in only if the parties agreed that the contract takes effect later than the day after publication in the CRZ."
             effective_from: "Effective from"
             crz_url: "CRZ URL"
             crz_url_hint: "Optional. Fill it in if the contract is already in the CRZ."

@@ -41,6 +41,9 @@ RSpec.describe Decidim::ContractsSk::Contract, :db do
   # Run once per group (before(:context): no DB needed, class-level only).
   before(:context) do # rubocop:disable RSpec/BeforeAfterAll
     @decidim_constants_before = Decidim.constants
+    @application_mailer_before = Decidim.const_get(:ApplicationMailer, false) if Decidim.const_defined?(
+      :ApplicationMailer, false
+    )
     core = Gem::Specification.find_by_name("decidim-core").full_gem_path
     real = ->(path) { load File.join(core, path) }
 
@@ -126,6 +129,12 @@ RSpec.describe Decidim::ContractsSk::Contract, :db do
 
   after(:context) do # rubocop:disable RSpec/BeforeAfterAll
     (Decidim.constants - @decidim_constants_before).each { |name| Decidim.send(:remove_const, name) }
+    # The stand-in replaced the dummy's mailer base; give it back, or every
+    # mailer first loaded after this group would inherit the stand-in.
+    if @application_mailer_before
+      Decidim.send(:remove_const, :ApplicationMailer)
+      Decidim.const_set(:ApplicationMailer, @application_mailer_before)
+    end
     if Decidim::ContractsSk.const_defined?(:ContractTransitionEvent, false)
       Decidim::ContractsSk.send(:remove_const, :ContractTransitionEvent)
     end

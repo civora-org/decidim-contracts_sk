@@ -163,6 +163,12 @@ FakeIndexContract = Struct.new(:title, :reference, :state, :review_reason) do
     _ = today
     :untracked
   end
+
+  # The #202 effectiveness cell: the offline fake is never applicable.
+  def crz_effectiveness(today: nil)
+    _ = today
+    :not_applicable
+  end
 end
 
 RSpec.describe "admin contracts CRUD", type: :request do

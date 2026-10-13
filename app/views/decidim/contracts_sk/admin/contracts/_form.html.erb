@@ -73,6 +73,11 @@
         </div>
 
         <div class="row column">
+          <%= form.date_field :agreed_effective_on, label: t("decidim.contracts_sk.admin.contracts.form.agreed_effective_on"), label_options: { for: "contract_agreed_effective_on" }, id: "contract_agreed_effective_on", name: "contract[agreed_effective_on]", value: @form.agreed_effective_on, aria: { describedby: "contract_agreed_effective_on_hint" } %>
+          <span class="help-text" id="contract_agreed_effective_on_hint"><%= t("decidim.contracts_sk.admin.contracts.form.agreed_effective_on_hint") %></span>
+        </div>
+
+        <div class="row column">
           <%= form.text_field :crz_url, label: t("decidim.contracts_sk.admin.contracts.form.crz_url"), label_options: { for: "contract_crz_url" }, id: "contract_crz_url", name: "contract[crz_url]", value: @form.crz_url, aria: { describedby: "contract_crz_url_hint" } %>
           <span class="help-text" id="contract_crz_url_hint"><%= t("decidim.contracts_sk.admin.contracts.form.crz_url_hint") %></span>
         </div>

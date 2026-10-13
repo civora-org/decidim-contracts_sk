@@ -314,6 +314,20 @@ sk:
           more: "a ďalšie v zozname zmlúv: %{count}"
           why: "Tento e-mail dostávate, pretože ste si nastavili upozornenia."
           unsubscribe: "Odhlásiť"
+      crz_deadline_digest_mailer:
+        digest:
+          subject: "Lehoty CRZ: zmluvy zatiaľ neúčinné - %{organization}"
+          hello: "Dobré ráno,"
+          intro: "Organizácia %{organization} má zmluvy, ktoré zatiaľ nie sú vložené do CRZ, a preto nie sú účinné. Lehota uplynula alebo uplynie do %{days} dní: %{count}."
+          overdue: "Po lehote: %{count}"
+          due_soon: "Lehota do %{days} dní: %{count}"
+          reference: "č. %{reference}"
+          not_effective: "Do zverejnenia v CRZ nie je účinná."
+          open: "Otvoriť zmluvu"
+          more: "A ďalšie v zozname zmlúv: %{count}"
+          overview: "Otvoriť prehľad"
+          disclaimer: "Termíny sú pomôcka podľa dátumu podpisu, nie právne poradenstvo."
+          why: "Tento e-mail dostávate, pretože ste správca alebo editor zmlúv v organizácii."
       feeds:
         show:
           title: "Zmluvy — %{organization}"
@@ -369,6 +383,17 @@ sk:
               heading: "Žiadna zmluva nezodpovedá aktuálnym filtrom."
               body: "Upravte alebo zrušte filtre a skúste to znova."
               clear: "Zrušiť filtre a zobraziť všetky zmluvy"
+          effectiveness:
+            heading: "Účinnosť"
+            agreed: "Dohodnutý neskorší začiatok účinnosti"
+            badge:
+              not_effective: "Zatiaľ neúčinná"
+              effective: "Účinná"
+            line:
+              not_filed: "Zmluva nie je potvrdená ako vložená do CRZ, preto zatiaľ nie je účinná. Pomôcka, nie právne poradenstvo."
+              agreed_date: "Zmluva je v CRZ, no zatiaľ nie je účinná: účinnosť nastane %{date} (dohodnutý neskorší začiatok)."
+              day_after_publication: "Zmluva je v CRZ, no zatiaľ nie je účinná: účinnosť nastane %{date} (deň po zverejnení)."
+              effective: "Účinná od %{date}."
           deadline:
             hint: "Zobrazuje sa, kým zmluva nie je potvrdená ako vložená do CRZ (použite „Potvrdiť vklad do CRZ“, keď už je). Ide o pomôcku podľa dátumu podpisu, nie o právne poradenstvo."
             badge:
@@ -447,6 +472,8 @@ sk:
             currency: "Mena"
             signed_on: "Dátum podpisu"
             signed_on_hint: "Podľa tohto dátumu sa počíta lehota na vloženie zmluvy do CRZ."
+            agreed_effective_on: "Dohodnutý neskorší začiatok účinnosti"
+            agreed_effective_on_hint: "Nepovinné. Vyplňte len vtedy, ak sa zmluvné strany dohodli, že zmluva nadobudne účinnosť neskôr ako deň po zverejnení v CRZ."
             effective_from: "Dátum účinnosti"
             crz_url: "Odkaz na CRZ"
             crz_url_hint: "Nepovinné. Vyplňte, ak už zmluvu v CRZ máte."

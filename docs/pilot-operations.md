@@ -422,6 +422,22 @@ resolver crash, etc.). Blank logs = OK (either published without errors or no
 transitions happened). If the `events` queue processor is not running, published
 events queue silently and replay on restart — no error line in the main log.
 
+### Ranný e-mail o lehotách CRZ (#202)
+
+Správcom a editorom organizácie chodí e-mail so zmluvami, ktoré nie sú
+potvrdené ako vložené do CRZ (teda zatiaľ neúčinné) a ich lehota uplynula
+alebo uplynie do 14 dní. Nič po lehote ani blízko lehoty = žiadny e-mail.
+Spúšťa ho cron/systemd timer hostiteľa, nie engine:
+
+```
+bin/rails decidim_contracts_sk:crz_deadline_digest            # všetky organizácie
+bin/rails "decidim_contracts_sk:crz_deadline_digest[<id>]"    # jedna organizácia
+```
+
+Odporúčanie: raz denne v pracovné dni, napr. 07:30. Potrebuje SMTP. Výstup
+a logy obsahujú len počty, nikdy adresy. Chybný príjemca sa zaloguje (trieda
+chyby a id) a ostatní e-mail dostanú.
+
 Prometheus/Grafana a alerting-škálovanie vlastní epic #16 — tu zámerne len
 minimálna pilotná výbava.
 

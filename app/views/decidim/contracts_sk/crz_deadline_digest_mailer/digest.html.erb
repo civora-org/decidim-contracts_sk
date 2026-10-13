@@ -1,0 +1,29 @@
+<p class="email-greeting"><%= t(".hello") %></p>
+
+<p class="email-instructions"><%= t(".intro", organization: @organization_name, days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS, count: @total) %></p>
+
+<% [[:overdue, @overdue], [:due_soon, @due_soon]].each do |group, contracts| %>
+  <% next if contracts.empty? %>
+  <h2 style="font-size: 1.0625rem; margin: 1.25rem 0 0.375rem;"><%= t(".#{group}", days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS, count: contracts.size) %></h2>
+  <ul>
+    <% contracts.each do |contract| %>
+      <li>
+        <strong><%= contract.title %></strong><br>
+        <%= t(".reference", reference: contract.reference) %><br>
+        <%= crz_deadline_line(contract, today: @today) %><br>
+        <%= t(".not_effective") %><br>
+        <%= link_to t(".open"), @contract_urls.fetch(contract.id) %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @more.positive? %>
+  <p class="email-instructions"><%= t(".more", count: @more) %> <%= link_to t(".overview"), @overview_url %></p>
+<% end %>
+
+<p class="email-instructions"><%= t(".disclaimer") %></p>
+
+<% content_for :unsubscribe do %>
+  <%= t(".why") %>
+<% end %>
