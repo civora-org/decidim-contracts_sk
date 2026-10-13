@@ -3,31 +3,26 @@
 # POLICY: ignores are exhaustive per-advisory (never per-gem), so any NEW
 # advisory not listed here still fails CI and forces a fresh disposition.
 #
-# Everything below is blocked upstream by decidim-core 0.31.7 pins
-# (`rails ~> 7.2.0, >= 7.2.2.2`, `devise ~> 4.7`, `shakapacker ~> 8.3.0`,
-# `rubyzip ~> 2.0`):
-# Rails 7.2 is EOL (2026-08-09) and receives no further patches; devise 4.9.4
-# is the newest release and remains unpatched; shakapacker >= 9.5.0 is
-# unresolvable under the pin. This engine ships no JS bundles; the host app
-# inherits the same pins and mirrors this file in civora-host CI.
-# REVISIT: every entry — on the next Decidim upgrade that relaxes these pins.
+# Pruned in civora-org/civora-platform#188 against both CI resolutions
+# (DECIDIM_VERSION 0.31 and 0.32, fresh resolution, empty ignore list,
+# 2026-10-13). The ten Rails 7.2 CVEs (CVE-2026-33168 ... -33176, -66066)
+# are no longer reported on either line (0.31 resolves rails 7.2.4, 0.32
+# resolves rails 8.1.4) and were removed. What is left is blocked upstream:
+#   0.31 line: devise 4.9.4 (newest release, unpatched), shakapacker 8.3.0
+#              (decidim-core pins ~> 8.3.0; fix needs >= 9.5.0), rubyzip 2.4.1;
+#   0.32 line: rack-proxy 0.8.3 (decidim-core pins < 1.0), rubyzip 2.4.1.
+# rubyzip is pinned `~> 2.0` by decidim-core on both lines (fix needs >= 3.4.0).
+# This engine ships no JS bundles, never extracts zips and never proxies HTTP;
+# the host app documents its own exposure in docs/ops/security-updates.md and
+# mirrors the 0.32 entries in civora-host CI.
+# REVISIT: drop the 0.31-only entries (devise, shakapacker) when the CI matrix
+# drops the 0.31 line; the rest on the Decidim release that relaxes the pins.
 ---
 ignore:
-  # Rails 7.2.2.2 (actionview / activestorage / activesupport)
-  - CVE-2026-33168
-  - CVE-2026-33173
-  - CVE-2026-33174
-  - CVE-2026-33195
-  - CVE-2026-33202
-  - CVE-2026-33658
-  - CVE-2026-66066
-  - CVE-2026-33169
-  - CVE-2026-33170
-  - CVE-2026-33176
-  # devise 4.9.4
+  # devise 4.9.4 (0.31 line)
   - CVE-2026-32700
   - CVE-2026-40295
-  # shakapacker 8.3.0
+  # shakapacker 8.3.0 (0.31 line)
   - GHSA-96qw-h329-v5rg
   # rubyzip 2.4.1 (decidim-core pins ~> 2.0; fix requires >= 3.4.0)
   - CVE-2026-85396
