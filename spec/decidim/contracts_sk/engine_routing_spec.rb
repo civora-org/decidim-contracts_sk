@@ -37,8 +37,8 @@ module EngineRoutingContract
   # at "/" and a single /:id catch-all serves show. The admin surface is
   # create/edit plus the lifecycle-transition member POSTs (each POST entry
   # is derived from the ContractLifecycle transition table in routes.rb —
-  # see the derivation guard below): no :show (admin records are edited, not
-  # displayed) and no :destroy (deletion is not part of the workflow yet).
+  # see the derivation guard below): a read-only :show (the contract page:
+  # progress, next step, facts) and no :destroy (deletion is not part of the workflow yet).
   # The CRZ-handoff pair (M02-05-C, civora-org/civora-platform#74) shares
   # one member path with two verbs and two explicit actions — declared
   # outside the lifecycle derivation (it is not a lifecycle event). The
@@ -73,7 +73,7 @@ module EngineRoutingContract
   # admin CRUD block counts 6 route entries, not 5.
   EXPECTED_ADMIN_ACTIONS = %w[
     approve archive confirm_crz_filing confirm_redaction create crz_filing download_crz_handoff edit
-    generate_crz_handoff import_crz index new publish reject return submit update
+    generate_crz_handoff import_crz index new publish reject return show submit update
   ].freeze
 
   EXPECTED_ROUTES = [
@@ -106,6 +106,7 @@ module EngineRoutingContract
     ["GET", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#download_crz_handoff"],
     ["POST", "/admin/contracts/:id/crz_handoff(.:format)", "#{ADMIN_CONTROLLER}#generate_crz_handoff"],
     ["GET", "/admin/contracts/:id/edit(.:format)", "#{ADMIN_CONTROLLER}#edit"],
+    ["GET", "/admin/contracts/:id(.:format)", "#{ADMIN_CONTROLLER}#show"],
     ["POST", "/admin/contracts/:id/publish(.:format)", "#{ADMIN_CONTROLLER}#publish"],
     ["POST", "/admin/contracts/:id/reject(.:format)", "#{ADMIN_CONTROLLER}#reject"],
     ["POST", "/admin/contracts/:id/return(.:format)", "#{ADMIN_CONTROLLER}#return"],
@@ -502,7 +503,7 @@ RSpec.describe Decidim::ContractsSk::Engine do
       )
     end
 
-    it "exposes exactly the CRUD + transition + CRZ-handoff + import + redaction actions (no show, no destroy)" do
+    it "exposes exactly the CRUD, transition, CRZ and redaction actions plus the read-only show (no destroy)" do
       actions = admin_routes.map { |_, _, endpoint| endpoint.split("#", 2).last }.uniq.sort
 
       expect(actions).to eq(EngineRoutingContract::EXPECTED_ADMIN_ACTIONS)

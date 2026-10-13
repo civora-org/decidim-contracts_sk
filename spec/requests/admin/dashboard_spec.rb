@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # ---------------------------------------------------------------------------
-# Request specs for the admin overview / dashboard (civora-org/civora-platform
-# #126), run against the Stage-1 dummy harness (spec/dummy mounts the engine
+# Request specs for the admin home, "What needs doing today" (civora-org/
+# civora-platform #126, reworked as a task list), run against the Stage-1 dummy harness (spec/dummy mounts the engine
 # at "/"), so the page lives at /admin.
 #
 # Two layers, one file (the audit-trail viewer spec's discipline):
@@ -10,10 +10,10 @@
 # * The default (offline, DB-free) group pins the DENIED paths: the :read
 #   gate opens the action before any query, so no DB connection is needed.
 # * The :db group (CONTRACTS_SK_DB=1) pins everything the page renders —
-#   per-role block visibility (editor-only, reviewer-only, both), the
-#   four-eyes exclusion in the review queue, per-block empty states, the
-#   filtered-index links and "Show all (N)" counts, tenancy isolation and a
-#   query count that does not grow with the number of rows.
+#   which tasks each role sees (reviewer, editor, both, nobody), the
+#   four-eyes exclusion, the single button per task and where it points, the
+#   counts matching the filtered index they link to, the "all done" state,
+#   tenancy isolation and a query count that does not grow with the rows.
 #
 # Synthetic data only (ZP-2026-x references, no real PII).
 #
@@ -136,6 +136,15 @@ RSpec.describe "admin dashboard", type: :request do
       response.body
     end
 
+    # The task <li> by DOM id, or nil when it is not rendered.
+    def task(key)
+      Nokogiri::HTML(body).at_css("#today-#{key}")
+    end
+
+    def task_button(key)
+      task(key)&.at_css("a.button")
+    end
+
     describe "access" do
       it "renders for an editor-only and a reviewer-only role holder" do
         %i[editor reviewer].each do |role|
@@ -143,19 +152,9 @@ RSpec.describe "admin dashboard", type: :request do
 
           get "/admin"
 
-          expect(response).to have_http_status(:ok), "#{role} must reach the overview"
-          expect(body).to include("Overview")
+          expect(response).to have_http_status(:ok), "#{role} must reach the home"
+          expect(body).to include("What needs doing today")
         end
-      end
-
-      it "renders the engine-owned admin layout hooks and the style block exactly once" do
-        create_contract!
-
-        get "/admin"
-
-        expect(body).to include(%(class="cs-admin-actions"), %(class="cs-admin-chips"))
-        expect(body.scan(".cs-admin-actions {").size).to eq(1)
-        expect(body).not_to include(%(style="display))
       end
 
       it "denies a signed-in user without an engine role with the permission flash" do
@@ -166,251 +165,249 @@ RSpec.describe "admin dashboard", type: :request do
         expect(response).to redirect_to("/")
         expect(flash[:alert]).to eq(unauthorized)
       end
-    end
 
-    describe "editor-only" do
-      let(:resolver_roles) { %i[editor] }
+      it "renders the engine-owned admin layout hooks and the style block exactly once, with no inline styles" do
+        create_contract!
 
-      before do
-        queue_item!("Queue item hidden")
-        returned_item!("Returned item mine")
-        approved_item!("Approved item one")
-        create_contract!(title: "Overdue item one", signed_on: overdue_signed_on)
-        create_event!(action: "contract.publish")
-      end
-
-      it "shows returned, approved, deadlines, counts and the audit trail, but no review queue" do
         get "/admin"
 
-        expect(response).to have_http_status(:ok)
-        aggregate_failures do
-          expect(body).to include("Returned to me", "Returned item mine")
-          expect(body).to include("Approved, ready to publish", "Approved item one")
-          expect(body).to include("CRZ deadline overdue", "Overdue item one")
-          expect(body).to include("Contracts by state")
-          expect(body).to include("Recent activity", "Publish")
-          expect(body).not_to include("Waiting for my review")
-          expect(body).not_to include("Queue item hidden")
-        end
+        expect(body).to include(%(class="cs-admin-actions"))
+        expect(body.scan(".cs-admin-actions { display: flex").size).to eq(1)
+        expect(body).not_to include(%(style="display))
       end
     end
 
-    describe "reviewer-only" do
+    describe "the review task (reviewer)" do
       let(:resolver_roles) { %i[reviewer] }
 
-      before do
-        queue_item!("Queue item other")
-        returned_item!("Returned item mine")
-        approved_item!("Approved item one")
-        create_contract!(title: "Due soon item", signed_on: due_soon_signed_on)
-        create_event!(action: "contract.approve")
-      end
+      it "counts what waits for the person, with one button to the filtered list" do
+        2.times { |i| queue_item!("Queue other #{i}") }
 
-      it "shows the review queue, deadlines, counts and the audit trail, but no returned/approved blocks" do
         get "/admin"
 
-        expect(response).to have_http_status(:ok)
-        aggregate_failures do
-          expect(body).to include("Waiting for my review", "Queue item other")
-          expect(body).to include("Due soon item")
-          expect(body).to include("Contracts by state")
-          expect(body).to include("Recent activity")
-          expect(body).not_to include("Returned to me")
-          expect(body).not_to include("Returned item mine")
-          expect(body).not_to include("Approved, ready to publish")
-          expect(body).not_to include("Approved item one")
+        expect(task("review").text).to include("2 contracts are waiting for your review")
+        button = task_button("review")
+        expect(button.text.strip).to eq("Review")
+        expect(button["href"]).to eq("/admin/contracts?state=in_review&submitter=others")
+        expect(task("review").css("a.button").size).to eq(1)
+      end
+
+      it "goes straight to the contract page when exactly one record waits" do
+        record = queue_item!("Only one")
+
+        get "/admin"
+
+        expect(task("review").text).to include("1 contract is waiting for your review")
+        expect(task("review").text).to include("Only one")
+        expect(task_button("review")["href"]).to eq("/admin/contracts/#{record.id}")
+      end
+
+      it "respects four-eyes: the person's own submissions are not theirs to review" do
+        queue_item!("Queue own", submitter: me)
+        queue_item!("Queue theirs")
+
+        get "/admin"
+
+        expect(task("review").text).to include("1 contract is waiting")
+        expect(body).not_to include("Queue own")
+      end
+
+      it "counts a legacy record without a submitter stamp" do
+        queue_item!("Queue legacy", submitter: nil)
+
+        get "/admin"
+
+        expect(task("review").text).to include("1 contract is waiting")
+      end
+
+      it "lists the person's own submissions again when the host enables self-review" do
+        Decidim::ContractsSk.allow_self_review = true
+        record = queue_item!("Queue own", submitter: me)
+
+        get "/admin"
+
+        expect(task("review").text).to include("1 contract is waiting")
+        expect(task_button("review")["href"]).to eq("/admin/contracts/#{record.id}")
+      end
+
+      it "shows nothing else: no returned drafts, publishing, filing or data nudges for a reviewer" do
+        returned_item!("Returned mine")
+        approved_item!("Approved one")
+        create_contract!(title: "No amount")
+
+        get "/admin"
+
+        %w[returned publish confirm-filing missing-amount missing-signed-on].each do |key|
+          expect(task(key)).to be_nil, "#{key} must not be a reviewer's task"
         end
+        expect(body).to include("All done")
       end
     end
 
-    describe "editor and reviewer" do
-      it "renders every block with its rows" do
-        queue_item!("Queue item other")
-        returned_item!("Returned item mine")
-        approved_item!("Approved item one")
-        create_contract!(title: "Overdue item one", signed_on: overdue_signed_on)
-        create_contract!(title: "Due soon item", signed_on: due_soon_signed_on)
+    describe "the editor's tasks" do
+      let(:resolver_roles) { %i[editor] }
+
+      it "shows returned drafts submitted by the person, not other people's, and no review task" do
+        returned_item!("Returned mine")
+        returned_item!("Returned theirs", submitter: colleague)
+        queue_item!("Queue hidden")
 
         get "/admin"
 
-        aggregate_failures do
-          ["Waiting for my review", "Queue item other", "Returned to me", "Returned item mine",
-           "Approved, ready to publish", "Approved item one", "CRZ deadline overdue", "Overdue item one",
-           "CRZ deadline within 14 days", "Due soon item", "Contracts by state", "Recent activity"].each do |text|
-            expect(body).to include(text)
-          end
-        end
+        expect(task("returned").text).to include("1 draft was returned to you with a comment")
+        expect(task("returned").text).to include("Returned mine")
+        expect(body).not_to include("Returned theirs")
+        expect(task_button("returned").text.strip).to eq("Edit")
+        expect(task("review")).to be_nil
       end
 
-      it "keeps the user's own in-review submission out of the queue (four-eyes rule)" do
-        queue_item!("Queue item own", submitter: me)
-        queue_item!("Queue item other")
+      it "counts approved records waiting to be published and how many still lack the redaction confirmation" do
+        approved_item!("Approved a", redaction_confirmed_at: Time.current)
+        approved_item!("Approved b")
 
         get "/admin"
 
-        expect(body).to include("Queue item other")
-        expect(body).not_to include("Queue item own")
+        expect(task("publish").text).to include("2 approved contracts are waiting to be published")
+        expect(task("publish").text).to include("1 still lacks the personal-data confirmation.")
+        expect(task_button("publish")["href"]).to eq("/admin/contracts?state=approved")
       end
 
-      it "lists the user's own submission once allow_self_review is on, and drops the submitter narrowing" do
-        Decidim::ContractsSk.allow_self_review = true
-        queue_item!("Queue item own", submitter: me)
+      it "asks to confirm the CRZ filing of published, unfiled editorial records only" do
+        create_contract!(title: "Published open", state: "published", published_at: Time.current)
+        create_contract!(title: "Published filed", state: "published", published_at: Time.current,
+                         crz_filed_at: Time.current)
+        create_contract!(title: "Mirror", state: "published", published_at: Time.current,
+                         source: Decidim::ContractsSk::CrzImport::Mapper::SOURCE)
 
         get "/admin"
 
-        expect(body).to include("Queue item own")
-        expect(body).to include(%(href="/admin/contracts?state=in_review"))
-        expect(body).not_to include("submitter=others")
+        expect(task("confirm-filing").text).to include("1 published contract is waiting for its CRZ filing")
+        expect(task_button("confirm-filing").text.strip).to eq("Confirm filing")
+        expect(task_button("confirm-filing")["href"]).to match(%r{\A/admin/contracts/\d+/crz_filing\z})
       end
 
-      it "words the queue hint for self-review mode truthfully" do
-        get "/admin"
-        expect(body).to include("Your own submissions are not listed")
-
-        Decidim::ContractsSk.allow_self_review = true
-        get "/admin"
-        expect(body).to include("Self-review is enabled")
-        expect(body).not_to include("Your own submissions are not listed")
-      end
-
-      it "includes an in-review record with no submitter stamp (NULL) in the queue" do
-        queue_item!("Queue item legacy", submitter: nil)
+      it "nudges about drafts without an amount or a signing date, linking to the matching lists" do
+        create_contract!(title: "Has both", amount: 10, signed_on: Date.current)
+        create_contract!(title: "No amount", signed_on: Date.current)
+        create_contract!(title: "Neither one")
+        create_contract!(title: "Published no amount", state: "published", published_at: Time.current)
 
         get "/admin"
 
-        expect(body).to include("Queue item legacy")
-        expect(body).to include("Show all (1)")
-      end
-
-      it "names the submitter on each queue row" do
-        queue_item!("Queue item other")
-
-        get "/admin"
-
-        expect(body).to include("Colin Colleague")
-      end
-
-      it "flags an approved record whose redaction is not confirmed" do
-        approved_item!("Approved unconfirmed")
-        approved_item!("Approved confirmed", redaction_confirmed_at: Time.current)
-
-        get "/admin"
-
-        expect(body.scan("Redaction not confirmed").size).to eq(1)
-      end
-
-      it "orders the queue oldest-first, the returned list newest-returned-first" do
-        newer = queue_item!("Queue newer")
-        older = queue_item!("Queue older")
-        newer.update_columns(updated_at: 1.hour.ago)
-        older.update_columns(updated_at: 3.days.ago)
-        returned_item!("Returned early", reviewed_at: 5.days.ago)
-        returned_item!("Returned late", reviewed_at: 1.day.ago)
-
-        get "/admin"
-
-        expect(body.index("Queue older")).to be < body.index("Queue newer")
-        expect(body.index("Returned late")).to be < body.index("Returned early")
-      end
-
-      it "puts returned records without a review stamp after the stamped ones (portable NULLs-last)" do
-        returned_item!("Returned unstamped", reviewed_at: nil)
-        returned_item!("Returned stamped early", reviewed_at: 9.days.ago)
-        returned_item!("Returned stamped late", reviewed_at: 1.day.ago)
-
-        get "/admin"
-
-        expect(body.index("Returned stamped late")).to be < body.index("Returned stamped early")
-        expect(body.index("Returned stamped early")).to be < body.index("Returned unstamped")
-      end
-
-      it "orders the deadline lists by signing date, earliest first" do
-        create_contract!(title: "Overdue later", signed_on: overdue_signed_on + 10.days)
-        create_contract!(title: "Overdue earlier", signed_on: overdue_signed_on)
-
-        get "/admin"
-
-        expect(body.index("Overdue earlier")).to be < body.index("Overdue later")
-      end
-
-      it "shows the user's returned records only, not another submitter's" do
-        returned_item!("Returned item mine")
-        returned_item!("Returned item theirs", submitter: colleague)
-
-        get "/admin"
-
-        expect(body).to include("Returned item mine")
-        expect(body).not_to include("Returned item theirs")
-      end
-
-      it "keeps CRZ mirrors, filed and terminal records out of the deadline lists" do
-        create_contract!(title: "Overdue mirror", signed_on: overdue_signed_on, source: "crz", source_id: "900000001",
-                         state: "published")
-        create_contract!(title: "Overdue filed", signed_on: overdue_signed_on, crz_filed_at: Time.current)
-        create_contract!(title: "Overdue archived", signed_on: overdue_signed_on, state: "archived")
-
-        get "/admin"
-
-        expect(body).not_to include("Overdue mirror", "Overdue filed", "Overdue archived")
+        expect(task("missing-amount").text).to include("2 drafts have no amount")
+        expect(task("missing-signed-on").text).to include("1 draft has no signing date")
+        expect(task_button("missing-amount")["href"]).to eq("/admin/contracts?missing=amount")
+        expect(task_button("missing-signed-on").text.strip).to eq("Fill in")
       end
     end
 
-    describe "links" do
-      before do
-        queue_item!("Queue item other")
-        returned_item!("Returned item mine")
-        approved_item!("Approved item one")
-        create_contract!(title: "Overdue item one", signed_on: overdue_signed_on)
-        create_contract!(title: "Due soon item", signed_on: due_soon_signed_on)
-      end
-
-      it "points every list at its filtered contracts index" do
-        get "/admin"
-
-        aggregate_failures do
-          expect(body).to include(%(href="/admin/contracts?state=in_review&amp;submitter=others"))
-          expect(body).to include(%(href="/admin/contracts?state=returned&amp;submitter=me"))
-          expect(body).to include(%(href="/admin/contracts?state=approved"))
-          expect(body).to include(%(href="/admin/contracts?deadline=overdue"))
-          expect(body).to include(%(href="/admin/contracts?deadline=due_soon"))
-          expect(body).to include(%(href="/admin/audit_events"))
-        end
-      end
-
-      it "links each state count to its state filter, in lifecycle order with zeros" do
-        get "/admin"
-
-        Decidim::ContractsSk::ContractLifecycle::STATES.each do |state|
-          expect(body).to include(%(href="/admin/contracts?state=#{state}"))
-        end
-        expect(body).to include("Archived (0)")
-        expect(body).to include("In review (1)")
-        expect(body.index("Draft (")).to be < body.index("Archived (")
-      end
-
-      it "links an editable record to its edit page and a non-editable one to the index narrowed to it" do
-        draft = create_contract!(title: "Overdue editable", signed_on: overdue_signed_on)
-        in_review = Decidim::ContractsSk::Contract.find_by!(title: "Queue item other")
+    describe "CRZ deadline tasks (urgent)" do
+      it "gives each record its own next step for this person, most overdue first" do
+        draft = create_contract!(title: "Late draft", signed_on: overdue_signed_on - 1.month)
+        published = create_contract!(title: "Late published", state: "published", published_at: Time.current,
+                                     signed_on: overdue_signed_on)
+        waiting = queue_item!("Late in review", signed_on: due_soon_signed_on)
 
         get "/admin"
 
-        expect(body).to include(%(href="/admin/contracts/#{draft.id}/edit"))
-        expect(body).not_to include(%(href="/admin/contracts/#{in_review.id}/edit"))
-        expect(body).to include(%(href="/admin/contracts?q=#{in_review.reference}&amp;state=in_review"))
+        expect(task("crz-overdue-#{draft.id}").text).to include("Late draft")
+        expect(task_button("crz-overdue-#{draft.id}").text.strip).to eq("Prepare the CRZ handoff")
+        expect(task_button("crz-overdue-#{draft.id}")["href"]).to eq("/admin/contracts/#{draft.id}/edit#crz-handoff")
+        expect(task_button("crz-overdue-#{published.id}").text.strip).to eq("Confirm filing")
+        expect(task_button("crz-due-soon-#{waiting.id}").text.strip).to eq("Review")
+        expect(body.index("Late draft")).to be < body.index("Late published")
+        expect(body).to include("CRZ deadline is near")
       end
 
-      it "offers the overview from the contracts index and the audit trail" do
-        controller_classes = [Decidim::ContractsSk::Admin::ContractsController,
-                              Decidim::ContractsSk::Admin::AuditEventsController]
-        controller_classes.each do |klass|
-          allow_any_instance_of(klass).to receive_messages(current_user: me, user_signed_in?: true,
-                                                           current_organization: organization)
-        end
+      it "words a deadline with days left" do
+        later = create_contract!(title: "Later one", signed_on: due_soon_signed_on)
 
-        get "/admin/contracts"
-        expect(body).to include(%(href="/admin"))
-        get "/admin/audit_events"
-        expect(body).to include(%(href="/admin"))
+        get "/admin"
+
+        expect(task("crz-due-soon-#{later.id}").text).to include("must be filed within 5 days")
+      end
+
+      it "shows a reviewer only the records they can judge, never a draft they cannot act on" do
+        Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[reviewer] }
+        create_contract!(title: "Late draft", signed_on: overdue_signed_on)
+        mine = queue_item!("Late own", submitter: me, signed_on: overdue_signed_on)
+        theirs = queue_item!("Late theirs", signed_on: overdue_signed_on)
+
+        get "/admin"
+
+        expect(body).not_to include("Late draft")
+        expect(task("crz-overdue-#{mine.id}")).to be_nil
+        expect(task_button("crz-overdue-#{theirs.id}").text.strip).to eq("Review")
+      end
+
+      it "keeps CRZ mirrors, filed and terminal records out" do
+        mirror_source = Decidim::ContractsSk::CrzImport::Mapper::SOURCE
+        create_contract!(title: "Mirror late", source: mirror_source, signed_on: overdue_signed_on)
+        create_contract!(title: "Filed late", crz_filed_at: Time.current, signed_on: overdue_signed_on)
+        create_contract!(title: "Rejected late", state: "rejected", signed_on: overdue_signed_on)
+
+        get "/admin"
+
+        expect(body).not_to include("Mirror late", "Filed late", "Rejected late")
+      end
+
+      it "lists at most five and links the rest to the unfiled list" do
+        7.times { |i| create_contract!(title: format("Late row %<n>d", n: i), signed_on: overdue_signed_on) }
+
+        get "/admin"
+
+        expect(body.scan(/Late row \d/).uniq.size).to eq(5)
+        expect(body).to include("and 2 more contracts with a deadline coming up")
+        expect(body).to include(%(href="/admin/contracts?deadline=unfiled"))
+      end
+    end
+
+    describe "who sees what" do
+      it "shows an editor and reviewer both groups of tasks, each with exactly one button" do
+        queue_item!("Queue other")
+        returned_item!("Returned mine")
+
+        get "/admin"
+
+        Nokogiri::HTML(body).css(".cs-today__task").each do |item|
+          expect(item.css("a.button").size).to eq(1)
+        end
+        expect(task("review")).not_to be_nil
+        expect(task("returned")).not_to be_nil
+      end
+
+      it "never shows another organization's records or counts them" do
+        foreign_org = Decidim::Organization.create!
+        foreign_user = Decidim::User.create!(organization: foreign_org, name: "Frank Foreign")
+        queue_item!("Foreign queue", organization: foreign_org, author: foreign_user, submitter: foreign_user)
+        returned_item!("Foreign returned", organization: foreign_org, author: foreign_user, submitter: me)
+        create_contract!(title: "Foreign overdue", organization: foreign_org, author: foreign_user,
+                         signed_on: overdue_signed_on)
+        queue_item!("Queue item mine")
+
+        get "/admin"
+
+        expect(body).not_to include("Foreign")
+        expect(task("review").text).to include("1 contract is waiting")
+        expect(task("returned")).to be_nil
+      end
+    end
+
+    describe "the empty state" do
+      it "says everything is done when nothing waits for the person" do
+        get "/admin"
+
+        expect(body).to include("All done")
+        expect(body).to include("Nothing is waiting for you today.")
+        expect(Nokogiri::HTML(body).css(".cs-today__task")).to be_empty
+      end
+
+      it "does not claim everything is done while a task exists" do
+        queue_item!("Queue other")
+
+        get "/admin"
+
+        expect(body).not_to include("All done")
       end
     end
 
@@ -421,60 +418,43 @@ RSpec.describe "admin dashboard", type: :request do
                                                               current_organization: organization)
       end
 
-      it "makes Show all (N) equal to the rows of the linked index query" do
+      it "links each many-record task to a list with exactly the counted rows" do
         3.times { |i| queue_item!("Queue other #{i}") }
         queue_item!("Queue own", submitter: me)
-        queue_item!("Queue legacy", submitter: nil)
-        2.times { |i| returned_item!("Returned mine #{i}") }
-        returned_item!("Returned theirs", submitter: colleague)
+        2.times { |i| returned_item!("Returned mine #{i}", amount: 5, signed_on: Date.current) }
+        returned_item!("Returned theirs", submitter: colleague, amount: 5, signed_on: Date.current)
+        2.times { |i| create_contract!(title: "Gap #{i}") }
+        create_contract!(title: "Complete", amount: 5, signed_on: Date.current)
 
         get "/admin"
-        queue_count = body[/id="dashboard-review-queue".*?Show all \((\d+)\)/m, 1]
-        returned_count = body[/id="dashboard-returned".*?Show all \((\d+)\)/m, 1]
+        keys = %w[review returned missing-amount]
+        links = keys.to_h { |key| [key, task_button(key)["href"]] }
+        counts = keys.to_h { |key| [key, task(key).text[/\d+/].to_i] }
 
-        get "/admin/contracts", params: { state: "in_review", submitter: "others" }
-        expect(body.scan(/Queue (?:other|legacy)[ \d]*</).size).to eq(queue_count.to_i)
+        get links["review"]
+        expect(body.scan(/Queue other \d/).uniq.size).to eq(counts["review"])
         expect(body).not_to include("Queue own")
-        get "/admin/contracts", params: { state: "returned", submitter: "me" }
-        expect(body.scan(/Returned mine \d</).size).to eq(returned_count.to_i)
-        expect(queue_count).to eq("4")
-        expect(returned_count).to eq("2")
+        get links["returned"]
+        expect(body.scan(/Returned mine \d/).uniq.size).to eq(counts["returned"])
+        get links["missing-amount"]
+        expect(body.scan(/Gap \d/).uniq.size).to eq(counts["missing-amount"])
+        expect(body).not_to include("Complete")
+        expect(counts).to eq("review" => 3, "returned" => 2, "missing-amount" => 2)
       end
     end
 
-    describe "empty states" do
-      it "renders a localized empty state for every visible block" do
-        get "/admin"
-
-        aggregate_failures do
-          expect(body).to include("Nothing is waiting for your review.")
-          expect(body).to include("None of your submissions has been returned.")
-          expect(body).to include("No approved records are waiting to be published.")
-          expect(body).to include("No CRZ deadlines are overdue.")
-          expect(body).to include("No CRZ deadlines are due soon.")
-          expect(body).to include("No contracts have been created yet.")
-          expect(body).to include("No audit events have been recorded yet.")
-        end
-      end
-
-      it "does not render the empty state of a block the role may not see" do
-        Decidim::ContractsSk.role_resolver = ->(_user, _context) { [:editor] }
+    describe "the rarely needed things stay one click away" do
+      it "keeps the all-contracts overview and the recent changes collapsed" do
+        create_event!(action: "contract.publish")
 
         get "/admin"
+        doc = Nokogiri::HTML(body)
 
-        expect(body).not_to include("Nothing is waiting for your review.")
-        expect(body).to include("None of your submissions has been returned.")
-      end
-    end
-
-    describe "limits" do
-      it "caps a list at ten rows and links the full count" do
-        12.times { |i| queue_item!(format("Queue row %<n>02d", n: i)) }
-
-        get "/admin"
-
-        expect(body.scan(/Queue row \d\d/).size).to eq(10)
-        expect(body).to include("Show all (12)")
+        expect(doc.at_css("details#today-overview")).not_to be_nil
+        expect(doc.at_css("details#today-overview")["open"]).to be_nil
+        expect(doc.at_css("details#today-recent-activity")["open"]).to be_nil
+        expect(body).to include("Contracts by state")
+        expect(body).to include("Recent activity")
       end
 
       it "renders a dangling audit target (class no longer loads) as the deleted-target label, not a 500" do
@@ -488,43 +468,15 @@ RSpec.describe "admin dashboard", type: :request do
         expect(body).to include("Record no longer exists")
       end
 
-      it "shows only the last ten audit events, newest first" do
-        contract = create_contract!
-        12.times do |i|
-          create_event!(action: format("order_%<n>02d", n: i), target: contract,
-                        created_at: Time.current - (20 - i).minutes)
-        end
+      it "offers the home from the contracts index" do
+        controller = Decidim::ContractsSk::Admin::ContractsController
+        allow_any_instance_of(controller).to receive_messages(current_user: me, user_signed_in?: true,
+                                                              current_organization: organization)
 
-        get "/admin"
+        get "/admin/contracts"
 
-        expect(body.scan(/Order \d\d/).size).to eq(10)
-        expect(body.index("Order 11")).to be < body.index("Order 02")
-        expect(body).not_to include("Order 01")
-      end
-    end
-
-    describe "tenancy" do
-      it "never lists or counts another organization's contracts or audit events" do
-        foreign_org = Decidim::Organization.create!
-        foreign_user = Decidim::User.create!(organization: foreign_org, name: "Frank Foreign")
-        foreign = [
-          queue_item!("Foreign queue", organization: foreign_org, author: foreign_user, submitter: foreign_user),
-          returned_item!("Foreign returned", organization: foreign_org, author: foreign_user, submitter: me),
-          approved_item!("Foreign approved", organization: foreign_org, author: foreign_user),
-          create_contract!(title: "Foreign overdue", organization: foreign_org, author: foreign_user,
-                           signed_on: overdue_signed_on)
-        ]
-        create_event!(action: "order_foreign", target: foreign.first, organization: foreign_org,
-                      actor: foreign_user)
-        queue_item!("Queue item mine")
-
-        get "/admin"
-
-        expect(body).to include("Queue item mine")
-        expect(body).not_to include("Foreign")
-        expect(body).not_to include("Order foreign")
-        expect(body).to include("All (1)")
-        expect(body).to include("In review (1)")
+        expect(body).to include(%(href="/admin"))
+        expect(body).to include("What needs doing today")
       end
     end
 
@@ -549,33 +501,23 @@ RSpec.describe "admin dashboard", type: :request do
           approved_item!("Approved row")
           create_contract!(title: "Overdue row", signed_on: overdue_signed_on)
           create_contract!(title: "Due soon row", signed_on: due_soon_signed_on)
-          actor = Decidim::User.create!(organization: organization, name: "Act Or")
-          create_event!(action: "contract.submit", actor: actor)
-          create_amendment_event!(actor)
         end
       end
 
-      # An amendment-targeted event: its label links through the amendment's
-      # parent contract, the association the dashboard preloads.
-      def create_amendment_event!(actor)
-        amendment = Decidim::ContractsSk::Amendment.create!(
-          contract: create_contract!(title: "Amended row"), version: 1, summary: "Extended deadline",
-          organization: organization, author: colleague
-        )
-        create_event!(action: "amendment.publish", target: amendment, actor: actor)
-      end
-
-      it "runs the same number of queries with one row per block as with five" do
-        seed_rows(1)
+      it "runs the same number of queries with two rows per kind as with six" do
+        # Two or more records per kind: a one-record task also loads the
+        # record to link straight to it, which is one more (bounded) query.
+        seed_rows(2)
         get "/admin" # warm-up: first-request schema/cache work is not under test
-        with_one = count_queries { get "/admin" }
+        with_two = count_queries { get "/admin" }
 
         seed_rows(4)
-        with_five = count_queries { get "/admin" }
+        with_six = count_queries { get "/admin" }
 
-        expect(body).to include("Amendment v1")
-        expect(with_five).to eq(with_one)
-        expect(with_one).to be < 30
+        # One COUNT per task kind plus one capped list for the deadlines; the
+        # per-record permission checks read the loaded rows, no further query.
+        expect(with_six).to eq(with_two)
+        expect(with_two).to be < 40
       end
     end
   end

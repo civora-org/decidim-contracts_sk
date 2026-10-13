@@ -5,9 +5,11 @@
 # rubocop:disable Metrics/BlockLength
 Decidim::ContractsSk::Engine.routes.draw do
   # Admin routes (declared before the public /:id catch-all so that the
-  # admin namespace is matched first). Contract records have no :show — they
-  # are edited, not displayed — and no :destroy — deletion is not part of
-  # the workflow yet. Parties are managed per contract through the nested
+  # admin namespace is matched first). A contract has a read-only :show (the
+  # one page that says where it is in the process and what comes next; the
+  # reviewer's only view of a record they cannot edit) next to the edit
+  # page, and no :destroy — deletion is not part of the workflow yet. Parties
+  # are managed per contract through the nested
   # resource below, which carries the full add/edit/remove surface.
   namespace :admin do
     # Admin landing page (civora-org/civora-platform#126): the role holder's
@@ -25,7 +27,7 @@ Decidim::ContractsSk::Engine.routes.draw do
     post "contracts/import/preview", to: "contract_imports#preview", as: :preview_contract_import
     post "contracts/import", to: "contract_imports#create", as: :contract_imports
 
-    resources :contracts, only: %i[index new create edit update] do
+    resources :contracts, only: %i[index show new create edit update] do
       # CRZ single-record import (ADR-008, civora-org/civora-platform#86):
       # one collection POST taking a :source_id (CRZ numeric id) param —
       # not tied to an existing record, so deliberately a collection route

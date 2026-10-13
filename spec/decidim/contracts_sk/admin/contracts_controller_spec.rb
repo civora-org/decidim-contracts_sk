@@ -8,7 +8,7 @@
 # admin/public separation and the exact action surface (the five CRUD actions
 # plus the six lifecycle-transition actions, the CRZ-handoff pair, the
 # single-record CRZ import and the ADR-007 redaction-confirmation POST —
-# no show, no destroy).
+# the read-only show page, no destroy).
 # ---------------------------------------------------------------------------
 
 require "spec_helper"
@@ -21,12 +21,12 @@ module Decidim
       end
 
       # rubocop:disable RSpec/ExampleLength
-      it "implements exactly the CRUD, transition, CRZ handoff/import/filing and redaction actions (no show/destroy)" do
+      it "implements exactly the CRUD, transition, CRZ and redaction actions plus the read-only show (no destroy)" do
         expect(described_class.public_instance_methods(false).map(&:to_s).sort)
           .to eq(%w[
                    approve archive confirm_crz_filing confirm_redaction create crz_filing
                    download_crz_handoff edit generate_crz_handoff import_crz index new publish reject
-                   return submit update
+                   return show submit update
                  ])
       end
       # rubocop:enable RSpec/ExampleLength

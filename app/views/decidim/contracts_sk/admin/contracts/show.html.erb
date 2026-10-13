@@ -1,0 +1,117 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<%# The contract page (read-only): the one place a person sees a record whole.
+    Top to bottom: what it is, where it is in the process and whose turn it
+    is, the next step as buttons (the same per-action permissions as the
+    index and edit pages; four-eyes is already applied by
+    transition_events_for), the facts, and the rarely needed things
+    (notes, history, parties, amendments) collapsed. The reviewer's only way
+    to read what they are about to approve. Decidim admin classes plus
+    .cs-* engine rules only (docs/public-ui.md). %>
+<% scope = "decidim.contracts_sk.admin.show" %>
+<% redaction_open = allowed_to?(:confirm_redaction, :contract, contract: @contract) && @contract.redaction_confirmed_at.blank? %>
+
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title" id="cs-contract-title"><%= @contract.title %></h1>
+    <div class="cs-admin-actions">
+      <%= link_to t("decidim.contracts_sk.admin.contracts.back_to_index"), admin_contracts_path,
+                  class: "button button__sm button__secondary" %>
+      <% if allowed_to?(:update, :contract, contract: @contract) %>
+        <%= link_to t("#{scope}.edit"), edit_admin_contract_path(@contract),
+                    class: "button button__sm button__secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card-section">
+    <p class="cs-show__meta">
+      <span class="cs-show__ref"><%= @contract.reference %></span>
+      <span class="label"><%= t(@contract.state, scope: "decidim.contracts_sk.contract_states") %></span>
+      <%= crz_deadline_badge(@contract, today: Date.current) %>
+    </p>
+    <%= render "progress", contract: @contract, yours: show_actions_available?(@contract) %>
+  </div>
+
+  <%# The reviewer's reason on a returned or rejected record. %>
+  <% if @contract.review_reason.present? && Decidim::ContractsSk::ContractLifecycle::DECISION_STATES.include?(@contract.state&.to_sym) %>
+    <div class="card-section">
+      <h2 class="h4"><%= t("decidim.contracts_sk.admin.contracts.review_decision.heading") %></h2>
+      <%= render "review_decision_body", contract: @contract %>
+    </div>
+  <% end %>
+
+  <%= render "next_step", contract: @contract %>
+
+  <% if redaction_open %>
+    <div class="card-section" id="cs-redaction">
+      <h2 class="h4"><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></h2>
+      <%= render "redaction_confirmation_body", contract: @contract %>
+    </div>
+  <% end %>
+
+  <div class="card-section">
+    <h2 class="h4"><%= t("#{scope}.facts") %></h2>
+    <dl class="cs-show__facts">
+      <% deadline_line = crz_deadline_line(@contract) %>
+      <% if deadline_line %>
+        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></dt><dd><%= deadline_line %></dd></div>
+      <% end %>
+      <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.amount") %></dt>
+        <dd><%= @contract.amount.present? ? format_amount(@contract.amount, @contract.currency) : t("#{scope}.missing") %></dd></div>
+      <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
+        <dd><%= @contract.signed_on.present? ? format_date(@contract.signed_on) : t("#{scope}.missing") %></dd></div>
+      <% if @contract.effective_from.present? %>
+        <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.effective_from") %></dt><dd><%= format_date(@contract.effective_from) %></dd></div>
+      <% end %>
+      <% if @contract.subject_matter.present? %>
+        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.contract.subject_matter") %></dt><dd><%= @contract.subject_matter %></dd></div>
+      <% end %>
+      <% if @parties.any? %>
+        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("#{scope}.parties") %></dt>
+          <dd>
+            <ul class="cs-show__list">
+              <% @parties.each do |party| %>
+                <li><%= party.name %> <span class="cs-today__ref"><%= [t("decidim.contracts_sk.contract.party.#{party.role}", default: party.role), (party.ico.present? ? "IČO #{party.ico}" : nil)].compact.join(" · ") %></span></li>
+              <% end %>
+            </ul>
+          </dd></div>
+      <% end %>
+      <% if @documents.any? %>
+        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("#{scope}.documents") %></dt>
+          <dd>
+            <ul class="cs-show__list">
+              <% @documents.each do |document| %>
+                <li><%= document.title %> <span class="cs-today__ref"><%= document.file_name %></span></li>
+              <% end %>
+            </ul>
+          </dd></div>
+      <% end %>
+      <% if @contract.redaction_confirmed_at.present? %>
+        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></dt>
+          <dd><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.confirmed_on", confirmed_at: format_date(@contract.redaction_confirmed_at)) %></dd></div>
+      <% end %>
+    </dl>
+  </div>
+
+  <%# Rarely needed: one click away, never in the way. %>
+  <div class="card-section">
+    <details class="cs-today__details" id="cs-show-more">
+      <summary><%= t("#{scope}.more") %></summary>
+      <div class="cs-admin-chips cs-show__more">
+        <% if allowed_to?(:read, :note, contract: @contract) %>
+          <%= link_to t("decidim.contracts_sk.admin.notes.link"), admin_contract_notes_path(@contract),
+                      class: "button button__sm button__secondary" %>
+        <% end %>
+        <% if allowed_to?(:read, :audit_event) %>
+          <%= link_to t("decidim.contracts_sk.admin.audit_events.index.title"),
+                      admin_audit_events_path(contract_id: @contract),
+                      class: "button button__sm button__secondary" %>
+        <% end %>
+        <%= link_to t("decidim.contracts_sk.admin.parties.index.title"), admin_contract_parties_path(@contract),
+                    class: "button button__sm button__secondary" %>
+        <%= link_to t("decidim.contracts_sk.admin.amendments.index.title"), admin_contract_amendments_path(@contract),
+                    class: "button button__sm button__secondary" %>
+      </div>
+    </details>
+  </div>
+</div>

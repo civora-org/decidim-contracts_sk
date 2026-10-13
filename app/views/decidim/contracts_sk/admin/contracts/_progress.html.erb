@@ -1,0 +1,37 @@
+<%# "Where am I in the process": the five steps of a contract (Draft, Check,
+    Approved, Published, Filed in the CRZ), the current one marked, and one
+    sentence on what happens next and whose turn it is. Shared by the
+    contract page and the edit page. Pure read model (ContractProgress);
+    CRZ mirrors never ran through the process and render nothing.
+    Status is never colour alone: the marker carries a tick or a number and
+    each step carries a screen-reader word ("done", "current step").
+    Locals:
+      contract - the record
+      yours    - true when this person has something to do on it right now %>
+<% progress = contract_progress(contract) %>
+<% if progress.applicable? %>
+  <% scope = "decidim.contracts_sk.admin.progress" %>
+  <div class="cs-steps-wrap">
+    <ol class="cs-steps" aria-label="<%= t("#{scope}.title") %>">
+      <% progress.steps.each_with_index do |step, index| %>
+        <% label_key = progress.rejected? && step.status == :stopped ? :rejected : step.key %>
+        <li class="cs-steps__step cs-steps__step--<%= step.status %>"<%= raw(' aria-current="step"') if step.status == :current %>>
+          <span class="cs-steps__marker" aria-hidden="true"><%= step.status == :done ? "✓" : (step.status == :stopped ? "✕" : index + 1) %></span>
+          <span class="cs-steps__label">
+            <%= t("#{scope}.steps.#{label_key}") %>
+            <span class="cs-admin-sr-only"> (<%= t("#{scope}.status.#{step.status}") %>)</span>
+            <% if step.key == :draft && progress.returned? %>
+              <span class="cs-steps__flag"><%= t("#{scope}.returned_flag") %></span>
+            <% end %>
+          </span>
+        </li>
+      <% end %>
+    </ol>
+    <p class="cs-steps__next">
+      <% if local_assigns.fetch(:yours, false) %>
+        <span class="label warning cs-steps__turn"><%= t("#{scope}.turn.you") %></span>
+      <% end %>
+      <%= t("#{scope}.next.#{progress.next_key}") %>
+    </p>
+  </div>
+<% end %>

@@ -57,7 +57,7 @@ module Decidim
                       :index_deadline_options, :index_deadline_counts,
                       :index_deadline_counter_label, :index_deadline_counter_path,
                       :index_deadline_counter_classes, :index_today,
-                      :index_submitter_options
+                      :index_submitter_options, :contract_progress, :show_actions_available?
 
         # Case-insensitive free-text match for the index :q filter over the
         # two editorial identity fields — the engine's shared TextSearch
@@ -78,10 +78,17 @@ module Decidim
         # deadline (civora-org/civora-platform#124) is :due_soon / :overdue
         # or nil ("any deadline"). submitter (civora-org/civora-platform#126)
         # is :me / :others or nil ("any submitter").
-        IndexFilters = Struct.new(:state, :source, :q, :deadline, :submitter, keyword_init: true)
+        IndexFilters = Struct.new(:state, :source, :q, :deadline, :submitter, :missing, keyword_init: true)
 
         # The deadline filter vocabulary (civora-org/civora-platform#124).
-        DEADLINE_FILTERS = %i[due_soon overdue].freeze
+        # :unfiled = every tracked record not yet confirmed as filed in the
+        # CRZ (the "waiting for the filing confirmation" list of the admin
+        # home); :due_soon and :overdue narrow it by the deadline.
+        DEADLINE_FILTERS = %i[due_soon overdue unfiled].freeze
+
+        # The data-quality lists of the admin home: records still editable
+        # (draft, returned) that lack the field.
+        MISSING_FILTERS = %i[amount signed_on].freeze
 
         # The submitter filter vocabulary (civora-org/civora-platform#126).
         SUBMITTER_FILTERS = %i[me others].freeze
@@ -99,6 +106,19 @@ module Decidim
         # ?template_id= prefills the form with the template's defaults and
         # nothing more - the permission is the plain :create :contract
         # check, since a template never publishes or advances anything.
+        # The one page of a record (read-only): where it is in the process,
+        # whose turn it is, the next step as buttons, the facts. Every role
+        # holder may open it (the index's :read gate); the controls on it
+        # carry the same per-action permissions as everywhere else.
+        def show
+          @contract = contracts_scope.find(params[:id])
+
+          enforce_permission_to :read, :contract
+
+          @parties = @contract.parties.order(:id)
+          @documents = @contract.documents.order(:id)
+        end
+
         def new
           enforce_permission_to :create, :contract
 
@@ -529,6 +549,24 @@ module Decidim
           redirect_to admin_contracts_path
         end
 
+        # The record's position in the process (steps and next step), for
+        # the show and edit pages.
+        def contract_progress(contract)
+          ContractProgress.new(contract)
+        end
+
+        # True when this person has something to do on the record right now
+        # (a lifecycle event, the redaction confirmation, the CRZ filing
+        # confirmation or an edit): the page then says "your turn" instead of
+        # "waiting for a colleague". Same permission checks as the controls.
+        def show_actions_available?(contract)
+          transition_events_for(contract).any? ||
+            %i[update confirm_redaction confirm_crz_filing].any? do |action|
+              allowed_to?(action, :contract, contract: contract) &&
+                !(action == :confirm_redaction && contract.redaction_confirmed_at.present?)
+            end
+        end
+
         # The events the acting user may trigger on this record right now: the
         # lifecycle's events from the record's state, filtered by the edges
         # whose roles intersect the user's engine roles. Uses the same
@@ -585,7 +623,17 @@ module Decidim
         # never to a 500.
         def filtered_contracts
           scope = contracts_scope.order(INDEX_ORDER)
-          apply_deadline_filter(apply_q_filter(apply_source_filter(apply_submitter_filter(apply_state_filter(scope)))))
+          scope = apply_state_filter(scope)
+          scope = apply_submitter_filter(scope)
+          scope = apply_source_filter(scope)
+          apply_missing_filter(apply_deadline_filter(apply_q_filter(scope)))
+        end
+
+        def apply_missing_filter(scope)
+          return scope unless index_filters.missing
+
+          editable = scope.where(state: ContractLifecycle::EDITABLE_STATES.map(&:to_s))
+          index_filters.missing == :amount ? editable.where(amount: nil) : editable.where(signed_on: nil)
         end
 
         # Submitter filter (civora-org/civora-platform#126): "me" is the
@@ -608,6 +656,7 @@ module Decidim
           case index_filters.deadline
           when :due_soon then scope.crz_due_soon(index_today)
           when :overdue then scope.crz_overdue(index_today)
+          when :unfiled then scope.crz_deadline_tracked
           else scope
           end
         end
@@ -646,8 +695,14 @@ module Decidim
             source: index_source_param,
             q: TextSearch.clean(params[:q]).strip,
             deadline: index_deadline_param,
-            submitter: index_submitter_param
+            submitter: index_submitter_param,
+            missing: index_missing_param
           )
+        end
+
+        def index_missing_param
+          candidate = params[:missing].to_s.presence&.to_sym
+          candidate if MISSING_FILTERS.include?(candidate)
         end
 
         def index_submitter_param
@@ -733,9 +788,7 @@ module Decidim
         # garbage param — normalized away to the default view — never gets
         # the filtered wording over the true-empty one.
         def index_filters_active?
-          index_filters.state.present? || index_filters.source.present? ||
-            index_filters.q.present? || index_filters.deadline.present? ||
-            index_filters.submitter.present?
+          index_filters.to_h.values.any?(&:present?)
         end
 
         # CRZ deadline counters (civora-org/civora-platform#124): due-soon
@@ -771,7 +824,7 @@ module Decidim
         def index_filter_params
           { state: index_filters.state, source: index_filters.source,
             q: index_filters.q.presence, deadline: index_filters.deadline,
-            submitter: index_filters.submitter }.compact
+            submitter: index_filters.submitter, missing: index_filters.missing }.compact
         end
 
         # Chip label: the localized state label (the shared contract_states.*

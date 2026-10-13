@@ -1,0 +1,36 @@
+<%# One item of the "What needs doing today" list: one plain sentence, an
+    optional hint and ONE button. Locals:
+      task - Admin::TodayTasks::Task
+    The sentence comes from today.tasks.<key>.sentence (plural on the count;
+    urgent tasks interpolate the record's title and the days). The button
+    goes to the record itself for a one-record task, otherwise to the
+    contracts index narrowed to what the task counted. Its accessible name
+    starts with the visible verb (WCAG 2.5.3) and carries the sentence, so
+    a screen-reader user tabbing the list knows what each button acts on. %>
+<% scope = "decidim.contracts_sk.admin.today" %>
+<% contract = task.contract %>
+<% days = task.days %>
+<% sentence_key = task.key == :crz_due_soon && days&.zero? ? :crz_today : task.key %>
+<% days_text = days ? t("decidim.contracts_sk.admin.contracts.deadline.days", count: days.abs) : nil %>
+<% sentence = t("#{scope}.tasks.#{sentence_key}.sentence", count: task.total, title: contract&.title, days: days_text, left: days_text) %>
+<% hint = task.group == :urgent ? t("#{scope}.urgent_hints.#{task.action}") : t("#{scope}.tasks.#{task.key}.hint", default: "") %>
+<% action = t("#{scope}.actions.#{task.action}") %>
+<li class="cs-today__task cs-today__task--<%= task.group %>" id="today-<%= task.key.to_s.dasherize %><%= "-#{contract.id}" if contract && task.group == :urgent %>">
+  <div class="cs-today__text">
+    <p class="cs-today__sentence"><%= sentence %></p>
+    <% if contract && task.group != :urgent %>
+      <p class="cs-today__record"><%= contract.title %> <span class="cs-today__ref"><%= contract.reference %></span></p>
+    <% elsif contract %>
+      <p class="cs-today__record"><span class="cs-today__ref"><%= contract.reference %></span> <%= crz_deadline_badge(contract, today: dashboard_today) %></p>
+    <% end %>
+    <% if hint.present? %>
+      <p class="cs-today__hint"><%= hint %></p>
+    <% end %>
+    <% if task.key == :publish && task.extra.to_i.positive? %>
+      <p class="cs-today__hint"><%= t("#{scope}.tasks.publish.unconfirmed", count: task.extra) %></p>
+    <% end %>
+  </div>
+  <%= link_to action, today_task_path(task),
+              class: "button button__sm button__secondary cs-today__button",
+              aria: { label: "#{action}: #{sentence}" } %>
+</li>

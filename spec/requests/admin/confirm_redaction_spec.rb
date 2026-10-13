@@ -357,7 +357,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
 
       expect(response).to have_http_status(:ok)
       aggregate_failures do
-        expect(response.body).to include("<details")
+        expect(response.body).to include(%(<details class="redaction-confirmation"))
         expect(response.body).to include("Privacy redaction")
         expect(response.body).to include("personal names and addresses of natural persons")
         expect(response.body).to include(%(action="/admin/contracts/#{draft.id}/confirm_redaction"))
@@ -379,7 +379,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
 
       expect(response).to have_http_status(:ok)
       aggregate_failures do
-        expect(response.body).not_to include("<details")
+        expect(response.body).not_to include(%(<details class="redaction-confirmation"))
         expect(response.body).not_to include(%(action="/admin/contracts/#{contract.id}/confirm_redaction"))
         expect(response.body).not_to include(%(name="redaction_confirmed"))
         # The confirmation line is the edit page's historical record; the
@@ -396,7 +396,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
 
       expect(response).to have_http_status(:ok)
       aggregate_failures do
-        expect(response.body).not_to include("<details")
+        expect(response.body).not_to include(%(<details class="redaction-confirmation"))
         expect(response.body).not_to include(%(action="/admin/contracts/#{contract.id}/confirm_redaction"))
         expect(response.body).not_to include(%(name="redaction_confirmed"))
       end
@@ -410,7 +410,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
 
       expect(response).to have_http_status(:ok)
       aggregate_failures do
-        expect(response.body).not_to include("<details")
+        expect(response.body).not_to include(%(<details class="redaction-confirmation"))
         expect(response.body).not_to include(%(action="/admin/contracts/#{in_review.id}/confirm_redaction"))
         expect(response.body).not_to include(%(action="/admin/contracts/#{published.id}/confirm_redaction"))
         expect(response.body).not_to include(%(name="redaction_confirmed"))

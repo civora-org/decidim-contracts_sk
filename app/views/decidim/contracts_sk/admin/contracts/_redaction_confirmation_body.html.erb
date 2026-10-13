@@ -15,7 +15,7 @@
   <p><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.confirmed_on", confirmed_at: format_date(contract.redaction_confirmed_at)) %></p>
 <% else %>
   <p><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.description") %></p>
-  <ul>
+  <ul class="cs-admin-rules">
     <% %i[names_addresses bank_details amounts document_content].each do |item| %>
       <li><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.checklist.#{item}") %></li>
     <% end %>

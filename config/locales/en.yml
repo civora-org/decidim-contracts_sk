@@ -329,6 +329,9 @@ en:
           index:
             title: "Contracts"
             empty: "No contracts have been created yet."
+            tools: "More tools (templates, imports)"
+            open: "Open"
+            more_actions: "More actions"
             counters:
               all: "All"
               crz_due_soon: "CRZ due within %{days} days"
@@ -339,6 +342,10 @@ en:
               q: "Search"
               submit: "Filter"
               clear: "Clear filters"
+              more: "More filters and CRZ deadlines"
+              missing:
+                amount: "Showing drafts without an amount."
+                signed_on: "Showing drafts without a signing date."
               states:
                 any: "Any state"
               sources:
@@ -355,6 +362,7 @@ en:
                 any: "Any deadline"
                 due_soon: "Due within %{days} days"
                 overdue: "Overdue"
+                unfiled: "Not yet filed in the CRZ"
             headers:
               crz_deadline: "CRZ deadline"
             no_matches:
@@ -395,7 +403,7 @@ en:
               amounts: "amounts tying the contract to identifiable persons"
               document_content: "sensitive content inside attached documents"
             confirmed_on: "Redaction confirmed on %{confirmed_at}."
-            description: "Before this contract can be published, confirm that personal data has been redacted from the record and its attached documents (ADR-007):"
+            description: "A published contract is public, so before publishing check that personal data is hidden in the contract and its attached documents:"
             invalid: "Redaction confirmation could not be recorded."
             submit: "Confirm redaction"
             success: "Redaction confirmation recorded."
@@ -432,13 +440,16 @@ en:
           form:
             title: "Title"
             reference: "Reference"
+            reference_hint: "The number you register the contract under. It must be unique within the organisation."
             subject_matter: "Subject matter"
             amount: "Amount"
             amount_hint: "Use a dot as the decimal separator (e.g. 1250.50) — comma decimals are rejected."
             currency: "Currency"
             signed_on: "Signed on"
+            signed_on_hint: "The deadline for filing the contract in the CRZ is counted from this date."
             effective_from: "Effective from"
             crz_url: "CRZ URL"
+            crz_url_hint: "Optional. Fill it in if the contract is already in the CRZ."
           crz_filing:
             link: "Record CRZ filing"
             title: "Record filing in CRZ"
@@ -491,7 +502,7 @@ en:
             label: "CRZ contract id"
             submit: "Import contract"
             submitting: "Importing… the source is rate-limited; this can take up to a minute."
-            hint: "The import fetches live from the public register's open API and can take up to a minute. For batch syncs use the scheduled rake task (docs/crz-import.md) — it is not subject to request timeouts."
+            hint: "The import fetches live from the public register's open API and can take up to a minute. For batch syncs ask your system administrator."
             blank_id: "Enter the numeric CRZ contract id to import."
             created: "Contract %{source_id} imported and published."
             updated: "Contract %{source_id} updated from the CRZ payload."
@@ -505,44 +516,125 @@ en:
             quarantined: "Contract %{source_id} could not be read from the source; it was skipped."
             out_of_scope: "Contract %{source_id} does not involve this organization (its IČO is on neither party); it was not imported."
             not_configured: "The CRZ import is not configured for this organization (no IČO set). Nothing was imported."
-        dashboard:
-          title: "Overview"
-          overview_link: "Overview"
-          all_contracts: "All contracts"
-          audit_trail: "Audit trail"
-          show_all: "Show all (%{count})"
-          unknown_submitter: "Unknown user"
-          redaction_missing: "Redaction not confirmed"
-          columns:
-            submitter: "Submitted by"
-            updated: "Last change"
-            reviewed: "Returned on"
-            reason: "Reviewer's reason"
-            redaction: "Redaction"
-            state: "State"
-            deadline: "CRZ deadline"
-          blocks:
-            review_queue:
-              title: "Waiting for my review"
-              hint: "Records in review that you may return, approve or reject — oldest first. Your own submissions are not listed (four-eyes rule)."
-              hint_self_review: "Records in review that you may return, approve or reject — oldest first. Self-review is enabled, so your own submissions are listed too."
-              empty: "Nothing is waiting for your review."
+        today:
+          title: "What needs doing today"
+          lead: "Today is %{date}. Below is only what you can do yourself."
+          more_urgent:
+            one: "and %{count} more contract with a deadline coming up"
+            few: "and %{count} more contracts with a deadline coming up"
+            other: "and %{count} more contracts with a deadline coming up"
+          empty:
+            title: "All done"
+            body: "Nothing is waiting for you today. Thank you, take a breath."
+          groups:
+            urgent:
+              title: "CRZ deadline is near"
+              hint: "Contracts that should go into the Central Register of Contracts (CRZ) as soon as possible."
+            waiting:
+              title: "Waiting for you"
+              hint: "Steps only you can take."
+            tidy:
+              title: "Can be completed"
+              hint: "Missing details that make a contract harder to process."
+          actions:
+            review: "Review"
+            edit_returned: "Edit"
+            publish: "Publish"
+            confirm_filing: "Confirm filing"
+            prepare_crz: "Prepare the CRZ handoff"
+            fill_in: "Fill in"
+          urgent_hints:
+            prepare_crz: "Finish the contract and prepare the handoff you will use to file it in the CRZ."
+            review: "It is waiting for review. Review it as soon as you can."
+            publish: "It is approved. Publish it."
+            confirm_filing: "It is published. File it in the CRZ and confirm the filing."
+          tasks:
+            crz_overdue:
+              sentence: "CRZ deadline passed: \"%{title}\" is overdue (%{days})."
+            crz_due_soon:
+              sentence: "CRZ deadline: \"%{title}\" must be filed within %{left}."
+            crz_today:
+              sentence: "CRZ deadline: \"%{title}\" must be filed today."
+            review:
+              sentence:
+                one: "%{count} contract is waiting for your review"
+                few: "%{count} contracts are waiting for your review"
+                other: "%{count} contracts are waiting for your review"
+              hint: "Read the contract and decide: approve, return for changes or reject."
             returned:
-              title: "Returned to me"
-              hint: "Records you submitted that a reviewer sent back for changes — most recently returned first."
-              empty: "None of your submissions has been returned."
-            approved:
-              title: "Approved, ready to publish"
-              hint: "Approved records waiting to be published — longest waiting first. Publishing needs the redaction confirmation."
-              empty: "No approved records are waiting to be published."
-            overdue:
-              title: "CRZ deadline overdue"
-              hint: "Records not confirmed as filed in CRZ whose deadline has passed — earliest signed first."
-              empty: "No CRZ deadlines are overdue."
-            due_soon:
-              title: "CRZ deadline within %{days} days"
-              hint: "Records not confirmed as filed in CRZ whose deadline falls within %{days} days — an aid, not legal advice."
-              empty: "No CRZ deadlines are due soon."
+              sentence:
+                one: "%{count} draft was returned to you with a comment"
+                few: "%{count} drafts were returned to you with a comment"
+                other: "%{count} drafts were returned to you with a comment"
+              hint: "Read the comment, fix the contract and send it for review again."
+            publish:
+              sentence:
+                one: "%{count} approved contract is waiting to be published"
+                few: "%{count} approved contracts are waiting to be published"
+                other: "%{count} approved contracts are waiting to be published"
+              hint: "Before publishing, confirm that personal data is hidden in the contract."
+              unconfirmed:
+                one: "%{count} still lacks the personal-data confirmation."
+                few: "%{count} still lack the personal-data confirmation."
+                other: "%{count} still lack the personal-data confirmation."
+            confirm_filing:
+              sentence:
+                one: "%{count} published contract is waiting for its CRZ filing to be confirmed"
+                few: "%{count} published contracts are waiting for their CRZ filing to be confirmed"
+                other: "%{count} published contracts are waiting for their CRZ filing to be confirmed"
+              hint: "File the contract in the CRZ, then confirm its CRZ number here."
+            missing_amount:
+              sentence:
+                one: "%{count} draft has no amount"
+                few: "%{count} drafts have no amount"
+                other: "%{count} drafts have no amount"
+              hint: "The amount appears in the contract list and in the statistics."
+            missing_signed_on:
+              sentence:
+                one: "%{count} draft has no signing date"
+                few: "%{count} drafts have no signing date"
+                other: "%{count} drafts have no signing date"
+              hint: "Without a signing date the CRZ filing deadline cannot be tracked."
+        progress:
+          title: "Contract progress"
+          steps:
+            draft: "Draft"
+            review: "Check"
+            approved: "Approved"
+            published: "Published"
+            filed: "Filed in CRZ"
+            rejected: "Rejected"
+          status:
+            done: "done"
+            current: "current step"
+            upcoming: "not yet"
+            stopped: "stopped"
+          returned_flag: "returned for changes"
+          turn:
+            you: "Your turn"
+          next:
+            draft: "Next: whoever prepares the contract finishes it and sends it for review."
+            returned: "Next: whoever prepares the contract addresses the comment and sends it for review again."
+            in_review: "Next: someone other than the person who submitted it reviews the contract (two people always check it)."
+            approved: "Next: confirm that personal data is hidden in the contract, then publish it in the catalogue."
+            published: "Next: file the contract in the CRZ and confirm the filing."
+            filed: "Done: the contract is published in the catalogue and filed in the CRZ."
+            archived: "The contract is archived. Nothing more is needed."
+            rejected: "The contract was rejected. Nothing more is needed."
+        show:
+          edit: "Edit details"
+          open_page: "View contract"
+          next_step: "Next step"
+          publish_needs_redaction: "Before publishing, first confirm that personal data is hidden (below)."
+          facts: "Contract details"
+          missing: "missing"
+          parties: "Parties"
+          documents: "Documents"
+          more: "Notes, change history and more"
+          more_edit: "Notes and links to projects"
+        dashboard:
+          overview_link: "What needs doing today"
+          all_contracts: "All contracts"
           counts:
             title: "Contracts by state"
             all: "All"
