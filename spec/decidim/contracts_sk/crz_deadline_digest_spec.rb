@@ -55,6 +55,14 @@ RSpec.describe "CRZ deadline digest", :db do # rubocop:disable RSpec/DescribeCla
       expect(mail.subject).to eq("CRZ deadlines: contracts not yet effective - Green Village")
     end
 
+    it "opens on the Dvere header: indigo and warm paper, a live-text wordmark, no images or web-font links" do
+      expect(html).to include('bgcolor="#fbf6ee"').and include('bgcolor="#34408a"').and include('bgcolor="#b5523a"')
+      expect(html).to match(%r{<a href="https://civora.sk"[^>]*>Civora</a>})
+      expect(html).not_to match(/<img|<svg|@font-face|<link/i)
+      expect(html.index("Civora</a>")).to be < html.index("Good morning")
+      expect(mail.attachments).to be_empty
+    end
+
     it "groups overdue and due-soon contracts, saying each is not effective until published in the CRZ" do
       expect(html).to include("Overdue: 1").and include("Deadline within 14 days: 1")
       expect(html).to include("Title ZP-OVERDUE").and include("no. ZP-OVERDUE")

@@ -13,16 +13,30 @@
     rules win ties); Decidim's default CSP allows inline styles. Colours
     are Decidim's own palette tokens: the organisation's --secondary for
     links, the core gray-2 / gray-3 / background-2 values for text, rules
-    and panels. %>
+    and panels.
+
+    The accent (links, focus rings, active tab, bars) follows the town: it
+    is the host organisation's primary colour, which Decidim emits as
+    --primary on :root (OrganizationHelper#organization_colors, only for
+    colours the organisation has set), and falls back to Dvere indigo
+    #34408a. "The town leads, Civora signs" (DESIGN.md): the Civora mark
+    appears only as the small credit at the foot of the page. A town that
+    picks a primary colour owns its contrast: choose one that reads 4.5:1
+    on white. %>
 <% content_for :css_content do %>
 <style>
+  /* --cs-accent: the town's primary colour, else Dvere indigo.
+     --cs-accent-dark: hover / pressed, 30% toward black. Left invalid when
+     --primary is unset, so every use site's var(--cs-accent-dark, #232c63)
+     falls back to Dvere deep indigo. */
+  :root { --cs-accent: var(--primary, #34408a); --cs-accent-dark: color-mix(in srgb, var(--primary) 70%, #000); }
   .cs-page { padding-top: 2.5rem; }
   .cs-page .title-decorator { margin-bottom: 2.25rem; overflow-wrap: anywhere; }
   .cs-lead { margin: 0; max-width: 42rem; font-size: 1.125rem; line-height: 1.6; color: #3e4c5c; }
 
   /* The register's shared header and view switch (catalogue / statistics),
-     set in the civora.sk register: Source Sans, ink #0e1b2e, one blue
-     #0b5cad, 1px rules. The active tab's ink line is a real element with a
+     set in the civora.sk register: Source Sans, ink #0e1b2e, one accent
+     (the town's primary, fallback #34408a), 1px rules. The active tab's ink line is a real element with a
      view-transition-name: between the two pages (both opt in below) the
      browser slides it from tab to tab and cross-fades the content. No JS;
      browsers without cross-document View Transitions just navigate. */
@@ -33,10 +47,10 @@
   .cs-switch .cs-switch__link:hover::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #d5dce6; }
   .cs-switch .cs-switch__link[aria-current="page"] { color: #0e1b2e; }
   .cs-switch .cs-switch__link[aria-current="page"]:hover::after { content: none; }
-  .cs-switch .cs-switch__link:focus-visible { outline: 3px solid #0b5cad; outline-offset: 3px; border-radius: 2px; }
+  .cs-switch .cs-switch__link:focus-visible { outline: 3px solid var(--cs-accent); outline-offset: 3px; border-radius: 2px; }
   .cs-switch__icon { flex: none; width: 1.125rem; height: 1.125rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
-  .cs-switch .cs-switch__link[aria-current="page"] .cs-switch__icon { color: #0b5cad; }
-  .cs-switch__ink { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: #0b5cad; view-transition-name: cs-switch-ink; }
+  .cs-switch .cs-switch__link[aria-current="page"] .cs-switch__icon { color: var(--cs-accent); }
+  .cs-switch__ink { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--cs-accent); view-transition-name: cs-switch-ink; }
   .cs-head { padding-bottom: clamp(2rem, 4vw, 3rem); }
   .cs-head__title { margin: 0; font-size: clamp(2.25rem, 1.4rem + 3vw, 3.5rem); font-weight: 700; line-height: 1.08; letter-spacing: -.02em; color: #0e1b2e; text-wrap: balance; overflow-wrap: anywhere; view-transition-name: cs-head-title; }
   .cs-head__lead { max-width: 44ch; margin: 1.25rem 0 0; font-size: 1.25rem; line-height: 1.5; color: #44546a; text-wrap: pretty; }
@@ -80,8 +94,8 @@
   .cs-chip__summary { padding: .375rem .75rem; border: 1px solid #d5dce6; background: #fff; font-size: .9375rem; font-weight: 600; line-height: 1.3; color: #0e1b2e; }
   .cs-chip__summary span { overflow-wrap: anywhere; }
   .cs-chip__summary:hover, .cs-chip[open] > .cs-chip__summary { border-color: #0e1b2e; }
-  .cs-chip--on > .cs-chip__summary { border-color: #0b5cad; background: #f1f4f8; color: #084782; }
-  .cs-reg summary:focus-visible { outline: 3px solid #0b5cad; outline-offset: 3px; border-radius: 2px; }
+  .cs-chip--on > .cs-chip__summary { border-color: var(--cs-accent); background: #f1f4f8; color: var(--cs-accent-dark, #232c63); }
+  .cs-reg summary:focus-visible { outline: 3px solid var(--cs-accent); outline-offset: 3px; border-radius: 2px; }
   .cs-chip__panel { position: absolute; top: calc(100% + .25rem); left: 0; z-index: 5; width: max-content; min-width: 16rem; max-width: min(22rem, calc(100vw - 2rem)); padding: 1rem; background: #fff; border: 1px solid #d5dce6; border-top: 2px solid #0e1b2e; }
   .cs-chip:nth-last-child(-n+2) > .cs-chip__panel { left: auto; right: 0; }
   .cs-chip__panel label { display: block; margin-bottom: .25rem; font-size: .875rem; font-weight: 600; color: #44546a; }
@@ -95,10 +109,10 @@
   .cs-active { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: .75rem; }
   .cs-active__list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
   .cs-reg .cs-tag { display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .5rem .25rem .625rem; background: #f1f4f8; font-size: .9375rem; line-height: 1.3; color: #0e1b2e; text-decoration: none; overflow-wrap: anywhere; }
-  .cs-reg .cs-tag:hover { color: #084782; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-reg .cs-tag:hover { color: var(--cs-accent-dark, #232c63); text-decoration: underline; text-underline-offset: .18em; }
   .cs-tag__x { flex: none; width: .75rem; height: .75rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-  .cs-reg .cs-active__clear { font-size: .9375rem; font-weight: 600; color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
-  .cs-reg .cs-active__clear:hover { color: #084782; text-decoration-thickness: 2px; }
+  .cs-reg .cs-active__clear { font-size: .9375rem; font-weight: 600; color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  .cs-reg .cs-active__clear:hover { color: var(--cs-accent-dark, #232c63); text-decoration-thickness: 2px; }
 
   /* Results toolbar: one line above the list. Left, what the filtered set
      holds; right, sort / download / follow. Opens on the register's 2px ink
@@ -110,17 +124,17 @@
   .cs-bar__sum > * + *::before { content: "·"; content: "·" / ""; margin-right: .5rem; font-weight: 400; color: #44546a; }
   .cs-bar__tools { display: flex; flex-wrap: wrap; align-items: center; gap: .125rem 1.25rem; }
   .cs-menu { position: relative; }
-  .cs-menu__summary { padding: .25rem 0; font-size: .9375rem; font-weight: 600; color: #0b5cad; }
-  .cs-menu__summary:hover { color: #084782; }
+  .cs-menu__summary { padding: .25rem 0; font-size: .9375rem; font-weight: 600; color: var(--cs-accent); }
+  .cs-menu__summary:hover { color: var(--cs-accent-dark, #232c63); }
   .cs-menu__panel { position: absolute; top: calc(100% + .25rem); right: 0; z-index: 5; width: max-content; min-width: 13rem; max-width: min(20rem, calc(100vw - 2rem)); margin: 0; padding: .5rem 1rem .75rem; list-style: none; background: #fff; border: 1px solid #d5dce6; border-top: 2px solid #0e1b2e; box-shadow: 0 .5rem 1.5rem rgba(14, 27, 46, .12); }
   .cs-menu__panel ul { margin: 0; padding: 0; list-style: none; }
   .cs-menu__panel li + li { border-top: 1px solid #d5dce6; }
-  .cs-menu__panel a { display: block; padding: .5rem 0; font-size: .9375rem; font-weight: 600; color: #0b5cad; text-decoration: none; }
-  .cs-menu__panel a:hover { color: #084782; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-menu__panel a { display: block; padding: .5rem 0; font-size: .9375rem; font-weight: 600; color: var(--cs-accent); text-decoration: none; }
+  .cs-menu__panel a:hover { color: var(--cs-accent-dark, #232c63); text-decoration: underline; text-underline-offset: .18em; }
   .cs-menu__panel a[aria-current] { color: #0e1b2e; font-weight: 700; text-decoration: none; cursor: default; }
   .cs-menu__panel .cs-small { margin-top: .5rem; color: #44546a; }
-  .cs-reg .cs-bar__follow { display: inline-flex; align-items: center; gap: .375rem; padding: .25rem 0; font-size: .9375rem; font-weight: 600; color: #0b5cad; text-decoration: none; }
-  .cs-reg .cs-bar__follow:hover { color: #084782; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-reg .cs-bar__follow { display: inline-flex; align-items: center; gap: .375rem; padding: .25rem 0; font-size: .9375rem; font-weight: 600; color: var(--cs-accent); text-decoration: none; }
+  .cs-reg .cs-bar__follow:hover { color: var(--cs-accent-dark, #232c63); text-decoration: underline; text-underline-offset: .18em; }
   .cs-bar__icon { flex: none; width: 1.125rem; height: 1.125rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
   .cs-filters-active__list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
@@ -157,7 +171,7 @@
      width from --cs-bar). Tokens are scoped to .cs-yb so the rest of the
      catalogue keeps Decidim's palette. */
   .cs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-  .cs-yb { --yb-ink: #0e1b2e; --yb-muted: #44546a; --yb-blue: #0b5cad; --yb-blue-dark: #084782; --yb-rule: #d5dce6; --yb-tint: #f1f4f8; --yb-crz: #75869b; color: var(--yb-ink); font-variant-numeric: lining-nums; }
+  .cs-yb { --yb-ink: #0e1b2e; --yb-muted: #44546a; --yb-blue: var(--cs-accent); --yb-blue-dark: var(--cs-accent-dark, #232c63); --yb-rule: #d5dce6; --yb-tint: #f1f4f8; --yb-crz: #75869b; color: var(--yb-ink); font-variant-numeric: lining-nums; }
   .cs-yb ::selection { background: #bcd7f2; color: var(--yb-ink); }
   .cs-yb a { color: var(--yb-blue); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
   .cs-yb a:hover { color: var(--yb-blue-dark); text-decoration-thickness: 2px; }
@@ -223,23 +237,23 @@
   .cs-row__date { grid-area: date; font-size: .9375rem; color: #44546a; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
   .cs-row__date--meta { display: none; }
   .cs-row__title { grid-area: title; min-width: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.35; color: #0e1b2e; text-decoration: none; overflow-wrap: anywhere; }
-  .cs-row__title:hover { color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-row__title:hover { color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; }
   .cs-row__amount { grid-area: amount; font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; }
   .cs-row__meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 0 .5rem; min-width: 0; margin: 0; font-size: .875rem; line-height: 1.45; color: #44546a; font-variant-numeric: tabular-nums lining-nums; }
   .cs-row__meta > *:not(:last-child)::after { content: "·"; content: "·" / ""; margin-left: .5rem; }
   .cs-row__parties { min-width: 0; overflow-wrap: anywhere; }
   .cs-row__src { white-space: nowrap; }
-  .cs-row .cs-row__supplier { color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
-  .cs-row .cs-row__supplier:hover { color: #084782; text-decoration-thickness: 2px; }
+  .cs-row .cs-row__supplier { color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  .cs-row .cs-row__supplier:hover { color: var(--cs-accent-dark, #232c63); text-decoration-thickness: 2px; }
   .cs-reg .cs-empty { padding: 1.5rem 0; border-top: 2px solid #0e1b2e; border-bottom: 1px solid #d5dce6; font-size: 1.0625rem; color: #44546a; }
   .cs-reg .cs-empty .cs-bar__follow { margin-left: 1rem; }
-  .cs-reg .cs-empty .cs-link { margin-left: .5rem; color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  .cs-reg .cs-empty .cs-link { margin-left: .5rem; color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
 
   .cs-pager { margin: 1.25rem 0 0; }
   .cs-pager__list { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin: 0; padding: 0; list-style: none; font-size: 1.0625rem; font-variant-numeric: tabular-nums lining-nums; }
   .cs-reg .cs-pager a, .cs-pager__current, .cs-pager__gap { display: inline-flex; align-items: center; justify-content: center; min-width: 2.5rem; min-height: 2.5rem; padding: 0 .5rem; }
-  .cs-reg .cs-pager a { font-weight: 600; color: #0b5cad; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
-  .cs-reg .cs-pager a:hover { color: #084782; text-decoration-thickness: 2px; }
+  .cs-reg .cs-pager a { font-weight: 600; color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  .cs-reg .cs-pager a:hover { color: var(--cs-accent-dark, #232c63); text-decoration-thickness: 2px; }
   .cs-pager__current { font-weight: 700; color: #0e1b2e; border-bottom: 3px solid #0e1b2e; }
   .cs-pager__gap { color: #44546a; }
 
@@ -355,7 +369,14 @@
     .cs-yb__fact:first-child { padding-left: 0; border-left: 0; }
     .cs-yb__fact:nth-child(n+3) { border-top: 0; }
   }
+  /* The Civora credit (shared/_civora_credit): a muted signature, never a
+     header. 16px door mark, .5rem clear space to the word, 2.5rem above. */
+  .cs-credit { margin: 2.5rem 0 0; padding-top: 1rem; border-top: 1px solid #d5dce6; font-size: .875rem; line-height: 1.4; color: #5b576c; }
+  .cs-credit__link { display: inline-flex; align-items: center; gap: .5rem; color: #5b576c; text-decoration: none; }
+  .cs-credit__link:hover { color: var(--cs-accent-dark, #232c63); text-decoration: underline; text-underline-offset: .18em; }
+  .cs-credit__mark { flex: none; width: 16px; height: 16px; }
   @media print {
+    .cs-credit { display: none; }
     .cs-find, .cs-bar__tools, .cs-pager, .cs-switch { display: none; }
     .cs-top { border-bottom: 0; }
     .cs-detail { grid-template-columns: 1fr; }

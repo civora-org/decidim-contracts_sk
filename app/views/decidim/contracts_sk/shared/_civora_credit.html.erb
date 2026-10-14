@@ -1,0 +1,14 @@
+<%# The Civora credit: "the town leads, Civora signs" (DESIGN.md, Town First
+    Rule). One muted line at the foot of the public contract pages and the
+    admin home: the Civora door mark at 16px beside the word "Civora", linking
+    to civora.sk. A signature, never a header: no tagline, no colour taken from
+    the town's palette. The mark is inline SVG (no asset to ship or fetch);
+    the link carries the accessible name, the SVG itself is decorative so the
+    name is not read twice. Styles: .cs-credit* in shared/_public_styles and
+    shared/_admin_styles. %>
+<p class="cs-credit">
+  <a class="cs-credit__link" href="https://civora.sk" rel="noopener" aria-label="<%= t("decidim.contracts_sk.shared.credit.label") %>">
+    <svg class="cs-credit__mark" viewBox="6 6 52 52" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 58V30a20 20 0 0 1 40 0v28z" fill="#34408a"/><path d="M24 58V32a8 8 0 0 1 16 0v26z" fill="#b5523a"/></svg>
+    <span>Civora</span>
+  </a>
+</p>

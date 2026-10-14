@@ -1,3 +1,35 @@
+<%# Header: Civora's own mail, so it wears Dvere (indigo on warm paper), not
+    the town's site palette ("the town leads, Civora signs" applies to the
+    town's pages, not to what Civora sends). E-mail-client safe: tables,
+    inline styles and bgcolor attributes only; no web fonts, no SVG, no
+    images to block (the door is two nested cells; clients without
+    border-radius, such as desktop Outlook, show it square). The wordmark is
+    live text, so it survives image blocking. %>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fbf6ee" style="background-color: #fbf6ee; border-bottom: 3px solid #34408a; margin: 0 0 1.25rem;">
+  <tr>
+    <td style="padding: 14px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td width="26" valign="bottom" style="padding: 0 10px 0 0;">
+            <table role="presentation" width="26" height="30" cellpadding="0" cellspacing="0" border="0" bgcolor="#34408a" style="background-color: #34408a; border-radius: 13px 13px 0 0;">
+              <tr>
+                <td align="center" valign="bottom" style="padding: 0;">
+                  <table role="presentation" width="10" height="22" cellpadding="0" cellspacing="0" border="0" bgcolor="#b5523a" style="background-color: #b5523a; border-radius: 5px 5px 0 0;">
+                    <tr><td style="font-size: 1px; line-height: 1px;">&nbsp;</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td valign="bottom" style="font-family: 'Alegreya Sans', Georgia, 'Times New Roman', serif; font-size: 26px; line-height: 26px; font-weight: 500; color: #34408a; padding: 0;">
+            <a href="https://civora.sk" style="color: #34408a; text-decoration: none;"><%= t(".brand") %></a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
 <p class="email-greeting"><%= t(".hello") %></p>
 
 <p class="email-instructions"><%= t(".intro", organization: @organization_name, days: Decidim::ContractsSk::CrzDeadline::DUE_SOON_DAYS, count: @total) %></p>

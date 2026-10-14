@@ -18,6 +18,8 @@ What the pages use instead:
 
 The stylesheet is delivered through Decidim's `:css_content` slot, which the core layout yields in `<head>` right after `decidim_core.css`. Decidim's default CSP allows inline styles (`style-src 'self' 'unsafe-inline'`). Each public view renders the partial once at the top.
 
+**Accent and credit ("the town leads, Civora signs").** The register's accent (links, focus rings, active tab, bars) is `--cs-accent`: the host organisation's primary colour (Decidim emits `--primary` on `:root` from `OrganizationHelper#organization_colors`, only for colours the organisation has set, verified against decidim-core 0.31.7), falling back to Dvere indigo `#34408a`. `--cs-accent-dark` (hover) is 30% toward black and is left invalid when `--primary` is unset, so each use `var(--cs-accent-dark, #232c63)` falls back to Dvere deep indigo. A town that sets a primary colour owns its contrast on white (4.5:1). Civora signs with one muted credit, `shared/_civora_credit` (16px door mark, link to civora.sk), at the foot of the catalogue, the contract page and the admin home; it is hidden in print. The CRZ deadline digest e-mail is Civora's own mail and wears Dvere (indigo on warm paper, table layout, no images).
+
 Colours are Decidim's palette: the organisation's `var(--secondary)` for links, and the core gray-2 `#3e4c5c` (secondary text), gray-3 `#e1e5ef` (rules) and background-2 `#fafbfc` (panels).
 
 If you add a Decidim component class, check it exists in the live bundle first:
