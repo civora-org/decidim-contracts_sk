@@ -157,6 +157,15 @@ RSpec.describe "admin dashboard", type: :request do
         end
       end
 
+      it "signs the foot of the admin home with the Civora credit" do
+        Decidim::ContractsSk.role_resolver = ->(_user, _context) { [:editor] }
+
+        get "/admin"
+
+        expect(body).to include(%(<a class="cs-credit__link" href="https://civora.sk"))
+        expect(body.scan(".cs-credit__link { display: inline-flex").size).to eq(1)
+      end
+
       it "denies a signed-in user without an engine role with the permission flash" do
         Decidim::ContractsSk.role_resolver = ->(_user, _context) { [] }
 

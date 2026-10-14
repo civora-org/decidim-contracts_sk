@@ -180,6 +180,8 @@ sk:
           contracts: "Zmluvy"
           note: "Údaje zahŕňajú všetky zverejnené záznamy tohto dodávateľa v katalógu. Zmluva zverejnená aj organizáciou, aj ako záznam prevzatý z CRZ, sa počíta dvakrát."
       shared:
+        credit:
+          label: "Civora, civora.sk"
         switch:
           label: "Pohľady na register zmlúv"
           catalogue: "Zoznam zmlúv"
@@ -317,6 +319,7 @@ sk:
       crz_deadline_digest_mailer:
         digest:
           subject: "Lehoty CRZ: zmluvy zatiaľ neúčinné - %{organization}"
+          brand: "Civora"
           hello: "Dobré ráno,"
           intro: "Organizácia %{organization} má zmluvy, ktoré zatiaľ nie sú vložené do CRZ, a preto nie sú účinné. Lehota uplynula alebo uplynie do %{days} dní: %{count}."
           overdue: "Po lehote: %{count}"

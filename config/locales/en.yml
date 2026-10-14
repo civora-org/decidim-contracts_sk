@@ -180,6 +180,8 @@ en:
           contracts: "Contracts"
           note: "Figures cover every published record of this contractor in the catalogue. A contract published both by the organisation and as a record taken from CRZ is counted twice."
       shared:
+        credit:
+          label: "Civora, civora.sk"
         switch:
           label: "Views of the contract register"
           catalogue: "Contract list"
@@ -317,6 +319,7 @@ en:
       crz_deadline_digest_mailer:
         digest:
           subject: "CRZ deadlines: contracts not yet effective - %{organization}"
+          brand: "Civora"
           hello: "Good morning,"
           intro: "%{organization} has contracts that are not yet filed in the CRZ and so are not effective. The deadline has passed or falls within %{days} days: %{count}."
           overdue: "Overdue: %{count}"

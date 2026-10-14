@@ -406,6 +406,36 @@ RSpec.describe "public catalogue register", :db, type: :request do
     end
   end
 
+  describe "the Civora credit" do
+    def expect_credit # rubocop:disable Metrics/AbcSize
+      sel = %(a.cs-credit__link[href="https://civora.sk"][aria-label="Civora, civora.sk"])
+
+      expect(doc.css(sel).size).to eq(1)
+      expect(doc.css("#{sel} span").text).to eq("Civora")
+      expect(doc.css(%(#{sel} svg[width="16"][height="16"][aria-hidden="true"]))).not_to be_empty
+    end
+
+    it "signs the foot of the catalogue" do
+      get "/"
+
+      expect(response).to have_http_status(:ok)
+      expect_credit
+    end
+
+    it "signs the foot of a contract page" do
+      get "/#{create_contract!.id}"
+
+      expect(response).to have_http_status(:ok)
+      expect_credit
+    end
+
+    it "signs the foot of an empty catalogue too" do
+      get "/", params: { q: "nothing-matches-this" }
+
+      expect_credit
+    end
+  end
+
   describe "style guards" do
     let(:css) do
       File.read(Decidim::ContractsSk::Engine.root.join("app/views/decidim/contracts_sk/shared/_public_styles.html.erb"))
@@ -419,7 +449,18 @@ RSpec.describe "public catalogue register", :db, type: :request do
     end
 
     it "gives every summary a visible focus ring" do
-      expect(css).to include(".cs-reg summary:focus-visible { outline: 3px solid #0b5cad")
+      expect(css).to include(".cs-reg summary:focus-visible { outline: 3px solid var(--cs-accent)")
+    end
+
+    it "takes its accent from the host organisation's primary colour, falling back to Dvere indigo" do
+      expect(css).to include(":root { --cs-accent: var(--primary, #34408a);")
+      expect(css).to include("--cs-accent-dark: color-mix(in srgb, var(--primary) 70%, #000);")
+      expect(css).to include("var(--cs-accent-dark, #232c63)")
+    end
+
+    it "no longer hard-codes the old civic blue" do
+      expect(css).not_to include("#0b5cad")
+      expect(css).not_to include("#084782")
     end
 
     it "resets the list style of the register" do
