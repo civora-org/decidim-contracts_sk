@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [1.10.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.9.0...v1.10.0) (2026-10-14)
+
+
+### Features
+
+* **crz:** effectiveness status and morning CRZ deadline digest ([2080ab9](https://github.com/civora-org/decidim-contracts_sk/commit/2080ab93666e435045e784f9a8fa89de259fa000))
+* **crz:** effectiveness status and morning CRZ deadline digest (civora-org/civora-platform[#202](https://github.com/civora-org/decidim-contracts_sk/issues/202)) ([8c77bf8](https://github.com/civora-org/decidim-contracts_sk/commit/8c77bf8f344e093bc6304309984ca50a81438624))
+* **ui:** town accent token, Civora credit and Dvere digest header (civora-org/civora-platform[#205](https://github.com/civora-org/decidim-contracts_sk/issues/205)) ([dbf2d3f](https://github.com/civora-org/decidim-contracts_sk/commit/dbf2d3f5e12009dda11f22006b1fbf7996161c2e))
+* **ui:** town accent, Civora credit and Dvere digest header ([964e837](https://github.com/civora-org/decidim-contracts_sk/commit/964e837e52e419d3351d4dbf00b13d0aafe62469))
+
 ## [1.9.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.8.1...v1.9.0) (2026-10-13)
 
 
