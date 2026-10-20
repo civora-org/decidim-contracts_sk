@@ -133,6 +133,13 @@ module Decidim
       has_many :notes, class_name: "Decidim::ContractsSk::Note",
                        dependent: :delete_all
 
+      # Contract template output (civora-org/civora-platform#211): the filled
+      # template entry and the files generated from it. Admin-only, never part
+      # of the public record. Generated files are destroyed before the entry
+      # they point at.
+      has_many :generated_documents, class_name: "Decidim::ContractsSk::GeneratedDocument", dependent: :destroy
+      has_one :template_entry, class_name: "Decidim::ContractsSk::ContractTemplateEntry", dependent: :destroy
+
       # The audit trail must survive contract deletion — dangling targets
       # after the target's own destroy are the Decidim ActionLog precedent —
       # so no dependent option here.

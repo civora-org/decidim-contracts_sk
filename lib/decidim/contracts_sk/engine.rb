@@ -20,6 +20,14 @@ module Decidim
         ]
       end
 
+      # Keep the encrypted template-entry values out of request logs
+      # (civora-org/civora-platform#211). Active Record Encryption already
+      # filters encrypted attributes from `inspect`; this covers the request
+      # parameters of a later entry form.
+      initializer "decidim_contracts_sk.filter_parameters" do |app|
+        app.config.filter_parameters |= [:personal_values]
+      end
+
       initializer "decidim_contracts_sk.i18n" do
         config.i18n.load_path += Dir[
           config.root.join("config", "locales", "*.yml").to_s
