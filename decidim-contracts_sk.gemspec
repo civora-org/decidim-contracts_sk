@@ -49,6 +49,17 @@ Gem::Specification.new do |spec|
   # generate_line / col_sep API the export uses on every supported Ruby.
   spec.add_dependency "csv", "~> 3.0"
 
+  # Contract templates (civora-org/civora-platform#211): sablon fills the
+  # MERGEFIELDs of a .docx (0.4.3 verified by the S1 spike; pinned to the
+  # 0.4 line, a 0.x gem), pdf-reader (MIT) extracts text so the redaction
+  # verifier can check a generated PDF, and rubyzip/nokogiri read and
+  # rewrite the OOXML package. The host pins rubyzip to 2.3.x, so the floor
+  # stays at 2.3 (do not raise it) and the cap is the next major.
+  spec.add_dependency "nokogiri", ">= 1.15", "< 2"
+  spec.add_dependency "pdf-reader", "~> 2.12"
+  spec.add_dependency "rubyzip", ">= 2.3", "< 3"
+  spec.add_dependency "sablon", "~> 0.4.3"
+
   spec.add_dependency "decidim-admin", ">= 0.31.5", "< 0.33"
   spec.add_dependency "decidim-core", ">= 0.31.5", "< 0.33"
 
