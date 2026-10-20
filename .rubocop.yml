@@ -7,6 +7,9 @@ AllCops:
   Exclude:
     # Throwaway spike scripts (run in a scratch project, not in the engine).
     - "docs/spikes/**/*"
+    - "vendor/**/*"
+    - "node_modules/**/*"
+    - "tmp/**/*"
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
