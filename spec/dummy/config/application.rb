@@ -500,6 +500,15 @@ class DummyApp < Rails::Application
   config.action_mailer.perform_deliveries = true
   config.cache_store = :null_store
 
+  # Active Record Encryption keys for the specs (civora-org/civora-platform
+  # #211): ContractTemplateEntry#personal_values is `encrypts`. A real Decidim
+  # host configures none of this by default and must set its own secrets
+  # (docs/contract-templates.md). These are fixed, public test values so the
+  # suite is deterministic; never reuse them anywhere real. Only these two
+  # are needed: the engine uses non-deterministic encryption.
+  config.active_record.encryption.primary_key = "contracts-sk-test-primary-key"
+  config.active_record.encryption.key_derivation_salt = "contracts-sk-test-key-derivation-salt"
+
   # Host-form parity (see the builder requires above): same default builder
   # as any Decidim host, so request specs exercise the forms exactly as they
   # render in production.

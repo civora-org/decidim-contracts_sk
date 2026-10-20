@@ -71,6 +71,15 @@ unless defined?(Decidim::User)
   end
 end
 
+# Models whose memoized column metadata is reset after migrating.
+module ContractsSkDbSupport
+  ENGINE_MODELS = %w[
+    Contract Party Document Amendment AuditEvent ContractLink UserRole Note Template Subscription CrzAttachment
+    ContractTemplate ContractTemplateField ContractOrganizationProfile ContractTemplateEntry GeneratedDocument
+    ReferenceCounter
+  ].freeze
+end
+
 RSpec.shared_context "contracts_sk db support" do
   # Fixed engine location as a plain method, not a let: the migration
   # directory is a deterministic engine identifier, not per-example state.
@@ -93,8 +102,7 @@ RSpec.shared_context "contracts_sk db support" do
       Object.const_get(snake_name.camelize).migrate(:up)
     end
 
-    %w[Contract Party Document Amendment AuditEvent ContractLink UserRole Note Template
-       Subscription].each do |model_name|
+    ContractsSkDbSupport::ENGINE_MODELS.each do |model_name|
       klass = Decidim::ContractsSk.const_get(model_name)
       klass&.reset_column_information
     end
