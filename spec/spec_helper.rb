@@ -45,4 +45,11 @@ RSpec.configure do |config|
   # Opt in with CONTRACTS_SK_DB=1; those groups additionally need the sqlite3
   # gem and skip themselves with a clear message when it is absent.
   config.filter_run_excluding :db unless ENV["CONTRACTS_SK_DB"] == "1"
+
+  # Real-LibreOffice examples (civora-org/civora-platform#211) run only where
+  # soffice is installed; everywhere else they are skipped, not failed.
+  soffice_on_path = ENV.fetch("PATH", "").split(File::PATH_SEPARATOR).any? do |dir|
+    File.executable?(File.join(dir, "soffice"))
+  end
+  config.filter_run_excluding :libreoffice unless soffice_on_path
 end
