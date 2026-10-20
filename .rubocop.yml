@@ -4,6 +4,9 @@ plugins:
 AllCops:
   TargetRubyVersion: 3.3
   SuggestExtensions: false
+  Exclude:
+    # Throwaway spike scripts (run in a scratch project, not in the engine).
+    - "docs/spikes/**/*"
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
