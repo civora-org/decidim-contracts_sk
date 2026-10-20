@@ -3,6 +3,7 @@
 require_relative "contracts_sk/version"
 
 module Decidim
+  # Slovak public contracts workflow and catalogue engine.
   module ContractsSk
     class Error < StandardError; end
 
@@ -17,6 +18,19 @@ module Decidim
     # there); the anchored format is what everything else matches against.
     ICO_PATTERN = /\d{8}/
     ICO_FORMAT = /\A\d{8}\z/ # the same pattern, anchored (kept literal: Party's spec pins it)
+
+    class << self
+      # The docx-to-PDF converter of the contract templates
+      # (civora-org/civora-platform#211): any callable taking .docx bytes and
+      # returning PDF bytes. The host may replace it (for example with a
+      # Gotenberg adapter); the default is the LibreOffice command line. Assign
+      # nil to go back to the default.
+      attr_writer :pdf_converter
+
+      def pdf_converter
+        @pdf_converter ||= Templates::PdfConverter::LibreOfficeCli.new
+      end
+    end
   end
 end
 
@@ -38,6 +52,12 @@ require_relative "contracts_sk/templates/docx_sanitizer"
 require_relative "contracts_sk/templates/docx_filler"
 require_relative "contracts_sk/templates/publication_variant"
 require_relative "contracts_sk/templates/redaction_verifier"
+require_relative "contracts_sk/templates/minimal_pdf"
+require_relative "contracts_sk/templates/pdf_converter"
+require_relative "contracts_sk/templates/pdf_converter/libre_office_cli"
+require_relative "contracts_sk/templates/pdf_converter/fake"
+require_relative "contracts_sk/templates/pdf_metadata"
+require_relative "contracts_sk/templates/document_generator"
 require_relative "contracts_sk/link_targets"
 require_relative "contracts_sk/related_contracts"
 require_relative "contracts_sk/crz_scope"

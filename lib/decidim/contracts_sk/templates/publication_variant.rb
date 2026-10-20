@@ -26,6 +26,22 @@ module Decidim
           walk(values, keys, false)
         end
 
+        # The non-blank String leaves under personal keys: the values the
+        # redaction verifier must not find in the publication variant.
+        def personal_values(values, personal_keys)
+          keys = Array(personal_keys).to_set(&:to_s)
+          collect(values, keys, false, [])
+        end
+
+        def collect(value, keys, personal, found)
+          case value
+          when Hash then value.each { |k, v| collect(v, keys, personal || keys.include?(k.to_s), found) }
+          when Array then value.each { |v| collect(v, keys, personal, found) }
+          else found << value.to_s if personal && !blank?(value) && value != true
+          end
+          found
+        end
+
         def walk(value, keys, personal)
           case value
           when Hash then value.to_h { |k, v| [k, walk(v, keys, personal || keys.include?(k.to_s))] }

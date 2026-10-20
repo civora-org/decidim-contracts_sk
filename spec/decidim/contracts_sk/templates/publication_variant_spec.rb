@@ -22,6 +22,12 @@ RSpec.describe Decidim::ContractsSk::Templates::PublicationVariant do
     expect(result["kupujuci_rc"]).to eq(hidden)
   end
 
+  it "collects the non-blank personal leaves, including those in table rows" do
+    keys = %w[kupujuci_meno kupujuci_rc kupujuci_adresa osoba]
+    found = described_class.personal_values(values.merge(kupujuci_adresa: " "), keys)
+    expect(found).to contain_exactly("Ján Testovací", "000000/0000", "Eva Fiktívna")
+  end
+
   it "leaves the other values alone" do
     result = described_class.values_for(values, [:kupujuci_meno])
     expect(result[:cislo_zmluvy]).to eq("VZ-1")
