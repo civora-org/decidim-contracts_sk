@@ -25,6 +25,7 @@ Metrics/MethodLength:
     - "lib/tasks/**/*.rake"
     - "spec/support/demo_data.rb"
     - "spec/support/crz_import_payloads.rb"
+    - "lib/decidim/contracts_sk/templates/**/*.rb"
 
 # Demo-data seeders are declarative fixture lists; complexity metrics don't
 # apply.
@@ -33,6 +34,7 @@ Metrics/AbcSize:
     - "spec/support/demo_data.rb"
     - "lib/tasks/**/*.rake"
     - "spec/support/crz_import_payloads.rb"
+    - "lib/decidim/contracts_sk/templates/**/*.rb"
 
 # Spec example-group blocks and Rake task bodies are naturally long; exclude
 # them from the limit.
@@ -51,3 +53,23 @@ RSpec/DescribeClass:
 RSpec/ContextWording:
   Exclude:
     - "spec/support/**/*.rb"
+
+# The OOXML template services are straight-line scanners over a fixed list of
+# package rules (civora-org/civora-platform#211); splitting each rule into its
+# own method only scatters the list. The synthetic XML fixtures are single-line
+# literals on purpose.
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - "lib/decidim/contracts_sk/templates/**/*.rb"
+Metrics/PerceivedComplexity:
+  Exclude:
+    - "lib/decidim/contracts_sk/templates/**/*.rb"
+Metrics/ModuleLength:
+  Exclude:
+    - "lib/decidim/contracts_sk/templates/**/*.rb"
+Metrics/ParameterLists:
+  Exclude:
+    - "spec/support/docx_fixtures.rb"
+Layout/LineLength:
+  Exclude:
+    - "spec/support/docx_fixtures.rb"
