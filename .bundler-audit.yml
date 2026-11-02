@@ -9,13 +9,15 @@
 # are no longer reported on either line (0.31 resolves rails 7.2.4, 0.32
 # resolves rails 8.1.4) and were removed. What is left is blocked upstream:
 #   0.31 line: devise 4.9.4 (newest release, unpatched), shakapacker 8.3.0
-#              (decidim-core pins ~> 8.3.0; fix needs >= 9.5.0), rubyzip 2.4.1;
+#              (decidim-core pins ~> 8.3.0; fix needs >= 9.5.0), rubyzip 2.4.1,
+#              ransack 4.2.1 (decidim-core 0.31.8 still pins ~> 4.2.0; fix needs
+#              >= 4.4.3; added 2026-11-02);
 #   0.32 line: rack-proxy 0.8.3 (decidim-core pins < 1.0), rubyzip 2.4.1.
 # rubyzip is pinned `~> 2.0` by decidim-core on both lines (fix needs >= 3.4.0).
 # This engine ships no JS bundles, never extracts zips and never proxies HTTP;
 # the host app documents its own exposure in docs/ops/security-updates.md and
 # mirrors the 0.32 entries in civora-host CI.
-# REVISIT: drop the 0.31-only entries (devise, shakapacker) when the CI matrix
+# REVISIT: drop the 0.31-only entries (devise, shakapacker, ransack) when the CI matrix
 # drops the 0.31 line; the rest on the Decidim release that relaxes the pins.
 ---
 ignore:
@@ -24,6 +26,11 @@ ignore:
   - CVE-2026-40295
   # shakapacker 8.3.0 (0.31 line)
   - GHSA-96qw-h329-v5rg
+  # ransack 4.2.1 (0.31 line; decidim-core 0.31.8 pins ~> 4.2.0, fix needs
+  # >= 4.4.3). The engine has no ransack/ransackable code; Decidim admin
+  # filters on the host are the exposure, tracked in civora-host.
+  - GHSA-j3f8-w227-4hh8
+  - GHSA-vxc9-rm8f-p56j
   # rubyzip 2.4.1 (decidim-core pins ~> 2.0; fix requires >= 3.4.0)
   - CVE-2026-85396
   # rack-proxy 0.8.3 (decidim-core pins ~> 0.8.3, < 1.0; fix requires >= 1.0.3).

@@ -20,6 +20,8 @@ module Decidim
         MAX_ENTRY_BYTES = 32 * 1024 * 1024
         MAX_TOTAL_BYTES = 96 * 1024 * 1024
         CHUNK = 64 * 1024
+        # Entry timestamp pinned so identical content gives identical bytes.
+        FIXED_TIME = ::Zip::DOSTime.new(1980, 1, 1, 0, 0, 0)
 
         # code is one of :not_a_zip, :too_large, :too_many_entries, :entry_too_large, :total_too_large
         class Error < StandardError
@@ -67,11 +69,19 @@ module Decidim
           ordered = entries.sort_by { |name, _| name == "[Content_Types].xml" ? 0 : 1 }
           io = Zip::OutputStream.write_buffer(StringIO.new(+"".b)) do |zip|
             ordered.each do |name, data|
-              zip.put_next_entry(name)
+              zip.put_next_entry(fixed_time_entry(name))
               zip.write(data)
             end
           end
           io.string
+        end
+
+        # rubyzip 2.3 takes the time as a positional argument and 2.4 as a
+        # keyword; the setter works on both.
+        def fixed_time_entry(name)
+          entry = ::Zip::Entry.new("", name)
+          entry.time = FIXED_TIME
+          entry
         end
 
         def read_entry(entry)
