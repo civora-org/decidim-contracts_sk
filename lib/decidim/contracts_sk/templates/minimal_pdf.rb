@@ -12,10 +12,17 @@ module Decidim
         # +lines+: Array of Strings. +info+: Hash of Info-dictionary strings
         # (Title, Author, ...), or a String used verbatim as the dictionary
         # body (for hand-crafted edge cases). +pages+ and +extra_trailer+ let a
-        # spec build deliberately odd files. Returns binary PDF bytes.
-        def build(lines:, info: {}, pages: 1, extra_trailer: "")
+        # spec build deliberately odd files. +xmp+ (a String) adds an XMP
+        # metadata stream referenced from the catalog; pass
+        # { body: String, filter: "FlateDecode" } to mark it compressed (/Filter)
+        # so a spec can exercise the fail-closed path.
+        # Returns binary PDF bytes.
+        def build(lines:, info: {}, pages: 1, extra_trailer: "", xmp: nil)
+          xmp_id = (info.empty? ? 6 : 7) if xmp
+          xmp_body, xmp_filter = xmp.is_a?(Hash) ? xmp.values_at(:body, :filter) : [xmp, nil]
+          metadata = xmp_id ? " /Metadata #{xmp_id} 0 R" : ""
           objects = [
-            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Catalog /Pages 2 0 R#{metadata} >>",
             pages_dictionary(pages),
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R " \
             "/Resources << /Font << /F1 5 0 R >> >> >>",
@@ -23,7 +30,15 @@ module Decidim
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
           ]
           objects << info_dictionary(info) unless info.empty?
-          assemble(objects, info_id: info.empty? ? nil : objects.length, extra_trailer: extra_trailer)
+          info_id = info.empty? ? nil : objects.length
+          objects << xmp_stream(xmp_body, xmp_filter) if xmp
+          assemble(objects, info_id: info_id, extra_trailer: extra_trailer)
+        end
+
+        def xmp_stream(xmp, filter)
+          flt = filter ? " /Filter /#{filter}" : ""
+          dict = "/Type /Metadata /Subtype /XML#{flt} /Length #{xmp.bytesize}"
+          "<< #{dict} >>\nstream\n#{xmp}\nendstream"
         end
 
         def content(lines)

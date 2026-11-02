@@ -61,6 +61,33 @@ RSpec.describe Decidim::ContractsSk::Templates::PdfMetadata do
     expect(described_class.blank(bare)).to eq(bare)
   end
 
+  describe "XMP metadata" do
+    let(:xmp) do
+      "<x:xmpmeta><dc:title>Zmluva Ján Testovací</dc:title><dc:creator>Fiktívny Autor</dc:creator>" \
+        "<pdf:Producer>LibreOffice 25.2</pdf:Producer><xmp:CreatorTool>Writer</xmp:CreatorTool></x:xmpmeta>"
+    end
+
+    it "blanks an uncompressed XMP stream in place" do # rubocop:disable RSpec/ExampleLength
+      with_xmp = pdf_module.build(lines: ["Zmluva c. 1"], info: info, xmp: xmp)
+      result = described_class.blank(with_xmp)
+      expect(result).not_to include("Testov", "Autor", "LibreOffice", "CreatorTool")
+      reader = PDF::Reader.new(StringIO.new(result))
+      expect(result.bytesize).to eq(with_xmp.bytesize)
+      expect([reader.metadata.to_s.strip, reader.pages.first.text]).to match([be_empty, include("Zmluva c. 1")])
+    end
+
+    it "blanks XMP in a PDF that has no Info dictionary" do
+      with_xmp = pdf_module.build(lines: ["x"], xmp: xmp)
+      result = described_class.blank(with_xmp)
+      expect(result).not_to include("Testov", "LibreOffice")
+    end
+
+    it "raises on a compressed XMP stream" do
+      compressed = pdf_module.build(lines: ["x"], info: info, xmp: { body: "not really flate", filter: "FlateDecode" })
+      expect { described_class.blank(compressed) }.to raise_error(described_class::Error, /compressed XMP/)
+    end
+  end
+
   describe "failing closed" do
     it "raises on bytes that are not a PDF" do
       expect { described_class.blank("not a pdf") }.to raise_error(described_class::Error)

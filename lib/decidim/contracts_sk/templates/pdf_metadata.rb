@@ -7,7 +7,8 @@ module Decidim
   module ContractsSk
     module Templates
       # Blanks the descriptive strings of a PDF's Info dictionary (Title,
-      # Author, Subject, Keywords, Creator, Producer) for
+      # Author, Subject, Keywords, Creator, Producer) and of its uncompressed XMP
+      # stream for
       # civora-org/civora-platform#211. LibreOffice copies the document title
       # into the PDF and names itself as Creator and Producer.
       #
@@ -20,8 +21,8 @@ module Decidim
       # still valid and the strings are blank.
       #
       # It FAILS CLOSED (raises Error) on anything it cannot rewrite safely: an
-      # encrypted or unreadable file, an incremental update (/Prev), XMP
-      # metadata, an Info object it cannot find as plain bytes (inside an object
+      # encrypted or unreadable file, an incremental update (/Prev), a
+      # compressed XMP stream, an Info object it cannot find as plain bytes (inside an object
       # stream), an indirect string value. LibreOffice's PDF export is none of
       # these. Dates and other keys are left alone.
       module PdfMetadata
@@ -36,10 +37,11 @@ module Decidim
           bytes = pdf_bytes.to_s.b
           reader = PDF::Reader.new(StringIO.new(bytes))
           ref = info_reference(reader)
-          return bytes unless ref
+          return blank_xmp_only(bytes, reader) unless ref
 
           pages = reader.page_count
           blanked = blank_object(bytes, ref)
+          blank_xmp(blanked, reader)
           verify!(blanked, pages)
           blanked
         rescue Error
@@ -51,13 +53,55 @@ module Decidim
         def info_reference(reader)
           trailer = reader.objects.trailer
           raise Error, "incremental PDF updates are not supported" if trailer.key?(:Prev)
-          raise Error, "PDF carries XMP metadata" unless reader.metadata.to_s.strip.empty?
 
           ref = trailer[:Info]
           return nil if ref.nil?
           raise Error, "Info dictionary is not an indirect object" unless ref.is_a?(PDF::Reader::Reference)
 
           ref
+        end
+
+        # No Info dictionary: the XMP stream may still carry text.
+        def blank_xmp_only(bytes, reader)
+          return bytes if reader.metadata.to_s.strip.empty?
+
+          pages = reader.page_count
+          out = bytes.dup
+          blank_xmp(out, reader)
+          verify!(out, pages)
+          out
+        end
+
+        # LibreOffice writes an uncompressed XMP stream (/Subtype /XML, no
+        # /Filter) referenced as /Metadata from the catalog, repeating the
+        # title, creator and producer. Overwrites the payload in place with
+        # spaces, so xref offsets stay valid. A compressed stream cannot be
+        # overwritten in place, so it fails closed.
+        def blank_xmp(out, reader)
+          ref = reader.objects.trailer[:Root] && reader.objects.deref(reader.objects.trailer[:Root])[:Metadata]
+          return if ref.nil?
+          raise Error, "XMP metadata is not an indirect object" unless ref.is_a?(PDF::Reader::Reference)
+
+          stream = reader.objects[ref]
+          raise Error, "XMP metadata is not a stream" unless stream.is_a?(PDF::Reader::Stream)
+          raise Error, "compressed XMP metadata cannot be blanked" if stream.hash.key?(:Filter)
+
+          length = stream.hash[:Length]
+          raise Error, "XMP stream length is not a direct number" unless length.is_a?(Integer) && length >= 0
+
+          start = xmp_payload_start(out, ref)
+          finish = start + length
+          tail = out.byteslice(finish, 16).to_s
+          raise Error, "XMP stream is not terminated" unless /\A[\r\n]*endstream/n.match?(tail)
+
+          out[start...finish] = " " * length
+        end
+
+        def xmp_payload_start(out, ref)
+          header = /(?<!\d)#{ref.id}[ \t\r\n]+#{ref.gen}[ \t\r\n]+obj(?![A-Za-z])/n.match(out) or
+            raise Error, "XMP object not found as plain bytes"
+          keyword = /stream\r?\n/n.match(out, header.end(0)) or raise Error, "XMP stream keyword not found"
+          keyword.end(0)
         end
 
         def blank_object(bytes, ref)
@@ -128,6 +172,8 @@ module Decidim
         def verify!(blanked, pages)
           reader = PDF::Reader.new(StringIO.new(blanked))
           raise Error, "PDF changed while blanking metadata" unless reader.page_count == pages
+
+          raise Error, "XMP metadata is not blank after sanitizing" unless reader.metadata.to_s.strip.empty?
 
           leftovers = reader.info.to_h.slice(*KEYS.map(&:to_sym)).values.reject { |v| v.to_s.strip.empty? }
           raise Error, "Info strings are not blank after sanitizing" unless leftovers.empty?
