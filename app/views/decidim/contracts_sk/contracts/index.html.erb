@@ -19,10 +19,7 @@
 <% content_for :header_snippets, feed_discovery_link(query) unless query.filters.source == "crz" %>
 <main class="layout-1col cols-10">
   <div class="cs-page cs-reg cs-reg--top">
-    <header class="cs-top">
-      <h1 class="cs-top__title"><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
-      <%= render "decidim/contracts_sk/shared/section_switch", current: :catalogue %>
-    </header>
+    <%= render "decidim/contracts_sk/shared/register_header", current: :catalogue %>
 
     <%= render "decidim/contracts_sk/contracts/filters", query: query %>
 

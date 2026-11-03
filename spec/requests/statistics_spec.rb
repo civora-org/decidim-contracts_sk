@@ -71,7 +71,8 @@ RSpec.describe "statistics page", :db, type: :request do
       get "/statistics"
 
       expect(response).to have_http_status(:ok)
-      expect(page.at_css("h1").text).to eq("Contract statistics")
+      expect(page.at_css("h1").text).to eq("Contracts")
+      expect(page.at_css("h2.cs-yb__title").text).to eq("Contract statistics")
       facts = page.css(".cs-yb__fact").map { |fact| fact.at_css("dt").text }
       expect(facts).to eq(["Signed this month", "Signed this year", "All published contracts",
                            "Organisation's own records"])
@@ -208,7 +209,8 @@ RSpec.describe "statistics page", :db, type: :request do
     it "renders in Slovak with the engine's month names" do
       I18n.with_locale(:sk) { get "/statistics" }
 
-      expect(page.at_css("h1").text).to eq("Štatistiky zmlúv")
+      expect(page.at_css("h1").text).to eq("Zmluvy")
+      expect(page.at_css("h2.cs-yb__title").text).to eq("Štatistiky zmlúv")
       expect(body_text).to include("október 2026").and include("Údaje k").and include("Tab. 1")
     end
 
@@ -232,6 +234,21 @@ RSpec.describe "statistics page", :db, type: :request do
       expect(switch.at_css("a[aria-current='page']").text.strip).to eq("Statistics")
       expect(switch.at_css("a[href='/']").text.strip).to eq("Contract list")
     end
+
+    it "renders the same header partial on both views, so the switch never moves" do
+      get "/"
+      catalogue = page.at_css("main header.cs-top")
+      get "/statistics"
+      statistics = page.at_css("main header.cs-top")
+
+      expect(statistics.at_css("h1.cs-top__title").text).to eq(catalogue.at_css("h1.cs-top__title").text)
+      expect(statistics.at_css("nav.cs-switch")).to be_present
+      expect(statistics.css("nav.cs-switch a").map { |a| [a["href"], a.text.strip] })
+        .to eq(catalogue.css("nav.cs-switch a").map { |a| [a["href"], a.text.strip] })
+      expect(statistics.css("a[aria-current]").size).to eq(1)
+      expect(page.css("h1").size).to eq(1)
+      expect(page.at_css("title").text).to include("Contract statistics")
+    end
   end
 
   describe "published-only and tenancy" do
@@ -254,7 +271,8 @@ RSpec.describe "statistics page", :db, type: :request do
       get "/statistics"
 
       expect(response).to have_http_status(:ok)
-      expect(page.at_css("h1").text).to eq("Contract statistics")
+      expect(page.at_css("h1").text).to eq("Contracts")
+      expect(page.at_css("h2.cs-yb__title").text).to eq("Contract statistics")
       expect(page.at_css(".cs-yb__empty").text).to include("no published contracts")
       expect(page.at_css(".cs-yb__empty a")["href"]).to eq("/")
       expect(page.css("table")).to be_empty
@@ -329,7 +347,8 @@ RSpec.describe "statistics page", :db, type: :request do
       I18n.with_locale(:sk) { get "/statistics" }
 
       expect(builds.size).to eq(1)
-      expect(page.at_css("h1").text).to eq("Štatistiky zmlúv")
+      expect(page.at_css("h1").text).to eq("Zmluvy")
+      expect(page.at_css("h2.cs-yb__title").text).to eq("Štatistiky zmlúv")
     end
 
     it "costs one query on a hit and three on a miss" do
