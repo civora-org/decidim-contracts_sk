@@ -11,13 +11,13 @@ require "stringio"
 module TemplateGenerationHelpers
   DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-  # [key, type, label, required, group_key]
+  # [key, type, label, required, group_key, party_part (optional)]
   FIELD_SPECS = [
     ["cislo_zmluvy", "text", "Číslo zmluvy", false, nil],
     ["org_nazov", "org_header", "Názov organizácie", false, nil],
     ["org_ico", "org_header", "IČO organizácie", false, nil],
     ["predmet", "long_text", "Predmet zmluvy", true, "predmet"],
-    ["kupujuci_meno", "person", "Kupujúci - meno", true, "kupujuci"],
+    ["kupujuci_meno", "person", "Kupujúci - meno", true, "kupujuci", "name"],
     ["kupujuci_adresa", "person", "Kupujúci - adresa", false, "kupujuci"],
     ["suma_celkom", "money", "Celková cena", true, "cena"],
     ["suma_slovom", "text", "Cena slovom", false, "cena"],
@@ -89,9 +89,9 @@ RSpec.shared_context "with a contract template" do
     )
     record.file.attach(io: StringIO.new(docx), filename: "kupna-zmluva.docx",
                        content_type: TemplateGenerationHelpers::DOCX_TYPE)
-    fields.each_with_index do |(key, type, label, required, group), position|
+    fields.each_with_index do |(key, type, label, required, group, part), position|
       record.fields.create!(key: key, field_type: type, label: label, required: required,
-                            group_key: group, position: position)
+                            group_key: group, position: position, party_part: part)
     end
     record
   end

@@ -35,12 +35,20 @@ module Decidim
       #   types:  { vymera: number }
       #   labels: { kupujuci_meno: "Kupujúci - meno" }
       #   groups: { kupujuci_meno: kupujuci }
+      #   counterparty: { name: kupujuci_meno }    the other party of the contract (see below)
+      #
+      # `counterparty` names the fields that make the contract's other party
+      # (parts: name, ico, address). A name field listed under `person` makes
+      # the counterparty a natural person: its party is published only as
+      # "Fyzická osoba" and no value is copied. A name field that is not a
+      # person field makes it a company: name, IČO (8 digits) and address
+      # are published as typed. Without it no counterparty party is created.
       #
       # Output names fields and counts only, never any document content.
       module Importer
         class Error < ContractsSk::Error; end
 
-        SIDECAR_KEYS = %w[person required types labels groups group_labels].freeze
+        SIDECAR_KEYS = %w[person required types labels groups group_labels counterparty].freeze
         FIELD_KEY = /\A[a-z][a-z0-9_]{0,63}\z/
         TYPE_VALUES = %w[text long_text date money number person].freeze
         DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -113,9 +121,46 @@ module Decidim
           raise Error, "the sidecar names fields the template does not have: #{missing.join(", ")}" if missing.any?
 
           check_group_labels!(sidecar)
+          check_counterparty!(sidecar, keys)
 
           wrong = (sidecar["types"] || {}).values.map(&:to_s) - TYPE_VALUES
           raise Error, "unknown field types in the sidecar: #{wrong.join(", ")}" if wrong.any?
+        end
+
+        # counterparty maps a part (name, ico, address) to a field key. The
+        # name is required; a natural person (name is a `person` field) has no
+        # ico or address part, and for a company no part may be personal data.
+        def check_counterparty!(sidecar, keys)
+          return unless sidecar.key?("counterparty")
+
+          map = sidecar["counterparty"]
+          raise Error, "counterparty must be a mapping of name, ico and address to field keys" unless map.is_a?(Hash)
+
+          map = map.to_h { |part, key| [part.to_s, key.to_s] }
+          unknown = map.keys - ContractTemplateField::PARTY_PARTS
+          raise Error, "counterparty names unknown parts: #{unknown.join(", ")}" if unknown.any?
+          raise Error, "counterparty needs a name field" unless map.key?("name")
+          if (map.values - keys).any?
+            raise Error,
+                  "counterparty names fields the template does not have: #{(map.values - keys).join(", ")}"
+          end
+          raise Error, "counterparty uses a field twice" if map.values.uniq.size != map.size
+
+          check_counterparty_privacy!(sidecar, map)
+        end
+
+        def check_counterparty_privacy!(sidecar, map)
+          personal = Array(sidecar["person"]).map(&:to_s)
+          details = map.except("name")
+          if personal.include?(map["name"])
+            if details.any?
+              raise Error,
+                    "a natural-person counterparty (name in person) cannot also name ico or address"
+            end
+          elsif (details.values & personal).any?
+            raise Error,
+                  "counterparty ico and address cannot be person fields: #{(details.values & personal).join(", ")}"
+          end
         end
 
         # group_labels maps a group key (a value of `groups`) to its heading.
@@ -137,7 +182,8 @@ module Decidim
           asked = sidecar["required"] == "all" || Array(sidecar["required"]).map(&:to_s).include?(key)
           { key: key, field_type: type, label: sidecar.dig("labels", key) || key.tr("_", " ").capitalize,
             group_key: sidecar.dig("groups", key), group_label: group_label(sidecar, key),
-            required: asked && typed_by_person?(key, type), position: position }
+            required: asked && typed_by_person?(key, type), position: position,
+            party_part: (sidecar["counterparty"] || {}).to_h { |part, k| [k.to_s, part.to_s] }[key] }
         end
 
         # Header, number and spelled-out fields are filled by the generator, so

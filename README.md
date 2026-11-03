@@ -124,6 +124,8 @@ On Decidim 0.32 the locale also becomes part of core URLs (`/sk/...`); see [docs
    | `20261020100005` | `generated_documents` |
    | `20261020100006` | `reference_counters` |
    | `20261103000001` | `group_label` column on `contract_template_fields` |
+   | `20261103000010` | `template_slot` column (and unique index) on `parties` |
+   | `20261103000011` | `party_part` column on `contract_template_fields` |
 
    Then run `bin/rails db:migrate`.
 3. **Set the Active Record encryption keys** in the host (`bin/rails db:encryption:init` generates values; keep them in the secret store, separate from database backups, and never lose them: stored personal values cannot be read without them). Which settings and how to rotate: [docs/contract-templates.md](docs/contract-templates.md#host-requirements-active-record-encryption).

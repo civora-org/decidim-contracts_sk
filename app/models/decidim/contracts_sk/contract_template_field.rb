@@ -14,6 +14,9 @@ module Decidim
       FIELD_TYPES = %w[text long_text date money number person org_header].freeze
       FIELD_TYPE_VALUES = FIELD_TYPES.to_h { |type| [type, type] }.freeze
 
+      # Which part of the counterparty a field holds (see ContractTemplate#counterparty).
+      PARTY_PARTS = %w[name ico address].freeze
+
       # ASCII snake_case: the key is a MERGEFIELD name and a JSON key.
       KEY_FORMAT = /\A[a-z][a-z0-9_]*\z/
       MAX_KEY_LENGTH = 64
@@ -37,12 +40,24 @@ module Decidim
                             format: { with: KEY_FORMAT },
                             allow_blank: true
       validates :group_label, length: { maximum: 255 }, allow_blank: true
+      validates :party_part, inclusion: { in: PARTY_PARTS }, allow_nil: true
+      validates :party_part, uniqueness: { scope: :contract_template_id }, allow_nil: true
+      validate :counterparty_details_are_public
       validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
       validate :template_not_used
       before_destroy :ensure_template_not_used, prepend: true
 
       private
+
+      # Only the name may be personal data (that is what makes the
+      # counterparty a natural person, published without any of its values).
+      # An IČO or a seat marked personal would be copied to the public party.
+      def counterparty_details_are_public
+        return unless party_part.present? && party_part != "name" && personal_data
+
+        errors.add(:party_part, :personal_detail)
+      end
 
       def force_personal_data_for_person
         self.personal_data = true if person?
