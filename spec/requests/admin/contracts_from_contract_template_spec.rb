@@ -259,18 +259,59 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       expect(flash[:alert]).to include("Company ID (IČO)", "Nothing was saved")
     end
 
-    it "does not log the typed values" do
-      logged = StringIO.new
-      logger = ActiveSupport::Logger.new(logged)
-      original = Rails.logger
-      Rails.logger = logger
-      begin
-        create_via_form
-      ensure
-        Rails.logger = original
+    it "keeps every typed value and the title out of the logged request parameters" do
+      logged = []
+      subscriber = ActiveSupport::Notifications.subscribe("process_action.action_controller") do |*, payload|
+        logged << payload[:params]
+      end
+      create_via_form
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+
+      text = logged.to_json
+      expect(logged).not_to be_empty
+      expect(text).to include("[FILTERED]")
+      ["Testovací", "Nepravá", "3 062,50", "Predaj pozemku", "parcela 1/1", "15. 12. 2026"].each do |typed|
+        expect(text).not_to include(typed)
+      end
+    end
+
+    it "filters the same parameters through the application's filter list" do
+      filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+
+      filtered = filter.filter(params_for.deep_stringify_keys)
+
+      expect(filtered.to_json).not_to match(/Testovací|Nepravá|Predaj/)
+      expect(filter.filter({ "amount" => "1", "q" => "x" })).to eq("amount" => "1", "q" => "x")
+    end
+
+    it "strips a NUL byte and control characters from the title instead of failing" do
+      post "/admin/contract_templates/#{template.id}/entry", params: params_for({}, title: "Kúpna\u0000 zmluva\u0007")
+
+      expect(response).to have_http_status(:found)
+      expect(contract_class.sole.title).to eq("Kúpna zmluva")
+    end
+
+    it "answers a clean 422 when entry is not a hash, or its values are not" do
+      ["x", ["a"]].each do |junk|
+        expect { post "/admin/contract_templates/#{template.id}/entry", params: { entry: junk } }
+          .not_to(change { counts })
+        expect(response).to have_http_status(:unprocessable_entity)
       end
 
-      expect(logged.string).not_to include("Testovací", "Nepravá")
+      expect { post "/admin/contract_templates/#{template.id}/entry", params: { entry: { title: "T", values: "x" } } }
+        .not_to(change { counts })
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "tells the editor when the host has no encryption keys, with no value in the message" do
+      allow(Decidim::ContractsSk::ContractTemplateEntry).to receive(:create!)
+        .and_raise(ActiveRecord::Encryption::Errors::Configuration, "Ján Testovací")
+
+      expect { create_via_form }.not_to(change { counts })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(flash[:alert]).to include("no encryption keys")
+      expect(flash[:alert]).not_to include("Testovací")
     end
   end
 
@@ -304,6 +345,16 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       expect(entry.generated_documents.group(:status).count).to eq("current" => 4, "superseded" => 4)
       expect(contract.reload.title).to eq("Nový názov")
       expect(contract.redaction_confirmed_at).to be_nil
+    end
+
+    it "sends the editor back with a message when the keys needed to read the values are missing" do
+      allow_any_instance_of(Decidim::ContractsSk::ContractTemplateEntry).to receive(:personal_values)
+        .and_raise(ActiveRecord::Encryption::Errors::Configuration)
+
+      get "/admin/contracts/#{contract.id}/template_entry/edit"
+
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
+      expect(flash[:alert]).to include("no encryption keys")
     end
 
     it "refuses a contract that left the editable states" do
@@ -418,7 +469,7 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       get "/admin/contract_templates/amount_in_words", params: { amount: "3 062,50" }
       expect(response.parsed_body).to eq("words" => "tritisícšesťdesiatdva eur a päťdesiat centov")
 
-      ["", "abc", "3.062", "-5", "99999999999999"].each do |value|
+      ["", "abc", "3.062", "-5", "99999999999999", "1#{"0" * 40}", "#{" " * 40}1"].each do |value|
         get "/admin/contract_templates/amount_in_words", params: { amount: value }
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to eq("words" => ""), value

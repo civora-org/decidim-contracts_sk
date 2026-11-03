@@ -939,6 +939,7 @@ sk:
             header_incomplete: "Hlavička obce nie je úplná, chýba: %{fields}. Nič sa neuložilo."
             redaction_failed: "Verzia na zverejnenie by prezradila osobné údaje, preto sa nič neuložilo. Skontrolujte, či sú v šablóne všetky osobné údaje označené ako osobné."
             conversion_failed: "Dokument sa nepodarilo previesť do PDF, nič sa neuložilo. Skúste to znova; ak sa to opakuje, kontaktujte správcu."
+            encryption_unavailable: "Osobné údaje sa nedajú bezpečne uložiť, lebo server nemá nastavené šifrovacie kľúče. Nič sa neuložilo. Kontaktujte správcu."
           header:
             official_name: "Názov obce"
             seat: "Sídlo"

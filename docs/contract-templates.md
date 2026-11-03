@@ -38,7 +38,7 @@ Operational consequences:
 
 - These secrets are as critical as `SECRET_KEY_BASE`: losing them makes every stored `personal_values` unreadable. Back them up with the other secrets, separately from database backups.
 - Do not rotate by replacing the primary key. To rotate, add the old key to `config.active_record.encryption.previous` (a list of key-and-salt entries) and re-save the records.
-- The engine adds `personal_values` to `config.filter_parameters`, and Active Record already filters it from `inspect`. The host's own log and error-reporting setup should not be loosened.
+- The engine adds `personal_values`, the whole `entry.values.*` subtree and `entry.title` (the contract-template form's parameters) to `config.filter_parameters`, and Active Record already filters `personal_values` from `inspect`. The host's own log and error-reporting setup should not be loosened, and must apply `filter_parameters` to anything that records request parameters.
 
 The engine's specs use fixed, public test keys set in `spec/dummy/config/application.rb`. They exist only for deterministic tests and must never be reused in a real host.
 
@@ -93,7 +93,9 @@ Field types and input (stored in one canonical form, shown the Slovak way): `tex
 
 `RedactionFailed` or a converter failure stores nothing and the editor sees a message; a leak means the template does not mark every personal value as personal. The request is synchronous (about a second with LibreOffice) and holds a transaction while the converter runs.
 
-Pages that hold typed values (the form, the edit form, the downloads) send `Cache-Control: no-store`. Values never reach logs, flashes or the audit trail.
+Pages that hold typed values (the form, the edit form, the downloads) send `Cache-Control: no-store`. Request parameters are filtered (every typed value and the title) from the request log through `config.filter_parameters`; flashes and the audit trail carry no values either. If the encryption keys are missing, generating stops with a message and stores nothing (no value in the message).
+
+**Locks and timeouts.** Generation runs inside one transaction. The converter timeout is 60 seconds (`LibreOfficeCli`), and for that time the new contract's numbering row (`ReferenceCounter`, per organization and year) is locked, and so is the contract row when regenerating. A second generation in the same organization waits for it, so a host with a PostgreSQL `lock_timeout` or `statement_timeout` below about 65 seconds can fail the waiting request with an error page (nothing is stored; the editor retries). Numbers whose reference already exists in the organization (a hand-entered `1/2026`) are skipped and the counter moves past them.
 
 ### Loading a template by hand
 

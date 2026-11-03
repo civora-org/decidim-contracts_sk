@@ -1007,6 +1007,7 @@ module LocaleContract
     "admin.template_entries.errors.out_of_range",
     "admin.template_entries.errors.too_long",
     "admin.template_entries.failure.conversion_failed",
+    "admin.template_entries.failure.encryption_unavailable",
     "admin.template_entries.failure.header_incomplete",
     "admin.template_entries.failure.invalid",
     "admin.template_entries.failure.not_editable",

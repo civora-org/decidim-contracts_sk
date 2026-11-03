@@ -939,6 +939,7 @@ en:
             header_incomplete: "The municipality header is incomplete, missing: %{fields}. Nothing was saved."
             redaction_failed: "The version for publication would have revealed personal data, so nothing was saved. Check that every personal detail is marked as personal in the template."
             conversion_failed: "The document could not be converted to PDF and nothing was saved. Try again; if it keeps happening, contact the administrator."
+            encryption_unavailable: "Personal data cannot be stored safely because the server has no encryption keys configured. Nothing was saved. Contact the administrator."
           header:
             official_name: "Municipality name"
             seat: "Seat"

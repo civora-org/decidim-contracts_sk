@@ -22,10 +22,13 @@ module Decidim
 
       # Keep the encrypted template-entry values out of request logs
       # (civora-org/civora-platform#211). Active Record Encryption already
-      # filters encrypted attributes from `inspect`; this covers the request
-      # parameters of a later entry form.
+      # filters encrypted attributes from `inspect`. The contract-template form
+      # posts every value (personal or not: which fields are personal is the
+      # template's business) as `entry[values][<key>]`, plus a title that may
+      # name a person, so the whole `entry.values.*` subtree and `entry.title`
+      # are filtered from request logs and error reports.
       initializer "decidim_contracts_sk.filter_parameters" do |app|
-        app.config.filter_parameters |= [:personal_values]
+        app.config.filter_parameters |= [:personal_values, /\Aentry\.(values\.|title\z)/]
       end
 
       initializer "decidim_contracts_sk.i18n" do

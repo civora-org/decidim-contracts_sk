@@ -24,7 +24,12 @@ module Decidim
       # The pages hold personal data the person typed, so every response is
       # `Cache-Control: no-store`. No value is ever written to a log, a flash
       # or the audit trail.
+      # Cop note: the new/create and edit/update pairs share one set of loaders,
+      # handlers and messages; splitting them would duplicate that, not simplify.
+      # rubocop:disable Metrics/ClassLength
       class TemplateEntriesController < Admin::ApplicationController
+        MAX_AMOUNT_CHARS = 32
+
         before_action :forbid_caching
 
         def index
@@ -58,6 +63,10 @@ module Decidim
 
           @form = TemplateEntryForm.for_entry(@entry, title: @contract.title)
           @profile = organization_profile
+        rescue ActiveRecord::Encryption::Errors::Configuration
+          # Reading the saved personal values needs the host's encryption keys.
+          flash[:alert] = t("decidim.contracts_sk.admin.template_entries.failure.encryption_unavailable")
+          redirect_to admin_contract_path(@contract)
         end
 
         def update
@@ -77,7 +86,7 @@ module Decidim
         def amount_in_words
           enforce_permission_to :create, :contract
 
-          parsed = Templates::FieldValues.parse("money", params[:amount].to_s)
+          parsed = Templates::FieldValues.parse("money", params[:amount].to_s.first(MAX_AMOUNT_CHARS))
           words = parsed.ok? && parsed.value.present? ? Templates::Words.for_amount(parsed.value) : ""
           render json: { words: words }
         end
@@ -98,6 +107,7 @@ module Decidim
             on(:header_incomplete) { |keys| failed(view, :header_incomplete, keys: Array(keys)) }
             on(:redaction_failed) { failed(view, :redaction_failed) }
             on(:conversion_failed) { failed(view, :conversion_failed) }
+            on(:encryption_unavailable) { failed(view, :encryption_unavailable) }
           end
         end
 
@@ -150,7 +160,11 @@ module Decidim
         def entry_params(template)
           @entry_params ||= begin
             keys = TemplateEntryForm.new(template: template).input_fields.map { |field| field.key.to_sym }
-            params.fetch(:entry, {}).permit(:title, values: keys)
+            # `entry=x` (not a hash) is read as no input at all: the form then
+            # fails validation instead of raising.
+            raw = params[:entry]
+            raw = ActionController::Parameters.new unless raw.is_a?(ActionController::Parameters)
+            raw.permit(:title, values: keys)
           end
         end
 
@@ -158,6 +172,7 @@ module Decidim
           response.headers["Cache-Control"] = "no-store"
         end
       end
+      # rubocop:enable Metrics/ClassLength
     end
   end
 end

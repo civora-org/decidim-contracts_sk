@@ -126,6 +126,18 @@ RSpec.describe Decidim::ContractsSk::Admin::GenerateFromTemplate, :db do
       expect(other[:ok].template_entry.internal_number).to eq("1/#{year}")
     end
 
+    it "skips a number whose reference is already taken and moves the counter past it" do
+      Decidim::ContractsSk::Contract.create!(contract_attributes(reference: "1/#{year}"))
+      Decidim::ContractsSk::Contract.create!(contract_attributes(reference: "2/#{year}"))
+
+      events = call
+
+      expect(events[:ok].reference).to eq("3/#{year}")
+      expect(events[:ok].template_entry.internal_number).to eq("3/#{year}")
+      expect(Decidim::ContractsSk::ReferenceCounter.sole.last_value).to eq(3)
+      expect(call(build_form({}, title: "Druhá"))[:ok].reference).to eq("4/#{year}")
+    end
+
     it "uses the template's reference pattern" do
       patterned = build_template(organization: organization, lineage_key: "other", reference_pattern: "ZM-{YYYY}-{N}")
 
@@ -329,13 +341,24 @@ RSpec.describe Decidim::ContractsSk::Admin::GenerateFromTemplate, :db do
       expect(events).to have_key(:invalid)
     end
 
-    it "rolls the counter back when the contract reference is already taken" do
-      Decidim::ContractsSk::Contract.create!(contract_attributes(reference: "1/#{year}"))
+    it "rolls the counter back when the contract cannot be saved after the number was taken" do
+      allow(Decidim::ContractsSk::Contract).to receive(:create!).and_raise(ActiveRecord::RecordInvalid)
       counts = table_counts
 
       expect(call).to have_key(:invalid)
       expect(table_counts).to eq(counts)
       expect(Decidim::ContractsSk::ReferenceCounter.count).to eq(0)
+    end
+
+    it "answers :encryption_unavailable when the host has no encryption keys, and stores nothing" do
+      allow(Decidim::ContractsSk::ContractTemplateEntry).to receive(:create!)
+        .and_raise(ActiveRecord::Encryption::Errors::Configuration, "Missing Active Record encryption credential")
+      counts = table_counts
+
+      events = call
+
+      expect(events).to have_key(:encryption_unavailable)
+      expect(table_counts).to eq(counts)
     end
 
     it "answers :invalid when the template has no file" do

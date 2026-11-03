@@ -100,6 +100,14 @@ RSpec.describe Decidim::ContractsSk::Admin::TemplateEntryForm do
       expect(form({ "suma_celkom" => "10 000 000 000" })).not_to be_valid
     end
 
+    it "strips control characters (a NUL byte) and collapses whitespace in the title" do
+      cleaned = form({}, "Kúpna\u0000 zmluva\u0007\n  1/1")
+
+      expect(cleaned.title).to eq("Kúpna zmluva 1/1")
+      expect(cleaned).to be_valid
+      expect(form({}, "\u0000\u0007")).not_to be_valid
+    end
+
     it "caps the title" do
       expect(form({}, "a" * 256)).not_to be_valid
       expect(form({}, "a" * 255)).to be_valid

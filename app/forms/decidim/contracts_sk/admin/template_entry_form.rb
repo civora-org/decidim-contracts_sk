@@ -47,7 +47,7 @@ module Decidim
         def initialize(template:, title: nil, values: {})
           super()
           @template = template
-          @title = title.to_s.strip
+          @title = title.to_s.gsub(FieldValues::CONTROL, "").gsub(/[[:space:]]+/, " ").strip
           @field_errors = {}
           @raw = known_values(values)
         end

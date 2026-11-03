@@ -32,7 +32,7 @@ module Decidim
       #
       # Broadcasts :ok(contract), or one of :invalid (form, tenancy, template no
       # longer usable), :not_editable, :header_incomplete(missing header keys),
-      # :redaction_failed, :conversion_failed. The audit event
+      # :redaction_failed, :conversion_failed, :encryption_unavailable. The audit event
       # "contract.generated_from_template" carries only ids and timestamps.
       # Cop note: one command owns the whole generation transaction (counter,
       # contract, entry, documents, audit) so that it reads top to bottom and
@@ -86,6 +86,9 @@ module Decidim
           broadcast(:redaction_failed)
         rescue Templates::PdfConverter::Error
           broadcast(:conversion_failed)
+        rescue ActiveRecord::Encryption::Errors::Configuration
+          # The host has not set the encryption keys; nothing was stored.
+          broadcast(:encryption_unavailable)
         rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, ActiveRecord::RecordNotUnique,
                ActiveStorage::FileNotFoundError
           broadcast(:invalid)
@@ -171,12 +174,22 @@ module Decidim
         end
 
         # {N}/{YYYY} by default; the template's own pattern may use {N} and
-        # {YYYY}. Allocated from the per-organization yearly counter.
+        # {YYYY}. Allocated from the per-organization yearly counter. A number
+        # whose reference already exists in the organization (a hand-entered
+        # contract, say) is skipped and the counter moves past it, so a clash
+        # never blocks generation for the rest of the year. The counter row
+        # stays locked until the transaction ends.
+        MAX_NUMBER_SKIPS = 100
+
         def next_number(current)
           year = Time.zone.today.year
-          n = ReferenceCounter.next!(organization, ReferenceCounter.scope_key_for(SEQUENCE, year))
+          scope = ReferenceCounter.scope_key_for(SEQUENCE, year)
           pattern = current.reference_pattern.presence || DEFAULT_PATTERN
-          pattern.gsub("{N}", n.to_s).gsub("{YYYY}", year.to_s)
+          MAX_NUMBER_SKIPS.times do
+            candidate = pattern.gsub("{N}", ReferenceCounter.next!(organization, scope).to_s).gsub("{YYYY}", year.to_s)
+            return candidate unless Contract.exists?(organization: organization, reference: candidate)
+          end
+          raise Halt, :invalid
         end
 
         def create_contract!(number)
