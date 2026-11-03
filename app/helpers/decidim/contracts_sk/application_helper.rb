@@ -180,7 +180,7 @@ module Decidim
         return crz_deadline_unknown_badge if status == :unknown
 
         text = status == :overdue ? crz_t("badge.overdue") : crz_days_text(contract.crz_days_left(today: today))
-        tag.span(text, class: CRZ_DEADLINE_BADGE_CLASSES.fetch(status))
+        tag.span(text, class: CRZ_DEADLINE_BADGE_CLASSES.fetch(status), title: crz_t("badge.title", text: text))
       end
 
       # The edit page's deadline line (civora-org/civora-platform#124): nil
@@ -260,6 +260,22 @@ module Decidim
         return crz_t("badge.today") if count.zero?
 
         I18n.t("decidim.contracts_sk.admin.contracts.deadline.days", count: count)
+      end
+
+      # The confirm dialog of a lifecycle step (Decidim's data-confirm modal
+      # reads data-confirm-title and data-confirm-icon; without them it
+      # shows a trash can and "Potvrdiť", which reads as a deletion). Icons
+      # are Remix icon names that decidim-core/admin register (menu_icons_spec
+      # checks every icon name the engine uses against the pinned gems).
+      CONFIRM_ICONS = {
+        submit: "mail-send-line", return: "arrow-go-back-line", approve: "check-double-line",
+        reject: "error-warning-line", publish: "eye-line", archive: "folder-line"
+      }.freeze
+
+      def transition_confirm_data(event)
+        { confirm: I18n.t("decidim.contracts_sk.admin.contracts.transition.confirm.#{event}"),
+          "confirm-title": I18n.t("decidim.contracts_sk.admin.contracts.transition.confirm_title.#{event}"),
+          "confirm-icon": CONFIRM_ICONS.fetch(event.to_sym) }
       end
 
       def effectiveness_t(key, **options)

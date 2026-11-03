@@ -75,6 +75,7 @@ require_relative "contracts_sk/subscription_throttle"
 # autoloader.
 require_relative "contracts_sk/crz_import/transport"
 require_relative "contracts_sk/crz_import/attachment_url"
+require_relative "contracts_sk/crz_import/source_id"
 require_relative "contracts_sk/crz_import/mapper"
 require_relative "contracts_sk/crz_import/client"
 require_relative "contracts_sk/crz_import/filing_comparison"

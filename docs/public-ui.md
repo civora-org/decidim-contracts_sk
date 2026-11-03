@@ -164,6 +164,9 @@ The host's compiled Decidim admin bundle, not the gem source, decides how admin 
 - **`table-list` centres every cell.** Left-align people/record tables with a `.table-list.<engine-class>` rule (the doubled class is needed to win), and right-align amounts with tabular numerals.
 - **`show-for-sr` does not exist.** Use `.cs-admin-sr-only`.
 - **A bare `<a>` in a table actions cell can render invisible.** Use a GET `button_to`.
+- **A `data-confirm` dialog shows a trash can and "Potvrdiť" unless told otherwise.** Decidim's confirm modal reads `data-confirm-title` and `data-confirm-icon` (a Remix icon name from the sprite, and `menu_icons_spec` wants it registered by decidim-core/admin) next to `data-confirm`; `transition_confirm_data` sets all three for the lifecycle buttons. The Cancel/OK button styles belong to the host bundle and cannot be set per button.
+- **A plain "Back to ..." link looks like body text.** Make it `button button__sm button__secondary cs-admin-choice--idle` (outlined, quiet). A back link must also never point at `edit` of a record that is no longer editable (it answers "not authorized"): link to the contract page.
+- **One primary action per page.** `button__primary` is red, so the main step is the solid `button__secondary` and the secondary one is outlined (`cs-admin-choice--idle`) and later in reading order.
 
 Override points: (1) host or other modules can restyle the classes from their own CSS — selectors are single classes, no ids, no `!important`; (2) a host app can replace the whole partial by placing a file at `app/views/decidim/contracts_sk/shared/_admin_styles.html.erb` (host views win over engine views).
 

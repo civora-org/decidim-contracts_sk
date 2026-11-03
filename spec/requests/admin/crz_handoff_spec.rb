@@ -239,7 +239,7 @@ RSpec.describe "admin CRZ handoff", type: :request do
 
       get "/admin/contracts/#{contract.id}/crz_handoff"
 
-      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:alert]).to be_present
     end
 

@@ -62,6 +62,18 @@ RSpec.describe Decidim::ContractsSk::Admin::ContractForm do
     expect(form.errors[:amount]).to be_present
   end
 
+  it "rejects three decimals instead of rounding them (\"1.250\" may mean one thousand two hundred fifty)" do
+    form = form_with_amount("1.250")
+
+    expect(form).not_to be_valid
+    expect(form.errors[:amount]).to be_present
+  end
+
+  it "keeps what was typed for redisplay, and the cast value when the amount was not a string" do
+    expect(form_with_amount("1.250").amount_input).to eq("1.250")
+    expect(form_with_amount(BigDecimal("12.5")).amount_input).to eq(BigDecimal("12.5"))
+  end
+
   it "rejects scientific notation (the format guard stays strict)" do
     form = form_with_amount("1e5")
 

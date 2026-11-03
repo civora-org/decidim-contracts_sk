@@ -214,8 +214,8 @@ module Decidim
         def import_crz
           enforce_permission_to :import_crz, :contract
 
-          source_id = params[:source_id].to_s.strip
-          return import_blank_id unless source_id.match?(/\A\d+\z/)
+          source_id = CrzImport::SourceId.parse(params[:source_id])
+          return import_blank_id unless source_id
 
           outcome = CrzImport::Sync.import_one(source_id: source_id,
                                                organization: current_organization,
@@ -265,7 +265,8 @@ module Decidim
 
           enforce_permission_to :confirm_crz_filing, :contract, contract: @contract
 
-          @crz_id = params[:crz_id].to_s.strip
+          raw_id = params[:crz_id].to_s.strip
+          @crz_id = CrzImport::SourceId.parse(raw_id) || raw_id
           load_filing_preview if @crz_id.present?
         end
 
@@ -280,8 +281,8 @@ module Decidim
 
           enforce_permission_to :confirm_crz_filing, :contract, contract: @contract
 
-          crz_id = params[:crz_id].to_s.strip
-          return filing_failed(:not_found, crz_id) unless crz_id.match?(CRZ_ID_FORMAT)
+          crz_id = CrzImport::SourceId.parse(params[:crz_id])
+          return filing_failed(:not_found, params[:crz_id].to_s.strip) unless crz_id
 
           run_filing_confirmation(crz_id)
         end
@@ -471,7 +472,7 @@ module Decidim
         # only fires on stale pages or hand-crafted requests).
         def download_missing
           flash[:alert] = t("decidim.contracts_sk.admin.crz_handoff.download_missing")
-          redirect_to edit_admin_contract_path(@contract)
+          redirect_to admin_contract_path(@contract)
         end
 
         # Both generate outcomes are PRG redirects to the edit page (the
@@ -495,12 +496,12 @@ module Decidim
         # checkbox form) either way.
         def confirm_redaction_succeeded
           flash[:notice] = t("decidim.contracts_sk.admin.contracts.confirm_redaction.success")
-          redirect_to edit_admin_contract_path(@contract)
+          redirect_to admin_contract_path(@contract)
         end
 
         def confirm_redaction_failed
           flash[:alert] = t("decidim.contracts_sk.admin.contracts.confirm_redaction.invalid")
-          redirect_to edit_admin_contract_path(@contract)
+          redirect_to admin_contract_path(@contract)
         end
 
         # The affirmation consumed server-side (see #confirm_redaction):
@@ -533,14 +534,14 @@ module Decidim
 
           TransitionContract.call(@contract, event: event, user: current_user,
                                              reason: params[:reason]) do
-            on(:ok) { transition_succeeded }
+            on(:ok) { transition_succeeded(event) }
             on(:invalid) { |failure = nil| transition_failed(failure) }
           end
         end
 
-        def transition_succeeded
-          flash[:notice] = t("decidim.contracts_sk.admin.contracts.transition.success")
-          redirect_to admin_contracts_path
+        def transition_succeeded(event)
+          flash[:notice] = t("decidim.contracts_sk.admin.contracts.transition.done.#{event}")
+          redirect_to transition_landing_path
         end
 
         # The refusal-payload → localized-alert mapping: dedicated,
@@ -561,7 +562,18 @@ module Decidim
                 "#{TRANSITION_FAILURE_KEYS.fetch(failure, :invalid)}"
 
           flash[:alert] = t(key)
-          redirect_to admin_contracts_path
+          redirect_to transition_landing_path
+        end
+
+        # Stay on the contract after a step (the person is mid-task and the
+        # page shows the new state and the next step); fall back to the list
+        # only when the actor can no longer read the record.
+        def transition_landing_path
+          if allowed_to?(:read, :contract, contract: @contract)
+            admin_contract_path(@contract)
+          else
+            admin_contracts_path
+          end
         end
 
         # The record's position in the process (steps and next step), for
@@ -882,8 +894,22 @@ module Decidim
         # published_at are deliberately absent: adding them here would
         # bypass the command layer's ownership rules.
         def form_params
-          params.require(:contract).permit(:title, :reference, :subject_matter, :amount,
-                                           :currency, :signed_on, :effective_from, :agreed_effective_on, :crz_url)
+          permitted = params.require(:contract).permit(:title, :reference, :subject_matter, :amount,
+                                                       :currency, :signed_on, :effective_from,
+                                                       :agreed_effective_on, :crz_url)
+          permitted[:amount] = typed_amount(permitted[:amount]) if permitted[:amount].is_a?(String)
+          permitted
+        end
+
+        # The editor types Slovak amounts ("3 062,50", "3062,5", "3.062,50"):
+        # turn what is unambiguous into the dot-decimal string the form's
+        # strict format check takes, and leave the rest (for example "1.250",
+        # which is 1,25 or 1 250) untouched so the form refuses it. The same
+        # parser the contract-template forms use. Deliberately here and not
+        # in ContractForm: the spreadsheet import shares that form and keeps
+        # its one strict shape.
+        def typed_amount(raw)
+          Templates::FieldValues.normalize_decimal(raw, max_places: 2, allow_negative: true) || raw
         end
       end
       # rubocop:enable Metrics/ClassLength

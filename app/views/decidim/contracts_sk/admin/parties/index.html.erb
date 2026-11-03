@@ -1,3 +1,4 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
 <div class="card">
   <div class="item_show__header">
     <h1 class="item_show__header-title" id="cs-parties-title">
@@ -6,7 +7,7 @@
   </div>
 
   <div class="card-section">
-    <p><%= link_to t("decidim.contracts_sk.admin.parties.back_to_contract"), edit_admin_contract_path(@contract) %></p>
+    <p><%= link_to t("decidim.contracts_sk.admin.parties.back_to_contract"), admin_contract_path(@contract), class: "button button__sm button__secondary cs-admin-choice--idle" %></p>
 
     <% if allowed_to?(:create, :party, contract: @contract) %>
       <p><%= link_to t("decidim.contracts_sk.admin.parties.new.title"), new_admin_contract_party_path(@contract), class: "button button__sm button__secondary" %></p>

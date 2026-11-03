@@ -63,7 +63,7 @@ module Decidim
         # with the command layer's alert.
         def create_failed
           flash[:alert] = t("decidim.contracts_sk.admin.links.create.error")
-          redirect_to edit_admin_contract_path(@contract)
+          redirect_to admin_contract_path(@contract)
         end
 
         # Both outcomes are PRG redirects: a destroy failure means the row
@@ -76,7 +76,7 @@ module Decidim
 
         def destroy_failed
           flash[:alert] = t("decidim.contracts_sk.admin.links.destroy.error")
-          redirect_to edit_admin_contract_path(@contract)
+          redirect_to admin_contract_path(@contract)
         end
 
         # Tenant-scoped record access: a contract of another organization is

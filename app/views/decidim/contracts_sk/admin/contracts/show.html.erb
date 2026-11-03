@@ -27,7 +27,11 @@
     <p class="cs-show__meta">
       <span class="cs-show__ref"><%= @contract.reference %></span>
       <span class="label"><%= t(@contract.state, scope: "decidim.contracts_sk.contract_states") %></span>
-      <%= crz_deadline_badge(@contract, today: Date.current) %>
+      <% deadline_badge = crz_deadline_badge(@contract, today: Date.current) %>
+      <% if deadline_badge %>
+        <span class="cs-today__ref"><%= t("decidim.contracts_sk.admin.contracts.deadline.badge.label") %></span>
+        <%= deadline_badge %>
+      <% end %>
     </p>
     <%= render "progress", contract: @contract, yours: show_actions_available?(@contract) %>
   </div>
@@ -40,14 +44,21 @@
     </div>
   <% end %>
 
-  <%= render "next_step", contract: @contract %>
-
-  <% if redaction_open %>
-    <div class="card-section" id="cs-redaction">
-      <h2 class="h4"><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></h2>
-      <%= render "redaction_confirmation_body", contract: @contract %>
-    </div>
+  <%# When the redaction confirmation is what stands between the person and
+      "Zverejniť v katalógu", it comes first: do this, then the button
+      below unlocks. Otherwise it follows the next step. %>
+  <% redaction_blocks_publish = redaction_open && transition_events_for(@contract).include?(:publish) %>
+  <% redaction_card = capture do %>
+    <% if redaction_open %>
+      <div class="card-section" id="cs-redaction">
+        <h2 class="h4"><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></h2>
+        <%= render "redaction_confirmation_body", contract: @contract %>
+      </div>
+    <% end %>
   <% end %>
+  <%= redaction_card if redaction_blocks_publish %>
+  <%= render "next_step", contract: @contract %>
+  <%= redaction_card unless redaction_blocks_publish %>
 
   <%= render "template_documents" %>
 

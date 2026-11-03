@@ -50,6 +50,8 @@
       .cs-admin-templates         the templates table: left-aligned, actions in one wrapping row
                                   Button links (a.button) in its cells keep the button's own white text and size: the bundle's
                                   `.table-list td a:not(...)` rule would otherwise paint them blue on blue
+      .cs-admin-prose             a paragraph of explanatory text at a readable measure
+      .cs-admin-header-block      the organization header card on the template form, inset like the form sections
       .cs-admin-template-name     a template's name in the list (heavier, long names wrap)
       .cs-admin-template-ico      the muted IČO beside the object party in the list
       .cs-admin-template-none     the muted "no party" placeholder in the list
@@ -76,7 +78,11 @@
   .cs-admin-note-form label { display: block; }
   .cs-admin-template-note { margin: .75rem 0 0; font-size: .875rem; color: #3e4c5c; max-width: 72ch; }
   .cs-admin-template-section { margin: 0 0 .5rem; }
-  .table-list.cs-admin-templates th, .table-list.cs-admin-templates td { text-align: left; vertical-align: middle; }
+  .table-list.cs-admin-templates { width: 100%; }
+  .table-list.cs-admin-templates th, .table-list.cs-admin-templates td { text-align: left; vertical-align: middle; padding: .75rem 1rem; }
+  .cs-admin-prose { max-width: 72ch; margin: 0 0 1rem; line-height: 1.5; }
+  .card-section.cs-admin-header-block { padding-left: 1rem; padding-right: 1rem; }
+  .cs-show__actions :is(button, input[type="submit"]):disabled, .cs-show__actions :is(button, input[type="submit"]):disabled:hover { background: #e1e5ef; color: #3e4c5c; box-shadow: none; cursor: not-allowed; }
   .cs-admin-templates .table-list__actions > div { display: flex; flex-wrap: wrap; gap: .5rem; }
   .cs-admin-templates .table-list__actions form { margin: 0; }
   .table-list.cs-admin-templates td a.button:is(.button__secondary, .button__primary) { color: rgb(255, 255, 255); font-size: inherit; font-weight: inherit; }

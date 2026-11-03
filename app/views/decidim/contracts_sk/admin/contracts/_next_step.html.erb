@@ -10,26 +10,38 @@
 <% filing_allowed = allowed_to?(:confirm_crz_filing, :contract, contract: contract) %>
 <% handoff = contract.documents.find_by(kind: "crz_export") %>
 <% handoff_download = allowed_to?(:download_crz_handoff, :contract, contract: contract) && handoff&.file&.attached? %>
+<%# Order and weight follow the work: the step the person is here to do is
+    first and solid; archiving (always available on a published record, rarely
+    the point of the visit) comes last and outlined. Publishing stays visible
+    but disabled, with the reason beside it, until the privacy-redaction
+    confirmation is recorded (the server refuses it too). %>
+<% quiet_class = "button button__sm button__secondary cs-admin-choice--idle" %>
+<% solid_class = "button button__sm button__secondary" %>
+<% redaction_pending = contract.redaction_confirmed_at.blank? %>
 <% if events.any? || filing_allowed || handoff_download %>
   <div class="card-section" id="cs-next-step">
     <h2 class="h4"><%= t("#{scope}.next_step") %></h2>
     <div class="cs-show__actions">
-      <% events.reject { |event| reason_event?(event) }.each do |event| %>
-        <%= button_to t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
-                      public_send(:"#{event}_admin_contract_path", contract),
-                      method: :post,
-                      class: "button button__sm button__secondary",
-                      data: { confirm: t("decidim.contracts_sk.admin.contracts.transition.confirm.#{event}") } %>
-      <% end %>
       <% if filing_allowed %>
         <%= link_to t("decidim.contracts_sk.admin.contracts.crz_filing.link"),
                     crz_filing_admin_contract_path(contract),
-                    class: "button button__sm button__secondary" %>
+                    class: solid_class %>
       <% end %>
       <% if handoff_download %>
         <%= link_to t("decidim.contracts_sk.admin.crz_handoff.download"),
                     download_crz_handoff_admin_contract_path(contract),
-                    class: "button button__sm button__secondary" %>
+                    class: filing_allowed ? quiet_class : solid_class %>
+      <% end %>
+      <% step_events = events.reject { |event| reason_event?(event) } %>
+      <% (step_events.reject { |event| event == :archive } + step_events.select { |event| event == :archive }).each do |event| %>
+        <% blocked = event == :publish && redaction_pending %>
+        <%= button_to t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
+                      public_send(:"#{event}_admin_contract_path", contract),
+                      method: :post,
+                      class: event == :archive ? quiet_class : solid_class,
+                      disabled: blocked,
+                      aria: (blocked ? { describedby: "cs-publish-blocked" } : {}),
+                      data: transition_confirm_data(event) %>
       <% end %>
     </div>
     <% events.select { |event| reason_event?(event) }.each do |event| %>
@@ -37,8 +49,8 @@
         <%= render "review_decision_form", contract: contract, event: event %>
       </div>
     <% end %>
-    <% if events.include?(:publish) && contract.redaction_confirmed_at.blank? %>
-      <p class="cs-today__hint"><%= t("#{scope}.publish_needs_redaction") %></p>
+    <% if events.include?(:publish) && redaction_pending %>
+      <p class="cs-today__hint" id="cs-publish-blocked"><%= t("#{scope}.publish_needs_redaction") %></p>
     <% end %>
   </div>
 <% end %>

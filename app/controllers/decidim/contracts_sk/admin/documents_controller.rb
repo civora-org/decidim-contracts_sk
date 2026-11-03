@@ -129,7 +129,7 @@ module Decidim
 
         def destroy_failed
           flash[:alert] = t("decidim.contracts_sk.admin.documents.destroy.error")
-          redirect_to edit_admin_contract_path(@contract)
+          redirect_to admin_contract_path(@contract)
         end
 
         # Tenant-scoped record access: a contract of another organization is
