@@ -43,11 +43,12 @@
         <h2 class="h4"><%= t("#{scope}.form.header_heading") %></h2>
         <p class="cs-admin-template-note"><%= t("#{scope}.form.header_hint") %></p>
         <dl class="cs-show__facts cs-admin-header-facts">
-          <% @form.header_fields.each do |field| %>
-            <% header_key = Decidim::ContractsSk::Templates::TemplateFields.org_header_key(field.key) %>
+          <%# Labelled like the Hlavička obce screen; fields mapping to one
+              header key (org_sidlo and org_adresa) show it once. %>
+          <% @form.header_fields.filter_map { |field| Decidim::ContractsSk::Templates::TemplateFields.org_header_key(field.key) }.uniq.each do |header_key| %>
             <% value = @profile&.header_value(header_key) %>
             <div class="cs-show__fact">
-              <dt><%= field.label %></dt>
+              <dt><%= t(header_key, scope: "#{scope}.header") %></dt>
               <dd>
                 <% if value.present? %>
                   <%= value %>
