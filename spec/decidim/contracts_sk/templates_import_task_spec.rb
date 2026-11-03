@@ -240,6 +240,12 @@ RSpec.describe "decidim_contracts_sk:templates:import", :db do
       File.write("#{path}.fields.yml", "groups: { predmet: a }\ngroup_labels: { b: \"B\" }\n")
       aborts_with(/group_labels names groups no field uses: b/) { import }
 
+      File.write("#{path}.fields.yml", "groups: { predmet: a }\ngroup_labels: { a: 5 }\n")
+      aborts_with(/group_labels values must be text without control characters: a/) { import }
+
+      File.write("#{path}.fields.yml", "groups: { predmet: a }\ngroup_labels: { a: \"x\\x01y\" }\n")
+      aborts_with(/group_labels values must be text without control characters: a/) { import }
+
       File.write("#{path}.fields.yml", "group_labels: [just, a, list]\n")
       aborts_with(/group_labels must be a mapping/) { import }
 

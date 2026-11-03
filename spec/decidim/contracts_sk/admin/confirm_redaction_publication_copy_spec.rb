@@ -17,6 +17,8 @@ require "spec_helper"
 
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
 RSpec.describe Decidim::ContractsSk::Admin::ConfirmRedaction, :db do
+  include ActiveJob::TestHelper
+
   include_context "with a contract template"
 
   let(:generated) { Decidim::ContractsSk::GeneratedDocument }
@@ -94,6 +96,28 @@ RSpec.describe Decidim::ContractsSk::Admin::ConfirmRedaction, :db do
     end
   end
 
+  describe "an unusable copy" do
+    it "refuses a copy without a recorded checksum, and stamps nothing" do
+      current_publication_pdf(contract).update_columns(checksum: nil)
+
+      expect(confirm(contract)).to eq(:invalid)
+
+      expect(contract.reload.redaction_confirmed_at).to be_nil
+      expect(contract.documents).to be_empty
+    end
+
+    it "refuses a copy whose stored file is gone, with nothing stored" do
+      blob = current_publication_pdf(contract).file.blob
+      blob.service.delete(blob.key)
+
+      expect(confirm(contract)).to eq(:invalid)
+
+      expect(contract.reload.redaction_confirmed_at).to be_nil
+      expect(contract.documents).to be_empty
+      expect(audit_class.where(action: %w[contract.redaction_confirmed contract.publication_copy_promoted])).to be_empty
+    end
+  end
+
   describe "a copy that already has its Document" do
     it "does not create a second one" do
       copy = current_publication_pdf(contract)
@@ -120,6 +144,35 @@ RSpec.describe Decidim::ContractsSk::Admin::ConfirmRedaction, :db do
       expect(old_copy.reload.promoted_document).to be_nil
       expect(new_copy.reload.promoted_document).to eq(contract.documents.sole)
       expect(contract.documents.sole.file.download).to eq(new_copy.file.download)
+    end
+
+    it "is not promoted through a stale instance: a contract loaded before regenerating promotes only the new copy" do
+      stale = Decidim::ContractsSk::Contract.find(contract.id)
+      stale.generated_documents.load
+      old_copy = current_publication_pdf(contract)
+
+      generate({ "predmet" => "Predaj pozemku parc. č. 5/5" }, record: Decidim::ContractsSk::Contract.find(contract.id))
+
+      expect(confirm(stale)).to eq(:ok)
+
+      new_copy = current_publication_pdf(contract.reload)
+      expect(old_copy.reload.promoted_document).to be_nil
+      expect(new_copy.promoted_document).to eq(contract.documents.sole)
+      expect(contract.documents.sole.file.download).to eq(new_copy.file.download)
+    end
+
+    it "keeps the superseded copy's file downloadable after the promoted Document is destroyed and purged" do
+      confirm(contract)
+      old_copy = current_publication_pdf(contract.reload)
+      bytes = old_copy.file.download
+
+      perform_enqueued_jobs do
+        generate({ "predmet" => "Predaj pozemku parc. č. 6/6" }, record: contract)
+      end
+
+      expect(contract.reload.documents).to be_empty
+      expect(old_copy.reload.status).to eq("superseded")
+      expect(old_copy.file.download).to eq(bytes)
     end
 
     it "is not promoted when no current copy exists (all superseded), as for a manual contract" do

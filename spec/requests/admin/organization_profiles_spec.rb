@@ -189,6 +189,18 @@ RSpec.describe "admin organization header", :db, type: :request do
       expect(profile_class.count).to eq(0)
     end
 
+    it "rejects control characters (NUL, \\x01, newline) in any value and stores nothing" do
+      ["Obec\u0000Vzorová", "Obec\u0001Vzorová", "Obec\nVzorová"].each do |bad|
+        post "/admin/organization_profile", params: { organization_profile: { official_name: bad, ico: "00000000" } }
+
+        expect(response).to have_http_status(:unprocessable_entity), bad.inspect
+        expect(response.body).to include("The value is not valid."), bad.inspect
+        expect(response.body).to include('aria-invalid="true"'), bad.inspect
+      end
+      expect(profile_class.count).to eq(0)
+      expect(audit_class.count).to eq(0)
+    end
+
     it "ignores keys outside the allowlist" do
       post "/admin/organization_profile",
            params: { organization_profile: { ico: "00000000", admin: "true", decidim_organization_id: other_org.id } }

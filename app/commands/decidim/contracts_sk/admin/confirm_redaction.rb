@@ -53,7 +53,9 @@ module Decidim
           end
 
           broadcast(:ok, contract)
-        rescue ActiveRecord::RecordInvalid
+        rescue ActiveRecord::RecordInvalid, ActiveStorage::FileNotFoundError
+          # A missing generated file (storage lost it) refuses the confirmation
+          # with the usual failure message; the lock's transaction rolled back.
           broadcast(:invalid)
         end
 

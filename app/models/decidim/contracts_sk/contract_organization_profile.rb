@@ -63,6 +63,7 @@ module Decidim
         return if value.nil?
         return errors.add(:header, :invalid_value, key: key) unless value.is_a?(String)
         return errors.add(:header, :too_long_value, key: key) if value.length > MAX_VALUE_LENGTH
+        return errors.add(:header, :invalid_value, key: key) if value.match?(/[[:cntrl:]]/)
 
         validate_header_format(key, value)
       end

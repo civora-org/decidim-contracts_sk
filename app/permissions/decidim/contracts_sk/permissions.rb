@@ -224,9 +224,6 @@ module Decidim
         toggle_allow(roles_for_user.any?) if %i[read create].include?(action)
       end
 
-      # The generated-document download rule (civora-org/civora-platform#211):
-      # any engine role may read, no lifecycle condition; every other action
-      # stays unset (fail-closed).
       # Generated documents (civora-org/civora-platform#211, P6). The
       # publication copy (personal data hidden) may be read by any engine
       # role; the internal copy holds personal data and is limited to the

@@ -143,7 +143,7 @@ workflow. The create writes one `contract.create_from_template` audit row.
 
 | Scope | Subject | Action | Allowed when |
 |---|---|---|---|
-| `admin` | `organization_profile` | `read`, `create`, `update`, `destroy` | organization admin with accepted admin terms (the `user_role` rule); engine roles never qualify |
+| `admin` | `organization_profile` | `read`, `create`, `update`, `destroy`, `import` | organization admin with accepted admin terms (the `user_role` rule); engine roles never qualify |
 | `admin` | `contract_template` | `read`, `create`, `update`, `destroy`, `import` | same rule; reserved for the upload/import screens, the import is a rake task today |
 | `admin` | `generated_document` | `read` with `variant: "publication"` | any engine role |
 | `admin` | `generated_document` | `read` with `variant: "internal"` (also a missing or unknown variant) | `editor` only: the internal copy holds personal data |

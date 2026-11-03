@@ -14,7 +14,7 @@ module Decidim
       # lock regeneration takes. Only the current copy qualifies:
       # regeneration supersedes the old rows and removes what they had
       # promoted, so a superseded copy is never promoted. The stored SHA-256
-      # is verified against the file first. Without a generated copy (a
+      # must be present and match the file; a blank checksum is refused. Without a generated copy (a
       # manually prepared contract) nothing happens and manual uploads stay
       # as they are. Returns true when there is nothing to promote or the
       # copy was promoted, false when the copy is unusable (the
@@ -49,7 +49,7 @@ module Decidim
         end
 
         def usable?
-          copy.file.attached? && (copy.checksum.blank? || copy.checksum == Digest::SHA256.hexdigest(copy.file.download))
+          copy.file.attached? && copy.checksum.present? && copy.checksum == Digest::SHA256.hexdigest(copy.file.download)
         end
 
         def promote!

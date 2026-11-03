@@ -123,6 +123,9 @@ module Decidim
           labels = sidecar["group_labels"] || {}
           raise Error, "group_labels must be a mapping of group key to heading" unless labels.is_a?(Hash)
 
+          bad = labels.reject { |_key, value| value.is_a?(String) && !value.match?(/[[:cntrl:]]/) }.keys
+          raise Error, "group_labels values must be text without control characters: #{bad.join(", ")}" if bad.any?
+
           used = (sidecar["groups"] || {}).values.map(&:to_s).uniq
           unknown = labels.keys.map(&:to_s) - used
           raise Error, "group_labels names groups no field uses: #{unknown.join(", ")}" if unknown.any?
