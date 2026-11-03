@@ -139,6 +139,17 @@ form and seeds the draft's object party. A template never publishes, never
 advances a state and never skips review; the draft enters the normal
 workflow. The create writes one `contract.create_from_template` audit row.
 
+## Contract templates from Word, the header and generated documents (#211, P6)
+
+| Scope | Subject | Action | Allowed when |
+|---|---|---|---|
+| `admin` | `organization_profile` | `read`, `create`, `update`, `destroy`, `import` | organization admin with accepted admin terms (the `user_role` rule); engine roles never qualify |
+| `admin` | `contract_template` | `read`, `create`, `update`, `destroy`, `import` | same rule; reserved for the upload/import screens, the import is a rake task today |
+| `admin` | `generated_document` | `read` with `variant: "publication"` | any engine role |
+| `admin` | `generated_document` | `read` with `variant: "internal"` (also a missing or unknown variant) | `editor` only: the internal copy holds personal data |
+
+Generating and regenerating are the plain `:create` / `:update` `:contract` checks (editor). The contract page lists only the downloads the role may open, using the same check. See [contract-templates.md](contract-templates.md).
+
 ## State source (caller contract)
 
 State is read duck-typed from the permission context:

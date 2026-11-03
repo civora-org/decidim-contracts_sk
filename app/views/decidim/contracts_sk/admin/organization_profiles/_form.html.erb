@@ -1,0 +1,48 @@
+<%# url: and method: come from the caller (new / edit). One text field per
+    allowed header key, with explicit ids/names like the other engine forms
+    (the host bundle leaves bare inputs unstyled inside a plain form).
+    Decidim classes plus .cs-admin-* rules only. %>
+<% scope = "decidim.contracts_sk.admin.organization_profiles" %>
+<%= form_with url: url, method: method, scope: :organization_profile, html: { class: "form form-defaults" } do |form| %>
+  <div class="card">
+    <div class="card-section">
+      <div class="form__wrapper">
+        <% if @form.errors.any? %>
+          <div class="flash alert">
+            <ul role="alert" tabindex="-1" autofocus>
+              <% @form.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <% header_keys.each do |key| %>
+          <% id = "organization_profile_#{key}" %>
+          <% error = @form.error_for(key) %>
+          <% hint = %w[ico iban].include?(key) ? t("#{scope}.form.hints.#{key}") : nil %>
+          <% described = [(hint ? "#{id}_hint" : nil), (error ? "#{id}_error" : nil)].compact.join(" ") %>
+          <div class="row column">
+            <%= label_tag id, header_label(key) %>
+            <%= text_field_tag "organization_profile[#{key}]", @form.public_send(key), id: id, maxlength: 255,
+                               autocomplete: "off", "aria-invalid": (error ? "true" : nil),
+                               "aria-describedby": described.presence %>
+            <% if hint %>
+              <span class="help-text" id="<%= id %>_hint"><%= hint %></span>
+            <% end %>
+            <% if error %>
+              <span class="form-error is-visible" id="<%= id %>_error"><%= error %></span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="item__edit-sticky">
+    <div class="item__edit-sticky-container">
+      <%= submit_tag t("#{scope}.form.submit"), class: "button button__sm button__secondary" %>
+      <%= link_to t("#{scope}.form.cancel"), admin_organization_profile_path, class: "button button__sm button__transparent" %>
+    </div>
+  </div>
+<% end %>

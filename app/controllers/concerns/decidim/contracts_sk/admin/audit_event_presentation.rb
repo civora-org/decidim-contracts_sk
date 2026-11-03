@@ -55,6 +55,10 @@ module Decidim
           "contract.create_from_template" => "decidim.contracts_sk.admin.audit_events.actions.create_from_template",
           "contract.generated_from_template" =>
             "decidim.contracts_sk.admin.audit_events.actions.generated_from_template",
+          "contract.publication_copy_promoted" =>
+            "decidim.contracts_sk.admin.audit_events.actions.publication_copy_promoted",
+          "organization_profile.removed" =>
+            "decidim.contracts_sk.admin.audit_events.actions.organization_profile_removed",
           "contract.note_added" => "decidim.contracts_sk.admin.audit_events.actions.note_added",
           "contract.crz_mirror_absorbed" => "decidim.contracts_sk.admin.audit_events.actions.crz_mirror_absorbed",
           "contract.imported_from_file" => "decidim.contracts_sk.admin.audit_events.actions.imported_from_file",
@@ -72,6 +76,12 @@ module Decidim
         # command-vocabulary mapping above, or a humanized fallback for any
         # unknown action string — never a raise, never raw internals.
         def audit_action_label(action)
+          header_key = action.to_s[/\Aorganization_profile\.changed\.(\w+)\z/, 1]
+          if header_key && ContractOrganizationProfile::HEADER_KEYS.include?(header_key)
+            return t("decidim.contracts_sk.admin.audit_events.actions.organization_profile_changed",
+                     field: t(header_key, scope: "decidim.contracts_sk.admin.template_entries.header"))
+          end
+
           key = ACTION_KEYS.fetch(action.to_s) { return action.to_s.humanize }
 
           t(key)
@@ -111,6 +121,9 @@ module Decidim
           when Contract then contract_target_info(target)
           when Amendment then amendment_target_info(target)
           when Decidim::User then user_target_info(target)
+          when ContractOrganizationProfile
+            { label: t("decidim.contracts_sk.admin.organization_profiles.show.title"),
+              url: admin_organization_profile_path }
           end
         end
 

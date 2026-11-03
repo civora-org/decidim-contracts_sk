@@ -91,16 +91,26 @@ module Decidim
       # (the sidebar also renders on Decidim's own admin pages, whose
       # permission chain does not include the engine).
       def self.register_admin_roles_item!
+        register_org_admin_item(:contracts_sk_roles, "admin_user_roles", :admin_user_roles_path,
+                                "user-settings-line", POSITION + 0.01)
+        # The municipality header (civora-org/civora-platform#211, P6) is
+        # reserved for the same people, so it rides the same gate.
+        register_org_admin_item(:contracts_sk_organization_profile, "admin_organization_profile",
+                                :admin_organization_profile_path, "building-line", POSITION + 0.02)
+      end
+
+      def self.register_org_admin_item(name, label_key, path_helper, icon, position)
         Decidim.menu :admin_menu_modules do |menu|
-          menu.add_item :contracts_sk_roles,
-                        I18n.t("menu.admin_user_roles", scope: "decidim.contracts_sk"),
-                        decidim_contracts_sk.admin_user_roles_path,
-                        icon_name: "user-settings-line",
-                        position: POSITION + 0.01,
+          menu.add_item name,
+                        I18n.t("menu.#{label_key}", scope: "decidim.contracts_sk"),
+                        decidim_contracts_sk.public_send(path_helper),
+                        icon_name: icon,
+                        position: position,
                         active: :inclusive,
                         if: Decidim::ContractsSk::Menu.manages_roles?(current_user)
         end
       end
+      private_class_method :register_org_admin_item
 
       # The entry link for engine role holders who are NOT Decidim admins
       # (civora-org/civora-platform#161, D3 of the #108 spike). Decidim's own

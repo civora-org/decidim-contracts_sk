@@ -75,8 +75,9 @@ RSpec.describe Decidim::ContractsSk::Permissions do
   # #65) and keep every call site self-describing.
   # rubocop:disable Metrics/ParameterLists
   def action_for(user, scope:, action:, state: nil, contract: nil, amendment: nil, amendment_state: nil,
-                 action_subject: :contract)
+                 action_subject: :contract, variant: nil)
     context = {}
+    context[:variant] = variant if variant
     context[:state] = state if state
     context[:contract] = contract if contract
     context[:amendment] = amendment if amendment
@@ -1424,6 +1425,71 @@ RSpec.describe Decidim::ContractsSk::Permissions do
 
     it "leaves public-scope user_role actions unset" do
       expect(unset?(org_admin, scope: :public, action: :read, action_subject: :user_role)).to be(true)
+    end
+  end
+
+  # Contract templates, the organization header and generated documents
+  # (civora-org/civora-platform#211, P6). Each rule was mutation-checked.
+  describe "admin scope — organization_profile and contract_template (organization admins only)" do
+    let(:both_roles_holder) { SpecUser.new(admin: false, admin_terms_accepted: true) }
+
+    %i[organization_profile contract_template].each do |subj|
+      %i[read create update destroy import].each do |act|
+        it "allows #{subj} #{act} to an organization admin with accepted terms" do
+          expect(action_for(org_admin, scope: :admin, action: act, action_subject: subj).allowed?).to be(true)
+        end
+
+        it "denies #{subj} #{act} to an unaccepted admin, a nil user and a non-admin holding both engine roles" do
+          expect(action_for(org_admin_unaccepted, scope: :admin, action: act,
+                                                  action_subject: subj).allowed?).to be(false)
+          expect(action_for(nil, scope: :admin, action: act, action_subject: subj).allowed?).to be(false)
+          swap_resolver(%i[editor reviewer]) do
+            expect(action_for(both_roles_holder, scope: :admin, action: act,
+                                                 action_subject: subj).allowed?).to be(false)
+          end
+        end
+      end
+
+      it "leaves unrelated #{subj} actions and the public scope unset" do
+        expect(unset?(org_admin, scope: :admin, action: :publish, action_subject: subj)).to be(true)
+        expect(unset?(org_admin, scope: :public, action: :read, action_subject: subj)).to be(true)
+      end
+    end
+  end
+
+  describe "admin scope — generated_document (internal copy: editors; publication copy: any engine role)" do
+    def allowed_for(roles, variant)
+      user = SpecUser.new(engine_roles: roles)
+      swap_resolver(roles) do
+        return action_for(user, scope: :admin, action: :read, action_subject: :generated_document,
+                                variant: variant).allowed?
+      end
+    end
+
+    it "lets an editor read both variants" do
+      expect(allowed_for(%i[editor], "internal")).to be(true)
+      expect(allowed_for(%i[editor], "publication")).to be(true)
+    end
+
+    it "lets a reviewer read only the publication copy" do
+      expect(allowed_for(%i[reviewer], "internal")).to be(false)
+      expect(allowed_for(%i[reviewer], "publication")).to be(true)
+    end
+
+    it "denies a user without any engine role both variants" do
+      expect(allowed_for([], "internal")).to be(false)
+      expect(allowed_for([], "publication")).to be(false)
+    end
+
+    it "treats a missing or unknown variant as the internal one (fail closed to the stricter rule)" do
+      expect(allowed_for(%i[reviewer], nil)).to be(false)
+      expect(allowed_for(%i[reviewer], "whatever")).to be(false)
+      expect(allowed_for(%i[editor], nil)).to be(true)
+    end
+
+    it "leaves every other generated_document action unset" do
+      expect(unset?(org_admin, scope: :admin, action: :create, action_subject: :generated_document)).to be(true)
+      expect(unset?(org_admin, scope: :public, action: :read, action_subject: :generated_document)).to be(true)
     end
   end
 end

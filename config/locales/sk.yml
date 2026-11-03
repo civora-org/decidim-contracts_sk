@@ -43,6 +43,7 @@ sk:
       menu:
         contracts: "Zmluvy"
         admin_contracts: "Zmluvy"
+        admin_organization_profile: "Hlavička obce"
         admin_user_roles: "Roly"
         user_admin_contracts: "Správa zmlúv"
       pagination:
@@ -424,6 +425,7 @@ sk:
             success: "Zmluva bola úspešne vytvorená."
             error: "Zmluvu sa nepodarilo vytvoriť."
           confirm_redaction:
+            promoted_title: "Zmluva (verzia na zverejnenie)"
             checkbox_label: "Potvrdzujem, že požadované skrytie údajov bolo vykonané."
             checklist:
               names_addresses: "mená a adresy fyzických osôb"
@@ -743,6 +745,9 @@ sk:
               user: "Používateľ"
               when: "Dátum"
           actions:
+            publication_copy_promoted: "Verzia na zverejnenie vybraná ako zverejňovaný dokument"
+            organization_profile_removed: "Hlavička obce odstránená"
+            organization_profile_changed: "Hlavička obce: zmenené pole %{field}"
             redaction_confirmed: "Skrytie údajov potvrdené"
             return_self: "Vrátené (vlastné posúdenie)"
             approve_self: "Schválené (vlastné posúdenie)"
@@ -907,6 +912,7 @@ sk:
             header_heading: "Hlavička obce"
             header_hint: "Tieto údaje sa doplnia automaticky a tu sa nedajú meniť."
             header_missing: "nevyplnené"
+            header_missing_link: "Doplniť hlavičku obce"
             header_missing_hint: "Hlavička obce nie je úplná. Zmluvu nie je možné vytvoriť, kým ju nedoplní správca."
             hints:
               date: "Napríklad 1. 1. 2026"
@@ -1021,6 +1027,41 @@ sk:
             success: "Poznámka bola pridaná."
             error: "Poznámku sa nepodarilo pridať. Nesmie byť prázdna ani dlhšia ako 2000 znakov."
           link: "Poznámky"
+        organization_profiles:
+          created: "Hlavička obce bola uložená."
+          updated: "Hlavička obce bola uložená."
+          destroyed: "Hlavička obce bola odstránená."
+          create:
+            invalid: "Hlavičku sa nepodarilo uložiť. Skontrolujte označené polia."
+          update:
+            invalid: "Hlavičku sa nepodarilo uložiť. Skontrolujte označené polia."
+          destroy:
+            invalid: "Hlavičku sa nepodarilo odstrániť."
+          show:
+            title: "Hlavička obce"
+            note: "Údaje obce, ktoré sa automaticky dopĺňajú do každej zmluvy vytvorenej zo šablóny (názov, sídlo, IČO, účet, štatutár). Ide o verejné údaje obce, nie o osobné údaje občanov. Zmena sa prejaví v zmluvách vygenerovaných odteraz; už vygenerované dokumenty sa nemenia."
+            empty: "Hlavička obce zatiaľ nie je vyplnená, zmluvu zo šablóny preto nemožno vytvoriť."
+            not_set: "nevyplnené"
+            create: "Vyplniť hlavičku"
+            edit: "Upraviť hlavičku"
+            destroy: "Odstrániť hlavičku"
+            destroy_confirm: "Naozaj odstrániť hlavičku obce? Zmluvu zo šablóny potom nepôjde vytvoriť, kým ju nevyplníte znova."
+          new:
+            title: "Vyplniť hlavičku obce"
+          edit:
+            title: "Upraviť hlavičku obce"
+          form:
+            submit: "Uložiť hlavičku"
+            cancel: "Zrušiť"
+            empty: "Vyplňte aspoň jedno pole."
+            hints:
+              ico: "Osem číslic."
+              iban: "Napríklad SK00 0000 0000 0000 0000 0000 (bez kontroly kontrolných číslic)."
+            errors:
+              invalid_ico: "IČO musí mať osem číslic."
+              invalid_iban: "IBAN nemá správny tvar."
+              too_long_value: "Hodnota je príliš dlhá (najviac 255 znakov)."
+              invalid_value: "Hodnota nie je platná."
         user_roles:
           roles:
             editor: "Editor"

@@ -1,0 +1,55 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<%# The organization's contract header (civora-org/civora-platform#211, P6):
+    what document generation fills into every contract made from a template.
+    Read view with the way to edit it; only organization admins reach it.
+    Decidim classes plus the engine's .cs-admin-* rules. %>
+<% scope = "decidim.contracts_sk.admin.organization_profiles" %>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title"><%= t("#{scope}.show.title") %></h1>
+    <div class="cs-admin-actions">
+      <%= link_to t("decidim.contracts_sk.admin.dashboard.overview_link"), admin_root_path,
+                  class: "button button__sm button__secondary" %>
+      <% if @profile %>
+        <%= link_to t("#{scope}.show.edit"), edit_admin_organization_profile_path,
+                    class: "button button__sm button__secondary" %>
+      <% else %>
+        <%= link_to t("#{scope}.show.create"), new_admin_organization_profile_path,
+                    class: "button button__sm button__secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card-section">
+    <p><%= t("#{scope}.show.note") %></p>
+  </div>
+
+  <% if @profile %>
+    <div class="card-section">
+      <dl class="cs-show__facts cs-admin-header-facts">
+        <% header_keys.each do |key| %>
+          <% value = @profile.header_value(key) %>
+          <div class="cs-show__fact">
+            <dt><%= header_label(key) %></dt>
+            <dd>
+              <% if value.present? %>
+                <%= value %>
+              <% else %>
+                <span class="cs-admin-dangling"><%= t("#{scope}.show.not_set") %></span>
+              <% end %>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+    <div class="card-section">
+      <%= button_to t("#{scope}.show.destroy"), admin_organization_profile_path, method: :delete,
+                    class: "button button__sm button__secondary alert",
+                    data: { confirm: t("#{scope}.show.destroy_confirm") } %>
+    </div>
+  <% else %>
+    <div class="card-section">
+      <p><%= t("#{scope}.show.empty") %></p>
+    </div>
+  <% end %>
+</div>

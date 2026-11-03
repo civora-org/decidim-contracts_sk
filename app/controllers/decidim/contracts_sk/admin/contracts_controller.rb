@@ -119,8 +119,7 @@ module Decidim
           @documents = @contract.documents.order(:id)
           # Files generated from a contract template (#211); admin-only.
           @template_entry = @contract.template_entry
-          @generated_documents =
-            @template_entry ? @template_entry.generated_documents.current.downloadable.order(:id) : []
+          @generated_documents = visible_generated_documents(@template_entry)
         end
 
         def new
@@ -328,6 +327,18 @@ module Decidim
         FILING_INDEX_REASONS = %i[already_filed not_fileable].freeze
 
         private
+
+        # The downloads the signed-in role may see (#211, P6): the internal
+        # copy (personal data) only for editors, the publication PDF for any
+        # engine role. The same :read :generated_document rule the download
+        # enforces, so a link is never shown that would be refused.
+        def visible_generated_documents(entry)
+          return [] unless entry
+
+          entry.generated_documents.current.downloadable.order(:id).select do |document|
+            allowed_to?(:read, :generated_document, contract: @contract, variant: document.variant)
+          end
+        end
 
         def add_import_flash(outcome, source_id)
           key = "decidim.contracts_sk.admin.contracts.import_crz.#{outcome}"

@@ -36,6 +36,7 @@ module Decidim
       validates :group_key, length: { maximum: MAX_KEY_LENGTH },
                             format: { with: KEY_FORMAT },
                             allow_blank: true
+      validates :group_label, length: { maximum: 255 }, allow_blank: true
       validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
       validate :template_not_used

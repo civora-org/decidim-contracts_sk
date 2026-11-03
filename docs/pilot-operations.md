@@ -475,6 +475,17 @@ docs/qa-checklist.md; demo dáta seed-neš podľa § 2.8.
 - [ ] `POST .../crz_handoff` na DEMO-2026-001 → PDF vygenerované; download funguje v ľubovoľnom stave; PDF je označené ako pomôcka, nie publikácia — **pass:** A14/A15.
 - [ ] Admin index: `import_crz` form → platné CRZ id → záznam `published` s provenance; neexistujúce id → lokalizovaný flash — **pass:** docs/crz-import.md.
 
+### Zmluva zo šablóny (#211)
+
+Potrebné: šifrovacie kľúče, LibreOffice, aktívna šablóna (`decidim_contracts_sk:templates:import`, pozri [contract-templates.md](contract-templates.md)). Len vymyslené údaje.
+
+- [ ] Ako administrátor (demo: `contracts-admin@example.org`) otvor **Hlavička obce** v bočnom menu: vyplň názov, sídlo, IČO (osem číslic), IBAN; neplatné IČO → chyba pri poli, nič sa neuloží. Uložená zmena pridá do audit logu riadok „zmenené pole …“ bez hodnoty — **pass:** #211 P6.
+- [ ] Ako editor (demo: `contracts-editor@example.org`) hlavička v menu nie je a `/admin/organization_profile` je zamietnuté; pri nekompletnej hlavičke formulár zo šablóny hlási, že treba požiadať administrátora — **pass:** #211 P6.
+- [ ] Ako editor: Nová zmluva zo šablóny → vyplň → draft s číslom a tromi súbormi na stiahnutie; interný Word/PDF obsahuje osobné údaje, PDF na zverejnenie ich má skryté — **pass:** #211 P5.
+- [ ] Ako reviewer (druhá osoba, nie ten, kto zmluvu vytvoril): na stránke zmluvy je len PDF na zverejnenie; priamy odkaz na interný súbor je zamietnutý — **pass:** #211 P6.
+- [ ] Ako editor potvrď skrytie údajov: v dokumentoch zmluvy pribudne „Zmluva (verzia na zverejnenie)“ a v audite `contract.publication_copy_promoted`. Vygeneruj znova: potvrdenie aj tento dokument zmiznú a treba potvrdiť znova — **pass:** #211 P6.
+- [ ] `submit` urobí editor (`contracts-editor@example.org`); `approve` môže urobiť až druhá osoba (`contracts-admin@example.org`), nie ten, kto odoslal (four-eyes, #123). Samotné potvrdenie skrytia údajov druhú osobu nevyžaduje — **pass:** #123.
+
 ### Strany, amendments, audit
 
 - [ ] Pridaj/edituj/odstráň strany na DEMO-2026-001; dve strany s rovnakou rolou legálne; na published → zamietnuté — **pass:** A11/A12.

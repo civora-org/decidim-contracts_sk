@@ -59,7 +59,12 @@
           <% end %>
         </dl>
         <% if header_missing.any? %>
-          <p class="cs-admin-template-note" role="status"><%= t("#{scope}.form.header_missing_hint") %></p>
+          <p class="cs-admin-template-note" role="status">
+            <%= t("#{scope}.form.header_missing_hint") %>
+            <% if allowed_to?(:update, :organization_profile) %>
+              <%= link_to t("#{scope}.form.header_missing_link"), admin_organization_profile_path, class: "cs-link" %>
+            <% end %>
+          </p>
         <% end %>
       </div>
     </div>
@@ -70,7 +75,9 @@
       <div class="card-section">
         <fieldset class="cs-admin-fieldset">
           <% if group_key %>
-            <legend><%= t("#{scope}.groups.#{group_key}", default: group_key.tr("_", " ").capitalize) %></legend>
+            <%# The template's own heading (group_label, set by the import) wins;
+                else the locale map, else the humanized key. %>
+            <legend><%= fields.filter_map { |field| field.group_label.presence }.first || t("#{scope}.groups.#{group_key}", default: group_key.tr("_", " ").capitalize) %></legend>
           <% end %>
           <div class="form__wrapper">
             <% fields.each do |field| %>

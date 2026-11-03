@@ -46,20 +46,29 @@ module Decidim
 
         def call
           contract.with_lock do
-            return broadcast(:invalid) unless contract.confirmable? && contract.redaction_confirmed_at.blank?
+            return broadcast(:invalid) unless confirmable_and_promotable?
 
             contract.update!(redaction_confirmed_at: Time.current)
             record_audit!
           end
 
           broadcast(:ok, contract)
-        rescue ActiveRecord::RecordInvalid
+        rescue ActiveRecord::RecordInvalid, ActiveStorage::FileNotFoundError
+          # A missing generated file (storage lost it) refuses the confirmation
+          # with the usual failure message; the lock's transaction rolled back.
           broadcast(:invalid)
         end
 
         private
 
         attr_reader :contract, :user
+
+        # Still confirmable and not yet stamped (the in-lock re-check), and
+        # the generated publication copy, when there is one, was promoted.
+        def confirmable_and_promotable?
+          contract.confirmable? && contract.redaction_confirmed_at.blank? &&
+            PromotePublicationCopy.call(contract, user: user)
+        end
 
         # The audit row is written inside the caller's locked transaction,
         # so its failure rolls the stamp back with it.

@@ -231,10 +231,22 @@ module Decidim
         # Marks the entry's current documents superseded and stores the new set.
         def store!(entry, current, documents)
           now = Time.current
+          remove_promoted_documents!(entry)
           GeneratedDocument.where(entry: entry, status: "current").update_all(status: "superseded", updated_at: now)
           OUTPUTS.each do |variant, format, key|
             attach!(entry, current, now, variant, format, documents.fetch(key.to_sym))
           end
+        end
+
+        # A publication copy promoted to the contract's documents by
+        # ConfirmRedaction (P6) is stale the moment the documents are
+        # regenerated: it is removed with the confirmation that vouched for
+        # it (cleared above), so only a fresh confirmation can promote the new
+        # copy.
+        def remove_promoted_documents!(entry)
+          ids = GeneratedDocument.where(entry: entry, status: "current").where.not(promoted_document_id: nil)
+                                 .pluck(:promoted_document_id)
+          Document.where(id: ids, contract_id: entry.contract_id).find_each(&:destroy!)
         end
 
         def attach!(entry, current, now, variant, format, bytes)
