@@ -193,14 +193,19 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 
 ## 3d. Contract from a template walkthrough (civora-org/civora-platform#211)
 
-Needs the host's encryption keys, LibreOffice (or a configured `pdf_converter`), an active template (`decidim_contracts_sk:templates:import`, see [contract-templates.md](contract-templates.md)) and a `ContractOrganizationProfile` for the organization. Synthetic template and values only.
+Needs the host's encryption keys, LibreOffice (or a configured `pdf_converter`), an active template (`decidim_contracts_sk:templates:import`, see [contract-templates.md](contract-templates.md)) and the municipality header (step 0). Synthetic template and values only.
+
+0. Sign in as `contracts-admin@example.org` (an organization admin). In the sidebar open **Hlavička obce** and fill in the name, seat, IČO (eight digits) and IBAN. Try `12AB` as the IČO: the field shows an error and nothing is saved. Save; in the audit trail one "field changed" row per key appears, without any value. Sign in as `contracts-editor@example.org`: the item is not in the menu and opening `/admin/organization_profile` is refused.
 
 1. Sign in as `contracts-editor@example.org`. On the contracts list click "Nová zmluva zo šablóny" and pick the template. The form shows the organization header read-only, the fields in groups, personal fields marked "Osobný údaj".
 2. Type `3 062,50` in the price: "Slovom: tritisícšesťdesiatdva eur a päťdesiat centov" appears under it. Type `3.062`: the preview empties and saving names the field.
-3. Fill in the rest and submit. You land on the contract page (a draft) with the internal number and three downloads. Open the internal Word and PDF (the personal values are there) and the publication PDF (they are replaced by "[osobné údaje – skryté]").
+3. Fill in the rest and submit. (With an incomplete header the form says what is missing; as the admin the hint links to **Hlavička obce**.) You land on the contract page (a draft) with the internal number and three downloads. Open the internal Word and PDF (the personal values are there) and the publication PDF (they are replaced by "[osobné údaje – skryté]").
 4. Use "Upraviť údaje a vygenerovať znova", change a name and submit. The number stays, the downloads are the new files, and a redaction confirmation made before is gone.
 5. Submit the contract for review. Review and approval need a second person (`contracts-admin@example.org`): the editor who generated and submitted it cannot approve it (four-eyes, #123). Once approved, "generate again" is no longer offered.
 6. Open the public catalogue as a visitor: no generated file is linked or reachable.
+7. Roles on the downloads: as a reviewer (a second person, e.g. a clerk granted Reviewer, not the one who made the contract) the contract page lists only "Verzia na zverejnenie (PDF)"; the URL of the internal Word or PDF is refused with the permission flash.
+8. Redaction: as `contracts-editor@example.org` confirm the redaction on the contract. Its documents now list "Zmluva (verzia na zverejnenie)", the same file as the publication PDF; the audit trail shows the promotion. (The editor who generated the contract may confirm it; there is no four-eyes rule on this step.) Generate again: the confirmation and the promoted document are gone and the new copy must be confirmed again.
+9. Remove the municipality header as `contracts-admin@example.org` and try to generate: the form says the header is incomplete and names the fields. Fill it in again.
 
 ## 3c. Role assignment walkthrough (civora-org/civora-platform#95, #113)
 

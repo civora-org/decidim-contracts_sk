@@ -1,6 +1,6 @@
 # Contract templates: schema and host requirements
 
-Steps P1 and P5 of [civora-org/civora-platform#211](https://github.com/civora-org/civora-platform/issues/211). P1 shipped the schema and the models; P5 (the last section of this page) adds "new contract from a template" in the admin, the generation command and the import task. Template upload and editing screens, and the redaction-confirmation integration, come in later steps (see the issue). Toolchain findings: [spikes/contract-templates-toolchain.md](spikes/contract-templates-toolchain.md).
+Steps P1 and P5 of [civora-org/civora-platform#211](https://github.com/civora-org/civora-platform/issues/211). P1 shipped the schema and the models; P5 (the last section of this page) adds "new contract from a template" in the admin, the generation command and the import task. P6 adds the municipality header screen, group headings, the redaction-confirmation integration and the per-role permissions (see the last sections). A template upload screen comes in a later step (see the issue). Toolchain findings: [spikes/contract-templates-toolchain.md](spikes/contract-templates-toolchain.md).
 
 ## Tables
 
@@ -44,7 +44,7 @@ The engine's specs use fixed, public test keys set in `spec/dummy/config/applica
 
 ## Migrations
 
-Six additive, reversible creates, dated 2026-10-20 (never in the future; see `migration_timestamps_spec.rb`). Hosts copy them verbatim with their original timestamps (README: "Upgrading the engine"), after the engine's earlier migrations. They need no backfill and touch no existing table. The host already owns the ActiveStorage tables the file attachments use.
+Six additive, reversible creates, dated 2026-10-20 (never in the future; see `migration_timestamps_spec.rb`). Hosts copy them verbatim with their original timestamps (README: "Upgrading the engine"), after the engine's earlier migrations. They need no backfill and touch no existing table. Step P6 adds one more, `20261103000001_add_group_label_to_decidim_contracts_sk_contract_template_fields`: a nullable string column `group_label` on `contract_template_fields` (reversible, no default, no backfill, no index). Hosts copy it verbatim with its timestamp. The host already owns the ActiveStorage tables the file attachments use.
 
 ## New contract from a template (step P5)
 
@@ -57,9 +57,9 @@ Editors fill a form once; the engine creates a draft contract, stores what was t
 | Choose a template | `GET /admin/contract_templates` | editor (the contract `:create` permission) |
 | The form | `GET /admin/contract_templates/:id/entry/new`, `POST .../entry` | editor |
 | Edit values and generate again | `GET /admin/contracts/:id/template_entry/edit`, `PATCH .../template_entry` | editor, contract still editable (`:update`) |
-| Download | `GET /admin/contracts/:id/generated_documents/:doc_id` | any engine role holder |
+| Download | `GET /admin/contracts/:id/generated_documents/:doc_id` | internal copy: editor; publication PDF: any engine role holder |
 
-The contracts list has a "Nová zmluva zo šablóny" button when the organization has an active template. The contract page shows the internal number, the downloads (internal Word, internal PDF, publication PDF; the publication Word is an intermediate and is not offered) and, for an editor, "generate again". Generated files are never linked from, or served by, any public route (`spec/requests/admin/contracts_from_contract_template_spec.rb` pins this).
+The contracts list has a "Nová zmluva zo šablóny" button when the organization has an active template. The contract page shows the internal number, the downloads the signed-in role may open (an editor sees internal Word, internal PDF and publication PDF; a reviewer sees only the publication PDF; the publication Word is an intermediate and is never offered) and, for an editor, "generate again". Generated files are never linked from, or served by, any public route (`spec/requests/admin/contracts_from_contract_template_spec.rb` pins this).
 
 ### What a template author names
 
@@ -74,7 +74,7 @@ A merge field is `MERGEFIELD =name` (see the services page). The name decides ho
 
 The contract's own amount and signing date come from the first money field named `suma_celkom`, `cena_celkom`, `celkova_cena`, `suma`, `cena` or `kupna_cena`, and the first date field named `datum_podpisu`, `datum_uzavretia`, `datum_zmluvy` or `signed_on`.
 
-Field types and input (stored in one canonical form, shown the Slovak way): `text` and `person` (255 characters), `long_text` (5000), `date` (`1. 1. 2026`, `1.1.2026`, `2026-01-01`), `money` (`3 062,50`, `3.062,50`, `3062.5`; two decimals, non-negative, up to 9 999 999 999,99; an ambiguous `3.062` is refused), `number` (decimal comma). `person` fields, and any field flagged `personal_data`, are stored only in the encrypted `personal_values` and are hidden in the publication copy. Group headings come from `group_key` (`decidim.contracts_sk.admin.template_entries.groups.<key>`, else the humanized key).
+Field types and input (stored in one canonical form, shown the Slovak way): `text` and `person` (255 characters), `long_text` (5000), `date` (`1. 1. 2026`, `1.1.2026`, `2026-01-01`), `money` (`3 062,50`, `3.062,50`, `3062.5`; two decimals, non-negative, up to 9 999 999 999,99; an ambiguous `3.062` is refused), `number` (decimal comma). `person` fields, and any field flagged `personal_data`, are stored only in the encrypted `personal_values` and are hidden in the publication copy. A field's caption is its `label`. Group headings come from the `group_label` stored on the group's fields (set by the import), else from `group_key` through the locale map (`decidim.contracts_sk.admin.template_entries.groups.<key>`), else the humanized key.
 
 ### The internal number
 
@@ -85,10 +85,10 @@ Field types and input (stored in one canonical form, shown the Slovak way): `tex
 `Admin::GenerateFromTemplate`, in one transaction (a failure rolls back everything, including the number taken from the counter):
 
 1. a new contract through `CreateContract` (author = the editor, state draft), or, with a contract given, `with_lock` plus an in-lock `editable?` re-check;
-2. the header from `ContractOrganizationProfile` (a missing header value stops the generation with a message naming it);
+2. the header from `ContractOrganizationProfile` (a missing header value stops the generation with a message naming it; the form then links to the header screen for an organization admin);
 3. `DocumentGenerator` (fill, sanitize, convert, redaction verification);
 4. the `ContractTemplateEntry` (non-personal values in `values`, personal ones encrypted), the four `GeneratedDocument` rows with their files (SHA-256 checksum recorded), the previous current ones marked `superseded` (their files are kept);
-5. on regeneration, `redaction_confirmed_at` is cleared: the documents changed, so a human confirms again;
+5. on regeneration, `redaction_confirmed_at` is cleared and the publication copy promoted by an earlier confirmation is removed from the contract's documents: the documents changed, so a human confirms again;
 6. the audit event `contract.generated_from_template` (actor, contract, time; never a value).
 
 `RedactionFailed` or a converter failure stores nothing and the editor sees a message; a leak means the template does not mark every personal value as personal. The request is synchronous (about a second with LibreOffice) and holds a transaction while the converter runs.
@@ -111,10 +111,73 @@ required: [predmet, suma_celkom]       # or: required: all
 types: { vymera: number }
 labels: { kupujuci_meno: "Kupujúci - meno" }
 groups: { kupujuci_meno: kupujuci }
+group_labels: { kupujuci: "Kupujúci" }   # heading of each group, diacritics allowed
 ```
 
 A second import with the same `lineage_key` creates version 2, activates it and archives the older active version. Existing contracts stay on the version they were written with.
 
 ### Before the first use on a host
 
-The host needs the Active Record Encryption keys (above), LibreOffice in the image (or its own `pdf_converter`), and a `ContractOrganizationProfile` row for the organization with the header values the templates use (there is no screen for it yet; create it in a console).
+The host needs the Active Record Encryption keys (above), LibreOffice in the image (or its own `pdf_converter`), and the municipality header filled in on **Hlavička obce** (next section).
+
+## The municipality header screen (step P6)
+
+`/admin/organization_profile` (sidebar item **Hlavička obce**, shown to organization admins only) is where the header the templates draw their `org_*` fields from is entered: official name, seat, IČO, DIČ, bank, IBAN, BIC, statutory representative and function, place of signing. It is the allowlist from `ContractOrganizationProfile::HEADER_KEYS`; unknown keys are not accepted. Blank fields are not stored. The IČO must be eight digits and the IBAN must have the shape of one (check digits are not verified).
+
+- **Who:** an organization admin who has accepted the admin terms (the same rule as role administration). Editors and reviewers never see the screen; the generation form shows them the header read-only, and when a value is missing it tells them to ask an administrator. For an organization admin the same hint links to the screen.
+- **What changes:** a change applies to documents generated from then on. Documents already generated are not rewritten; regenerate a contract to pick up a new header.
+- **Audit:** every save writes one audit row per header key whose value changed (`organization_profile.changed.<key>`), and removing the header writes `organization_profile.removed`. The rows hold the actor, the time and the key. Neither the old nor the new value is ever recorded.
+- **Removing the header** makes generation stop with "missing header value" until it is filled in again.
+
+## Field labels and group headings (step P6)
+
+The caption of a field was already stored (`contract_template_fields.label`, required, filled from the sidecar's `labels` or a humanized key). P6 adds the missing half: `contract_template_fields.group_label`, a nullable string holding the heading of the field's group. Without it a group's heading came only from a locale file keyed by the ASCII `group_key`, so a town could not get "Kupujúci" with its diacritics without a code change. The import writes the heading onto every field of the group from the sidecar's `group_labels`; the form uses it first and falls back as described above, so templates imported earlier look exactly as before. It is a plain string, not a translated column: the engine has no translated columns and a template is written in one language.
+
+## Publication copy and the redaction confirmation (step P6)
+
+When an editor confirms the redaction of a contract that has a **current** generated publication PDF, `ConfirmRedaction` promotes that file to the contract's publishable document in the same locked transaction as the stamp: a `Document` of kind `contract` (the same record a manual upload creates and the public page lists once the contract is published), linked from the generated row (`promoted_document_id`). One extra audit row, `contract.publication_copy_promoted`, records it.
+
+- **Only the current copy.** Regenerating supersedes the old rows, clears `redaction_confirmed_at` and removes the Document the old copy had promoted, all under the contract's row lock, which the confirmation also takes. A superseded copy therefore can never be promoted, and a file whose SHA-256 no longer matches the recorded checksum is refused (the confirmation fails and nothing is stamped).
+- **Manual uploads are untouched.** A contract without a generated copy is confirmed exactly as before. A manually uploaded document next to a promoted one stays through confirmation and regeneration.
+- **No four-eyes rule on the confirmation.** `ConfirmRedaction` has never required a person different from the submitter (the four-eyes rule applies to the judgment gates return, approve and reject), and P6 keeps it that way: the editor who generated the copy may confirm it. The confirmation is still a human step; nothing is promoted or published by generating.
+- **Reference counter (P7).** The yearly per-organization counter, the `{N}` / `{YYYY}` pattern per template, skipping of taken references and the rollback with a failed generation are shipped (see "The internal number") and need nothing further.
+
+## Roles (step P6)
+
+| Action | Who |
+|---|---|
+| Manage contract templates and import them (`:contract_template`, any of read, create, update, destroy, import) | organization admin with accepted admin terms only (the permission exists for the upcoming upload screen; today the import is the rake task, run by an operator) |
+| Municipality header (`:organization_profile`) | organization admin with accepted admin terms only |
+| Generate a contract from a template, regenerate | editor (`:create` / `:update` on `:contract`; regeneration only while the contract is editable) |
+| Download the internal copy (personal data) | editor |
+| Download the publication PDF | any engine role holder |
+
+The older `:template` subject (contract skeletons that prefill the new-contract form, #127) is a different feature and keeps its editor-only rule.
+
+## Author guide: making a template in Word (step D1)
+
+1. **Write the contract in Word as usual** and save it as `.docx`. An old `.doc` must be opened in Word or LibreOffice and saved as `.docx` first.
+2. **Mark every place to fill with a merge field.** In Word: *Insert, Quick Parts, Field, MergeField*, and type the name with a leading equals sign, e.g. `=kupujuci_meno`. The field code must read `MERGEFIELD =kupujuci_meno \* MERGEFORMAT`. The name is lowercase ASCII with underscores (`a-z`, `0-9`, `_`; at most 64 characters), no diacritics, no spaces. The same field may appear several times (an IBAN used three times is filled once).
+3. **Name the fields by what they are.** The names in "What a template author names" decide the treatment: `org_*` come from the municipality header, `cislo_zmluvy` is the internal number, `<amount>_slovom` is the amount in words. Everything else is asked for in the form; the type is guessed from the name (`datum_*` date, `cena_*` / `suma_*` money, otherwise text) and refined in the sidecar.
+4. **Do not use** macros, embedded objects, linked files, tracked changes, hidden text or fields other than `MERGEFIELD`, `PAGE` and `NUMPAGES`. The import refuses such a file and says why. Control fields (conditions and loops) are not supported by the form yet.
+5. **Mark personal data.** List in the sidecar every field that holds a natural person's data (name, birth number, address, a second person). Those values are stored encrypted and replaced in the publication copy. If one slips through unmarked, the redaction check refuses to generate and nothing is stored.
+6. **Write the sidecar** `<file>.docx.fields.yml` next to the file (optional, but needed for personal fields, captions and groups):
+
+   ```yaml
+   person: [kupujuci_meno, kupujuci_rc, kupujuci_adresa]   # personal data
+   required: [predmet, suma_celkom]                        # or: required: all
+   types: { vymera: number, popis: long_text }             # text long_text date money number
+   labels: { kupujuci_meno: "Kupujúci - meno" }            # the caption of a field
+   groups: { kupujuci_meno: kupujuci, kupujuci_adresa: kupujuci }
+   group_labels: { kupujuci: "Kupujúci" }                  # the heading of a group
+   ```
+
+   `labels` defaults to the humanized key. `group_labels` keys must be groups some field uses. Unknown keys and fields the template does not have are errors, so a typo cannot pass silently.
+7. **Import it** (an operator runs this on the host; the file stays outside git):
+
+   ```bash
+   bin/rails "decidim_contracts_sk:templates:import[<org_id>,<path/to/file.docx>,<lineage_key>,<Template name>]"
+   ```
+
+   The task prints the fields it created with their types. Importing the same `lineage_key` again creates the next version; contracts already written keep their version.
+8. **Try it with invented data** (section "Walkthrough" in the manual scenarios), open both PDFs and check that the publication copy has no personal value.
