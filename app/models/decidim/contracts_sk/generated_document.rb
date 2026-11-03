@@ -42,6 +42,13 @@ module Decidim
       enum :file_format, FILE_FORMAT_VALUES, validate: true
       enum :status, STATUS_VALUES, default: "current", validate: true
 
+      # What the admin pages offer for download: the internal Word and PDF and
+      # the publication PDF. The publication Word file is an intermediate the
+      # PDF is made from; it is stored and verified but not offered.
+      scope :downloadable, lambda {
+        where(variant: "internal").or(where(variant: "publication", file_format: "pdf"))
+      }
+
       validates :contract, :entry, presence: true
       validates :generated_at, presence: true
       validates :template_version, numericality: { only_integer: true, greater_than_or_equal_to: 1 }

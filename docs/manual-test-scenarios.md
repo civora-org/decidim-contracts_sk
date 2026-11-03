@@ -191,6 +191,17 @@ Sign in as a seeded admin first. Base: `http://localhost:3000/zmluvy/admin`.
 > link, and a later `import_crz` of the same id answers "already linked"
 > without writing. Needs network access to the ekosystem feed.
 
+## 3d. Contract from a template walkthrough (civora-org/civora-platform#211)
+
+Needs the host's encryption keys, LibreOffice (or a configured `pdf_converter`), an active template (`decidim_contracts_sk:templates:import`, see [contract-templates.md](contract-templates.md)) and a `ContractOrganizationProfile` for the organization. Synthetic template and values only.
+
+1. Sign in as `contracts-editor@example.org`. On the contracts list click "Nová zmluva zo šablóny" and pick the template. The form shows the organization header read-only, the fields in groups, personal fields marked "Osobný údaj".
+2. Type `3 062,50` in the price: "Slovom: tritisícšesťdesiatdva eur a päťdesiat centov" appears under it. Type `3.062`: the preview empties and saving names the field.
+3. Fill in the rest and submit. You land on the contract page (a draft) with the internal number and three downloads. Open the internal Word and PDF (the personal values are there) and the publication PDF (they are replaced by "[osobné údaje – skryté]").
+4. Use "Upraviť údaje a vygenerovať znova", change a name and submit. The number stays, the downloads are the new files, and a redaction confirmation made before is gone.
+5. Submit the contract for review. Review and approval need a second person (`contracts-admin@example.org`): the editor who generated and submitted it cannot approve it (four-eyes, #123). Once approved, "generate again" is no longer offered.
+6. Open the public catalogue as a visitor: no generated file is linked or reachable.
+
 ## 3c. Role assignment walkthrough (civora-org/civora-platform#95, #113)
 
 End-to-end check of per-user roles. Needs the seeded `contracts-admin@example.org`

@@ -50,7 +50,11 @@
       .cs-admin-templates         the templates table: left-aligned, actions in one wrapping row
       .cs-admin-template-name     a template's name in the list (heavier, long names wrap)
       .cs-admin-template-ico      the muted IČO beside the object party in the list
-      .cs-admin-template-none     the muted "no party" placeholder in the list %>
+      .cs-admin-template-none     the muted "no party" placeholder in the list
+      .cs-admin-fieldset          a group of template-form fields (borderless fieldset with a legend)
+      .cs-admin-header-facts      the read-only organization header block on the template form
+      .cs-admin-words             the live "amount in words" line under a money field
+      .cs-admin-busy-note         the hint beside the generate button %>
 <% unless @cs_admin_styles_rendered %>
   <% @cs_admin_styles_rendered = true %>
   <% css = capture do %>
@@ -76,6 +80,13 @@
   .cs-admin-choice--idle, .cs-admin-choice--idle:hover { background: #fff; color: rgb(21, 90, 191); box-shadow: inset 0 0 0 1px rgb(21, 90, 191); }
   .cs-admin-template-name { font-weight: 600; overflow-wrap: anywhere; }
   .cs-admin-template-ico, .cs-admin-template-none { color: #3e4c5c; font-variant-numeric: tabular-nums; }
+  .cs-admin-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .cs-admin-fieldset legend { font-size: 1.125rem; font-weight: 700; margin: 0 0 .75rem; padding: 0; }
+  .cs-admin-header-facts { margin-top: .75rem; }
+  .cs-admin-words { margin: .375rem 0 0; min-height: 1.5em; font-size: .9375rem; color: #3e4c5c; overflow-wrap: anywhere; }
+  .cs-admin-words strong { color: #111; }
+  .cs-admin-busy-note { display: inline-block; margin: 0 0 0 .75rem; }
+  #cs-template-documents .cs-show__ref { margin: 0 0 .75rem; }
   .cs-admin-note-form textarea { display: block; width: 100%; margin: .375rem 0 .75rem; }
   .cs-admin-search { max-width: 72ch; }
   .cs-admin-search label { display: block; }

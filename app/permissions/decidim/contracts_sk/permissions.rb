@@ -113,6 +113,16 @@ module Decidim
     # role-only: templates have no lifecycle, and starting a contract from
     # one is just the :create :contract check (a template only prefills).
     #
+    # Admin scope, subject :generated_document (civora-org/civora-platform
+    # #211): the Word and PDF files generated from a contract template.
+    # :read (download) is allowed when the user holds ANY engine role, in any
+    # lifecycle state, role-only like the notes. Nothing here is public: the
+    # public scope answers nothing for this subject. Generating them is not
+    # a separate permission: it is the contract's own :create (a new draft)
+    # or :update (regenerating an editable one). The permission rules are
+    # minimal for now and are refined with the redaction-confirmation
+    # integration.
+    #
     # Admin scope, subject :audit_event (civora-org/civora-platform#92):
     # the append-only audit trail is read-only and organization-scoped, so
     # its single action mirrors the contracts index read:
@@ -166,7 +176,8 @@ module Decidim
 
       # The subjects this class owns (see the class comment); everything
       # else is left to the rest of the permission_class_chain.
-      SUBJECTS = %i[contract party document amendment link note template audit_event user_role].freeze
+      SUBJECTS = %i[contract party document amendment link note template audit_event user_role
+                    generated_document].freeze
 
       def permissions
         return permission_action unless SUBJECTS.include? subject
@@ -189,7 +200,8 @@ module Decidim
                       document: :child_record_action, link: :child_record_action,
                       amendment: :amendment_action, note: :note_action,
                       template: :template_action, audit_event: :audit_event_action,
-                      user_role: :user_role_action }.freeze
+                      user_role: :user_role_action,
+                      generated_document: :generated_document_action }.freeze
 
       def admin_action
         rule = ADMIN_RULES[subject]
@@ -208,6 +220,13 @@ module Decidim
       # :create are answered; update/destroy stay unset (append-only).
       def note_action
         toggle_allow(roles_for_user.any?) if %i[read create].include?(action)
+      end
+
+      # The generated-document download rule (civora-org/civora-platform#211):
+      # any engine role may read, no lifecycle condition; every other action
+      # stays unset (fail-closed).
+      def generated_document_action
+        toggle_allow(roles_for_user.any?) if action == :read
       end
 
       # The template rule (civora-org/civora-platform#127): editor only, for

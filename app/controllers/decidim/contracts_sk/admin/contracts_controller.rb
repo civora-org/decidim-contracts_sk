@@ -117,6 +117,10 @@ module Decidim
 
           @parties = @contract.parties.order(:id)
           @documents = @contract.documents.order(:id)
+          # Files generated from a contract template (#211); admin-only.
+          @template_entry = @contract.template_entry
+          @generated_documents =
+            @template_entry ? @template_entry.generated_documents.current.downloadable.order(:id) : []
         end
 
         def new

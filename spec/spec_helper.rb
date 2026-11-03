@@ -26,6 +26,7 @@ require_relative "support/demo_data"
 require_relative "support/crz_import_payloads"
 require_relative "support/decidim_locale_switcher"
 require_relative "support/docx_fixtures"
+require_relative "support/template_generation_helpers"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

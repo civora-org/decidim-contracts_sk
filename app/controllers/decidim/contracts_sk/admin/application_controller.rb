@@ -17,6 +17,8 @@ module Decidim
       class ApplicationController < ::Decidim::Admin::ApplicationController
         helper Decidim::ContractsSk::ApplicationHelper
 
+        helper_method :active_contract_templates?
+
         before_action :authenticate_user!
         before_action :require_second_factor!
 
@@ -29,6 +31,13 @@ module Decidim
 
           flash[:alert] = I18n.t("decidim.contracts_sk.admin.second_factor.required")
           redirect_to Decidim::ContractsSk.second_factor_redirect_path.call(self)
+        end
+
+        # True when the organization has a contract template ready to use
+        # (civora-org/civora-platform#211): decides whether the contracts list
+        # offers "New contract from a template".
+        def active_contract_templates?
+          ContractTemplate.where(organization: current_organization, status: "active").exists?
         end
 
         def permission_class_chain
