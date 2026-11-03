@@ -19,7 +19,7 @@
       <p class="cs-admin-template-note"><%= t("#{scope}.documents.internal_note") %></p>
       <p class="cs-admin-template-note"><%= t("#{scope}.documents.publication_note") %></p>
       <% if @template_entry.last_generated_at %>
-        <p class="cs-admin-template-note"><%= t("#{scope}.documents.generated_on", at: l(@template_entry.last_generated_at, format: :long)) %></p>
+        <p class="cs-admin-template-note"><%= t("#{scope}.documents.generated_on", at: format_datetime(@template_entry.last_generated_at)) %></p>
       <% end %>
     <% end %>
     <% if allowed_to?(:update, :contract, contract: @contract) %>

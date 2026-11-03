@@ -432,6 +432,18 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       end
     end
 
+    it "shows the generation time in the Slovak date format, with no English month name" do
+      post "/admin/contract_templates/#{template.id}/entry", params: params_for
+      contract = contract_class.last
+      contract.template_entry.update!(last_generated_at: Time.zone.local(2026, 11, 3, 15, 55))
+
+      I18n.with_locale(:sk) { get "/admin/contracts/#{contract.id}" }
+
+      note = html.css("#cs-template-documents .cs-admin-template-note").map(&:text).grep(/Vygenerované/).join
+      expect(note).to include("03. 11. 2026 15:55")
+      expect(note).not_to match(/January|February|March|April|May|June|July|August|September|October|November|December/)
+    end
+
     it "shows no documents section on a contract that was not made from a template" do
       plain = contract_class.create!(contract_attributes(reference: "RUCNE-2"))
 
