@@ -27,7 +27,30 @@ Decidim::ContractsSk::Engine.routes.draw do
     post "contracts/import/preview", to: "contract_imports#preview", as: :preview_contract_import
     post "contracts/import", to: "contract_imports#create", as: :contract_imports
 
+    # Contract templates with a Word source (civora-org/civora-platform#211):
+    # the chooser of active templates, then the form built from the picked
+    # template's fields (GET) and the generation (POST). A route set of its
+    # own because the picked template, not a contract, is the parent here;
+    # regenerating an existing contract lives under it (template_entry,
+    # below). The amount-in-words preview is a GET returning JSON; it writes
+    # nothing. Declared before the contracts resource like the import routes.
+    get "contract_templates", to: "template_entries#index", as: :contract_templates
+    get "contract_templates/amount_in_words", to: "template_entries#amount_in_words",
+                                              as: :contract_template_amount_in_words
+    get "contract_templates/:contract_template_id/entry/new", to: "template_entries#new",
+                                                              as: :new_contract_template_entry
+    post "contract_templates/:contract_template_id/entry", to: "template_entries#create",
+                                                           as: :contract_template_entries
+
     resources :contracts, only: %i[index show new create edit update] do
+      # Regenerating the documents of a contract made from a template
+      # (civora-org/civora-platform#211): edit the entered values (GET) and
+      # generate again (PATCH). One entry per contract, hence a singular
+      # resource. The generated files are downloaded one by one (show only):
+      # admin-only, never linked from the public pages.
+      resource :template_entry, only: %i[edit update], controller: "template_entries"
+      resources :generated_documents, only: :show
+
       # CRZ single-record import (ADR-008, civora-org/civora-platform#86):
       # one collection POST taking a :source_id (CRZ numeric id) param —
       # not tied to an existing record, so deliberately a collection route

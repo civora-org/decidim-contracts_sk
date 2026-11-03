@@ -1,0 +1,171 @@
+<%# url:, method: and submit_label: come from the caller (new / edit). The
+    fields are the template's own (TemplateEntryForm#groups), grouped by
+    group_key. The organization header is shown read-only: it is filled from
+    the organization's profile, never typed. A money field with a "...slovom"
+    merge field shows the amount in words under it; the preview is a plain
+    GET to the server (one source of the Slovak grammar) and the page works
+    without JavaScript. Plain tag helpers with explicit ids/names, like the
+    filter forms: the field list is dynamic, so there is no model-bound
+    builder field to use. Decidim classes plus .cs-admin-* rules only. %>
+<% scope = "decidim.contracts_sk.admin.template_entries" %>
+<% header_missing = @form.missing_header_keys(@profile) %>
+<%= form_with url: url, method: method, scope: :entry, html: { class: "form form-defaults", data: { "cs-generate-form": true } } do |form| %>
+  <div class="card">
+    <div class="card-section">
+      <div class="form__wrapper">
+        <% if @form.errors.any? %>
+          <div class="flash alert">
+            <ul role="alert" tabindex="-1" autofocus>
+              <% @form.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <div class="row column">
+          <%= label_tag "entry_title", t("#{scope}.form.title") %>
+          <%= text_field_tag "entry[title]", @form.title, id: "entry_title", required: true, maxlength: 255,
+                             "aria-invalid": (@form.error_for("title") ? "true" : nil),
+                             "aria-describedby": "entry_title_hint#{' entry_title_error' if @form.error_for('title')}" %>
+          <span class="help-text" id="entry_title_hint"><%= t("#{scope}.form.title_hint") %></span>
+          <% if @form.error_for("title") %>
+            <span class="form-error is-visible" id="entry_title_error"><%= @form.error_for("title") %></span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if @form.header_fields.any? %>
+    <div class="card">
+      <div class="card-section">
+        <h2 class="h4"><%= t("#{scope}.form.header_heading") %></h2>
+        <p class="cs-admin-template-note"><%= t("#{scope}.form.header_hint") %></p>
+        <dl class="cs-show__facts cs-admin-header-facts">
+          <% @form.header_fields.each do |field| %>
+            <% header_key = Decidim::ContractsSk::Templates::TemplateFields.org_header_key(field.key) %>
+            <% value = @profile&.header_value(header_key) %>
+            <div class="cs-show__fact">
+              <dt><%= field.label %></dt>
+              <dd>
+                <% if value.present? %>
+                  <%= value %>
+                <% else %>
+                  <span class="cs-admin-dangling"><%= t("#{scope}.form.header_missing") %></span>
+                <% end %>
+              </dd>
+            </div>
+          <% end %>
+        </dl>
+        <% if header_missing.any? %>
+          <p class="cs-admin-template-note" role="status"><%= t("#{scope}.form.header_missing_hint") %></p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% @form.groups.each do |group_key, fields| %>
+    <div class="card">
+      <div class="card-section">
+        <fieldset class="cs-admin-fieldset">
+          <% if group_key %>
+            <legend><%= t("#{scope}.groups.#{group_key}", default: group_key.tr("_", " ").capitalize) %></legend>
+          <% end %>
+          <div class="form__wrapper">
+            <% fields.each do |field| %>
+              <% words_fields = [] %>
+              <% id = "entry_values_#{field.key}" %>
+              <% name = "entry[values][#{field.key}]" %>
+              <% error = @form.error_for(field.key) %>
+              <% hint = %w[date money number].include?(field.field_type) ? t("#{scope}.form.hints.#{field.field_type}") : nil %>
+              <% described = [(hint || field.help_text.present? || field.personal_data) ? "#{id}_hint" : nil, (error ? "#{id}_error" : nil)].compact.join(" ") %>
+              <% input_options = { id: id, required: field.required, "aria-invalid": (error ? "true" : nil),
+                                   "aria-describedby": described.presence, autocomplete: "off" } %>
+              <div class="row column">
+                <%= label_tag id, field.label %>
+                <% if field.field_type == "long_text" %>
+                  <%= text_area_tag name, @form.raw_value(field.key), input_options.merge(rows: 4, maxlength: 5000) %>
+                <% elsif field.field_type == "date" %>
+                  <%= text_field_tag name, @form.raw_value(field.key), input_options.merge(inputmode: "numeric", placeholder: "1. 1. 2026", maxlength: 16) %>
+                <% elsif %w[money number].include?(field.field_type) %>
+                  <% words_fields = field.field_type == "money" ? @form.words_fields.select { |w| @form.words_source(w) == field } : [] %>
+                  <%= text_field_tag name, @form.raw_value(field.key), input_options.merge(inputmode: "decimal", maxlength: 24,
+                        data: (words_fields.any? ? { "cs-words-url": admin_contract_template_amount_in_words_path, "cs-words-target": "#{id}_words" } : {})) %>
+                <% else %>
+                  <%= text_field_tag name, @form.raw_value(field.key), input_options.merge(maxlength: 255) %>
+                <% end %>
+                <% if hint || field.help_text.present? || field.personal_data %>
+                  <span class="help-text" id="<%= id %>_hint">
+                    <%= [hint, field.help_text.presence, (t("#{scope}.form.personal_hint") if field.personal_data)].compact.join(" ") %>
+                  </span>
+                <% end %>
+                <% if words_fields.present? %>
+                  <% parsed = Decidim::ContractsSk::Templates::FieldValues.parse("money", @form.raw_value(field.key)) %>
+                  <p class="cs-admin-words" id="<%= id %>_words" aria-live="polite" data-label="<%= t("#{scope}.form.in_words") %>"><% if parsed.ok? && parsed.value.present? %><%= t("#{scope}.form.in_words") %> <strong><%= Decidim::ContractsSk::Templates::Words.for_amount(parsed.value) %></strong><% end %></p>
+                <% end %>
+                <% if error %>
+                  <span class="form-error is-visible" id="<%= id %>_error"><%= error %></span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="item__edit-sticky">
+    <div class="item__edit-sticky-container">
+      <%= submit_tag submit_label, class: "button button__sm button__secondary",
+                                   data: { "cs-busy-label": t("#{scope}.form.busy") } %>
+      <span class="cs-admin-template-note cs-admin-busy-note"><%= t("#{scope}.form.submit_hint") %></span>
+    </div>
+  </div>
+<% end %>
+
+<script>
+  (function () {
+    // Live amount in words: asks the server (one source of the Slovak
+    // grammar) after the person stops typing. Without JavaScript the words
+    // are still printed in the document; only the preview is missing.
+    document.querySelectorAll("[data-cs-words-url]").forEach(function (input) {
+      var target = document.getElementById(input.getAttribute("data-cs-words-target"));
+      var url = input.getAttribute("data-cs-words-url");
+      var timer = null;
+      var latest = 0;
+      if (!target || !window.fetch) { return; }
+      input.addEventListener("input", function () {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(function () {
+          var ticket = ++latest;
+          fetch(url + "?amount=" + encodeURIComponent(input.value), {
+            headers: { "Accept": "application/json" }, credentials: "same-origin"
+          }).then(function (r) { return r.ok ? r.json() : { words: "" }; }).then(function (data) {
+            if (ticket !== latest) { return; }
+            target.textContent = "";
+            if (data.words) {
+              target.appendChild(document.createTextNode(target.getAttribute("data-label") + " "));
+              var strong = document.createElement("strong");
+              strong.textContent = data.words;
+              target.appendChild(strong);
+            }
+          }).catch(function () {});
+        }, 250);
+      });
+    });
+
+    // Generating takes a second or two: show it, and refuse a double submit.
+    document.querySelectorAll("form[data-cs-generate-form]").forEach(function (form) {
+      form.addEventListener("submit", function () {
+        var button = form.querySelector("[data-cs-busy-label]");
+        if (!button || button.disabled) { return; }
+        window.setTimeout(function () {
+          button.value = button.getAttribute("data-cs-busy-label");
+          button.disabled = true;
+          button.setAttribute("aria-busy", "true");
+        }, 0);
+      });
+    });
+  })();
+</script>

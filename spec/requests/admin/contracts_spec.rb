@@ -264,6 +264,14 @@ RSpec.describe "admin contracts CRUD", type: :request do
   end
 
   describe "index pagination and filters (offline, DB-free, civora-org/civora-platform#86b)" do
+    # The "new contract from a template" button asks the database whether an
+    # active contract template exists (civora-org/civora-platform#211); this
+    # group has no connection.
+    before do
+      allow_any_instance_of(Decidim::ContractsSk::Admin::ContractsController)
+        .to receive(:active_contract_templates?).and_return(false)
+    end
+
     def stub_index_scope(scope)
       allow_any_instance_of(Decidim::ContractsSk::Admin::ContractsController)
         .to receive(:contracts_scope).and_return(scope)

@@ -1,0 +1,14 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
+<% scope = "decidim.contracts_sk.admin.template_entries" %>
+<div class="item_show__header">
+  <h1 class="item_show__header-title"><%= t("#{scope}.edit.title") %></h1>
+</div>
+
+<p><%= link_to t("#{scope}.edit.back"), admin_contract_path(@contract) %></p>
+
+<div class="item__edit item__edit-1col">
+  <div class="item__edit-form">
+    <%= render "form", url: admin_contract_template_entry_path(@contract), method: :patch,
+                       submit_label: t("#{scope}.edit.submit") %>
+  </div>
+</div>

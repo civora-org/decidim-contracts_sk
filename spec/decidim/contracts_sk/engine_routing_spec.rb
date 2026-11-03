@@ -138,6 +138,21 @@ module EngineRoutingContract
     ["DELETE", "/admin/contracts/:contract_id/links/:id(.:format)", "#{LINKS_CONTROLLER}#destroy"],
     ["GET", "/admin/contracts/:contract_id/notes(.:format)", "decidim/contracts_sk/admin/notes#index"],
     ["POST", "/admin/contracts/:contract_id/notes(.:format)", "decidim/contracts_sk/admin/notes#create"],
+    ["GET", "/admin/contract_templates(.:format)", "decidim/contracts_sk/admin/template_entries#index"],
+    ["GET", "/admin/contract_templates/amount_in_words(.:format)",
+     "decidim/contracts_sk/admin/template_entries#amount_in_words"],
+    ["GET", "/admin/contract_templates/:contract_template_id/entry/new(.:format)",
+     "decidim/contracts_sk/admin/template_entries#new"],
+    ["POST", "/admin/contract_templates/:contract_template_id/entry(.:format)",
+     "decidim/contracts_sk/admin/template_entries#create"],
+    ["GET", "/admin/contracts/:contract_id/template_entry/edit(.:format)",
+     "decidim/contracts_sk/admin/template_entries#edit"],
+    ["PATCH", "/admin/contracts/:contract_id/template_entry(.:format)",
+     "decidim/contracts_sk/admin/template_entries#update"],
+    ["PUT", "/admin/contracts/:contract_id/template_entry(.:format)",
+     "decidim/contracts_sk/admin/template_entries#update"],
+    ["GET", "/admin/contracts/:contract_id/generated_documents/:id(.:format)",
+     "decidim/contracts_sk/admin/generated_documents#show"],
     ["GET", "/admin/templates(.:format)", "decidim/contracts_sk/admin/templates#index"],
     ["POST", "/admin/templates(.:format)", "decidim/contracts_sk/admin/templates#create"],
     ["GET", "/admin/templates/new(.:format)", "decidim/contracts_sk/admin/templates#new"],
@@ -907,11 +922,12 @@ RSpec.describe Decidim::ContractsSk::Engine do
     # The controller-list example spans several lines by design (the exact
     # controller vocabulary pinned in full).
     # rubocop:disable RSpec/ExampleLength
-    it "routes only the engine's sixteen controllers, distinct by the admin/ segment" do
+    it "routes only the engine's twenty controllers, distinct by the admin/ segment" do
       controllers = %w[
         decidim/contracts_sk/admin/amendments decidim/contracts_sk/admin/audit_events
         decidim/contracts_sk/admin/contract_imports decidim/contracts_sk/admin/contracts
         decidim/contracts_sk/admin/dashboard decidim/contracts_sk/admin/documents
+        decidim/contracts_sk/admin/generated_documents decidim/contracts_sk/admin/template_entries
         decidim/contracts_sk/admin/links decidim/contracts_sk/admin/notes decidim/contracts_sk/admin/parties
         decidim/contracts_sk/admin/templates decidim/contracts_sk/admin/user_roles
         decidim/contracts_sk/contracts decidim/contracts_sk/feeds decidim/contracts_sk/open_data
@@ -925,8 +941,8 @@ RSpec.describe Decidim::ContractsSk::Engine do
 
     it "maps no admin-prefixed path to the public controller" do
       admin_prefixed = route_triples.select { |_, path, _| path.start_with?("/admin/") }
-      admin_controllers = %w[amendments audit_events contract_imports contracts documents links notes parties
-                             templates user_roles]
+      admin_controllers = %w[amendments audit_events contract_imports contracts documents generated_documents links
+                             notes parties template_entries templates user_roles]
                           .map { |name| "decidim/contracts_sk/admin/#{name}" }
 
       expect(controllers_of(admin_prefixed)).to eq(admin_controllers)

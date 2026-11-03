@@ -1,0 +1,33 @@
+<%# The files generated from a contract template (civora-org/civora-platform
+    #211): download links for the internal Word and PDF and the publication
+    PDF, and the way back into the entered values to generate again. Admin
+    only; the public pages never link these files. Shown only for a contract
+    made from a template. Decidim classes plus .cs-admin-* rules. %>
+<% scope = "decidim.contracts_sk.admin.template_entries" %>
+<% if @template_entry %>
+  <div class="card-section" id="cs-template-documents">
+    <h2 class="h4"><%= t("#{scope}.documents.heading") %></h2>
+    <p class="cs-show__ref"><%= t("#{scope}.documents.number", number: @template_entry.internal_number) %></p>
+    <% if @generated_documents.any? %>
+      <div class="cs-admin-chips">
+        <% @generated_documents.each do |document| %>
+          <%= link_to t("#{scope}.documents.#{document.variant}_#{document.file_format}"),
+                      admin_contract_generated_document_path(@contract, document),
+                      class: "button button__sm button__secondary" %>
+        <% end %>
+      </div>
+      <p class="cs-admin-template-note"><%= t("#{scope}.documents.internal_note") %></p>
+      <p class="cs-admin-template-note"><%= t("#{scope}.documents.publication_note") %></p>
+      <% if @template_entry.last_generated_at %>
+        <p class="cs-admin-template-note"><%= t("#{scope}.documents.generated_on", at: l(@template_entry.last_generated_at, format: :long)) %></p>
+      <% end %>
+    <% end %>
+    <% if allowed_to?(:update, :contract, contract: @contract) %>
+      <div class="cs-admin-chips cs-admin-more">
+        <%= link_to t("#{scope}.documents.regenerate"), edit_admin_contract_template_entry_path(@contract),
+                    class: "button button__sm button__secondary" %>
+      </div>
+      <p class="cs-admin-template-note"><%= t("#{scope}.documents.regenerate_hint") %></p>
+    <% end %>
+  </div>
+<% end %>
