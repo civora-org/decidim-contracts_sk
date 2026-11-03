@@ -57,7 +57,10 @@ module Decidim
           publication_values = PublicationVariant.values_for(values, personal_keys)
           publication_docx, publication_pdf = render(template_bytes, publication_values, converter)
 
-          verify!(publication_docx, publication_pdf, PublicationVariant.personal_values(values, personal_keys))
+          public_texts = RedactionVerifier.docx_public_texts(template_bytes) +
+                         PublicationVariant.public_values(values, personal_keys)
+          verify!(publication_docx, publication_pdf,
+                  PublicationVariant.personal_values(values, personal_keys), public_texts)
 
           { internal_docx: internal_docx, internal_pdf: internal_pdf,
             publication_docx: publication_docx, publication_pdf: publication_pdf }
@@ -69,10 +72,11 @@ module Decidim
           [docx, pdf]
         end
 
-        def verify!(docx, pdf, personal_values)
+        def verify!(docx, pdf, personal_values, public_texts)
           return if personal_values.empty?
 
-          result = RedactionVerifier.call(docx_bytes: docx, pdf_bytes: pdf, personal_values: personal_values)
+          result = RedactionVerifier.call(docx_bytes: docx, pdf_bytes: pdf, personal_values: personal_values,
+                                          public_texts: public_texts)
           return if result.ok?
 
           raise RedactionFailed.new(leaks: result.leaks, findings: result.errors)
