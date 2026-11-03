@@ -40,7 +40,7 @@ module Decidim
       module Importer
         class Error < ContractsSk::Error; end
 
-        SIDECAR_KEYS = %w[person required types labels groups].freeze
+        SIDECAR_KEYS = %w[person required types labels groups group_labels].freeze
         FIELD_KEY = /\A[a-z][a-z0-9_]{0,63}\z/
         TYPE_VALUES = %w[text long_text date money number person].freeze
         DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -112,8 +112,20 @@ module Decidim
           missing = mentioned.map(&:to_s).uniq - keys
           raise Error, "the sidecar names fields the template does not have: #{missing.join(", ")}" if missing.any?
 
+          check_group_labels!(sidecar)
+
           wrong = (sidecar["types"] || {}).values.map(&:to_s) - TYPE_VALUES
           raise Error, "unknown field types in the sidecar: #{wrong.join(", ")}" if wrong.any?
+        end
+
+        # group_labels maps a group key (a value of `groups`) to its heading.
+        def check_group_labels!(sidecar)
+          labels = sidecar["group_labels"] || {}
+          raise Error, "group_labels must be a mapping of group key to heading" unless labels.is_a?(Hash)
+
+          used = (sidecar["groups"] || {}).values.map(&:to_s).uniq
+          unknown = labels.keys.map(&:to_s) - used
+          raise Error, "group_labels names groups no field uses: #{unknown.join(", ")}" if unknown.any?
         end
 
         def definition(key, position, sidecar)
@@ -121,11 +133,17 @@ module Decidim
           type = person ? "person" : (sidecar.dig("types", key) || guess_type(key)).to_s
           asked = sidecar["required"] == "all" || Array(sidecar["required"]).map(&:to_s).include?(key)
           { key: key, field_type: type, label: sidecar.dig("labels", key) || key.tr("_", " ").capitalize,
-            group_key: sidecar.dig("groups", key), required: asked && typed_by_person?(key, type), position: position }
+            group_key: sidecar.dig("groups", key), group_label: group_label(sidecar, key),
+            required: asked && typed_by_person?(key, type), position: position }
         end
 
         # Header, number and spelled-out fields are filled by the generator, so
         # "required" means nothing for them.
+        def group_label(sidecar, key)
+          group = sidecar.dig("groups", key)
+          group && (sidecar["group_labels"] || {})[group.to_s]
+        end
+
         def typed_by_person?(key, type)
           type != "org_header" && !TemplateFields.internal_number_key?(key) && !TemplateFields.words_suffix?(key)
         end

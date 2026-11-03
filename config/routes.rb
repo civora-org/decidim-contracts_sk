@@ -161,6 +161,11 @@ Decidim::ContractsSk::Engine.routes.draw do
     # email, so it never travels in a URL), the grant (create) and the
     # revoke (destroy). No show/edit/update: a grant is added or removed,
     # never edited.
+    # The organization's contract header (civora-org/civora-platform#211, P6):
+    # a singular resource, one header per organization, organization admins
+    # only. It sits at /admin/organization_profile, never under a record id.
+    resource :organization_profile, only: %i[show new create edit update destroy]
+
     resources :user_roles, only: %i[index new create destroy] do
       collection { post :search }
     end

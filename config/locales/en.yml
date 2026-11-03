@@ -43,6 +43,7 @@ en:
       menu:
         contracts: "Contracts"
         admin_contracts: "Contracts"
+        admin_organization_profile: "Municipality header"
         admin_user_roles: "Roles"
         user_admin_contracts: "Contracts administration"
       pagination:
@@ -424,6 +425,7 @@ en:
             success: "Contract created successfully."
             error: "Contract could not be created."
           confirm_redaction:
+            promoted_title: "Contract (publication version)"
             checkbox_label: "I confirm that the required redactions have been made."
             checklist:
               names_addresses: "personal names and addresses of natural persons"
@@ -743,6 +745,9 @@ en:
               user: "User"
               when: "Date"
           actions:
+            publication_copy_promoted: "Publication version chosen as the document to publish"
+            organization_profile_removed: "Municipality header removed"
+            organization_profile_changed: "Municipality header: field changed: %{field}"
             redaction_confirmed: "Redaction confirmed"
             return_self: "Returned (self-review)"
             approve_self: "Approved (self-review)"
@@ -907,6 +912,7 @@ en:
             header_heading: "Municipality header"
             header_hint: "These details are filled in automatically and cannot be changed here."
             header_missing: "not filled in"
+            header_missing_link: "Complete the municipality header"
             header_missing_hint: "The municipality header is incomplete. The contract cannot be created until an administrator completes it."
             hints:
               date: "For example 1. 1. 2026"
@@ -1021,6 +1027,41 @@ en:
             success: "Note added."
             error: "The note could not be added. It must not be empty or longer than 2000 characters."
           link: "Notes"
+        organization_profiles:
+          created: "The municipality header was saved."
+          updated: "The municipality header was saved."
+          destroyed: "The municipality header was removed."
+          create:
+            invalid: "The header could not be saved. Check the marked fields."
+          update:
+            invalid: "The header could not be saved. Check the marked fields."
+          destroy:
+            invalid: "The header could not be removed."
+          show:
+            title: "Municipality header"
+            note: "The municipality's details filled into every contract made from a template (name, seat, IČO, bank account, statutory representative). These are the municipality's public identifiers, not citizens' personal data. A change applies to documents generated from now on; documents already generated are not changed."
+            empty: "The municipality header is not filled in yet, so no contract can be made from a template."
+            not_set: "not filled in"
+            create: "Fill in the header"
+            edit: "Edit the header"
+            destroy: "Remove the header"
+            destroy_confirm: "Really remove the municipality header? No contract can be made from a template until it is filled in again."
+          new:
+            title: "Fill in the municipality header"
+          edit:
+            title: "Edit the municipality header"
+          form:
+            submit: "Save the header"
+            cancel: "Cancel"
+            empty: "Fill in at least one field."
+            hints:
+              ico: "Eight digits."
+              iban: "For example SK00 0000 0000 0000 0000 0000 (check digits are not verified)."
+            errors:
+              invalid_ico: "The IČO must have eight digits."
+              invalid_iban: "The IBAN does not have a valid shape."
+              too_long_value: "The value is too long (255 characters at most)."
+              invalid_value: "The value is not valid."
         user_roles:
           roles:
             editor: "Editor"

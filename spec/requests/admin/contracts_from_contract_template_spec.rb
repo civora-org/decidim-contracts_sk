@@ -124,6 +124,16 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       expect(html.css("input[name*='cislo_zmluvy'], input[name*='org_'], input[name*='suma_slovom']")).to be_empty
     end
 
+    it "headlines a group with the template's own group_label, else the locale map, else the humanized key" do
+      template.fields.where(group_key: "kupujuci").update_all(group_label: "Kupujúci a spol.")
+      template.fields.where(group_key: "terminy").update_all(group_key: "neznama_skupina")
+
+      get "/admin/contract_templates/#{template.id}/entry/new"
+
+      expect(html.css("legend").map { |l| l.text.strip })
+        .to eq(["Subject of the contract", "Kupujúci a spol.", "Price and payment", "Neznama skupina"])
+    end
+
     it "marks personal fields, hints formats and prepares the amount-in-words preview" do
       get "/admin/contract_templates/#{template.id}/entry/new"
 
@@ -143,6 +153,23 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       get "/admin/contract_templates/#{template.id}/entry/new"
 
       expect(response.body).to include("not filled in", "header is incomplete")
+    end
+
+    it "links the incomplete-header warning to the header screen for an organization admin only" do
+      profile.update!(header: { "official_name" => "Obec Vzorová" })
+
+      get "/admin/contract_templates/#{template.id}/entry/new"
+      expect(html.css("a[href='/admin/organization_profile']")).to be_empty
+
+      admin = Decidim::User.create!(organization: organization, admin: true, admin_terms_accepted_at: Time.current)
+      allow_any_instance_of(Decidim::ContractsSk::Admin::ApplicationController)
+        .to receive(:current_user).and_return(admin)
+      get "/admin/contract_templates/#{template.id}/entry/new"
+      expect(html.css("a[href='/admin/organization_profile']").text).to include("Complete the municipality header")
+
+      create_via_form
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(html.css("a[href='/admin/organization_profile']")).not_to be_empty
     end
 
     it "404s for a draft, archived, foreign or unknown template" do
@@ -367,13 +394,15 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       expect(flash[:alert]).to eq(unauthorized)
     end
 
-    it "does not offer the regenerate button to a reviewer, who can still download" do
+    it "does not offer the regenerate button to a reviewer, who sees only the publication copy" do
       allow(Decidim::ContractsSk).to receive(:role_resolver).and_return(->(_user, _context) { [:reviewer] })
 
       get "/admin/contracts/#{contract.id}"
 
       hrefs = html.css("#cs-template-documents a").pluck("href")
-      expect(hrefs.size).to eq(3)
+      expect(hrefs.size).to eq(1)
+      copy = contract.template_entry.generated_documents.current.find_by!(variant: "publication", file_format: "pdf")
+      expect(hrefs.first).to eq("/admin/contracts/#{contract.id}/generated_documents/#{copy.id}")
       expect(hrefs).not_to include("/admin/contracts/#{contract.id}/template_entry/edit")
     end
 
@@ -437,15 +466,51 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       end
     end
 
-    it "serves any engine role holder, and nobody else" do
-      allow(Decidim::ContractsSk).to receive(:role_resolver).and_return(->(_user, _context) { [:reviewer] })
-      get "/admin/contracts/#{contract.id}/generated_documents/#{doc("internal", "pdf").id}"
-      expect(response).to have_http_status(:ok)
+    # P6 role matrix: the internal copy (personal data) is for editors only,
+    # the publication PDF for any engine role, nothing for a user without a
+    # role. Mutation-checked: weakening the variant rule in
+    # Permissions#generated_document_action turns the reviewer/internal row red.
+    {
+      editor: { internal_docx: :ok, internal_pdf: :ok, publication_pdf: :ok },
+      reviewer: { internal_docx: :denied, internal_pdf: :denied, publication_pdf: :ok },
+      none: { internal_docx: :denied, internal_pdf: :denied, publication_pdf: :denied }
+    }.each do |role, expectations|
+      expectations.each do |kind, outcome|
+        it "#{outcome == :ok ? "serves" : "refuses"} #{kind} to #{role}" do
+          roles = role == :none ? [] : [role]
+          allow(Decidim::ContractsSk).to receive(:role_resolver).and_return(->(_user, _context) { roles })
+          variant, format = kind.to_s.split("_")
 
-      allow(Decidim::ContractsSk).to receive(:role_resolver).and_return(->(_user, _context) { [] })
-      get "/admin/contracts/#{contract.id}/generated_documents/#{doc("internal", "pdf").id}"
-      expect(response).to have_http_status(:found)
+          get "/admin/contracts/#{contract.id}/generated_documents/#{doc(variant, format).id}"
+
+          if outcome == :ok
+            expect(response).to have_http_status(:ok)
+          else
+            expect(response).to have_http_status(:found)
+            expect(flash[:alert]).to eq(unauthorized)
+          end
+        end
+      end
+    end
+
+    it "lists no internal download for a reviewer and all three for an editor" do
+      get "/admin/contracts/#{contract.id}"
+      expect(html.css("#cs-template-documents a[href*='generated_documents']").size).to eq(3)
+
+      allow(Decidim::ContractsSk).to receive(:role_resolver).and_return(->(_user, _context) { [:reviewer] })
+      get "/admin/contracts/#{contract.id}"
+      expect(html.css("#cs-template-documents a[href*='generated_documents']").size).to eq(1)
+    end
+
+    it "lets only an editor generate and regenerate; a reviewer is refused with nothing stored" do
+      allow(Decidim::ContractsSk).to receive(:role_resolver).and_return(->(_user, _context) { [:reviewer] })
+      before_counts = counts
+
+      post "/admin/contract_templates/#{template.id}/entry", params: params_for
       expect(flash[:alert]).to eq(unauthorized)
+      patch "/admin/contracts/#{contract.id}/template_entry", params: params_for({ "predmet" => "Zmena" })
+      expect(flash[:alert]).to eq(unauthorized)
+      expect(counts).to eq(before_counts)
     end
 
     it "does not serve a contract of another organization" do

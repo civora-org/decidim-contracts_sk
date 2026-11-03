@@ -106,6 +106,28 @@ RSpec.describe "decidim_contracts_sk:templates:import", :db do
     expect(fields["org_ico"].required).to be(false)
   end
 
+  it "stores the sidecar's group headings on the fields of each group, with diacritics" do
+    File.write("#{path}.fields.yml", <<~YAML)
+      groups: { kupujuci_meno: kupujuci, kupujuci_adresa: kupujuci, suma_celkom: cena }
+      group_labels: { kupujuci: "Kupujúci", cena: "Cena a platba" }
+    YAML
+
+    import
+
+    fields = fields_by_key(template_class.sole)
+    expect(fields.values_at("kupujuci_meno", "kupujuci_adresa").map(&:group_label)).to eq(%w[Kupujúci Kupujúci])
+    expect(fields["suma_celkom"].group_label).to eq("Cena a platba")
+    expect(fields["predmet"]).to have_attributes(group_key: nil, group_label: nil)
+  end
+
+  it "leaves group_label empty when the sidecar gives no group headings" do
+    File.write("#{path}.fields.yml", "groups: { kupujuci_meno: kupujuci }\n")
+
+    import
+
+    expect(fields_by_key(template_class.sole)["kupujuci_meno"].group_label).to be_nil
+  end
+
   it "can mark every field required" do
     File.write("#{path}.fields.yml", "required: all\n")
 
@@ -214,6 +236,12 @@ RSpec.describe "decidim_contracts_sk:templates:import", :db do
 
       File.write("#{path}.fields.yml", "persons: [predmet]\n")
       aborts_with(/unknown sidecar settings: persons/) { import }
+
+      File.write("#{path}.fields.yml", "groups: { predmet: a }\ngroup_labels: { b: \"B\" }\n")
+      aborts_with(/group_labels names groups no field uses: b/) { import }
+
+      File.write("#{path}.fields.yml", "group_labels: [just, a, list]\n")
+      aborts_with(/group_labels must be a mapping/) { import }
 
       File.write("#{path}.fields.yml", "types: { predmet: blob }\n")
       aborts_with(/unknown field types in the sidecar: blob/) { import }

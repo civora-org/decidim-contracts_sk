@@ -177,7 +177,7 @@ module Decidim
       # The subjects this class owns (see the class comment); everything
       # else is left to the rest of the permission_class_chain.
       SUBJECTS = %i[contract party document amendment link note template audit_event user_role
-                    generated_document].freeze
+                    generated_document organization_profile contract_template].freeze
 
       def permissions
         return permission_action unless SUBJECTS.include? subject
@@ -201,7 +201,9 @@ module Decidim
                       amendment: :amendment_action, note: :note_action,
                       template: :template_action, audit_event: :audit_event_action,
                       user_role: :user_role_action,
-                      generated_document: :generated_document_action }.freeze
+                      generated_document: :generated_document_action,
+                      organization_profile: :organization_admin_action,
+                      contract_template: :organization_admin_action }.freeze
 
       def admin_action
         rule = ADMIN_RULES[subject]
@@ -225,8 +227,26 @@ module Decidim
       # The generated-document download rule (civora-org/civora-platform#211):
       # any engine role may read, no lifecycle condition; every other action
       # stays unset (fail-closed).
+      # Generated documents (civora-org/civora-platform#211, P6). The
+      # publication copy (personal data hidden) may be read by any engine
+      # role; the internal copy holds personal data and is limited to the
+      # role that can edit the contract (:editor), in any state, so an editor
+      # keeps the file after submitting. The variant comes in
+      # context[:variant]; a missing or unknown variant is treated as
+      # internal (fail closed to the stricter rule).
       def generated_document_action
-        toggle_allow(roles_for_user.any?) if action == :read
+        return unless action == :read
+
+        toggle_allow(context[:variant].to_s == "publication" ? roles_for_user.any? : editor?)
+      end
+
+      # The organization's contract header and the contract templates
+      # (manage, import): organization admins with accepted admin terms
+      # only, the user_role rule. Engine roles, stored or resolver-granted,
+      # never qualify.
+      def organization_admin_action
+        toggle_allow(user&.admin? && user.admin_terms_accepted?) if %i[read create update destroy
+                                                                       import].include?(action)
       end
 
       # The template rule (civora-org/civora-platform#127): editor only, for

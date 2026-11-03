@@ -25,9 +25,11 @@ module Decidim
       amendment.publish contract.approve contract.approve_self contract.archive
       contract.create_from_template contract.crz_filed contract.crz_filed_override contract.crz_mirror_absorbed
       contract.generated_from_template
-      contract.imported_from_file contract.note_added contract.publish contract.redaction_confirmed
+      contract.imported_from_file contract.note_added contract.publication_copy_promoted contract.publish
+      contract.redaction_confirmed
       contract.reject contract.reject_self
       contract.return contract.return_self contract.submit crz_import_create crz_import_update
+      organization_profile.removed
       user_role.grant_editor user_role.grant_reviewer user_role.revoke_editor user_role.revoke_reviewer
     ].freeze
 

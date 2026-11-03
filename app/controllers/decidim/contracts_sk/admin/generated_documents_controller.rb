@@ -17,9 +17,13 @@ module Decidim
         def show
           @contract = Contract.where(organization: current_organization).find(params[:contract_id])
 
-          enforce_permission_to :read, :generated_document, contract: @contract
+          document = @contract.generated_documents.current.downloadable.find(params[:id])
 
-          send_document(@contract.generated_documents.current.downloadable.find(params[:id]))
+          # The variant decides who may read it: the internal copy (personal
+          # data) is editors only, the publication copy any engine role.
+          enforce_permission_to :read, :generated_document, contract: @contract, variant: document.variant
+
+          send_document(document)
         end
 
         private
