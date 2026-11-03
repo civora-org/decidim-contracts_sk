@@ -152,6 +152,10 @@ All settings are config-time. Set them in an initializer such as `config/initial
 | `supported_link_target_types` | Empty (no linking) | Whitelist of target class names for contract links |
 | `link_target_resolver` | Resolves nothing | Callable `(link) -> { label:, url: }` (or `nil`). It must scope lookups to the organisation itself |
 
+### Public look and the Civora credit
+
+The public pages read the host's Civora theme tokens (`--civora-*`: paper, cream, ink, rule, radius, display font) and fall back to the engine's own colours on a host without them, so no setting is needed. They end with a small Civora credit. It is hidden automatically when the host layout already renders a `.civora-sign` signature; any other host can hide it by putting `data-cs-credit="off"` on an element in its layout, for example `<body data-cs-credit="off">`. Details: [public UI](docs/public-ui.md).
+
 Example for a host that grants roles to admins only:
 
 ```ruby

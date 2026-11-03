@@ -441,6 +441,10 @@ RSpec.describe "public catalogue register", :db, type: :request do
       File.read(Decidim::ContractsSk::Engine.root.join("app/views/decidim/contracts_sk/shared/_public_styles.html.erb"))
     end
 
+    it "hides the credit when the host already signs for Civora or opts out" do
+      expect(css).to include('body:has(.civora-sign, [data-cs-credit="off"]) .cs-credit { display: none; }')
+    end
+
     it "hides the chips, the toolbar menus, the pager and the switch in print" do
       print_block = css[/@media print \{.*?\n  \}/m]
 
