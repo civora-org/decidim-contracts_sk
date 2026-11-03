@@ -14,12 +14,12 @@
 <% statistics_meta_tags %>
 <%= render "decidim/contracts_sk/shared/public_styles" %>
 <main class="layout-1col cols-10">
-  <div class="cs-page cs-yb">
-    <%= render "decidim/contracts_sk/shared/section_switch", current: :statistics %>
-    <header class="cs-head cs-yb__head">
-      <h1 class="cs-head__title"><%= t("#{t_s}.title") %></h1>
+  <div class="cs-page cs-reg--top cs-yb">
+    <%= render "decidim/contracts_sk/shared/register_header", current: :statistics %>
+    <header class="cs-yb__head">
+      <h2 class="cs-yb__title"><%= t("#{t_s}.title") %></h2>
       <% unless stats.all_time.count.zero? %>
-        <p class="cs-head__lead"><%= t("#{t_s}.lead") %></p>
+        <p class="cs-yb__lead"><%= t("#{t_s}.lead") %></p>
         <p class="cs-yb__asof"><%= t("#{t_s}.as_of", time: format_datetime(stats.computed_at)) %></p>
       <% end %>
     </header>

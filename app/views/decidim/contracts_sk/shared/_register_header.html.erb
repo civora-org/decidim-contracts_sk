@@ -1,0 +1,10 @@
+<%# The header both views of the public register share: the section title
+    "Zmluvy" (the page's one h1) and the list / statistics switch on one
+    row. One partial, one structure, so the switch keeps its exact position
+    when the reader changes view and only the active state moves. A view that
+    needs its own heading (the statistics) sets it as an h2 below this row.
+    locals: current (:catalogue | :statistics) %>
+<header class="cs-top">
+  <h1 class="cs-top__title"><%= t("decidim.contracts_sk.contracts.index.title") %></h1>
+  <%= render "decidim/contracts_sk/shared/section_switch", current: current %>
+</header>
