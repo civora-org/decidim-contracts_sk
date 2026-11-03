@@ -7,7 +7,7 @@ A [Decidim](https://decidim.org) engine for Slovak public contracts. It provides
 
 The engine is built for Slovak municipalities and other public-sector organisations. It is part of the [Civora](https://github.com/civora-org) platform but works as a standalone Decidim module.
 
-**Status:** pilot. The latest release is [v1.10.0](https://github.com/civora-org/decidim-contracts_sk/releases/latest). <!-- x-release-please-version --> It runs in the reference host, [civora-org/civora-host](https://github.com/civora-org/civora-host). The gem is not published to RubyGems; hosts install it from the Git tag. Release notes are in [CHANGELOG.md](CHANGELOG.md).
+**Status:** pilot. The latest release is [v1.10.1](https://github.com/civora-org/decidim-contracts_sk/releases/latest). <!-- x-release-please-version --> It runs in the reference host, [civora-org/civora-host](https://github.com/civora-org/civora-host). The gem is not published to RubyGems; hosts install it from the Git tag. Release notes are in [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements
 
@@ -83,7 +83,7 @@ Add the gem to the host `Gemfile`, pinned to a release tag:
 
 <!-- x-release-please-start-version -->
 ```ruby
-gem "decidim-contracts_sk", github: "civora-org/decidim-contracts_sk", tag: "v1.10.0"
+gem "decidim-contracts_sk", github: "civora-org/decidim-contracts_sk", tag: "v1.10.1"
 ```
 <!-- x-release-please-end -->
 
