@@ -1,5 +1,19 @@
 ## [Unreleased]
 
+## [1.12.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.11.0...v1.12.0) (2026-11-03)
+
+
+### Features
+
+* **templates:** create contract parties from the template entry (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([48fd9d7](https://github.com/civora-org/decidim-contracts_sk/commit/48fd9d733eac0ab03c12a6be9a63086319d1dc6b))
+* **templates:** create contract parties from the template entry (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([987d2d7](https://github.com/civora-org/decidim-contracts_sk/commit/987d2d7d9bc57b754235fe200b070118aa229cc6))
+
+
+### Bug Fixes
+
+* **admin:** findings from the referent walkthrough ([49c4204](https://github.com/civora-org/decidim-contracts_sk/commit/49c4204e545c3f12f32f99754d55e1b3e2b9a065))
+* **admin:** findings from the referent walkthrough ([7339946](https://github.com/civora-org/decidim-contracts_sk/commit/73399462d72f8a83ff7d6b705b7f4aedd47f1ad9))
+
 ## [1.11.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.10.1...v1.11.0) (2026-11-03)
 
 
