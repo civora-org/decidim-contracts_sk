@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [1.10.1](https://github.com/civora-org/decidim-contracts_sk/compare/v1.10.0...v1.10.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* **admin:** use a registered icon for the organisation header menu item ([76a3864](https://github.com/civora-org/decidim-contracts_sk/commit/76a3864ffa6f1a8913bdaaff033ed25cf3d5374a))
+* **admin:** use a registered icon for the organisation header menu item (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([aa1522d](https://github.com/civora-org/decidim-contracts_sk/commit/aa1522d789bfc57ea4d57a0aff7326c91b012c2c))
+
 ## [1.10.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.9.0...v1.10.0) (2026-11-03)
 
 
