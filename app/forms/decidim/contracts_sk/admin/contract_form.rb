@@ -33,15 +33,20 @@ module Decidim
         include ActiveModel::Model
         include ActiveModel::Attributes
 
-        # Dot-decimal amount strings only (review round of #75). The leading
-        # minus is legal SYNTAX here — the sign policy (non-negative) stays
-        # owned by the numericality validator. Deliberately rejected: comma
-        # decimals ("12,50" — the Slovak decimal-comma habit is caught at
-        # the boundary so the stored value can never silently differ from
-        # what the editor meant), scientific notation ("1e5"), surrounding
+        # Dot-decimal amount strings with at most two decimals (the column is
+        # decimal(12,2)). Three digits after the dot ("1.250") are refused, not
+        # rounded: a Slovak reader may mean one thousand two hundred fifty,
+        # and a silent 1.25 would be wrong by a factor of a thousand. The
+        # admin form turns "3 062,50" and friends into this shape before the
+        # form sees them (Admin::ContractsController#typed_amount); the
+        # spreadsheet import shares this form and keeps this one shape. The
+        # leading minus is legal SYNTAX here — the sign policy (non-negative) stays
+        # owned by the numericality validator. Rejected HERE: comma
+        # decimals ("12,50" — the form never guesses; the admin controller
+        # converts the unambiguous Slovak shapes first), scientific notation ("1e5"), surrounding
         # whitespace and a leading plus — the editorial form keeps one
         # unambiguous input shape.
-        STRICT_AMOUNT_FORMAT = /\A-?\d+(\.\d+)?\z/
+        STRICT_AMOUNT_FORMAT = /\A-?\d+(\.\d{1,2})?\z/
 
         attribute :title, :string
         attribute :reference, :string
@@ -60,6 +65,13 @@ module Decidim
         def amount=(value)
           @raw_amount = value
           super
+        end
+
+        # What to show back in the amount field: the text as typed (so a
+        # refused amount can be corrected instead of turning into "0"), else
+        # the cast value.
+        def amount_input
+          @raw_amount.is_a?(String) && @raw_amount.present? ? @raw_amount : amount
         end
 
         validates :title, presence: true, length: { maximum: 255 }

@@ -1,3 +1,4 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
 <%# Internal review notes page (civora-org/civora-platform#128): the entry for
     every role holder. A reviewer cannot reach the contract's edit page
     (editor-only), so the thread lives on its own page; the edit page embeds
@@ -10,10 +11,10 @@
   </div>
 
   <div class="card-section">
-    <% if allowed_to?(:update, :contract, contract: @contract) %>
-      <p><%= link_to t("decidim.contracts_sk.admin.notes.index.back_to_contract"), edit_admin_contract_path(@contract) %></p>
+    <% if allowed_to?(:read, :contract, contract: @contract) %>
+      <p><%= link_to t("decidim.contracts_sk.admin.notes.index.back_to_contract"), admin_contract_path(@contract), class: "button button__sm button__secondary cs-admin-choice--idle" %></p>
     <% end %>
-    <p><%= link_to t("decidim.contracts_sk.admin.notes.index.back_to_list"), admin_contracts_path %></p>
+    <p><%= link_to t("decidim.contracts_sk.admin.notes.index.back_to_list"), admin_contracts_path, class: "button button__sm button__secondary cs-admin-choice--idle" %></p>
   </div>
 
   <%= render "thread", contract: @contract, notes: @notes, form: @form %>

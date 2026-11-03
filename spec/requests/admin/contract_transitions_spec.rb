@@ -176,7 +176,7 @@ RSpec.describe "admin contract transitions", type: :request do
       # its own audit row ahead of the loop's per-step assertions.
       post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "1" }
 
-      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:notice]).to be_present
       expect(contract.reload.redaction_confirmed_at).to be_present
 
@@ -212,8 +212,10 @@ RSpec.describe "admin contract transitions", type: :request do
           end
         end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
 
-        expect(response).to redirect_to("/admin/contracts")
-        expect(flash[:notice]).to be_present
+        # Stays on the contract, with a message naming what happened (#7 of
+        # the referent walkthrough), not the generic "transition performed".
+        expect(response).to redirect_to("/admin/contracts/#{contract.id}")
+        expect(flash[:notice]).to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.done.#{event}"))
 
         contract.reload
         expect(contract.state.to_sym)
@@ -253,7 +255,7 @@ RSpec.describe "admin contract transitions", type: :request do
         end
       end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
 
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:notice]).to be_present
 
       contract.reload
@@ -286,7 +288,7 @@ RSpec.describe "admin contract transitions", type: :request do
         post "/admin/contracts/#{contract.id}/submit"
       end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
 
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:alert])
         .to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.invalid"))
 
@@ -394,7 +396,7 @@ RSpec.describe "admin contract transitions", type: :request do
       end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
 
       aggregate_failures do
-        expect(response).to redirect_to("/admin/contracts")
+        expect(response).to redirect_to("/admin/contracts/#{contract.id}")
         # The dedicated redaction-gate flash (#91 review round): the
         # command's :redaction_gate refusal payload maps onto its own
         # localized, actionable message instead of the generic one.
@@ -425,14 +427,14 @@ RSpec.describe "admin contract transitions", type: :request do
       expect(contract.redaction_confirmed_at).to be_nil
 
       post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "1" }
-      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:notice]).to be_present
 
       expect do
         post "/admin/contracts/#{contract.id}/publish"
       end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
 
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:notice]).to be_present
 
       contract.reload
@@ -451,23 +453,23 @@ RSpec.describe "admin contract transitions", type: :request do
       contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
 
       post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "1" }
-      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
 
       # Per-step role overrides, same shape as the with_roles helper in the
       # sibling group (the group's around hook restores the resolver).
       Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
       post "/admin/contracts/#{contract.id}/submit"
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[reviewer] }
       acting_as(reviewer_user) { post "/admin/contracts/#{contract.id}/approve" }
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       Decidim::ContractsSk.role_resolver = ->(_user, _context) { resolver_roles }
 
       expect do
         post "/admin/contracts/#{contract.id}/publish"
       end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
 
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:notice]).to be_present
 
       contract.reload
@@ -519,7 +521,7 @@ RSpec.describe "admin contract transitions", type: :request do
         end
       end.to change(Decidim::ContractsSk::AuditEvent, :count).by(1)
 
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:notice]).to be_present
 
       contract.reload
@@ -540,7 +542,7 @@ RSpec.describe "admin contract transitions", type: :request do
       end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
 
       aggregate_failures do
-        expect(response).to redirect_to("/admin/contracts")
+        expect(response).to redirect_to("/admin/contracts/#{contract.id}")
         expect(flash[:alert])
           .to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.review_reason_required"))
         expect(flash[:alert])
@@ -565,7 +567,7 @@ RSpec.describe "admin contract transitions", type: :request do
       end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
 
       aggregate_failures do
-        expect(response).to redirect_to("/admin/contracts")
+        expect(response).to redirect_to("/admin/contracts/#{contract.id}")
         expect(flash[:alert])
           .to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.review_reason_rejected"))
         expect(flash[:alert])
@@ -854,7 +856,7 @@ RSpec.describe "admin contract transitions", type: :request do
     it "lets another admin approve the same record" do
       acting_as(reviewer_user) { post "/admin/contracts/#{in_review.id}/approve" }
 
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{in_review.id}")
       expect(flash[:notice]).to be_present
       expect(in_review.reload.state).to eq("approved")
       expect(Decidim::ContractsSk::AuditEvent.order(:id).last.action).to eq("contract.approve")
@@ -865,7 +867,7 @@ RSpec.describe "admin contract transitions", type: :request do
 
       post "/admin/contracts/#{in_review.id}/approve"
 
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{in_review.id}")
       expect(in_review.reload.state).to eq("approved")
       expect(Decidim::ContractsSk::AuditEvent.order(:id).last.action).to eq("contract.approve_self")
     end
@@ -881,7 +883,7 @@ RSpec.describe "admin contract transitions", type: :request do
         post "/admin/contracts/#{in_review.id}/approve"
       end.not_to change(Decidim::ContractsSk::AuditEvent, :count)
 
-      expect(response).to redirect_to("/admin/contracts")
+      expect(response).to redirect_to("/admin/contracts/#{in_review.id}")
       expect(flash[:alert]).to eq(I18n.t("decidim.contracts_sk.admin.contracts.transition.self_review"))
       expect(in_review.reload.state).to eq("in_review")
     end

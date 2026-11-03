@@ -192,10 +192,10 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
 
       body = response.body
       expect(body).to include("CRZ deadline</th>")
-      expect(body).to include(%(<span class="label alert">Overdue</span>))
-      expect(body).to include(%(<span class="label warning">7 days</span>))
-      expect(body).to include(%(<span class="label warning">14 days</span>))
-      expect(body).to include(%(<span class="label">15 days</span>))
+      expect(body).to match(%r{<span class="label alert" title="[^"]+">Overdue</span>})
+      expect(body).to match(%r{<span class="label warning" title="[^"]+">7 days</span>})
+      expect(body).to match(%r{<span class="label warning" title="[^"]+">14 days</span>})
+      expect(body).to match(%r{<span class="label" title="[^"]+">15 days</span>})
       expect(body).to include("Deadline unknown")
       expect(body).to include(%(<span class="sr-only">Deadline unknown — add signing date</span>))
       expect(body).to include(%(<span aria-hidden="true">\u2014</span>))
@@ -209,16 +209,16 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
       create_contract!(reference: "ZP-DL-105", signed_on: Date.new(2026, 2, 1))
 
       get "/admin/contracts"
-      expect(response.body).to include(%(<span class="label warning">Due today</span>))
-      expect(response.body).to include(%(<span class="label warning">1 day</span>))
+      expect(response.body).to match(%r{<span class="label warning" title="[^"]+">Due today</span>})
+      expect(response.body).to match(%r{<span class="label warning" title="[^"]+">1 day</span>})
 
       with_slovak { get "/admin/contracts" }
       aggregate_failures do
-        expect(response.body).to include(%(<span class="label warning">Dnes</span>))
-        expect(response.body).to include(%(<span class="label warning">1 deň</span>))
-        expect(response.body).to include(%(<span class="label warning">3 dni</span>))
-        expect(response.body).to include(%(<span class="label warning">7 dní</span>))
-        expect(response.body).to include(%(<span class="label alert">Po termíne</span>))
+        expect(response.body).to match(%r{<span class="label warning" title="[^"]+">Dnes</span>})
+        expect(response.body).to match(%r{<span class="label warning" title="[^"]+">1 deň</span>})
+        expect(response.body).to match(%r{<span class="label warning" title="[^"]+">3 dni</span>})
+        expect(response.body).to match(%r{<span class="label warning" title="[^"]+">7 dní</span>})
+        expect(response.body).to match(%r{<span class="label alert" title="[^"]+">Po termíne</span>})
         expect(response.body).to include("Lehota CRZ</th>")
       end
     end
@@ -243,7 +243,7 @@ RSpec.describe "admin contracts CRZ deadline tracking", :db, type: :request do
 
       get "/admin/contracts"
 
-      expect(response.body).to include(%(<span class="label alert">Overdue</span>))
+      expect(response.body).to match(%r{<span class="label alert" title="[^"]+">Overdue</span>})
     end
   end
 

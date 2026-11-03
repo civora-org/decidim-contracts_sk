@@ -138,14 +138,14 @@ RSpec.describe "admin redaction confirmation", type: :request do
       allow_any_instance_of(controller).to receive(:current_organization).and_return(organization)
     end
 
-    it "stamps the record, writes the audit row and PRG-redirects to the edit page with a notice" do
+    it "stamps the record, writes the audit row and PRG-redirects to the contract page with a notice" do
       before = Time.current
       contract = Decidim::ContractsSk::Contract.create!(contract_attributes)
 
       post "/admin/contracts/#{contract.id}/confirm_redaction",
            params: { redaction_confirmed: "1" }
 
-      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:notice]).to be_present
 
       contract.reload
@@ -163,6 +163,19 @@ RSpec.describe "admin redaction confirmation", type: :request do
       end
     end
 
+    # Referent walkthrough #1: an approved record cannot be edited, so landing
+    # on its edit page after a successful save showed "not authorized".
+    it "lands on a page the person may open after stamping an approved record (no permission error)" do
+      contract = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "approved"))
+
+      post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "1" }
+      follow_redirect!
+
+      expect(response).to have_http_status(:ok)
+      expect(flash[:alert]).to be_nil
+      expect(response.body).to include("Redaction confirmed on")
+    end
+
     it "stamps an approved record too — the confirmable window reaches the publish edge (#91 H-1)" do
       # The review round widened the CONFIRMATION window to include
       # :approved (a reviewer sign-off can arrive unstamped); editability
@@ -172,7 +185,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
       post "/admin/contracts/#{contract.id}/confirm_redaction",
            params: { redaction_confirmed: "1" }
 
-      expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+      expect(response).to redirect_to("/admin/contracts/#{contract.id}")
       expect(flash[:notice]).to be_present
 
       contract.reload
@@ -193,7 +206,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
       post "/admin/contracts/#{contract.id}/confirm_redaction"
 
       aggregate_failures do
-        expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+        expect(response).to redirect_to("/admin/contracts/#{contract.id}")
         expect(flash[:notice]).to be_nil
         expect(flash[:alert])
           .to eq(I18n.t("decidim.contracts_sk.admin.contracts.confirm_redaction.invalid"))
@@ -214,7 +227,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
       post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "0" }
 
       aggregate_failures do
-        expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+        expect(response).to redirect_to("/admin/contracts/#{contract.id}")
         expect(flash[:alert]).to be_present
       end
 
@@ -233,7 +246,7 @@ RSpec.describe "admin redaction confirmation", type: :request do
       post "/admin/contracts/#{contract.id}/confirm_redaction", params: { redaction_confirmed: "1" }
 
       aggregate_failures do
-        expect(response).to redirect_to("/admin/contracts/#{contract.id}/edit")
+        expect(response).to redirect_to("/admin/contracts/#{contract.id}")
         expect(flash[:alert])
           .to eq(I18n.t("decidim.contracts_sk.admin.contracts.confirm_redaction.invalid"))
       end

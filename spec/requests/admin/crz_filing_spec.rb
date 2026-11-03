@@ -140,11 +140,45 @@ RSpec.describe "admin CRZ filing confirmation", :db, type: :request do
       expect(client).not_to have_received(:contract)
     end
 
+    # Referent walkthrough #3: people paste the address of the CRZ record.
+    [
+      "https://www.crz.gov.sk/zmluva/2142424/",
+      "https://crz.gov.sk/zmluva/2142424",
+      "http://www.crz.gov.sk/zmluva/2142424/?utm_source=mail#top",
+      "  www.crz.gov.sk/zmluva/2142424/  "
+    ].each do |pasted|
+      it "takes the numeric id out of a pasted CRZ address (#{pasted.strip})" do
+        get path, params: { crz_id: pasted }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("name=\"checksum\"")
+        ids = Nokogiri::HTML(response.body).css("input[name='crz_id']").pluck("value")
+        expect(ids).to all(eq(crz_id))
+        expect(client).to have_received(:contract).with(crz_id)
+      end
+    end
+
+    [
+      "https://evil.example/zmluva/2142424/",
+      "https://www.crz.gov.sk.evil.example/zmluva/2142424/",
+      "https://www.crz.gov.sk/objednavka/2142424/",
+      "https://www.crz.gov.sk/zmluva/abc/",
+      "javascript:alert(2142424)",
+      "2142424 and more"
+    ].each do |garbage|
+      it "still refuses #{garbage.inspect} before any network call" do
+        get path, params: { crz_id: garbage }
+
+        expect(flash[:alert]).to eq("Enter the CRZ contract number (e.g. 12851898) or a link to it from crz.gov.sk.")
+        expect(client).not_to have_received(:contract)
+      end
+    end
+
     it "refuses a non-numeric id before any network call" do
       get path, params: { crz_id: "12/34" }
 
       expect(response).to have_http_status(:ok)
-      expect(flash[:alert]).to eq("Enter the numeric CRZ contract id.")
+      expect(flash[:alert]).to eq("Enter the CRZ contract number (e.g. 12851898) or a link to it from crz.gov.sk.")
       expect(client).not_to have_received(:contract)
     end
 
@@ -224,6 +258,21 @@ RSpec.describe "admin CRZ filing confirmation", :db, type: :request do
       expect(contract.source).to eq("editorial")
       expect(contract.source_id).to eq(crz_id)
       expect(contract.crz_published_on).to eq(Date.new(2026, 4, 20))
+    end
+
+    it "files the record when the pasted value is the CRZ address" do
+      post path, params: { crz_id: "https://www.crz.gov.sk/zmluva/#{crz_id}/", checksum: token }
+
+      expect(flash[:notice]).to eq("Filing of contract 2142424 in CRZ confirmed and linked.")
+      expect(contract.reload.source_id).to eq(crz_id)
+    end
+
+    it "refuses an address on another site and files nothing" do
+      post path, params: { crz_id: "https://evil.example/zmluva/#{crz_id}/", checksum: token }
+
+      expect(response).to redirect_to(path)
+      expect(flash[:alert]).to include("No CRZ contract")
+      expect(contract.reload.crz_filed_at).to be_nil
     end
 
     it "files an override with the reason and flashes the override notice" do

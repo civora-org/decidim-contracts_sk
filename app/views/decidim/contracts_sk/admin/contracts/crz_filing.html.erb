@@ -1,3 +1,4 @@
+<%= render "decidim/contracts_sk/shared/admin_styles" %>
 <%# CRZ filing confirmation page (civora-org/civora-platform#125): the
     editor names the CRZ id of the record they filed by hand; with ?crz_id=
     the controller has fetched the official record (read-only) and the page
@@ -16,14 +17,15 @@
 </div>
 
 <p><strong><%= @contract.title %></strong> (<%= @contract.reference %>)</p>
-<p><%= t("#{scope}.description") %></p>
+<p class="cs-admin-prose"><%= t("#{scope}.description") %></p>
 
 <div class="card">
   <div class="card-section">
     <%= form_with url: crz_filing_admin_contract_path(@contract), method: :get, local: true, html: { class: "form form-defaults" } do %>
       <div class="form__wrapper">
         <%= label_tag :crz_id, t("#{scope}.crz_id_label") %>
-        <%= text_field_tag :crz_id, @crz_id, placeholder: "12345678", inputmode: "numeric" %>
+        <%= text_field_tag :crz_id, @crz_id, placeholder: t("#{scope}.crz_id_placeholder"), autocomplete: "off", "aria-describedby": "crz_id_hint" %>
+        <span class="help-text" id="crz_id_hint"><%= t("#{scope}.crz_id_hint") %></span>
       </div>
       <%= submit_tag t("#{scope}.lookup"), name: nil, class: "button button__sm button__secondary" %>
       <p><em><%= t("#{scope}.lag_hint") %></em></p>
@@ -90,10 +92,10 @@
 
         <%= submit_tag t("#{scope}.confirm"),
                        class: "button button__sm button__secondary",
-                       data: { confirm: t("#{scope}.confirm_prompt") } %>
+                       data: { confirm: t("#{scope}.confirm_prompt"), "confirm-title": t("#{scope}.confirm_title"), "confirm-icon": "check-double-line" } %>
       <% end %>
     </div>
   </div>
 <% end %>
 
-<p><%= link_to t("#{scope}.back"), admin_contracts_path %></p>
+<p><%= link_to t("#{scope}.back"), admin_contract_path(@contract), class: "button button__sm button__secondary cs-admin-choice--idle" %></p>

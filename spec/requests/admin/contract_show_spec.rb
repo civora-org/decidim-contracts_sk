@@ -186,9 +186,71 @@ RSpec.describe "admin contract page", :db, type: :request do
       get "/admin/contracts/#{record.id}"
 
       expect(buttons).to eq(["Publish"])
-      expect(response.body).to include("Before publishing, first confirm that personal data is hidden (below).")
+      expect(response.body).to include("A contract can be published only after you confirm that personal data")
       expect(response.body).to include("A published contract is public")
       expect(doc.css("form[action$='/confirm_redaction']").size).to eq(1)
+    end
+
+    # Referent walkthrough #4: publishing before the redaction is confirmed is
+    # shown disabled with its reason, and the confirmation sits above it.
+    it "disables Publish with its reason until the redaction is confirmed, and puts the confirmation first" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
+      record = contract!("approved")
+
+      get "/admin/contracts/#{record.id}"
+
+      publish = doc.css("#cs-next-step input[type=submit]").find { |button| button["value"] == "Publish" }
+      expect(publish["disabled"]).not_to be_nil
+      expect(publish["aria-describedby"]).to eq("cs-publish-blocked")
+      expect(doc.at_css("#cs-publish-blocked").text).to include("only after you confirm")
+      expect(response.body.index('id="cs-redaction"')).to be < response.body.index('id="cs-next-step"')
+    end
+
+    it "enables Publish once the redaction is confirmed and shows no blocking hint" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
+      record = contract!("approved", redaction_confirmed_at: Time.current)
+
+      get "/admin/contracts/#{record.id}"
+
+      publish = doc.css("#cs-next-step input[type=submit]").find { |button| button["value"] == "Publish" }
+      expect(publish["disabled"]).to be_nil
+      expect(doc.at_css("#cs-publish-blocked")).to be_nil
+      expect(doc.at_css("#cs-redaction")).to be_nil
+    end
+
+    it "asks for the destructive-looking steps with their own dialog title and icon, not the trash can" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
+      record = contract!("approved", redaction_confirmed_at: Time.current)
+
+      get "/admin/contracts/#{record.id}"
+
+      publish = doc.css("#cs-next-step input[type=submit]").find { |button| button["value"] == "Publish" }
+      expect(publish["data-confirm-title"]).to eq("Publish in the catalogue")
+      expect(publish["data-confirm-icon"]).to eq("eye-line")
+    end
+
+    # Walkthrough #9: on a published record the CRZ filing is the main step.
+    it "leads with the CRZ filing as the solid action and puts Archive last and outlined" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
+      record = contract!("published")
+
+      get "/admin/contracts/#{record.id}"
+
+      actions = doc.css("#cs-next-step .cs-show__actions a, #cs-next-step .cs-show__actions input[type=submit]")
+      expect(actions.map { |node| node["value"] || node.text.strip }).to eq(["Record CRZ filing", "Archive"])
+      expect(actions.first["class"]).not_to include("cs-admin-choice--idle")
+      expect(actions.last["class"]).to include("cs-admin-choice--idle")
+    end
+
+    # Walkthrough #14: the badge says what the number is.
+    it "labels the deadline badge as the CRZ deadline" do
+      record = contract!("published", signed_on: Date.current - 3.days)
+
+      get "/admin/contracts/#{record.id}"
+
+      expect(doc.at_css(".cs-show__meta").text).to include("CRZ deadline:")
+      title = doc.at_css(".cs-show__meta .label[title]")["title"]
+      expect(title).to start_with("Deadline for filing the contract in the CRZ:")
     end
 
     it "offers the CRZ filing confirmation for a published, unfiled editorial record to editors only" do

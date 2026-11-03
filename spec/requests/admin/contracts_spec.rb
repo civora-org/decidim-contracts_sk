@@ -530,7 +530,7 @@ RSpec.describe "admin contracts CRUD", type: :request do
         expect(response.body).to include('inputmode="decimal"')
         expect(response.body).to include('aria-describedby="contract_amount_hint"')
         expect(response.body).to include('id="contract_amount_hint"')
-        expect(response.body).to include("Use a dot as the decimal separator")
+        expect(response.body).to include("A decimal comma and a decimal point both work")
         # Currency (#79): a select over the allowlist with the default
         # selected — never the free-text input again.
         expect(response.body).to include(">EUR</option>")
@@ -671,6 +671,52 @@ RSpec.describe "admin contracts CRUD", type: :request do
       expect(response).to have_http_status(422)
       expect(flash[:alert]).to be_present
       expect(Decidim::ContractsSk::Contract.count).to eq(0)
+    end
+
+    # Referent walkthrough #6: a Slovak editor types a decimal comma and
+    # spaces between thousands; what is unambiguous is accepted, the rest
+    # (a bare "1.250" is 1,25 or 1 250) is refused, never guessed.
+    {
+      "3 062,50" => "3062.50",
+      "3\u00a0062,50" => "3062.50",
+      "3062,5" => "3062.5",
+      "3.062,50" => "3062.50",
+      "3,062.50" => "3062.50",
+      "1250.50" => "1250.50",
+      "1 250" => "1250",
+      "0,99" => "0.99"
+    }.each do |typed, stored|
+      it "accepts the amount #{typed.inspect} as #{stored}" do
+        post "/admin/contracts", params: {
+          contract: { title: "Road reconstruction", reference: "ZP-AMT-#{stored}", amount: typed }
+        }
+
+        expect(response).to redirect_to("/admin/contracts")
+        expect(Decidim::ContractsSk::Contract.find_by!(reference: "ZP-AMT-#{stored}").amount).to eq(BigDecimal(stored))
+      end
+    end
+
+    ["1.250", "1,250", "1,2,3", "12,345.678", "3 062,505", "1e5", "+5", "1 2 3,x", "12 EUR", "--5"].each do |typed|
+      it "refuses the ambiguous or malformed amount #{typed.inspect} and keeps what was typed in the field" do
+        post "/admin/contracts", params: {
+          contract: { title: "Road reconstruction", reference: "ZP-AMT-BAD", amount: typed }
+        }
+
+        expect(response).to have_http_status(422)
+        expect(Decidim::ContractsSk::Contract.count).to eq(0)
+        expect(Nokogiri::HTML(response.body).at_css("#contract_amount")["value"]).to eq(typed)
+      end
+    end
+
+    it "accepts a typed decimal comma on update too" do
+      record = Decidim::ContractsSk::Contract.create!(contract_attributes)
+
+      patch "/admin/contracts/#{record.id}", params: {
+        contract: { title: "Road reconstruction", reference: "ZP-2026-001", amount: "98 000,40" }
+      }
+
+      expect(response).to redirect_to("/admin/contracts")
+      expect(record.reload.amount).to eq(BigDecimal("98000.40"))
     end
 
     it "answers 422 and leaves the record untouched when an update posts a non-numeric amount" do

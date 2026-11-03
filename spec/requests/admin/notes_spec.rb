@@ -70,14 +70,17 @@ RSpec.describe "admin internal review notes", type: :request do
     context "when the user is a reviewer only" do
       let(:resolver_roles) { %i[reviewer] }
 
-      it "lets the reviewer read and add on an in-review record (which they cannot edit)" do
+      it "lets the reviewer read and add on an in-review record (which they cannot edit) and go back to it" do
         record = Decidim::ContractsSk::Contract.create!(contract_attributes(state: "in_review", reference: "ZP-7"))
         record.notes.create!(author: author, body: "Editor: please look at the amount.")
 
         get "/admin/contracts/#{record.id}/notes"
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("Editor: please look at the amount.")
-        expect(response.body).not_to include("Back to the contract</a>")
+        # The link used to go to the edit page and was hidden from anyone who
+        # may not edit; it now goes to the contract page, which a reviewer reads.
+        expect(response.body).to include(%(href="/admin/contracts/#{record.id}"))
+        expect(response.body).not_to include("/admin/contracts/#{record.id}/edit")
 
         expect { add_note("Reviewer: amount confirmed.", record) }.to change(record.notes, :count).by(1)
       end

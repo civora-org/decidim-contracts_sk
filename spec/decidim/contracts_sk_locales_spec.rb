@@ -575,14 +575,17 @@ module LocaleContract
   FORM_HINT_AND_DATE_FORMAT_LABELS = {
     en: {
       "admin.contracts.form.amount_hint" =>
-        "Use a dot as the decimal separator (e.g. 1250.50) — comma decimals are rejected.",
+        "Write the amount in digits, e.g. 3 062,50 or 3062.50. A decimal comma and a decimal point both work; " \
+        "thousands may be separated by a space. A form like 1.250 is refused because it is unclear whether it means " \
+        "1.25 or 1,250.",
       "admin.parties.form.ico_hint" => "Leave blank or enter exactly 8 digits.",
       "date_formats.default" => "%Y-%m-%d",
       "date_formats.datetime" => "%Y-%m-%d %H:%M"
     },
     sk: {
       "admin.contracts.form.amount_hint" =>
-        "Použite bodku ako oddeľovač desatinných miest (napr. 1250.50) — desatinná čiarka nie je prijateľná.",
+        "Napíšte sumu číslicami, napr. 3 062,50 alebo 3062.50. Desatinná čiarka aj bodka sú v poriadku, tisíce možno " \
+        "oddeliť medzerou. Zápis ako 1.250 systém odmietne, lebo nie je jasné, či ide o 1,25 alebo 1 250.",
       "admin.parties.form.ico_hint" => "Nechajte prázdne alebo zadajte presne 8 číslic.",
       "date_formats.default" => "%d. %m. %Y",
       "date_formats.datetime" => "%d. %m. %Y %H:%M"
@@ -741,7 +744,10 @@ module LocaleContract
     "admin.contracts.crz_filing.comparison.title",
     "admin.contracts.crz_filing.confirm",
     "admin.contracts.crz_filing.confirm_prompt",
+    "admin.contracts.crz_filing.confirm_title",
+    "admin.contracts.crz_filing.crz_id_hint",
     "admin.contracts.crz_filing.crz_id_label",
+    "admin.contracts.crz_filing.crz_id_placeholder",
     "admin.contracts.crz_filing.description",
     "admin.contracts.crz_filing.filed",
     "admin.contracts.crz_filing.filed_override",
@@ -764,7 +770,9 @@ module LocaleContract
     "admin.contracts.crz_filing.refusals.stale",
     "admin.contracts.crz_filing.refusals.withdrawn",
     "admin.contracts.crz_filing.title",
+    "admin.contracts.deadline.badge.label",
     "admin.contracts.deadline.badge.overdue",
+    "admin.contracts.deadline.badge.title",
     "admin.contracts.deadline.badge.today",
     "admin.contracts.deadline.badge.unknown",
     "admin.contracts.deadline.days.few",
@@ -865,6 +873,18 @@ module LocaleContract
     "admin.contracts.transition.confirm.reject",
     "admin.contracts.transition.confirm.return",
     "admin.contracts.transition.confirm.submit",
+    "admin.contracts.transition.confirm_title.approve",
+    "admin.contracts.transition.confirm_title.archive",
+    "admin.contracts.transition.confirm_title.publish",
+    "admin.contracts.transition.confirm_title.reject",
+    "admin.contracts.transition.confirm_title.return",
+    "admin.contracts.transition.confirm_title.submit",
+    "admin.contracts.transition.done.approve",
+    "admin.contracts.transition.done.archive",
+    "admin.contracts.transition.done.publish",
+    "admin.contracts.transition.done.reject",
+    "admin.contracts.transition.done.return",
+    "admin.contracts.transition.done.submit",
     "admin.contracts.transition.invalid",
     "admin.contracts.transition.publish",
     "admin.contracts.transition.redaction_required",
@@ -876,7 +896,6 @@ module LocaleContract
     "admin.contracts.transition.review_reason_required",
     "admin.contracts.transition.self_review",
     "admin.contracts.transition.submit",
-    "admin.contracts.transition.success",
     "admin.contracts.update.error",
     "admin.contracts.update.success",
     "admin.crz_handoff.create.error",
