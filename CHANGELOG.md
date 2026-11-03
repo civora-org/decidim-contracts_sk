@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [1.11.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.10.1...v1.11.0) (2026-11-03)
+
+
+### Features
+
+* **public:** use the host's Civora theme tokens with fallbacks ([9231e2b](https://github.com/civora-org/decidim-contracts_sk/commit/9231e2b5ab6dc3ebaae290c0c8061fad3d6a43b0))
+* **public:** use the host's Civora theme tokens with fallbacks ([3d0fae8](https://github.com/civora-org/decidim-contracts_sk/commit/3d0fae84eaba6d96261864c6fd3252f0240a7e5f))
+
 ## [1.10.1](https://github.com/civora-org/decidim-contracts_sk/compare/v1.10.0...v1.10.1) (2026-11-03)
 
 
