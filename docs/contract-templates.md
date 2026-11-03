@@ -88,8 +88,9 @@ Field types and input (stored in one canonical form, shown the Slovak way): `tex
 2. the header from `ContractOrganizationProfile` (a missing header value stops the generation with a message naming it; the form then links to the header screen for an organization admin);
 3. `DocumentGenerator` (fill, sanitize, convert, redaction verification);
 4. the `ContractTemplateEntry` (non-personal values in `values`, personal ones encrypted), the four `GeneratedDocument` rows with their files (SHA-256 checksum recorded), the previous current ones marked `superseded` (their files are kept);
-5. on regeneration, `redaction_confirmed_at` is cleared and the publication copy promoted by an earlier confirmation is removed from the contract's documents: the documents changed, so a human confirms again;
-6. the audit event `contract.generated_from_template` (actor, contract, time; never a value).
+5. the parties of the contract (section "Parties of a contract from a template");
+6. on regeneration, `redaction_confirmed_at` is cleared and the publication copy promoted by an earlier confirmation is removed from the contract's documents: the documents changed, so a human confirms again;
+7. the audit event `contract.generated_from_template` (actor, contract, time; never a value).
 
 `RedactionFailed` or a converter failure stores nothing and the editor sees a message; a leak means the template does not mark every personal value as personal. The request is synchronous (about a second with LibreOffice) and holds a transaction while the converter runs.
 
@@ -155,6 +156,43 @@ When an editor confirms the redaction of a contract that has a **current** gener
 
 The older `:template` subject (contract skeletons that prefill the new-contract form, #127) is a different feature and keeps its editor-only rule.
 
+## Parties of a contract from a template
+
+A contract generated from a template gets its parties (the public catalogue page, the CRZ handoff and the exports read them), created in the same transaction as the documents by `Admin::SyncTemplateParties`:
+
+| Party | Role | Source |
+|-------|------|--------|
+| the municipality | `object` (the contracting body) | the header profile: `official_name` (else the organization's name), `ico`, `seat` |
+| the counterparty | `contractor` | the template's declared counterparty fields (below); none declared, none created |
+
+The role vocabulary is the catalogue's own (`object` / `contractor`); the contract's role titles (predávajúci, kupujúci, prenajímateľ, nájomca) stay in the document text.
+
+**Declaring the counterparty** (sidecar, `party_part` on the fields):
+
+```yaml
+person: [kupujuci_meno, kupujuci_adresa]
+counterparty: { name: kupujuci_meno }                 # a natural person
+# a company: plain (non-person) fields
+counterparty: { name: partner_nazov, ico: partner_ico, address: partner_sidlo }
+```
+
+- **Natural person** (the `name` field is in `person`): the party is stored and published as **"Fyzická osoba"** only. No typed value is read for it, so no name, address, birth date or birth number reaches the `parties` table; the real values stay in the encrypted entry. The party has no IČO, so the existing rules keep it out of every public aggregate: the open-data exports list only parties with an IČO, the party filter matches names only among parties with an IČO, supplier pages and statistics rankings need an IČO. The catalogue page and the CRZ handoff show "Fyzická osoba" with the role. `ico` and `address` may not be declared next to a person name (the import refuses it).
+- **Company** (the `name` field is not a person field): name, IČO and seat are stored as typed. The IČO (spaces ignored) must be eight digits or the form refuses it; it is optional. A company is published like any contractor, with a supplier page when it has an IČO. A sole trader (SZČO) is a natural person with an IČO; declare it as a company only if its name may be published.
+- **Regenerating** updates the same two parties in place (they carry `template_slot` `municipality` / `counterparty`, unique per contract), so there are no duplicates, and a changed header or counterparty is picked up. A party a person added by hand has no slot and is never touched. If a person edits an auto-created party in the admin, the next regeneration overwrites it from the template; add a second party by hand instead. Emptying an optional counterparty name removes the counterparty party the template created.
+- **Existing templates** have no declared counterparty: contracts regenerated from them gain the municipality only. Re-import the template with the sidecar `counterparty` setting as the next version (new contracts use it; contracts already written stay on their version and the version's fields are frozen).
+
+**Updating a template that is already on a host** (for example the two demo templates): add `counterparty: { name: kupujuci_meno }` (purchase) or `counterparty: { name: najomca_meno }` (lease) to the sidecar and run the import again with the same `lineage_key`; this creates version 2 and archives version 1:
+
+```bash
+bin/rails "decidim_contracts_sk:templates:import[<org_id>,KZ-civora.docx,<lineage_key>,<Template name>]"
+```
+
+New contracts then get their parties; to give an existing draft its parties, use "Upraviť údaje a vygenerovať znova" on a version-2 contract (a contract pinned to version 1 keeps getting the municipality only).
+
+### Schema
+
+Two additive, reversible migrations, no backfill, hosts copy them verbatim: `20261103000010` adds the nullable string `parties.template_slot` and a unique index on `(contract_id, template_slot)` (NULLs are distinct, so manual parties are unrestricted); `20261103000011` adds the nullable string `contract_template_fields.party_part` (`name`, `ico` or `address`).
+
 ## Author guide: making a template in Word (step D1)
 
 1. **Write the contract in Word as usual** and save it as `.docx`. An old `.doc` must be opened in Word or LibreOffice and saved as `.docx` first.
@@ -171,6 +209,7 @@ The older `:template` subject (contract skeletons that prefill the new-contract 
    labels: { kupujuci_meno: "Kupujúci - meno" }            # the caption of a field
    groups: { kupujuci_meno: kupujuci, kupujuci_adresa: kupujuci }
    group_labels: { kupujuci: "Kupujúci" }                  # the heading of a group
+   counterparty: { name: kupujuci_meno }                   # the other party of the contract (see "Parties of a contract from a template")
    ```
 
    `labels` defaults to the humanized key. `group_labels` keys must be groups some field uses. Unknown keys and fields the template does not have are errors, so a typo cannot pass silently.

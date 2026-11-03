@@ -94,6 +94,16 @@ RSpec.describe Decidim::ContractsSk::ContractTemplateField, :db do
     expect(described_class.exists?(field.id)).to be(true)
   end
 
+  it "accepts a party part, one field per part, and refuses a personal ico or address part" do
+    expect(build_field(key: "partner", party_part: "name", personal_data: true)).to be_valid
+    expect(build_field(key: "partner", party_part: "zip")).not_to be_valid
+    build_field(key: "partner", party_part: "ico").save!
+    expect(build_field(key: "partner2", party_part: "ico")).not_to be_valid
+    expect(build_field(key: "adresa", party_part: "address", personal_data: true)).not_to be_valid
+    expect(build_field(key: "adresa", party_part: "address", field_type: "person")).not_to be_valid
+    expect(build_field(key: "adresa", party_part: "address")).to be_valid
+  end
+
   it "stays editable on an unused template" do
     field = build_field.tap(&:save!)
 

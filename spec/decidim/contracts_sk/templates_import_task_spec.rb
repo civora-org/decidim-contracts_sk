@@ -120,6 +120,23 @@ RSpec.describe "decidim_contracts_sk:templates:import", :db do
     expect(fields["predmet"]).to have_attributes(group_key: nil, group_label: nil)
   end
 
+  it "stores the counterparty parts the sidecar declares and none otherwise" do
+    File.write("#{path}.fields.yml", "person: [kupujuci_meno]\ncounterparty: { name: kupujuci_meno }\n")
+
+    import
+
+    fields = fields_by_key(template_class.sole)
+    expect(fields["kupujuci_meno"].party_part).to eq("name")
+    expect(fields.except("kupujuci_meno").values.map(&:party_part)).to all(be_nil)
+    expect(template_class.sole.counterparty_fields.keys).to eq(["name"])
+  end
+
+  it "creates no counterparty part without a counterparty setting" do
+    import
+
+    expect(fields_by_key(template_class.sole).values.map(&:party_part)).to all(be_nil)
+  end
+
   it "leaves group_label empty when the sidecar gives no group headings" do
     File.write("#{path}.fields.yml", "groups: { kupujuci_meno: kupujuci }\n")
 
@@ -254,6 +271,24 @@ RSpec.describe "decidim_contracts_sk:templates:import", :db do
 
       File.write("#{path}.fields.yml", "- just\n- a list\n")
       aborts_with(/the sidecar must be a mapping/) { import }
+    end
+
+    it "refuses a malformed or privacy-breaking counterparty setting" do
+      {
+        "counterparty: [kupujuci_meno]\n" => /counterparty must be a mapping/,
+        "counterparty: { ico: org_ico }\n" => /counterparty needs a name field/,
+        "counterparty: { name: kupujuci_meno, zip: plocha }\n" => /unknown parts: zip/,
+        "counterparty: { name: nema_pole }\n" => /counterparty names fields the template does not have: nema_pole/,
+        "counterparty: { name: predmet, address: predmet }\n" => /uses a field twice/,
+        "person: [kupujuci_meno, kupujuci_adresa]\ncounterparty: { name: kupujuci_meno, address: kupujuci_adresa }\n" =>
+          /natural-person counterparty .* cannot also name ico or address/,
+        "person: [kupujuci_adresa]\ncounterparty: { name: predmet, address: kupujuci_adresa }\n" =>
+          /ico and address cannot be person fields: kupujuci_adresa/
+      }.each do |yaml, message|
+        File.write("#{path}.fields.yml", yaml)
+        aborts_with(message) { import }
+      end
+      expect(template_class.count).to eq(0)
     end
 
     it "refuses an invalid lineage key without leaving a half-made template" do

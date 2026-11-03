@@ -24,7 +24,11 @@ module Decidim
       # documents superseded and clears the redaction confirmation: the
       # documents changed, so a human has to confirm them again.
       #
-      # Everything (counter, contract, entry, documents, audit row) commits in
+      # The contract's parties come with it (SyncTemplateParties): the
+      # municipality from the header, the counterparty from the fields the
+      # template declares; a natural person is stored as "Fyzická osoba" only.
+      #
+      # Everything (counter, contract, entry, documents, parties, audit row) commits in
       # one transaction; any failure rolls it ALL back, including the number
       # taken from the counter. Generation itself (LibreOffice) runs inside it,
       # a second or so; redaction verification (DocumentGenerator) happens
@@ -116,6 +120,7 @@ module Decidim
             created = create_contract!(number)
             entry = create_entry!(created, current, number)
             store!(entry, current, documents)
+            sync_parties!(created, current, profile)
             audit!(created)
             created
           end
@@ -133,6 +138,7 @@ module Decidim
             update_contract!
             entry = save_entry!(entry, current, number)
             store!(entry, current, documents)
+            sync_parties!(contract, current, profile)
             audit!(contract)
             contract
           end
@@ -226,6 +232,13 @@ module Decidim
           entry.update!(values: form.stored_values, personal_values: form.stored_personal_values,
                         last_generated_at: Time.current)
           entry
+        end
+
+        # The municipality and counterparty parties (SyncTemplateParties);
+        # idempotent, manual parties untouched.
+        def sync_parties!(target, current, profile)
+          SyncTemplateParties.call(contract: target, template: current, form: form, profile: profile,
+                                   organization: organization)
         end
 
         # Marks the entry's current documents superseded and stores the new set.

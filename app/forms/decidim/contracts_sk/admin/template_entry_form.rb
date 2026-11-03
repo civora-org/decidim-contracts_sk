@@ -90,6 +90,7 @@ module Decidim
 
         validate :validate_title
         validate :validate_values
+        validate :validate_counterparty_ico
 
         # Canonical values, split by sensitivity. Call only on a valid form.
         def stored_values
@@ -169,6 +170,19 @@ module Decidim
 
             add_error(field.key, field.label, code)
           end
+        end
+
+        # The counterparty's IČO becomes a public party identifier, so a value
+        # that is not eight digits is refused here rather than dropped later.
+        def validate_counterparty_ico
+          field = fields.find { |f| f.respond_to?(:party_part) && f.party_part == "ico" }
+          return unless field && input_fields.include?(field) && !@field_errors.key?(field.key)
+
+          add_error(field.key, field.label, :invalid) unless counterparty_ico_ok?(canonical(field))
+        end
+
+        def counterparty_ico_ok?(value)
+          value.blank? || ContractsSk::ICO_FORMAT.match?(Templates::PartyValues.normalize_ico(value))
         end
 
         def document_value(field, profile, internal_number)

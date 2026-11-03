@@ -70,6 +70,13 @@ module Decidim
         persisted? && entries.exists?
       end
 
+      # The fields that form the counterparty of the contracts written from
+      # this version, by part ("name", "ico", "address"); {} when the template
+      # declares none.
+      def counterparty_fields
+        fields.select(&:party_part).index_by(&:party_part)
+      end
+
       private
 
       def used_version_is_immutable
