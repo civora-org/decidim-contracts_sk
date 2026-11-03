@@ -44,16 +44,30 @@ module Decidim
       # person field makes it a company: name, IČO (8 digits) and address
       # are published as typed. Without it no counterparty party is created.
       #
+      # `reference_pattern: "{N}/{YYYY} Odd.X"` sets the template's internal
+      # number pattern. Without it a new version INHERITS the settings kept on
+      # the template row from the latest earlier version of the lineage
+      # (INHERITED_SETTINGS: today the reference pattern), so a re-import never
+      # silently changes the numbering. The sidecar wins when it sets one; an
+      # empty value (`reference_pattern: ""`) clears it back to the default.
+      # The numbering sequence itself (ReferenceCounter) is per organization and
+      # year, not per template version, so it continues across versions.
+      #
       # Output names fields and counts only, never any document content.
       module Importer
         class Error < ContractsSk::Error; end
 
-        SIDECAR_KEYS = %w[person required types labels groups group_labels counterparty].freeze
+        SIDECAR_KEYS = %w[person required types labels groups group_labels counterparty reference_pattern].freeze
+        # Settings on the template row (not in the docx or sidecar fields) that a
+        # new version carries over from the previous one.
+        INHERITED_SETTINGS = %w[reference_pattern].freeze
         FIELD_KEY = /\A[a-z][a-z0-9_]{0,63}\z/
         TYPE_VALUES = %w[text long_text date money number person].freeze
         DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-        Result = Struct.new(:template, :fields, :warnings, keyword_init: true)
+        # carried_over: setting => value inherited from the previous version;
+        # previous_version: the version they came from (nil on a first import).
+        Result = Struct.new(:template, :fields, :warnings, :carried_over, :previous_version, keyword_init: true)
 
         module_function
 
@@ -65,9 +79,10 @@ module Decidim
           check_sidecar!(sidecar, keys)
           definitions = keys.each_with_index.map { |key, position| definition(key, position, sidecar) }
 
-          meta = { organization: organization, lineage_key: lineage_key, name: name, path: path }
-          template = persist(meta, bytes, definitions)
-          Result.new(template: template, fields: template.fields.to_a, warnings: lint.warnings)
+          meta = { organization: organization, lineage_key: lineage_key, name: name, path: path, sidecar: sidecar }
+          template, previous, carried = persist(meta, bytes, definitions)
+          Result.new(template: template, fields: template.fields.to_a, warnings: lint.warnings,
+                     carried_over: carried, previous_version: previous&.version)
         end
 
         def read(path)
@@ -121,10 +136,20 @@ module Decidim
           raise Error, "the sidecar names fields the template does not have: #{missing.join(", ")}" if missing.any?
 
           check_group_labels!(sidecar)
+          check_reference_pattern!(sidecar)
           check_counterparty!(sidecar, keys)
 
           wrong = (sidecar["types"] || {}).values.map(&:to_s) - TYPE_VALUES
           raise Error, "unknown field types in the sidecar: #{wrong.join(", ")}" if wrong.any?
+        end
+
+        def check_reference_pattern!(sidecar)
+          return unless sidecar.key?("reference_pattern")
+
+          value = sidecar["reference_pattern"]
+          return if value.nil? || (value.is_a?(String) && !value.match?(/[[:cntrl:]]/))
+
+          raise Error, "reference_pattern must be text without control characters"
         end
 
         # counterparty maps a part (name, ico, address) to a field key. The
@@ -206,12 +231,30 @@ module Decidim
           "text"
         end
 
+        # Settings of the new version: the sidecar's where it sets them, else the
+        # previous version's. Returns [attributes, carried_over (the inherited
+        # ones that have a value)].
+        def inherited_settings(previous, sidecar)
+          settings = {}
+          carried = {}
+          INHERITED_SETTINGS.each do |setting|
+            if sidecar.key?(setting)
+              settings[setting.to_sym] = sidecar[setting].presence
+            elsif previous&.public_send(setting).present?
+              settings[setting.to_sym] = carried[setting] = previous.public_send(setting)
+            end
+          end
+          [settings, carried]
+        end
+
         def persist(meta, bytes, definitions)
           ActiveRecord::Base.transaction do
             siblings = ContractTemplate.where(organization: meta[:organization], lineage_key: meta[:lineage_key])
+            previous = siblings.order(:version).last
+            settings, carried = inherited_settings(previous, meta[:sidecar])
             template = ContractTemplate.create!(
               organization: meta[:organization], lineage_key: meta[:lineage_key], name: meta[:name],
-              status: "draft", version: siblings.maximum(:version).to_i + 1,
+              status: "draft", version: siblings.maximum(:version).to_i + 1, **settings,
               source_filename: File.basename(meta[:path]), source_checksum: Digest::SHA256.hexdigest(bytes)
             )
             template.file.attach(io: StringIO.new(DocxSanitizer.call(bytes)), filename: File.basename(meta[:path]),
@@ -220,7 +263,7 @@ module Decidim
             siblings.where(status: "active").where.not(id: template.id).update_all(status: "archived",
                                                                                    updated_at: Time.current)
             template.update!(status: "active")
-            template
+            [template, previous, carried]
           end
         rescue ActiveRecord::RecordInvalid => e
           raise Error, "could not save the template: #{e.record.errors.full_messages.join("; ")}"

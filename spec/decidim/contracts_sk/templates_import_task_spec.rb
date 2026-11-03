@@ -196,6 +196,107 @@ RSpec.describe "decidim_contracts_sk:templates:import", :db do
     Decidim::ContractsSk.pdf_converter = nil
   end
 
+  describe "settings of the template row on a re-import" do
+    it "carries the reference pattern over to the new version and says so" do
+      import
+      template_class.sole.update!(reference_pattern: "{N}/{YYYY} Odd.NsMaSB")
+
+      printed = import
+
+      expect(template_class.find_by(version: 2).reference_pattern).to eq("{N}/{YYYY} Odd.NsMaSB")
+      expect(printed).to include("carried over from v1: reference_pattern={N}/{YYYY} Odd.NsMaSB")
+    end
+
+    it "inherits from the latest version, even when it is not the active one" do
+      import
+      template_class.sole.update!(reference_pattern: "A-{N}")
+      import
+      template_class.find_by(version: 2).update!(reference_pattern: "B-{N}", status: "archived")
+      template_class.find_by(version: 1).update!(status: "active")
+
+      import
+
+      expect(template_class.find_by(version: 3).reference_pattern).to eq("B-{N}")
+    end
+
+    it "lets the sidecar's reference_pattern win over the previous version's" do
+      import
+      template_class.sole.update!(reference_pattern: "OLD-{N}")
+      File.write("#{path}.fields.yml", "reference_pattern: \"NEW-{N}/{YYYY}\"\n")
+
+      printed = import
+
+      expect(template_class.find_by(version: 2).reference_pattern).to eq("NEW-{N}/{YYYY}")
+      expect(printed).to include("carried over from v1: nothing to carry")
+    end
+
+    it "lets an empty sidecar value clear the pattern back to the default" do
+      import
+      template_class.sole.update!(reference_pattern: "OLD-{N}")
+      File.write("#{path}.fields.yml", "reference_pattern: \"\"\n")
+
+      import
+
+      expect(template_class.find_by(version: 2).reference_pattern).to be_nil
+    end
+
+    it "sets the pattern on a first import from the sidecar and prints no carry-over line" do
+      File.write("#{path}.fields.yml", "reference_pattern: \"ZM-{YYYY}-{N}\"\n")
+
+      printed = import
+
+      expect(template_class.sole.reference_pattern).to eq("ZM-{YYYY}-{N}")
+      expect(printed).not_to include("carried over")
+    end
+
+    it "leaves the pattern empty when no version ever had one" do
+      import
+      printed = import
+
+      expect(template_class.find_by(version: 2).reference_pattern).to be_nil
+      expect(printed).to include("carried over from v1: nothing to carry")
+    end
+
+    it "does not inherit from another organization's lineage of the same key" do
+      other = Decidim::Organization.create!
+      import(org_id: other.id.to_s)
+      template_class.where(organization: other).sole.update!(reference_pattern: "OTHER-{N}")
+
+      import
+
+      expect(template_class.where(organization: organization).sole.reference_pattern).to be_nil
+    end
+
+    it "continues the contract numbering across versions" do
+      Decidim::ContractsSk.pdf_converter = Decidim::ContractsSk::Templates::PdfConverter::Fake.new
+      Decidim::ContractsSk::ContractOrganizationProfile.create!(
+        organization: organization, header: { "official_name" => "Obec Vzorová", "ico" => "00000000" }
+      )
+      File.write("#{path}.fields.yml",
+                 "person: [kupujuci_meno, kupujuci_adresa]\nreference_pattern: \"{N}/{YYYY} X\"\n")
+      generate = lambda do
+        template = template_class.find_by!(status: "active")
+        form = Decidim::ContractsSk::Admin::TemplateEntryForm.new(
+          template: template, title: "Zmluva", values: TemplateGenerationHelpers.valid_params
+        )
+        Decidim::ContractsSk::Admin::GenerateFromTemplate.call(form, template: template, user: author,
+                                                                     organization: organization)[:ok].reference
+      end
+      year = Time.zone.today.year
+
+      import
+      first = generate.call
+      File.write("#{path}.fields.yml", "person: [kupujuci_meno, kupujuci_adresa]\n")
+      import
+      second = generate.call
+
+      expect(template_class.find_by(status: "active").version).to eq(2)
+      expect([first, second]).to eq(["1/#{year} X", "2/#{year} X"])
+    ensure
+      Decidim::ContractsSk.pdf_converter = nil
+    end
+  end
+
   describe "refusals" do
     def aborts_with(message, &block)
       expect(&block).to raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
@@ -289,6 +390,14 @@ RSpec.describe "decidim_contracts_sk:templates:import", :db do
         aborts_with(message) { import }
       end
       expect(template_class.count).to eq(0)
+    end
+
+    it "refuses a reference_pattern that is not plain text" do
+      File.write("#{path}.fields.yml", "reference_pattern: [a]\n")
+      aborts_with(/reference_pattern must be text/) { import }
+
+      File.write("#{path}.fields.yml", "reference_pattern: \"x\\x01y\"\n")
+      aborts_with(/reference_pattern must be text/) { import }
     end
 
     it "refuses an invalid lineage key without leaving a half-made template" do

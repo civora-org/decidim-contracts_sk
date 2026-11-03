@@ -113,9 +113,12 @@ types: { vymera: number }
 labels: { kupujuci_meno: "Kupujúci - meno" }
 groups: { kupujuci_meno: kupujuci }
 group_labels: { kupujuci: "Kupujúci" }   # heading of each group, diacritics allowed
+reference_pattern: "{N}/{YYYY} Odd.X"    # internal number pattern; "" = back to the default
 ```
 
 A second import with the same `lineage_key` creates version 2, activates it and archives the older active version. Existing contracts stay on the version they were written with.
+
+**What a re-import keeps.** Settings stored on the template row rather than in the Word file or the sidecar are carried over from the latest earlier version of the lineage (any status): today that is `reference_pattern`. The sidecar's `reference_pattern` wins when present (an empty value clears it). The task prints `carried over from v1: reference_pattern=...` (or `nothing to carry`), so a changed numbering is never silent. Field definitions (types, labels, groups, person, required, counterparty) are not inherited: they come from the Word file and the sidecar on every import, so keep the sidecar next to the file. The number sequence is not per version: `ReferenceCounter` is keyed per organization and year (`zmluvy:<year>`), so numbering continues across versions and across templates.
 
 ### Before the first use on a host
 
