@@ -124,6 +124,22 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       expect(html.css("input[name*='cislo_zmluvy'], input[name*='org_'], input[name*='suma_slovom']")).to be_empty
     end
 
+    it "labels the read-only header like the organization header screen and shows a header key once" do
+      template.fields.create!(key: "org_sidlo", field_type: "org_header", label: "Org sidlo", required: false,
+                              position: 90)
+      template.fields.create!(key: "org_adresa", field_type: "org_header", label: "Org adresa", required: false,
+                              position: 91)
+
+      get "/admin/contract_templates/#{template.id}/entry/new"
+
+      terms = html.css("dl.cs-admin-header-facts dt").map { |node| node.text.strip }
+      expect(terms).to include(I18n.t("decidim.contracts_sk.admin.template_entries.header.ico"),
+                               I18n.t("decidim.contracts_sk.admin.template_entries.header.official_name"))
+      expect(terms.count(I18n.t("decidim.contracts_sk.admin.template_entries.header.seat"))).to eq(1)
+      expect(terms).to eq(terms.uniq)
+      expect(html.at_css("dl.cs-admin-header-facts").text).not_to match(/Org (ico|nazov|sidlo|adresa)/i)
+    end
+
     it "headlines a group with the template's own group_label, else the locale map, else the humanized key" do
       template.fields.where(group_key: "kupujuci").update_all(group_label: "Kupujúci a spol.")
       template.fields.where(group_key: "terminy").update_all(group_key: "neznama_skupina")

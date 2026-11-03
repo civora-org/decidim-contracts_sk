@@ -48,6 +48,8 @@
       .cs-admin-choice--idle      an unselected option in a one-of chooser (outlined; the current one stays solid
                                   — the bundle renders button__primary red, which reads as danger)
       .cs-admin-templates         the templates table: left-aligned, actions in one wrapping row
+                                  Button links (a.button) in its cells keep the button's own white text and size: the bundle's
+                                  `.table-list td a:not(...)` rule would otherwise paint them blue on blue
       .cs-admin-template-name     a template's name in the list (heavier, long names wrap)
       .cs-admin-template-ico      the muted IČO beside the object party in the list
       .cs-admin-template-none     the muted "no party" placeholder in the list
@@ -77,11 +79,12 @@
   .table-list.cs-admin-templates th, .table-list.cs-admin-templates td { text-align: left; vertical-align: middle; }
   .cs-admin-templates .table-list__actions > div { display: flex; flex-wrap: wrap; gap: .5rem; }
   .cs-admin-templates .table-list__actions form { margin: 0; }
+  .table-list.cs-admin-templates td a.button:is(.button__secondary, .button__primary) { color: rgb(255, 255, 255); font-size: inherit; font-weight: inherit; }
   .cs-admin-choice--idle, .cs-admin-choice--idle:hover { background: #fff; color: rgb(21, 90, 191); box-shadow: inset 0 0 0 1px rgb(21, 90, 191); }
   .cs-admin-template-name { font-weight: 600; overflow-wrap: anywhere; }
   .cs-admin-template-ico, .cs-admin-template-none { color: #3e4c5c; font-variant-numeric: tabular-nums; }
   .cs-admin-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-  .cs-admin-fieldset legend { font-size: 1.125rem; font-weight: 700; margin: 0 0 .75rem; padding: 0; }
+  .cs-admin-fieldset legend { font-size: 1.125rem; font-weight: 700; margin: 0 0 .75rem; padding: 0 1rem; }
   .cs-admin-header-facts { margin-top: .75rem; }
   .cs-admin-words { margin: .375rem 0 0; min-height: 1.5em; font-size: .9375rem; color: #3e4c5c; overflow-wrap: anywhere; }
   .cs-admin-words strong { color: #111; }
