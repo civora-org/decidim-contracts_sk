@@ -1,5 +1,33 @@
 ## [Unreleased]
 
+## [1.10.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.9.0...v1.10.0) (2026-11-03)
+
+
+### Features
+
+* **crz:** effectiveness status and morning CRZ deadline digest ([2080ab9](https://github.com/civora-org/decidim-contracts_sk/commit/2080ab93666e435045e784f9a8fa89de259fa000))
+* **crz:** effectiveness status and morning CRZ deadline digest (civora-org/civora-platform[#202](https://github.com/civora-org/decidim-contracts_sk/issues/202)) ([8c77bf8](https://github.com/civora-org/decidim-contracts_sk/commit/8c77bf8f344e093bc6304309984ca50a81438624))
+* **templates:** docx linter, sanitizer, filler and redaction verifier (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([62a2f83](https://github.com/civora-org/decidim-contracts_sk/commit/62a2f83cf9e7522363805bed217d4bdc25227bce))
+* **templates:** new contract from template with Word/PDF and publication copy (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([#166](https://github.com/civora-org/decidim-contracts_sk/issues/166)) ([8ed1e7d](https://github.com/civora-org/decidim-contracts_sk/commit/8ed1e7d0a5250e277f32b051d6ae5dc30020de52))
+* **templates:** PDF converter seam and document generator ([2357c99](https://github.com/civora-org/decidim-contracts_sk/commit/2357c99e9197dc7ddad41f7b7305fdcd2eebd5cf))
+* **templates:** PDF converter seam and document generator (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([f989fca](https://github.com/civora-org/decidim-contracts_sk/commit/f989fca7941c238410831aab7c99d06a10f793a6))
+* **templates:** schema and models for contract templates (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([4671734](https://github.com/civora-org/decidim-contracts_sk/commit/467173441ed1d6a75bd593cfc6428cb7ab16d29b))
+* **templates:** schema and models for contract templates (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([073b13f](https://github.com/civora-org/decidim-contracts_sk/commit/073b13f30dfca5b53f6f21466352c58cd339b678))
+* **templates:** Slovak amount-in-words helper (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([ff57903](https://github.com/civora-org/decidim-contracts_sk/commit/ff57903b6df9e87e46e6745dfcc86fead436f479))
+* **templates:** Slovak amount-in-words helper (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([2075224](https://github.com/civora-org/decidim-contracts_sk/commit/2075224cef72e99a7f6eec3f44102efba211201e))
+* **ui:** town accent token, Civora credit and Dvere digest header (civora-org/civora-platform[#205](https://github.com/civora-org/decidim-contracts_sk/issues/205)) ([dbf2d3f](https://github.com/civora-org/decidim-contracts_sk/commit/dbf2d3f5e12009dda11f22006b1fbf7996161c2e))
+* **ui:** town accent, Civora credit and Dvere digest header ([964e837](https://github.com/civora-org/decidim-contracts_sk/commit/964e837e52e419d3351d4dbf00b13d0aafe62469))
+
+
+### Bug Fixes
+
+* **public:** keep the list/statistics switch in one place ([22c44e7](https://github.com/civora-org/decidim-contracts_sk/commit/22c44e743681fc438dd4eb38fc48557086832174))
+* **public:** keep the list/statistics switch in one place ([a356fa5](https://github.com/civora-org/decidim-contracts_sk/commit/a356fa56a632f4bf91d1b3e812847e2b4bea909a))
+* **templates:** blank LibreOffice XMP metadata and pin zip entry times ([f0f2a79](https://github.com/civora-org/decidim-contracts_sk/commit/f0f2a7991f5e1c93344cd7ed976f6f9f3a3853f7))
+* **templates:** blank LibreOffice XMP metadata and pin zip entry times (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([c73b3eb](https://github.com/civora-org/decidim-contracts_sk/commit/c73b3eb70ca69924197744f3350b75079a94bb5e))
+* **templates:** ignore per-word redaction needles explained by public content (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([#168](https://github.com/civora-org/decidim-contracts_sk/issues/168)) ([743bb00](https://github.com/civora-org/decidim-contracts_sk/commit/743bb00f04dba36da48a5540c0110d70fb937974))
+* **templates:** template admin visuals (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([#169](https://github.com/civora-org/decidim-contracts_sk/issues/169)) ([dc08f60](https://github.com/civora-org/decidim-contracts_sk/commit/dc08f60acb643d87a5541254b7830e8f2266a90e))
+
 ## [1.9.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.8.1...v1.9.0) (2026-10-13)
 
 
