@@ -30,6 +30,13 @@ module Decidim
       # - each word of a multi-word value that has at least 4 normalised
       #   characters and is not a common word (street, town, state words).
       #
+      # A per-word needle is dropped when that word also occurs in +public_texts+
+      # (strings the caller knows are public: the template's own text, the
+      # non-personal values such as the town header), because a town word in a
+      # buyer's address is not a leak when the town name is printed anyway. The
+      # whole-value and rodné číslo needles are never exempted. Without
+      # +public_texts+ nothing is exempted (fail closed).
+      #
       # Searched: every XML part of the docx (body, headers, footers,
       # footnotes, endnotes, comments, docProps, customXml, relationships; text
       # and attribute values, paragraph by paragraph so a value split across
@@ -62,10 +69,10 @@ module Decidim
 
         module_function
 
-        def call(docx_bytes:, personal_values:, pdf_bytes: nil)
+        def call(docx_bytes:, personal_values:, pdf_bytes: nil, public_texts: [])
           errors = []
           leaks = []
-          candidates = build_candidates(personal_values, errors)
+          candidates = build_candidates(personal_values, errors, public_words(public_texts))
           return Result.new(leaks: leaks, errors: errors) if errors.any?
 
           scan_docx(docx_bytes, candidates, leaks, errors)
@@ -82,8 +89,30 @@ module Decidim
           text.to_s.scrub.unicode_normalize(:nfkd).gsub(/\p{Mn}|\p{Cf}|[[:space:]]/, "").downcase
         end
 
+        # Normalised words of the given public strings.
+        def public_words(public_texts)
+          Array(public_texts).flat_map { |t| split_words(t.to_s).map { |w| normalize(w) } }.to_set
+        end
+
+        def split_words(text)
+          text.split(/[[:space:],;]+/).map { |w| w.gsub(/\A[[:punct:]]+|[[:punct:]]+\z/, "") }
+        end
+
+        # Paragraph and element texts of the docx body, headers and footers: the
+        # words a template prints by itself. Unreadable input yields nothing,
+        # so nothing is exempted.
+        def docx_public_texts(docx_bytes)
+          Package.read(docx_bytes).flat_map do |name, data|
+            next [] unless name.match?(%r{\Aword/(document|header\d*|footer\d*)\.xml\z})
+
+            xml_segments(Xml.parse(data))
+          end
+        rescue StandardError
+          []
+        end
+
         # [[value_index, kind, normalised_needle], ...]
-        def build_candidates(personal_values, errors)
+        def build_candidates(personal_values, errors, public_words = Set.new)
           values = Array(personal_values).map(&:to_s).reject { |v| v.strip.empty? }
           if values.empty?
             errors << Finding.new(code: :no_personal_values,
@@ -93,7 +122,7 @@ module Decidim
           values.each_with_index.flat_map do |value, index|
             needles = [[:value, normalize(value)]]
             needles.concat(rodne_cislo_variants(value))
-            needles.concat(word_needles(value))
+            needles.concat(word_needles(value, public_words))
             needles.uniq.reject { |_, needle| needle.empty? }.map { |kind, needle| [index, kind, needle] }
           end
         end
@@ -105,12 +134,12 @@ module Decidim
           [[:value, "#{match[1]}#{match[2]}"], [:value, "#{match[1]}/#{match[2]}"]]
         end
 
-        def word_needles(value)
-          words = value.split(/[[:space:],;]+/).map { |w| w.gsub(/\A[[:punct:]]+|[[:punct:]]+\z/, "") }
+        def word_needles(value, public_words = Set.new)
+          words = split_words(value)
           return [] if words.length < 2
 
           words.map { |w| normalize(w) }
-               .select { |w| w.length >= MIN_WORD && !COMMON_WORDS.include?(w) }
+               .select { |w| w.length >= MIN_WORD && !COMMON_WORDS.include?(w) && !public_words.include?(w) }
                .map { |w| [:word, w] }
         end
 

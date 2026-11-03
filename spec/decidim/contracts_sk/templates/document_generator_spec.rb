@@ -91,6 +91,26 @@ RSpec.describe Decidim::ContractsSk::Templates::DocumentGenerator do
     expect { generate(personal_keys: []) }.to raise_error(ArgumentError, /personal_keys/)
   end
 
+  describe "a buyer living in the town of the municipality" do
+    let(:town_values) do
+      values.merge(org_adresa: "Námestie Vzorové 1, 017 01 Považská Bystrica",
+                   kupujuci_adresa: "Ukážková 1, 017 01 Považská Bystrica")
+    end
+
+    it "generates, because the town words are printed by the public header anyway" do
+      result = generate(values: town_values)
+      expect(docx_text(result[:publication_docx])).to include("Považská Bystrica")
+      expect(docx_text(result[:publication_docx])).not_to include("Ukážková", "Ukážková 1, 017 01")
+      expect(pdf_text(result[:publication_pdf])).not_to include("Ukazkova")
+      expect(docx_text(result[:internal_docx])).to include("Ukážková")
+    end
+
+    it "still fails when the whole address leaks through a public field" do
+      leaky = town_values.merge(predmet: "Oprava pred domom Ukážková 1, 017 01 Považská Bystrica")
+      expect { generate(values: leaky) }.to raise_error(described_class::RedactionFailed)
+    end
+  end
+
   describe "failing closed" do
     it "raises RedactionFailed when a personal value leaks through a non-personal field" do
       leaky = values.merge(predmet: "Dodávka pre Ján Testovací")

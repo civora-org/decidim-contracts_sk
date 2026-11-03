@@ -182,3 +182,12 @@ The older `:template` subject (contract skeletons that prefill the new-contract 
 
    The task prints the fields it created with their types. Importing the same `lineage_key` again creates the next version; contracts already written keep their version.
 8. **Try it with invented data** (section "Walkthrough" in the manual scenarios), open both PDFs and check that the publication copy has no personal value.
+
+### Redaction check: words shared with public content
+
+The redaction check looks for each personal value as a whole, for the rodné číslo (with and without the slash) and, for multi-word values such as an address, for each longer word on its own. A buyer living in the municipality shares words with the public copy ("Považská Bystrica" in the header, in the katastrálne územie, in the template's own text), and those words alone are not a leak. So a per-word needle is dropped when the same word (compared without diacritics and case) appears in the template's own text (body, headers, footers) or in a non-personal value that went into the document (the `org_*` header fields, the katastrálne územie and every other field not marked personal).
+
+- The whole-value needle and the rodné číslo needles are never exempted: the full address in the publication copy still fails, even when each of its words is public.
+- A word that only a personal field holds (the street, the surname) stays a needle.
+- Known trade-off: a personal word typed into a non-personal field counts as public content for the per-word check; the whole value is still caught.
+- `RedactionVerifier.call(..., public_texts: [...])` takes the public strings; without it nothing is exempted (fail closed). `DocumentGenerator` passes the template text and the non-personal values.

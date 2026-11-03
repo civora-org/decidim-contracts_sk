@@ -28,6 +28,38 @@ RSpec.describe Decidim::ContractsSk::Templates::RedactionVerifier do
 
   def clean_core = DocxFixtures.default_core.sub("<dc:creator>Fiktívny Autor</dc:creator>", "<dc:creator></dc:creator>")
 
+  describe "words explained by public content" do
+    let(:town_address) { "Ukážková 1, 017 01 Považská Bystrica" }
+
+    it "ignores a word that the public texts print" do
+      result = verify(docx(para("Obec Považská Bystrica, #{hidden}"), core: clean_core), [town_address],
+                      public_texts: ["Obec Považská Bystrica"])
+      expect(result).to be_ok
+    end
+
+    it "does not exempt anything when public_texts is not passed (fail closed)" do
+      result = verify(docx(para("Obec Považská Bystrica, #{hidden}"), core: clean_core), [town_address])
+      expect(result.leaks).to include(have_attributes(kind: :word, value_index: 0))
+    end
+
+    it "still catches a personal word that only a leak prints" do
+      result = verify(docx(para("Obec Považská Bystrica, bytom Ukážková"), core: clean_core), [town_address],
+                      public_texts: ["Obec Považská Bystrica"])
+      expect(result.leaks).to include(have_attributes(kind: :word, value_index: 0))
+    end
+
+    it "still catches the whole value when every one of its words is public" do
+      result = verify(docx(para("Ukážková 1, 017 01 Považská Bystrica"), core: clean_core), [town_address],
+                      public_texts: ["Ukážková Považská Bystrica"])
+      expect(result.leaks).to include(have_attributes(kind: :value, value_index: 0))
+    end
+
+    it "leaves the rodné číslo needles strict" do
+      result = verify(docx(para("000000/0000"), core: clean_core), [rc], public_texts: ["000000/0000", "000000 0000"])
+      expect(result.leaks).to include(have_attributes(kind: :value, value_index: 0))
+    end
+  end
+
   describe "a clean document" do
     it "passes" do
       result = verify(docx(para("Kupujúci: #{hidden}"), core: clean_core))

@@ -33,6 +33,22 @@ module Decidim
           collect(values, keys, false, [])
         end
 
+        # The non-blank String leaves NOT under personal keys (the org header,
+        # the land registry area, ...): public content that was printed.
+        def public_values(values, keys_list)
+          keys = Array(keys_list).to_set(&:to_s)
+          gather_public(values, keys, false, [])
+        end
+
+        def gather_public(value, keys, personal, found)
+          case value
+          when Hash then value.each { |k, v| gather_public(v, keys, personal || keys.include?(k.to_s), found) }
+          when Array then value.each { |v| gather_public(v, keys, personal, found) }
+          else found << value.to_s if !personal && value.is_a?(String) && !blank?(value)
+          end
+          found
+        end
+
         def collect(value, keys, personal, found)
           case value
           when Hash then value.each { |k, v| collect(v, keys, personal || keys.include?(k.to_s), found) }
