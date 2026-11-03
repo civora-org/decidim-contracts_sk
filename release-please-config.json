@@ -3,7 +3,10 @@
     ".": {
       "release-type": "ruby",
       "version-file": "lib/decidim/contracts_sk/version.rb",
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        "README.md"
+      ]
     }
   }
 }
