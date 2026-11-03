@@ -96,7 +96,7 @@ module Decidim
         # The municipality header (civora-org/civora-platform#211, P6) is
         # reserved for the same people, so it rides the same gate.
         register_org_admin_item(:contracts_sk_organization_profile, "admin_organization_profile",
-                                :admin_organization_profile_path, "building-line", POSITION + 0.02)
+                                :admin_organization_profile_path, "government-line", POSITION + 0.02)
       end
 
       def self.register_org_admin_item(name, label_key, path_helper, icon, position)
