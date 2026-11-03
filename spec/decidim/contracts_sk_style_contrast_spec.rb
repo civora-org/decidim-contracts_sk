@@ -53,4 +53,49 @@ RSpec.describe "engine style partials: colour contrast" do # rubocop:disable RSp
       end
     end
   end
+
+  # The theme tokens (`--cs-*`) read the host's Civora theme and fall back to the
+  # engine's own values. Both sides must stay readable: the fallbacks on white
+  # and the old tint, the Civora values on the Civora grounds (host
+  # _foundation.scss: paper, paper-light, cream; secondary ink is its
+  # --civora-gray-2-rgb 74 70 96).
+  describe "theme tokens" do
+    public_styles = File.expand_path("../../app/views/decidim/contracts_sk/shared/_public_styles.html.erb", __dir__)
+    civora_text = { ink: "#2b2a40", secondary_ink: "#4a4660", muted: "#5b576c" }.freeze
+    civora_grounds = { paper: "#fbf6ee", raised: "#fdfaf6", cream: "#f3e9db" }.freeze
+    fallback_text = %w[--cs-ink --cs-text --cs-ink-2 --cs-gray-2 --cs-muted].freeze
+
+    def token_fallback(path, name)
+      css_of(path)[/#{Regexp.escape(name)}:\s*(?:var\(--civora-[\w-]+,\s*|rgb\(var\(--civora-[\w-]+,\s*)([^)]+)\)/, 1]
+    end
+
+    def to_hex(value)
+      return hex_of(value) if hex_of(value)
+
+      "##{value.split.map { |n| n.to_i.to_s(16).rjust(2, "0") }.join}"
+    end
+
+    fallback_text.each do |name|
+      it "keeps the fallback of #{name} at 4.5:1 on white and the #f1f4f8 tint" do
+        hex = to_hex(token_fallback(public_styles, name))
+        expect([ratio(hex, "#ffffff"), ratio(hex, "#f1f4f8")].min).to be >= 4.5
+      end
+    end
+
+    civora_text.each do |tname, text|
+      civora_grounds.each do |gname, ground|
+        it "keeps Civora #{tname} at 4.5:1 on #{gname}" do
+          expect(ratio(text, ground)).to be >= 4.5
+        end
+      end
+    end
+
+    it "gives every surface and ink token a fallback (a host without the theme looks as before)" do
+      names = %w[ink text ink-2 gray-2 muted crz rule rule-soft edge raised tint panel select radius radius-soft pill]
+      tokens = css_of(public_styles).scan(/(--cs-(?:#{names.join("|")})):\s*([^;]+);/)
+      without_fallback = tokens.reject { |_, v| v.include?("var(--civora-") && v.match?(/,\s*[^)]+\)/) }
+
+      expect([tokens.size, without_fallback]).to eq([16, []])
+    end
+  end
 end

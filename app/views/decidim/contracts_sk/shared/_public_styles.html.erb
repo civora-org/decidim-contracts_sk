@@ -30,9 +30,36 @@
      --primary is unset, so every use site's var(--cs-accent-dark, #232c63)
      falls back to Dvere deep indigo. */
   :root { --cs-accent: var(--primary, #34408a); --cs-accent-dark: color-mix(in srgb, var(--primary) 70%, #000); }
+
+  /* Theme tokens. Every surface, ink, rule, shape and type value of the pages
+     is read from one of these. Each takes the host's Civora theme
+     (--civora-*, civora-host app/packs/stylesheets/decidim/civora/_foundation.scss)
+     when the host ships it and otherwise the engine's own value, so a host
+     without the theme looks exactly as before. The town's colours are not
+     here: --cs-accent and --secondary stay the town's. The fallbacks are the
+     values the pages shipped with; they, and the Civora values, are held to
+     WCAG AA by spec/decidim/contracts_sk_style_contrast_spec.rb. */
+  :root {
+    --cs-ink: var(--civora-ink, #0e1b2e);
+    --cs-text: var(--civora-ink, #020203);
+    --cs-ink-2: rgb(var(--civora-gray-2-rgb, 68 84 106));
+    --cs-gray-2: rgb(var(--civora-gray-2-rgb, 62 76 92));
+    --cs-muted: var(--civora-muted, #5b576c);
+    --cs-crz: var(--civora-muted, #75869b);
+    --cs-rule: var(--civora-rule, #d5dce6);
+    --cs-rule-soft: var(--civora-rule, #e1e5ef);
+    --cs-edge: var(--civora-edge, #d5dce6);
+    --cs-raised: var(--civora-paper-light, #fff);
+    --cs-tint: var(--civora-cream, #f1f4f8);
+    --cs-panel: var(--civora-cream, #fafbfc);
+    --cs-select: var(--civora-clay-tint, #bcd7f2);
+    --cs-radius: var(--civora-radius, 0px);
+    --cs-radius-soft: var(--civora-radius, .25rem);
+    --cs-pill: var(--civora-radius-pill, 0px);
+  }
   .cs-page { padding-top: 2.5rem; }
   .cs-page .title-decorator { margin-bottom: 2.25rem; overflow-wrap: anywhere; }
-  .cs-lead { margin: 0; max-width: 42rem; font-size: 1.125rem; line-height: 1.6; color: #3e4c5c; }
+  .cs-lead { margin: 0; max-width: 42rem; font-size: 1.125rem; line-height: 1.6; color: var(--cs-gray-2); }
 
   /* The register's shared header and view switch (catalogue / statistics),
      set in the civora.sk register: Source Sans, ink #0e1b2e, one accent
@@ -40,20 +67,20 @@
      view-transition-name: between the two pages (both opt in below) the
      browser slides it from tab to tab and cross-fades the content. No JS;
      browsers without cross-document View Transitions just navigate. */
-  .cs-switch { display: flex; gap: clamp(1.5rem, 4vw, 2.5rem); margin: 0 0 clamp(2rem, 4vw, 3rem); border-bottom: 1px solid #d5dce6; }
-  .cs-switch .cs-switch__link { position: relative; display: inline-flex; align-items: center; gap: .5rem; padding: .875rem 0 .75rem; font-size: 1.0625rem; font-weight: 600; line-height: 1.2; color: #44546a; text-decoration: none; transition: color .15s ease; }
+  .cs-switch { display: flex; gap: clamp(1.5rem, 4vw, 2.5rem); margin: 0 0 clamp(2rem, 4vw, 3rem); border-bottom: 1px solid var(--cs-rule); }
+  .cs-switch .cs-switch__link { position: relative; display: inline-flex; align-items: center; gap: .5rem; padding: .875rem 0 .75rem; font-size: 1.0625rem; font-weight: 600; line-height: 1.2; color: var(--cs-ink-2); text-decoration: none; transition: color .15s ease; }
   .cs-switch .cs-switch__link:hover { text-decoration: none; }
-  .cs-switch .cs-switch__link:hover { color: #0e1b2e; }
-  .cs-switch .cs-switch__link:hover::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #d5dce6; }
-  .cs-switch .cs-switch__link[aria-current="page"] { color: #0e1b2e; }
+  .cs-switch .cs-switch__link:hover { color: var(--cs-ink); }
+  .cs-switch .cs-switch__link:hover::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--cs-rule); }
+  .cs-switch .cs-switch__link[aria-current="page"] { color: var(--cs-ink); }
   .cs-switch .cs-switch__link[aria-current="page"]:hover::after { content: none; }
   .cs-switch .cs-switch__link:focus-visible { outline: 3px solid var(--cs-accent); outline-offset: 3px; border-radius: 2px; }
   .cs-switch__icon { flex: none; width: 1.125rem; height: 1.125rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
   .cs-switch .cs-switch__link[aria-current="page"] .cs-switch__icon { color: var(--cs-accent); }
   .cs-switch__ink { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--cs-accent); view-transition-name: cs-switch-ink; }
   .cs-head { padding-bottom: clamp(2rem, 4vw, 3rem); }
-  .cs-head__title { margin: 0; font-size: clamp(2.25rem, 1.4rem + 3vw, 3.5rem); font-weight: 700; line-height: 1.08; letter-spacing: -.02em; color: #0e1b2e; text-wrap: balance; overflow-wrap: anywhere; view-transition-name: cs-head-title; }
-  .cs-head__lead { max-width: 44ch; margin: 1.25rem 0 0; font-size: 1.25rem; line-height: 1.5; color: #44546a; text-wrap: pretty; }
+  .cs-head__title { margin: 0; font-family: var(--civora-font-heading, inherit); font-size: clamp(2.25rem, 1.4rem + 3vw, 3.5rem); font-weight: 700; line-height: 1.08; letter-spacing: -.02em; color: var(--cs-ink); text-wrap: balance; overflow-wrap: anywhere; view-transition-name: cs-head-title; }
+  .cs-head__lead { max-width: 44ch; margin: 1.25rem 0 0; font-size: 1.25rem; line-height: 1.5; color: var(--cs-ink-2); text-wrap: pretty; }
 
   @view-transition { navigation: auto; }
   ::view-transition-group(cs-switch-ink) { animation-duration: .42s; animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
@@ -70,10 +97,10 @@
   /* Catalogue header: the compact title and the Zoznam | Štatistiky switch share
      one line (wrapping on phones), parted from the content by one hairline. The
      switch's ink line sits on that hairline. */
-  .cs-reg { color: #0e1b2e; font-variant-numeric: lining-nums; }
+  .cs-reg { color: var(--cs-ink); font-variant-numeric: lining-nums; }
   .cs-page.cs-reg--top { padding-top: 1.5rem; }
-  .cs-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0 2rem; margin: 0 0 1.25rem; border-bottom: 1px solid #d5dce6; }
-  .cs-top__title { margin: 0; padding-bottom: .5rem; font-size: clamp(1.375rem, 1.1rem + .9vw, 1.75rem); font-weight: 700; line-height: 1.2; letter-spacing: -.015em; color: #0e1b2e; overflow-wrap: anywhere; }
+  .cs-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0 2rem; margin: 0 0 1.25rem; border-bottom: 1px solid var(--cs-rule); }
+  .cs-top__title { margin: 0; font-family: var(--civora-font-heading, inherit); padding-bottom: .5rem; font-size: clamp(1.375rem, 1.1rem + .9vw, 1.75rem); font-weight: 700; line-height: 1.2; letter-spacing: -.015em; color: var(--cs-ink); overflow-wrap: anywhere; }
   .cs-top .cs-switch { margin: 0; border-bottom: 0; }
 
   /* Search and filter chips (#116): one GET form. The chips are native
@@ -84,23 +111,23 @@
   .cs-find__row { display: flex; gap: .5rem; }
   .cs-find__row input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; margin: 0; }
   .cs-find__row .button { flex: none; justify-content: center; white-space: nowrap; }
-  .cs-find ::placeholder { color: #44546a; opacity: 1; }
+  .cs-find ::placeholder { color: var(--cs-ink-2); opacity: 1; }
   .cs-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
   .cs-chip { position: relative; max-width: 100%; }
   .cs-chip__summary, .cs-menu__summary { display: inline-flex; align-items: center; gap: .5rem; max-width: 100%; list-style: none; cursor: pointer; }
   .cs-chip__summary::-webkit-details-marker, .cs-menu__summary::-webkit-details-marker { display: none; }
   .cs-chip__summary::after, .cs-menu__summary::after { content: ""; flex: none; width: .4375rem; height: .4375rem; margin: -.1875rem 0 0 .125rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
   .cs-chip[open] > .cs-chip__summary::after, .cs-menu[open] > .cs-menu__summary::after { margin-top: .1875rem; transform: rotate(-135deg); }
-  .cs-chip__summary { padding: .375rem .75rem; border: 1px solid #d5dce6; background: #fff; font-size: .9375rem; font-weight: 600; line-height: 1.3; color: #0e1b2e; }
+  .cs-chip__summary { padding: .375rem .75rem; border: 1px solid var(--cs-edge); border-radius: var(--cs-pill); background: var(--cs-raised); font-size: .9375rem; font-weight: 600; line-height: 1.3; color: var(--cs-ink); }
   .cs-chip__summary span { overflow-wrap: anywhere; }
-  .cs-chip__summary:hover, .cs-chip[open] > .cs-chip__summary { border-color: #0e1b2e; }
-  .cs-chip--on > .cs-chip__summary { border-color: var(--cs-accent); background: #f1f4f8; color: var(--cs-accent-dark, #232c63); }
+  .cs-chip__summary:hover, .cs-chip[open] > .cs-chip__summary { border-color: var(--cs-ink); }
+  .cs-chip--on > .cs-chip__summary { border-color: var(--cs-accent); background: var(--cs-tint); color: var(--cs-accent-dark, #232c63); }
   .cs-reg summary:focus-visible { outline: 3px solid var(--cs-accent); outline-offset: 3px; border-radius: 2px; }
-  .cs-chip__panel { position: absolute; top: calc(100% + .25rem); left: 0; z-index: 5; width: max-content; min-width: 16rem; max-width: min(22rem, calc(100vw - 2rem)); padding: 1rem; background: #fff; border: 1px solid #d5dce6; border-top: 2px solid #0e1b2e; }
+  .cs-chip__panel { position: absolute; top: calc(100% + .25rem); left: 0; z-index: 5; width: max-content; min-width: 16rem; max-width: min(22rem, calc(100vw - 2rem)); padding: 1rem; background: var(--cs-raised); border: 1px solid var(--cs-rule); border-top: 2px solid var(--cs-ink); border-radius: var(--cs-radius); }
   .cs-chip:nth-last-child(-n+2) > .cs-chip__panel { left: auto; right: 0; }
-  .cs-chip__panel label { display: block; margin-bottom: .25rem; font-size: .875rem; font-weight: 600; color: #44546a; }
+  .cs-chip__panel label { display: block; margin-bottom: .25rem; font-size: .875rem; font-weight: 600; color: var(--cs-ink-2); }
   .cs-chip__panel input, .cs-chip__panel select { width: 100%; min-width: 0; margin-bottom: 0; }
-  .cs-chip__panel .cs-small { margin-top: .25rem; color: #44546a; }
+  .cs-chip__panel .cs-small { margin-top: .25rem; color: var(--cs-ink-2); }
   .cs-chip__pair { display: grid; min-width: 0; margin: 0; padding: 0; border: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
   .cs-chip__pair > div { min-width: 0; }
   .cs-chip__apply { margin-top: .75rem; }
@@ -108,7 +135,7 @@
   /* Applied filters: each a link that drops that one param. */
   .cs-active { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: .75rem; }
   .cs-active__list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
-  .cs-reg .cs-tag { display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .5rem .25rem .625rem; background: #f1f4f8; font-size: .9375rem; line-height: 1.3; color: #0e1b2e; text-decoration: none; overflow-wrap: anywhere; }
+  .cs-reg .cs-tag { display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .5rem .25rem .625rem; border-radius: var(--cs-pill); background: var(--cs-tint); font-size: .9375rem; line-height: 1.3; color: var(--cs-ink); text-decoration: none; overflow-wrap: anywhere; }
   .cs-reg .cs-tag:hover { color: var(--cs-accent-dark, #232c63); text-decoration: underline; text-underline-offset: .18em; }
   .cs-tag__x { flex: none; width: .75rem; height: .75rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   .cs-reg .cs-active__clear { font-size: .9375rem; font-weight: 600; color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
@@ -117,22 +144,22 @@
   /* Results toolbar: one line above the list. Left, what the filtered set
      holds; right, sort / download / follow. Opens on the register's 2px ink
      rule. Menus are <details> of plain links. */
-  .cs-bar { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .375rem 1.5rem; margin-top: 1.25rem; padding: .625rem 0; border-top: 2px solid #0e1b2e; }
+  .cs-bar { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .375rem 1.5rem; margin-top: 1.25rem; padding: .625rem 0; border-top: 2px solid var(--cs-ink); }
   .cs-bar__sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: .125rem .5rem; margin: 0; font-size: 1.0625rem; font-variant-numeric: tabular-nums lining-nums; }
-  .cs-bar__figure { font-weight: 700; color: #0e1b2e; }
-  .cs-bar__note { font-size: .9375rem; color: #44546a; }
-  .cs-bar__sum > * + *::before { content: "·"; content: "·" / ""; margin-right: .5rem; font-weight: 400; color: #44546a; }
+  .cs-bar__figure { font-weight: 700; color: var(--cs-ink); }
+  .cs-bar__note { font-size: .9375rem; color: var(--cs-ink-2); }
+  .cs-bar__sum > * + *::before { content: "·"; content: "·" / ""; margin-right: .5rem; font-weight: 400; color: var(--cs-ink-2); }
   .cs-bar__tools { display: flex; flex-wrap: wrap; align-items: center; gap: .125rem 1.25rem; }
   .cs-menu { position: relative; }
   .cs-menu__summary { padding: .25rem 0; font-size: .9375rem; font-weight: 600; color: var(--cs-accent); }
   .cs-menu__summary:hover { color: var(--cs-accent-dark, #232c63); }
-  .cs-menu__panel { position: absolute; top: calc(100% + .25rem); right: 0; z-index: 5; width: max-content; min-width: 13rem; max-width: min(20rem, calc(100vw - 2rem)); margin: 0; padding: .5rem 1rem .75rem; list-style: none; background: #fff; border: 1px solid #d5dce6; border-top: 2px solid #0e1b2e; box-shadow: 0 .5rem 1.5rem rgba(14, 27, 46, .12); }
+  .cs-menu__panel { position: absolute; top: calc(100% + .25rem); right: 0; z-index: 5; width: max-content; min-width: 13rem; max-width: min(20rem, calc(100vw - 2rem)); margin: 0; padding: .5rem 1rem .75rem; list-style: none; background: var(--cs-raised); border: 1px solid var(--cs-rule); border-top: 2px solid var(--cs-ink); border-radius: var(--cs-radius); box-shadow: 0 .5rem 1.5rem rgba(14, 27, 46, .12); }
   .cs-menu__panel ul { margin: 0; padding: 0; list-style: none; }
-  .cs-menu__panel li + li { border-top: 1px solid #d5dce6; }
+  .cs-menu__panel li + li { border-top: 1px solid var(--cs-rule); }
   .cs-menu__panel a { display: block; padding: .5rem 0; font-size: .9375rem; font-weight: 600; color: var(--cs-accent); text-decoration: none; }
   .cs-menu__panel a:hover { color: var(--cs-accent-dark, #232c63); text-decoration: underline; text-underline-offset: .18em; }
-  .cs-menu__panel a[aria-current] { color: #0e1b2e; font-weight: 700; text-decoration: none; cursor: default; }
-  .cs-menu__panel .cs-small { margin-top: .5rem; color: #44546a; }
+  .cs-menu__panel a[aria-current] { color: var(--cs-ink); font-weight: 700; text-decoration: none; cursor: default; }
+  .cs-menu__panel .cs-small { margin-top: .5rem; color: var(--cs-ink-2); }
   .cs-reg .cs-bar__follow { display: inline-flex; align-items: center; gap: .375rem; padding: .25rem 0; font-size: .9375rem; font-weight: 600; color: var(--cs-accent); text-decoration: none; }
   .cs-reg .cs-bar__follow:hover { color: var(--cs-accent-dark, #232c63); text-decoration: underline; text-underline-offset: .18em; }
   .cs-bar__icon { flex: none; width: 1.125rem; height: 1.125rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -140,21 +167,21 @@
   .cs-filters-active__list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
   .cs-filters-active .label { white-space: normal; overflow-wrap: anywhere; }
 
-  .cs-opendata__title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; color: #020203; }
+  .cs-opendata__title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; color: var(--cs-text); }
 
   /* E-mail alerts pages (#121): the subscribe form, the confirmation, unsubscribe
      and message pages, all reusing the shared .cs-head. */
   .cs-alerts { margin: 0 0 1.5rem; }
-  .cs-alerts__title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; color: #020203; }
+  .cs-alerts__title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; color: var(--cs-text); }
   .cs-alerts .cs-small { margin: 0 0 .75rem; max-width: 42rem; }
   .cs-alerts__form { max-width: 42rem; margin-top: .75rem; }
   .cs-alerts__field { margin-bottom: .75rem; }
-  .cs-alerts__field label { display: block; margin-bottom: .5rem; font-weight: 600; color: #020203; }
+  .cs-alerts__field label { display: block; margin-bottom: .5rem; font-weight: 600; color: var(--cs-text); }
   .cs-alerts__field input { width: 100%; min-width: 0; }
   .cs-alerts__error { margin: .5rem 0 0; font-weight: 600; color: #a1161b; }
   .cs-alerts-page .cs-head { padding-bottom: 1.5rem; }
   .cs-alerts-page .cs-filters-active__list { margin-bottom: 1rem; }
-  .cs-alerts__search { margin: 0 0 1rem; padding: .75rem 0; border-top: 2px solid #0e1b2e; border-bottom: 1px solid #d5dce6; font-size: 1.0625rem; font-weight: 600; color: #0e1b2e; overflow-wrap: anywhere; }
+  .cs-alerts__search { margin: 0 0 1rem; padding: .75rem 0; border-top: 2px solid var(--cs-ink); border-bottom: 1px solid var(--cs-rule); font-size: 1.0625rem; font-weight: 600; color: var(--cs-ink); overflow-wrap: anywhere; }
 
   /* Supplier page (#117): summary facts above the register. */
   .cs-supplier { margin: 0 0 2rem; }
@@ -171,13 +198,13 @@
      width from --cs-bar). Tokens are scoped to .cs-yb so the rest of the
      catalogue keeps Decidim's palette. */
   .cs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-  .cs-yb { --yb-ink: #0e1b2e; --yb-muted: #44546a; --yb-blue: var(--cs-accent); --yb-blue-dark: var(--cs-accent-dark, #232c63); --yb-rule: #d5dce6; --yb-tint: #f1f4f8; --yb-crz: #75869b; color: var(--yb-ink); font-variant-numeric: lining-nums; }
-  .cs-yb ::selection { background: #bcd7f2; color: var(--yb-ink); }
+  .cs-yb { --yb-ink: var(--cs-ink); --yb-muted: var(--cs-ink-2); --yb-blue: var(--cs-accent); --yb-blue-dark: var(--cs-accent-dark, #232c63); --yb-rule: var(--cs-rule); --yb-tint: var(--cs-tint); --yb-crz: var(--cs-crz); color: var(--yb-ink); font-variant-numeric: lining-nums; }
+  .cs-yb ::selection { background: var(--cs-select); color: var(--yb-ink); }
   .cs-yb a { color: var(--yb-blue); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
   .cs-yb a:hover { color: var(--yb-blue-dark); text-decoration-thickness: 2px; }
   .cs-yb a:focus-visible { outline: 3px solid var(--yb-blue); outline-offset: 3px; border-radius: 2px; }
   .cs-yb__head { padding-bottom: clamp(2rem, 4vw, 3rem); }
-  .cs-yb__title { margin: 0; font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem); font-weight: 700; line-height: 1.12; letter-spacing: -.02em; color: var(--yb-ink); text-wrap: balance; overflow-wrap: anywhere; }
+  .cs-yb__title { margin: 0; font-family: var(--civora-font-heading, inherit); font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem); font-weight: 700; line-height: 1.12; letter-spacing: -.02em; color: var(--yb-ink); text-wrap: balance; overflow-wrap: anywhere; }
   .cs-yb__lead { max-width: 44ch; margin: 1rem 0 0; font-size: 1.25rem; line-height: 1.5; color: var(--yb-muted); text-wrap: pretty; }
   .cs-yb__asof { margin: .75rem 0 0; font-size: .9375rem; color: var(--yb-muted); }
 
@@ -192,7 +219,7 @@
   .cs-yb__aside { display: block; margin: .25rem 0 0; font-size: .875rem; font-weight: 400; line-height: 1.4; color: var(--yb-muted); }
 
   .cs-yb__tab { margin: 0 0 clamp(3rem, 6vw, 4.5rem); }
-  .cs-yb__tab-title { margin: 0; padding-top: 1rem; border-top: 2px solid var(--yb-ink); font-size: clamp(1.375rem, 1.1rem + .9vw, 1.75rem); font-weight: 700; line-height: 1.2; letter-spacing: -.015em; color: var(--yb-ink); text-wrap: balance; }
+  .cs-yb__tab-title { margin: 0; font-family: var(--civora-font-heading, inherit); padding-top: 1rem; border-top: 2px solid var(--yb-ink); font-size: clamp(1.375rem, 1.1rem + .9vw, 1.75rem); font-weight: 700; line-height: 1.2; letter-spacing: -.015em; color: var(--yb-ink); text-wrap: balance; }
   .cs-yb__no { margin-right: .5em; color: var(--yb-blue); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cs-yb__unit { max-width: 72ch; margin: .5rem 0 1.25rem; font-size: 1rem; color: var(--yb-muted); }
   .cs-yb__table { width: 100%; border-collapse: collapse; font-size: 1.0625rem; font-variant-numeric: tabular-nums lining-nums; }
@@ -227,27 +254,27 @@
   .cs-yb__note { max-width: 72ch; margin: 0; padding-top: 1.25rem; border-top: 1px solid var(--yb-rule); font-size: .9375rem; line-height: 1.55; color: var(--yb-muted); }
   .cs-yb__empty { margin: 0; padding: 2.5rem 0; border-top: 2px solid var(--yb-ink); border-bottom: 1px solid var(--yb-rule); font-size: 1.125rem; color: var(--yb-muted); }
 
-  .cs-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; }
-  .cs-list > li + li { border-top: 1px solid #e1e5ef; }
+  .cs-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--cs-rule-soft); border-bottom: 1px solid var(--cs-rule-soft); }
+  .cs-list > li + li { border-top: 1px solid var(--cs-rule-soft); }
 
   /* The register (catalogue, supplier page, in-space list): hairline-separated
      two-line rows. Line 1: date | title | amount; line 2, muted: contractors,
      reference, CRZ provenance. About 68px a row. */
-  .cs-reg .cs-list { border-color: #d5dce6; }
-  .cs-reg .cs-list > li + li { border-color: #d5dce6; }
+  .cs-reg .cs-list { border-color: var(--cs-rule); }
+  .cs-reg .cs-list > li + li { border-color: var(--cs-rule); }
   .cs-row { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr) auto; grid-template-areas: "date title amount" ". meta meta"; column-gap: 1rem; row-gap: .125rem; align-items: baseline; padding: .75rem 0; }
-  .cs-row__date { grid-area: date; font-size: .9375rem; color: #44546a; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+  .cs-row__date { grid-area: date; font-size: .9375rem; color: var(--cs-ink-2); font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
   .cs-row__date--meta { display: none; }
-  .cs-row__title { grid-area: title; min-width: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.35; color: #0e1b2e; text-decoration: none; overflow-wrap: anywhere; }
+  .cs-row__title { grid-area: title; min-width: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.35; color: var(--cs-ink); text-decoration: none; overflow-wrap: anywhere; }
   .cs-row__title:hover { color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; }
   .cs-row__amount { grid-area: amount; font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; }
-  .cs-row__meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 0 .5rem; min-width: 0; margin: 0; font-size: .875rem; line-height: 1.45; color: #44546a; font-variant-numeric: tabular-nums lining-nums; }
+  .cs-row__meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 0 .5rem; min-width: 0; margin: 0; font-size: .875rem; line-height: 1.45; color: var(--cs-ink-2); font-variant-numeric: tabular-nums lining-nums; }
   .cs-row__meta > *:not(:last-child)::after { content: "·"; content: "·" / ""; margin-left: .5rem; }
   .cs-row__parties { min-width: 0; overflow-wrap: anywhere; }
   .cs-row__src { white-space: nowrap; }
   .cs-row .cs-row__supplier { color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
   .cs-row .cs-row__supplier:hover { color: var(--cs-accent-dark, #232c63); text-decoration-thickness: 2px; }
-  .cs-reg .cs-empty { padding: 1.5rem 0; border-top: 2px solid #0e1b2e; border-bottom: 1px solid #d5dce6; font-size: 1.0625rem; color: #44546a; }
+  .cs-reg .cs-empty { padding: 1.5rem 0; border-top: 2px solid var(--cs-ink); border-bottom: 1px solid var(--cs-rule); font-size: 1.0625rem; color: var(--cs-ink-2); }
   .cs-reg .cs-empty .cs-bar__follow { margin-left: 1rem; }
   .cs-reg .cs-empty .cs-link { margin-left: .5rem; color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
 
@@ -256,39 +283,39 @@
   .cs-reg .cs-pager a, .cs-pager__current, .cs-pager__gap { display: inline-flex; align-items: center; justify-content: center; min-width: 2.5rem; min-height: 2.5rem; padding: 0 .5rem; }
   .cs-reg .cs-pager a { font-weight: 600; color: var(--cs-accent); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
   .cs-reg .cs-pager a:hover { color: var(--cs-accent-dark, #232c63); text-decoration-thickness: 2px; }
-  .cs-pager__current { font-weight: 700; color: #0e1b2e; border-bottom: 3px solid #0e1b2e; }
-  .cs-pager__gap { color: #44546a; }
+  .cs-pager__current { font-weight: 700; color: var(--cs-ink); border-bottom: 3px solid var(--cs-ink); }
+  .cs-pager__gap { color: var(--cs-ink-2); }
 
-  .cs-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin-top: .25rem; font-size: .875rem; color: #3e4c5c; }
-  .cs-meta strong { font-weight: 600; color: #020203; }
+  .cs-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin-top: .25rem; font-size: .875rem; color: var(--cs-gray-2); }
+  .cs-meta strong { font-weight: 600; color: var(--cs-text); }
   /* The separator belongs to the item it introduces, so a wrapped line
      starts with it instead of ending on a dangling dot; "/ ''" keeps it
      out of the accessible name where supported. */
-  .cs-meta > * + *::before { content: "·"; content: "·" / ""; margin-right: .75rem; color: #3e4c5c; }
+  .cs-meta > * + *::before { content: "·"; content: "·" / ""; margin-right: .75rem; color: var(--cs-gray-2); }
   .cs-meta > .label::before { content: none; }
-  .cs-empty { margin: 0; padding: 2.5rem 0; border-top: 1px solid #e1e5ef; border-bottom: 1px solid #e1e5ef; font-size: 1.125rem; color: #3e4c5c; }
+  .cs-empty { margin: 0; padding: 2.5rem 0; border-top: 1px solid var(--cs-rule-soft); border-bottom: 1px solid var(--cs-rule-soft); font-size: 1.125rem; color: var(--cs-gray-2); }
   .cs-empty--inline { padding: 0; border: 0; font-size: 1rem; }
 
   .cs-detail { display: grid; gap: 2.5rem; margin-top: 2.5rem; }
   .cs-main { display: flex; flex-direction: column; gap: 3rem; min-width: 0; }
   .cs-main .decorator { margin-bottom: 2rem; }
 
-  .cs-facts { padding: 1.5rem; border: 1px solid #e1e5ef; border-radius: .25rem; background: #fafbfc; }
-  .cs-facts__title { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: #020203; }
+  .cs-facts { padding: 1.5rem; border: 1px solid var(--cs-rule-soft); border-radius: var(--cs-radius-soft); background: var(--cs-panel); }
+  .cs-facts__title { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: var(--cs-text); }
   .cs-dl { display: grid; gap: 1rem; margin: 0; }
-  .cs-dl dt { font-size: .875rem; color: #3e4c5c; }
-  .cs-dl dd { margin: .125rem 0 0; color: #020203; overflow-wrap: anywhere; }
+  .cs-dl dt { font-size: .875rem; color: var(--cs-gray-2); }
+  .cs-dl dd { margin: .125rem 0 0; color: var(--cs-text); overflow-wrap: anywhere; }
   .cs-dl__figure { font-size: 1.5rem; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
   .cs-dl a { color: var(--secondary); text-decoration: underline; text-underline-offset: .2em; word-break: break-all; }
 
-  .cs-subject__label { margin: 0; font-size: .875rem; font-weight: 400; color: #3e4c5c; }
-  .cs-subject__text { margin: .25rem 0 0; font-size: 1.25rem; line-height: 1.45; color: #020203; overflow-wrap: anywhere; }
+  .cs-subject__label { margin: 0; font-size: .875rem; font-weight: 400; color: var(--cs-gray-2); }
+  .cs-subject__text { margin: .25rem 0 0; font-size: 1.25rem; line-height: 1.45; color: var(--cs-text); overflow-wrap: anywhere; }
 
-  .cs-notice { display: flex; gap: .75rem; padding: 1.25rem 1.5rem; border: 1px solid #e1e5ef; border-radius: .25rem; }
-  .cs-notice > svg, .cs-doc > svg { flex: none; width: 1.25rem; height: 1.25rem; margin-top: .125rem; fill: currentColor; color: #3e4c5c; }
+  .cs-notice { display: flex; gap: .75rem; padding: 1.25rem 1.5rem; border: 1px solid var(--cs-rule-soft); border-radius: var(--cs-radius-soft); }
+  .cs-notice > svg, .cs-doc > svg { flex: none; width: 1.25rem; height: 1.25rem; margin-top: .125rem; fill: currentColor; color: var(--cs-gray-2); }
   .cs-notice__body { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
-  .cs-notice__title { margin: 0; font-size: 1rem; font-weight: 600; color: #020203; }
-  .cs-small { margin: 0; font-size: .875rem; line-height: 1.55; color: #3e4c5c; }
+  .cs-notice__title { margin: 0; font-size: 1rem; font-weight: 600; color: var(--cs-text); }
+  .cs-small { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--cs-gray-2); }
   /* CRZ licence attribution (#198): one quiet muted line under the register; links keep the palette link colour. */
   .cs-attrib { max-width: 60ch; }
   .cs-page > .cs-attrib { margin-top: 1.5rem; }
@@ -296,9 +323,9 @@
   .cs-notice .label { white-space: normal; }
 
   .cs-party { display: grid; gap: .5rem; padding: 1rem 0; }
-  .cs-party__name { margin: 0; font-weight: 600; color: #020203; overflow-wrap: anywhere; }
-  .cs-party__side { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; font-size: .875rem; color: #3e4c5c; }
-  .cs-party__side span.cs-num { color: #020203; font-variant-numeric: tabular-nums; }
+  .cs-party__name { margin: 0; font-weight: 600; color: var(--cs-text); overflow-wrap: anywhere; }
+  .cs-party__side { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; font-size: .875rem; color: var(--cs-gray-2); }
+  .cs-party__side span.cs-num { color: var(--cs-text); font-variant-numeric: tabular-nums; }
 
   .cs-doc { display: flex; align-items: flex-start; gap: .75rem; padding: 1rem 0; }
   .cs-doc__body { min-width: 0; }
@@ -315,8 +342,8 @@
 
   .cs-version { padding: 1.25rem 0; }
   .cs-version--current { padding: 1rem 0; }
-  .cs-version__head { margin: 0; font-weight: 600; color: #020203; }
-  .cs-version__head span { font-weight: 400; color: #3e4c5c; }
+  .cs-version__head { margin: 0; font-weight: 600; color: var(--cs-text); }
+  .cs-version__head span { font-weight: 400; color: var(--cs-gray-2); }
   .cs-version .cs-dl { margin-top: .75rem; column-gap: 2rem; row-gap: .75rem; }
 
   @media (min-width: 640px) {
@@ -373,10 +400,14 @@
   }
   /* The Civora credit (shared/_civora_credit): a muted signature, never a
      header. 16px door mark, .5rem clear space to the word, 2.5rem above. */
-  .cs-credit { margin: 2.5rem 0 0; padding-top: 1rem; border-top: 1px solid #d5dce6; font-size: .875rem; line-height: 1.4; color: #5b576c; }
-  .cs-credit__link { display: inline-flex; align-items: center; gap: .5rem; color: #5b576c; text-decoration: none; }
+  .cs-credit { margin: 2.5rem 0 0; padding-top: 1rem; border-top: 1px solid var(--cs-rule); font-size: .875rem; line-height: 1.4; color: var(--cs-muted); }
+  .cs-credit__link { display: inline-flex; align-items: center; gap: .5rem; color: var(--cs-muted); text-decoration: none; }
   .cs-credit__link:hover { color: var(--cs-accent-dark, #232c63); text-decoration: underline; text-underline-offset: .18em; }
   .cs-credit__mark { flex: none; width: 16px; height: 16px; }
+  /* One signature per page: a host that already signs for Civora (its footer
+     renders .civora-sign) or that marks a wrapper [data-cs-credit="off"] shows
+     no second credit here. Without :has() support the credit stays. */
+  body:has(.civora-sign, [data-cs-credit="off"]) .cs-credit { display: none; }
   @media print {
     .cs-credit { display: none; }
     .cs-find, .cs-bar__tools, .cs-pager, .cs-switch { display: none; }

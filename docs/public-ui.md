@@ -20,6 +20,25 @@ The stylesheet is delivered through Decidim's `:css_content` slot, which the cor
 
 **Accent and credit ("the town leads, Civora signs").** The register's accent (links, focus rings, active tab, bars) is `--cs-accent`: the host organisation's primary colour (Decidim emits `--primary` on `:root` from `OrganizationHelper#organization_colors`, only for colours the organisation has set, verified against decidim-core 0.31.7), falling back to Dvere indigo `#34408a`. `--cs-accent-dark` (hover) is 30% toward black and is left invalid when `--primary` is unset, so each use `var(--cs-accent-dark, #232c63)` falls back to Dvere deep indigo. A town that sets a primary colour owns its contrast on white (4.5:1). Civora signs with one muted credit, `shared/_civora_credit` (16px door mark, link to civora.sk), at the foot of the catalogue, the contract page and the admin home; it is hidden in print. The CRZ deadline digest e-mail is Civora's own mail and wears Dvere (indigo on warm paper, table layout, no images).
 
+**Host theme tokens (the Civora public theme).** Every surface, ink, rule, shape and type value in `_public_styles` is read from a `--cs-*` token defined once on `:root`; each token takes the host's `--civora-*` custom property when the host ships the Civora theme (civora-host `_foundation.scss`) and otherwise the engine's own value:
+
+| Token | Civora source | Fallback (today's look) |
+|---|---|---|
+| `--cs-ink`, `--cs-text` | `--civora-ink` (#2b2a40) | #0e1b2e, #020203 |
+| `--cs-ink-2`, `--cs-gray-2` | `--civora-gray-2-rgb` (secondary ink #4a4660) | #44546a, #3e4c5c |
+| `--cs-muted`, `--cs-crz` | `--civora-muted` (#5b576c) | #5b576c, #75869b |
+| `--cs-rule`, `--cs-rule-soft` | `--civora-rule` (#e3d8c8) | #d5dce6, #e1e5ef |
+| `--cs-edge` (outlined controls) | `--civora-edge` (#89868e, 3:1) | #d5dce6 |
+| `--cs-raised` (chips, popovers) | `--civora-paper-light` | #fff |
+| `--cs-tint`, `--cs-panel` (on-chips, tags, bars, facts panel) | `--civora-cream` | #f1f4f8, #fafbfc |
+| `--cs-select` | `--civora-clay-tint` | #bcd7f2 |
+| `--cs-radius`, `--cs-radius-soft`, `--cs-pill` | `--civora-radius` (10px), `--civora-radius-pill` | 0, .25rem, 0 |
+| headings (`font-family`) | `--civora-font-heading` | inherit |
+
+On the Civora host the chips and applied-filter tags become pills, popovers, the facts panel and the notice take the 10px radius and warm paper and cream surfaces, rules turn warm, and headings use the display face. Body text and fonts come from the host body. The town accent (`--cs-accent`, `--secondary`) is untouched. A host without the theme is pixel-identical to before (checked by rendering both stylesheets with the `--civora-*` properties reset to `initial`). Add a new colour or radius as a token with a fallback, never as a bare literal; the contrast spec holds both the fallbacks and the Civora values to AA. The one deliberate exception: the popover `box-shadow` stays (a floating menu needs separation from the list under it).
+
+**One signature per page.** The host footer of the Civora theme already carries a Civora signature (`.civora-sign`), so the engine's own credit (`shared/_civora_credit`) is hidden by `body:has(.civora-sign, [data-cs-credit="off"]) .cs-credit` in `_public_styles`. Hosts that sign themselves need no setting; a host that wants no engine credit can put `data-cs-credit="off"` on any element of its layout (for example `<body>`). Browsers without `:has()` keep the credit. The admin home keeps its credit: the admin has no host signature.
+
 Colours are Decidim's palette: the organisation's `var(--secondary)` for links, and the core gray-2 `#3e4c5c` (secondary text), gray-3 `#e1e5ef` (rules) and background-2 `#fafbfc` (panels).
 
 If you add a Decidim component class, check it exists in the live bundle first:
