@@ -233,3 +233,23 @@ The redaction check looks for each personal value as a whole, for the rodné č�
 - A word that only a personal field holds (the street, the surname) stays a needle.
 - Known trade-off: a personal word typed into a non-personal field counts as public content for the per-word check; the whole value is still caught.
 - `RedactionVerifier.call(..., public_texts: [...])` takes the public strings; without it nothing is exempted (fail closed). `DocumentGenerator` passes the template text and the non-personal values.
+
+### Redaction check: whole words, not substrings
+
+Matching is on word boundaries (civora-org/civora-platform#211). A short first name is a substring of public words: "Jana" sits inside the mayor's surname "Janas", "Eva" inside "Evanjelická", "Peter" inside "Petržalka". The verifier first compares text without whitespace, diacritics and case (so a value wrapped over lines or letter-spaced is still found), then accepts a hit only when
+
+- the character before it is not a letter or digit, and
+- the letters right after it (up to the next space or punctuation) are either none or a Slovak case ending: `a e i o u y m om ou ov ia ie iu im ym ej ho mu mi ovi ova ovu ove ovo ach ami eho emu ich ych ovej ovou ovym ovych ovia`.
+
+| Value | Publication text | Result |
+|-------|------------------|--------|
+| Jana | Starosta Peter Janas | no leak |
+| Eva | Evanjelická ulica | no leak |
+| Jana | Kupujúca: Jana, bytom | leak |
+| Novák | Novákovi, Novákom, Nováka | leak (inflection) |
+| Novák | Novákstav | no leak |
+| Ján Testovací | Ján⏎Testovací or J á n Testovací | leak |
+
+Digit needles (the rodné číslo with and without the slash, any purely numeric value) stay substring matches: a number inside a longer digit run is still a leak (fail closed).
+
+Limits: a personal word that is also an inflected form of a public word ("Jana" against a public "Jana") cannot be told apart and counts as a leak (single-word values are not exempted by `public_texts`); a needle glued to a letter before it ("dňaJana") and a hyphenated line break ("Testo-vací") are not matched; the ending list covers common noun and adjectival endings, not every irregular form.
