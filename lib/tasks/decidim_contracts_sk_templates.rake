@@ -10,7 +10,8 @@
 # are guessed from the merge field names; an optional sidecar
 # `<path>.fields.yml` marks person (personal data) fields, labels, groups and
 # required fields. A re-import with the same lineage_key creates the next
-# version and archives the older active one. See docs/contract-templates.md.
+# version, archives the older active one and carries the previous version's
+# template settings (reference_pattern) over unless the sidecar sets them. See docs/contract-templates.md.
 #
 # Output lists field names and counts only, never any document content.
 
@@ -35,6 +36,10 @@ namespace :decidim_contracts_sk do
       template = result.template
       puts "template #{template.id} (#{template.lineage_key} v#{template.version}) " \
            "is active with #{result.fields.size} fields"
+      if result.previous_version
+        carried = result.carried_over.map { |setting, value| "#{setting}=#{value}" }
+        puts "carried over from v#{result.previous_version}: #{carried.presence&.join(", ") || "nothing to carry"}"
+      end
       result.fields.each do |field|
         flags = [("personal" if field.personal_data), ("required" if field.required)].compact
         puts ["  #{field.key}: #{field.field_type}", flags.map { |f| "(#{f})" }.join(" ").presence].compact.join(" ")
