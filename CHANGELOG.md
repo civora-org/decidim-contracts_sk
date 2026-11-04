@@ -1,5 +1,19 @@
 ## [Unreleased]
 
+## [1.13.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.12.0...v1.13.0) (2026-11-04)
+
+
+### Features
+
+* **admin:** contract workspace with one next step ([69291d7](https://github.com/civora-org/decidim-contracts_sk/commit/69291d7699f76d2e8eec4849fe1859e6173ba6e1))
+* **admin:** contract workspace with one next step ([e4f145c](https://github.com/civora-org/decidim-contracts_sk/commit/e4f145cf55847a0b28d93ff17b1b88a6ed00a863))
+
+
+### Bug Fixes
+
+* **templates:** new template versions keep the previous version's settings ([2d04fe8](https://github.com/civora-org/decidim-contracts_sk/commit/2d04fe83098a29a692f66d3eb8181d6255460823))
+* **templates:** new template versions keep the previous version's settings (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([3ec532c](https://github.com/civora-org/decidim-contracts_sk/commit/3ec532c960241da9b1fb46db7645c67e7e072f4f))
+
 ## [1.12.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.11.0...v1.12.0) (2026-11-03)
 
 
