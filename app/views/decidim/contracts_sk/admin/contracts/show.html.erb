@@ -1,137 +1,214 @@
 <%= render "decidim/contracts_sk/shared/admin_styles" %>
-<%# The contract page (read-only): the one place a person sees a record whole.
-    Top to bottom: what it is, where it is in the process and whose turn it
-    is, the next step as buttons (the same per-action permissions as the
-    index and edit pages; four-eyes is already applied by
-    transition_events_for), the facts, and the rarely needed things
-    (notes, history, parties, amendments) collapsed. The reviewer's only way
-    to read what they are about to approve. Decidim admin classes plus
-    .cs-* engine rules only (docs/public-ui.md). %>
+<%# The contract page (read-only): the one place a person sees a record whole,
+    laid out as a desk (docs/public-ui.md, "Pracovný stôl"). Header (what it
+    is, its state, its CRZ deadline), the step bar, then two columns: the
+    main column holds the next-step card first (one primary action, the
+    prerequisites as an inline checklist, the quiet steps beside it) and the
+    record's documents, facts, parties and attachments; the rail holds the
+    CRZ deadline, effectiveness, the last five history events and the notes.
+    Single column below 1100px. Same per-action permissions as the index and
+    edit pages (four-eyes already applied by transition_events_for). The
+    reviewer's only way to read what they are about to approve. Decidim admin
+    classes plus .cs-* engine rules only (docs/public-ui.md). %>
 <% scope = "decidim.contracts_sk.admin.show" %>
 <% redaction_open = allowed_to?(:confirm_redaction, :contract, contract: @contract) && @contract.redaction_confirmed_at.blank? %>
+<% deadline_status = @contract.crz_deadline_status(today: Date.current) %>
+<% effectiveness_line = crz_effectiveness_line(@contract) %>
+<% has_next_card = next_step_controls?(@contract) %>
 
-<div class="card">
-  <div class="item_show__header">
-    <h1 class="item_show__header-title" id="cs-contract-title"><%= @contract.title %></h1>
+<div class="cs-ws">
+  <header class="cs-ws__head">
+    <div class="cs-ws__title">
+      <h1 class="cs-ws__h1" id="cs-contract-title"><%= @contract.title %></h1>
+      <p class="cs-show__meta">
+        <span class="cs-show__ref"><%= @contract.reference %></span>
+        <span class="label cs-chip cs-chip--<%= @contract.state %>"><%= t(@contract.state, scope: "decidim.contracts_sk.contract_states") %></span>
+        <% deadline_badge = crz_deadline_badge(@contract, today: Date.current) %>
+        <% if deadline_badge %>
+          <span class="cs-today__ref"><%= t("decidim.contracts_sk.admin.contracts.deadline.badge.label") %></span>
+          <%= deadline_badge %>
+        <% end %>
+      </p>
+    </div>
     <div class="cs-admin-actions">
       <%= link_to t("decidim.contracts_sk.admin.contracts.back_to_index"), admin_contracts_path,
-                  class: "button button__sm button__secondary" %>
+                  class: "button button__sm button__secondary cs-admin-choice--idle" %>
       <% if allowed_to?(:update, :contract, contract: @contract) %>
         <%= link_to t("#{scope}.edit"), edit_admin_contract_path(@contract),
-                    class: "button button__sm button__secondary" %>
+                    class: "button button__sm button__secondary cs-admin-choice--idle" %>
       <% end %>
     </div>
+  </header>
+
+  <div class="cs-ws__steps">
+    <%# With the next-step card, the card carries the "whose turn" sentence. %>
+    <%= render "progress", contract: @contract, yours: show_actions_available?(@contract), sentence: !has_next_card %>
   </div>
 
-  <div class="card-section">
-    <p class="cs-show__meta">
-      <span class="cs-show__ref"><%= @contract.reference %></span>
-      <span class="label"><%= t(@contract.state, scope: "decidim.contracts_sk.contract_states") %></span>
-      <% deadline_badge = crz_deadline_badge(@contract, today: Date.current) %>
-      <% if deadline_badge %>
-        <span class="cs-today__ref"><%= t("decidim.contracts_sk.admin.contracts.deadline.badge.label") %></span>
-        <%= deadline_badge %>
+  <div class="cs-ws__grid">
+    <div class="cs-ws__main">
+      <%# The reviewer's reason on a returned or rejected record. %>
+      <% if @contract.review_reason.present? && Decidim::ContractsSk::ContractLifecycle::DECISION_STATES.include?(@contract.state&.to_sym) %>
+        <section class="cs-panel" aria-labelledby="cs-decision-title">
+          <h2 class="cs-panel__title" id="cs-decision-title"><%= t("decidim.contracts_sk.admin.contracts.review_decision.heading") %></h2>
+          <%= render "review_decision_body", contract: @contract %>
+        </section>
       <% end %>
-    </p>
-    <%= render "progress", contract: @contract, yours: show_actions_available?(@contract) %>
-  </div>
 
-  <%# The reviewer's reason on a returned or rejected record. %>
-  <% if @contract.review_reason.present? && Decidim::ContractsSk::ContractLifecycle::DECISION_STATES.include?(@contract.state&.to_sym) %>
-    <div class="card-section">
-      <h2 class="h4"><%= t("decidim.contracts_sk.admin.contracts.review_decision.heading") %></h2>
-      <%= render "review_decision_body", contract: @contract %>
+      <%= render "next_step", contract: @contract, lead: true, yours: show_actions_available?(@contract) %>
+
+      <%# Redaction confirmation that does not gate a step of its own: a panel. %>
+      <% unless has_next_card && transition_events_for(@contract).include?(:publish) %>
+        <% if redaction_open %>
+          <section class="cs-panel" id="cs-redaction" aria-labelledby="cs-redaction-title">
+            <h2 class="cs-panel__title" id="cs-redaction-title"><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></h2>
+            <%= render "redaction_confirmation_body", contract: @contract %>
+          </section>
+        <% end %>
+      <% end %>
+
+      <%= render "template_documents" %>
+
+      <section class="cs-panel" aria-labelledby="cs-facts-title">
+        <h2 class="cs-panel__title" id="cs-facts-title"><%= t("#{scope}.facts") %></h2>
+        <dl class="cs-show__facts">
+          <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.amount") %></dt>
+            <dd><%= @contract.amount.present? ? format_amount(@contract.amount, @contract.currency) : t("#{scope}.missing") %></dd></div>
+          <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
+            <dd><%= @contract.signed_on.present? ? format_date(@contract.signed_on) : t("#{scope}.missing") %></dd></div>
+          <% if @contract.effective_from.present? %>
+            <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.effective_from") %></dt><dd><%= format_date(@contract.effective_from) %></dd></div>
+          <% end %>
+          <% if @contract.agreed_effective_on.present? %>
+            <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.admin.contracts.effectiveness.agreed") %></dt><dd><%= format_date(@contract.agreed_effective_on) %></dd></div>
+          <% end %>
+          <% if @contract.subject_matter.present? %>
+            <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.contract.subject_matter") %></dt><dd><%= @contract.subject_matter %></dd></div>
+          <% end %>
+          <% if @contract.redaction_confirmed_at.present? %>
+            <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></dt>
+              <dd><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.confirmed_on", confirmed_at: format_date(@contract.redaction_confirmed_at)) %></dd></div>
+          <% end %>
+        </dl>
+      </section>
+
+      <section class="cs-panel" id="cs-parties" aria-labelledby="cs-parties-title">
+        <div class="cs-panel__head">
+          <h2 class="cs-panel__title" id="cs-parties-title"><%= t("#{scope}.parties") %></h2>
+          <%= link_to admin_contract_parties_path(@contract), class: "button button__sm button__secondary cs-admin-choice--idle" do %>
+            <%= t("#{scope}.manage") %><span class="cs-admin-sr-only"> – <%= t("#{scope}.parties") %></span>
+          <% end %>
+        </div>
+        <% if @parties.any? %>
+          <ul class="cs-show__list cs-parties">
+            <% @parties.each do |party| %>
+              <li class="cs-parties__party">
+                <span class="cs-parties__name"><%= party.name %></span>
+                <span class="cs-today__ref"><%= [t("decidim.contracts_sk.contract.party.#{party.role}", default: party.role), (party.ico.present? ? "IČO #{party.ico}" : nil)].compact.join(" · ") %></span>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="cs-panel__empty"><%= t("decidim.contracts_sk.admin.parties.index.empty") %></p>
+        <% end %>
+      </section>
+
+      <section class="cs-panel" id="cs-attachments" aria-labelledby="cs-attachments-title">
+        <div class="cs-panel__head">
+          <h2 class="cs-panel__title" id="cs-attachments-title"><%= t("#{scope}.documents") %> · <%= t("#{scope}.amendments") %></h2>
+          <%= link_to admin_contract_amendments_path(@contract), class: "button button__sm button__secondary cs-admin-choice--idle" do %>
+            <%= t("#{scope}.manage") %><span class="cs-admin-sr-only"> – <%= t("#{scope}.amendments") %></span>
+          <% end %>
+        </div>
+        <% if @documents.any? %>
+          <ul class="cs-show__list cs-parties">
+            <% @documents.each do |document| %>
+              <li class="cs-parties__party">
+                <span class="cs-parties__name"><%= document.title %></span>
+                <span class="cs-today__ref"><%= document.file_name %></span>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+        <% if @contract.amendments.any? %>
+          <ul class="cs-show__list cs-parties">
+            <% @contract.amendments.order(:version).each do |amendment| %>
+              <li class="cs-parties__party">
+                <span class="cs-parties__name"><%= t("#{scope}.amendment_label", version: amendment.version) %></span>
+                <span class="cs-today__ref"><%= t(amendment.state, scope: "decidim.contracts_sk.admin.amendments.states", default: amendment.state) %></span>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+        <% if @documents.empty? && @contract.amendments.empty? %>
+          <p class="cs-panel__empty"><%= t("decidim.contracts_sk.admin.amendments.index.empty") %></p>
+        <% end %>
+      </section>
     </div>
-  <% end %>
 
-  <%# When the redaction confirmation is what stands between the person and
-      "Zverejniť v katalógu", it comes first: do this, then the button
-      below unlocks. Otherwise it follows the next step. %>
-  <% redaction_blocks_publish = redaction_open && transition_events_for(@contract).include?(:publish) %>
-  <% redaction_card = capture do %>
-    <% if redaction_open %>
-      <div class="card-section" id="cs-redaction">
-        <h2 class="h4"><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></h2>
-        <%= render "redaction_confirmation_body", contract: @contract %>
-      </div>
-    <% end %>
-  <% end %>
-  <%= redaction_card if redaction_blocks_publish %>
-  <%= render "next_step", contract: @contract %>
-  <%= redaction_card unless redaction_blocks_publish %>
-
-  <%= render "template_documents" %>
-
-  <div class="card-section">
-    <h2 class="h4"><%= t("#{scope}.facts") %></h2>
-    <dl class="cs-show__facts">
-      <% deadline_line = crz_deadline_line(@contract) %>
-      <% if deadline_line %>
-        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></dt><dd><%= deadline_line %></dd></div>
+    <aside class="cs-ws__rail" aria-label="<%= t("#{scope}.history") %>">
+      <% if deadline_status != :untracked %>
+        <section class="cs-rail" aria-labelledby="cs-rail-deadline">
+          <h2 class="cs-rail__title" id="cs-rail-deadline"><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></h2>
+          <dl class="cs-rail__dl">
+            <div class="cs-show__fact">
+              <dt class="cs-admin-sr-only"><%= t("decidim.contracts_sk.admin.contracts.index.headers.crz_deadline") %></dt>
+              <% if deadline_status == :unknown %>
+                <dd><%= crz_deadline_line(@contract) %></dd>
+              <% else %>
+                <dd>
+                  <span class="cs-rail__big"><%= format_date(@contract.crz_deadline) %></span>
+                  <span class="cs-rail__days"><%= deadline_badge %></span>
+                </dd>
+              <% end %>
+            </div>
+          </dl>
+          <p class="cs-rail__hint"><%= t("decidim.contracts_sk.admin.contracts.deadline.hint") %></p>
+        </section>
       <% end %>
-      <% effectiveness_line = crz_effectiveness_line(@contract) %>
+
       <% if effectiveness_line %>
-        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.admin.contracts.effectiveness.heading") %></dt><dd><%= crz_effectiveness_badge(@contract) %> <%= effectiveness_line %></dd></div>
+        <section class="cs-rail" aria-labelledby="cs-rail-effectiveness">
+          <h2 class="cs-rail__title" id="cs-rail-effectiveness"><%= t("decidim.contracts_sk.admin.contracts.effectiveness.heading") %></h2>
+          <dl class="cs-rail__dl">
+            <div class="cs-show__fact">
+              <dt class="cs-admin-sr-only"><%= t("decidim.contracts_sk.admin.contracts.effectiveness.heading") %></dt>
+              <dd><%= crz_effectiveness_badge(@contract) %> <%= effectiveness_line %></dd>
+            </div>
+          </dl>
+        </section>
       <% end %>
-      <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.amount") %></dt>
-        <dd><%= @contract.amount.present? ? format_amount(@contract.amount, @contract.currency) : t("#{scope}.missing") %></dd></div>
-      <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.signed_on") %></dt>
-        <dd><%= @contract.signed_on.present? ? format_date(@contract.signed_on) : t("#{scope}.missing") %></dd></div>
-      <% if @contract.effective_from.present? %>
-        <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.contract.effective_from") %></dt><dd><%= format_date(@contract.effective_from) %></dd></div>
-      <% end %>
-      <% if @contract.agreed_effective_on.present? %>
-        <div class="cs-show__fact"><dt><%= t("decidim.contracts_sk.admin.contracts.effectiveness.agreed") %></dt><dd><%= format_date(@contract.agreed_effective_on) %></dd></div>
-      <% end %>
-      <% if @contract.subject_matter.present? %>
-        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.contract.subject_matter") %></dt><dd><%= @contract.subject_matter %></dd></div>
-      <% end %>
-      <% if @parties.any? %>
-        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("#{scope}.parties") %></dt>
-          <dd>
-            <ul class="cs-show__list">
-              <% @parties.each do |party| %>
-                <li><%= party.name %> <span class="cs-today__ref"><%= [t("decidim.contracts_sk.contract.party.#{party.role}", default: party.role), (party.ico.present? ? "IČO #{party.ico}" : nil)].compact.join(" · ") %></span></li>
-              <% end %>
-            </ul>
-          </dd></div>
-      <% end %>
-      <% if @documents.any? %>
-        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("#{scope}.documents") %></dt>
-          <dd>
-            <ul class="cs-show__list">
-              <% @documents.each do |document| %>
-                <li><%= document.title %> <span class="cs-today__ref"><%= document.file_name %></span></li>
-              <% end %>
-            </ul>
-          </dd></div>
-      <% end %>
-      <% if @contract.redaction_confirmed_at.present? %>
-        <div class="cs-show__fact cs-show__fact--wide"><dt><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %></dt>
-          <dd><%= t("decidim.contracts_sk.admin.contracts.confirm_redaction.confirmed_on", confirmed_at: format_date(@contract.redaction_confirmed_at)) %></dd></div>
-      <% end %>
-    </dl>
-  </div>
 
-  <%# Rarely needed: one click away, never in the way. %>
-  <div class="card-section">
-    <details class="cs-today__details" id="cs-show-more">
-      <summary><%= t("#{scope}.more") %></summary>
-      <div class="cs-admin-chips cs-show__more">
-        <% if allowed_to?(:read, :note, contract: @contract) %>
-          <%= link_to t("decidim.contracts_sk.admin.notes.link"), admin_contract_notes_path(@contract),
-                      class: "button button__sm button__secondary" %>
-        <% end %>
-        <% if allowed_to?(:read, :audit_event) %>
-          <%= link_to t("decidim.contracts_sk.admin.audit_events.index.title"),
-                      admin_audit_events_path(contract_id: @contract),
-                      class: "button button__sm button__secondary" %>
-        <% end %>
-        <%= link_to t("decidim.contracts_sk.admin.parties.index.title"), admin_contract_parties_path(@contract),
-                    class: "button button__sm button__secondary" %>
-        <%= link_to t("decidim.contracts_sk.admin.amendments.index.title"), admin_contract_amendments_path(@contract),
-                    class: "button button__sm button__secondary" %>
-      </div>
-    </details>
+      <% if allowed_to?(:read, :audit_event) %>
+        <section class="cs-rail" id="cs-history" aria-labelledby="cs-rail-history">
+          <h2 class="cs-rail__title" id="cs-rail-history"><%= t("#{scope}.history") %></h2>
+          <% if @history.any? %>
+            <ol class="cs-history">
+              <% @history.each do |event| %>
+                <li class="cs-history__event">
+                  <span class="cs-history__what"><%= audit_action_label(event.action) %></span>
+                  <span class="cs-today__ref"><%= audit_actor_name(event) %> · <%= format_datetime(event.created_at) %></span>
+                </li>
+              <% end %>
+            </ol>
+          <% else %>
+            <p class="cs-panel__empty"><%= t("decidim.contracts_sk.admin.dashboard.recent_activity.empty") %></p>
+          <% end %>
+          <p class="cs-rail__more">
+            <%= link_to t("decidim.contracts_sk.admin.dashboard.recent_activity.show_all"),
+                        admin_audit_events_path(contract_id: @contract), class: "cs-rail__link" %>
+          </p>
+        </section>
+      <% end %>
+
+      <% if allowed_to?(:read, :note, contract: @contract) %>
+        <section class="cs-rail" id="cs-notes" aria-labelledby="cs-rail-notes">
+          <h2 class="cs-rail__title" id="cs-rail-notes"><%= t("#{scope}.notes") %></h2>
+          <p class="cs-rail__more">
+            <%= link_to t("decidim.contracts_sk.admin.notes.index.title"), admin_contract_notes_path(@contract), class: "cs-rail__link" %>
+          </p>
+        </section>
+      <% end %>
+    </aside>
   </div>
 </div>

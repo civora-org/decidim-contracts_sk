@@ -1,56 +1,101 @@
-<%# The next step on a record: the lifecycle events the acting person may fire
-    (derived, never hand-enumerated; four-eyes already applied by
-    transition_events_for) plus the CRZ filing confirmation and the handoff
-    download. Reason events (return, reject) open their own small form: the
-    reviewer must say why. Renders nothing when the person has no step here.
-    Shared by the contract page and the edit page. Locals:
-      contract - the record %>
+<%# The next step on a record: ONE primary action, everything else quiet.
+    The lifecycle events the acting person may fire (derived, never
+    hand-enumerated; four-eyes already applied by transition_events_for) plus
+    the CRZ filing confirmation and the handoff download. The first control in
+    reading order is the primary (solid); the rest are outlined and sit under
+    it, archiving always last. Publishing stays visible but disabled, with its
+    prerequisite shown inline as a checklist item (the privacy-redaction
+    confirmation, form inside the item) until that is recorded; the server
+    refuses it too. Reason events (return, reject) open their own small form:
+    the reviewer must say why. Renders nothing when the person has no step
+    here. Shared by the contract page and the edit page. Locals:
+      contract - the record
+      lead     - true (contract page): say whose turn it is and what happens
+                 next in the card itself
+      yours    - true when this person has something to do on it right now %>
 <% scope = "decidim.contracts_sk.admin.show" %>
 <% events = transition_events_for(contract) %>
 <% filing_allowed = allowed_to?(:confirm_crz_filing, :contract, contract: contract) %>
 <% handoff = contract.documents.find_by(kind: "crz_export") %>
 <% handoff_download = allowed_to?(:download_crz_handoff, :contract, contract: contract) && handoff&.file&.attached? %>
-<%# Order and weight follow the work: the step the person is here to do is
-    first and solid; archiving (always available on a published record, rarely
-    the point of the visit) comes last and outlined. Publishing stays visible
-    but disabled, with the reason beside it, until the privacy-redaction
-    confirmation is recorded (the server refuses it too). %>
 <% quiet_class = "button button__sm button__secondary cs-admin-choice--idle" %>
-<% solid_class = "button button__sm button__secondary" %>
 <% redaction_pending = contract.redaction_confirmed_at.blank? %>
+<% publishing = events.include?(:publish) %>
 <% if events.any? || filing_allowed || handoff_download %>
-  <div class="card-section" id="cs-next-step">
-    <h2 class="h4"><%= t("#{scope}.next_step") %></h2>
-    <div class="cs-show__actions">
-      <% if filing_allowed %>
-        <%= link_to t("decidim.contracts_sk.admin.contracts.crz_filing.link"),
-                    crz_filing_admin_contract_path(contract),
-                    class: solid_class %>
-      <% end %>
-      <% if handoff_download %>
-        <%= link_to t("decidim.contracts_sk.admin.crz_handoff.download"),
-                    download_crz_handoff_admin_contract_path(contract),
-                    class: filing_allowed ? quiet_class : solid_class %>
-      <% end %>
-      <% step_events = events.reject { |event| reason_event?(event) } %>
-      <% (step_events.reject { |event| event == :archive } + step_events.select { |event| event == :archive }).each do |event| %>
-        <% blocked = event == :publish && redaction_pending %>
-        <%= button_to t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
-                      public_send(:"#{event}_admin_contract_path", contract),
-                      method: :post,
-                      class: event == :archive ? quiet_class : solid_class,
-                      disabled: blocked,
-                      aria: (blocked ? { describedby: "cs-publish-blocked" } : {}),
-                      data: transition_confirm_data(event) %>
-      <% end %>
-    </div>
-    <% events.select { |event| reason_event?(event) }.each do |event| %>
-      <div class="cs-show__reason">
-        <%= render "review_decision_form", contract: contract, event: event %>
+  <% step_events = events.reject { |event| reason_event?(event) } %>
+  <% controls = [] %>
+  <% controls << { kind: :link, label: t("decidim.contracts_sk.admin.contracts.crz_filing.link"), path: crz_filing_admin_contract_path(contract) } if filing_allowed %>
+  <% controls << { kind: :link, label: t("decidim.contracts_sk.admin.crz_handoff.download"), path: download_crz_handoff_admin_contract_path(contract) } if handoff_download %>
+  <% (step_events.reject { |event| event == :archive } + step_events.select { |event| event == :archive }).each do |event| %>
+    <% controls << { kind: :post, event: event, label: t("decidim.contracts_sk.admin.contracts.transition.#{event}", default: event.to_s.humanize),
+                     path: public_send(:"#{event}_admin_contract_path", contract), blocked: event == :publish && redaction_pending } %>
+  <% end %>
+  <% primary, *quiet = controls %>
+  <section class="cs-next" id="cs-next-step" aria-labelledby="cs-next-title">
+    <% lead = local_assigns.fetch(:lead, false) && contract_progress(contract).applicable? %>
+    <%# With the lead sentence ("Ďalší krok: ...") the heading would say it twice: it stays for assistive technology. %>
+    <h2 class="cs-next__title<%= " cs-admin-sr-only" if lead %>" id="cs-next-title"><%= t("#{scope}.next_step") %></h2>
+    <% if lead %>
+      <p class="cs-next__lead">
+        <% if local_assigns.fetch(:yours, false) %>
+          <span class="label warning cs-steps__turn"><%= t("decidim.contracts_sk.admin.progress.turn.you") %></span>
+        <% end %>
+        <%= t("decidim.contracts_sk.admin.progress.next.#{contract_progress(contract).next_key}") %>
+      </p>
+    <% end %>
+
+    <%# Prerequisite of publishing, as a checklist item the person can tick
+        right here (the form posts to confirm_redaction; the server refuses
+        publishing without it as well). %>
+    <% if publishing %>
+      <% redaction_title = t("decidim.contracts_sk.admin.contracts.confirm_redaction.title") %>
+      <ul class="cs-next__prereqs" aria-label="<%= redaction_title %>">
+        <% if redaction_pending %>
+          <li class="cs-next__prereq cs-next__prereq--open"<%= raw(' id="cs-redaction"') if allowed_to?(:confirm_redaction, :contract, contract: contract) %>>
+            <span class="cs-next__tick" aria-hidden="true"></span>
+            <div class="cs-next__prereq-body">
+              <p class="cs-next__prereq-title"><%= redaction_title %></p>
+              <% if allowed_to?(:confirm_redaction, :contract, contract: contract) %>
+                <%= render "redaction_confirmation_body", contract: contract %>
+              <% end %>
+            </div>
+          </li>
+        <% else %>
+          <li class="cs-next__prereq cs-next__prereq--done">
+            <span class="cs-next__tick" aria-hidden="true"><%= contracts_icon(:check) %></span>
+            <div class="cs-next__prereq-body">
+              <p class="cs-next__prereq-title"><%= redaction_title %><span class="cs-admin-sr-only"> (<%= t("decidim.contracts_sk.admin.progress.status.done") %>)</span></p>
+              <%= render "redaction_confirmation_body", contract: contract %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <% if primary %>
+      <div class="cs-show__actions cs-next__primary-row">
+        <%= next_step_control(primary, "button button__sm button__secondary cs-next__primary") %>
       </div>
     <% end %>
-    <% if events.include?(:publish) && redaction_pending %>
+    <% if controls.any? { |control| control[:blocked] } %>
       <p class="cs-today__hint" id="cs-publish-blocked"><%= t("#{scope}.publish_needs_redaction") %></p>
     <% end %>
-  </div>
+    <% reason_events = events.select { |event| reason_event?(event) } %>
+    <% if quiet.any? || reason_events.any? %>
+      <div class="cs-next__quiet">
+        <% if quiet.any? %>
+          <div class="cs-show__actions cs-next__secondary">
+            <% quiet.each do |control| %>
+              <%= next_step_control(control, quiet_class) %>
+            <% end %>
+          </div>
+        <% end %>
+        <% reason_events.each do |event| %>
+          <div class="cs-show__reason">
+            <%= render "review_decision_form", contract: contract, event: event %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
 <% end %>
