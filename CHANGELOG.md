@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [1.13.1](https://github.com/civora-org/decidim-contracts_sk/compare/v1.13.0...v1.13.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **templates:** match redaction needles on whole words ([a3c7629](https://github.com/civora-org/decidim-contracts_sk/commit/a3c76292c8483ec5041f08285cfbf25a4fcd25e6))
+* **templates:** match redaction needles on whole words (civora-org/civora-platform[#211](https://github.com/civora-org/decidim-contracts_sk/issues/211)) ([497088d](https://github.com/civora-org/decidim-contracts_sk/commit/497088d131d35763be206274b78fd75ca8c40c5d))
+
 ## [1.13.0](https://github.com/civora-org/decidim-contracts_sk/compare/v1.12.0...v1.13.0) (2026-11-04)
 
 
