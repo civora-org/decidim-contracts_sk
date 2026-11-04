@@ -37,6 +37,18 @@ module Decidim
       # whole-value and rodné číslo needles are never exempted. Without
       # +public_texts+ nothing is exempted (fail closed).
       #
+      # Word boundaries: apart from digit needles (rodné číslo, a purely numeric
+      # value), which stay substring matches, a needle matches only when the
+      # character before it is not a letter or digit and the letters right after
+      # it are empty or a Slovak case ending (CASE_ENDINGS). So the first name
+      # "Jana" is not found in the public surname "Janas" or "Evanjelická" for
+      # "Eva", while "Novák" is still found in "Novákovi" and "Novákom".
+      # Limits: a personal word that is also an inflected form of a public word
+      # ("Jana" in a public "Jana") cannot be told apart
+      # (a single-word value is never exempted by +public_texts+); a word glued to
+      # a letter before it ("dňaJana") and a hyphenated line break
+      # ("Testo-vací") are not matched.
+      #
       # Searched: every XML part of the docx (body, headers, footers,
       # footnotes, endnotes, comments, docProps, customXml, relationships; text
       # and attribute values, paragraph by paragraph so a value split across
@@ -63,6 +75,15 @@ module Decidim
         COMMON_WORDS = %w[
           ulica ulice namestie mesto obec okres kraj slovensko slovenska slovenskej republika
           cislo adresa sidlo bydlisko trvale bytom narodnej
+        ].to_set.freeze
+
+        # Slovak case endings that may follow a personal word and still count as
+        # that word ("Novák" -> "Novákovi", "Jana" -> "Janou"). Folded, no diacritics.
+        CASE_ENDINGS = %w[
+          a e i o u y m
+          om ou ov ia ie iu im ym ej ho mu mi
+          ovi ova ovu ove ovo ach ami eho emu ich ych
+          ovej ovou ovym ovych ovia
         ].to_set.freeze
 
         INERT_EXTENSIONS = %w[.png .jpg .jpeg .gif .bmp .tif .tiff .emf .wmf .svg .odttf .fntdata].freeze
@@ -202,12 +223,52 @@ module Decidim
         end
 
         def check(segments, candidates, location, leaks)
-          normalized = segments.map { |s| normalize(s) }
+          folded = segments.map { |s| fold(s) }
           candidates.each do |index, kind, needle|
-            leaks << Leak.new(location: location, kind: kind, value_index: index) if normalized.any? do |s|
-              s.include?(needle)
+            leaks << Leak.new(location: location, kind: kind, value_index: index) if folded.any? do |f|
+              found?(f, needle)
             end
           end
+        end
+
+        # [spaced, stripped, map]: +spaced+ is the folded text with whitespace
+        # kept (word boundaries), +stripped+ is the same without whitespace (what
+        # the needles are written in), +map+ gives each stripped index its index
+        # in +spaced+.
+        def fold(text)
+          spaced = text.to_s.scrub.unicode_normalize(:nfkd).gsub(/\p{Mn}|\p{Cf}/, "").downcase
+          stripped = +""
+          map = []
+          spaced.each_char.with_index do |ch, i|
+            next if ch.match?(/[[:space:]]/)
+
+            stripped << ch
+            map << i
+          end
+          [spaced, stripped, map]
+        end
+
+        # Digit needles (rodné číslo, a numeric value) match as substrings, as
+        # before: a number inside a longer digit run still counts. Every other
+        # needle must stand on word boundaries (see the module comment).
+        def found?(folded, needle)
+          spaced, stripped, map = folded
+          return stripped.include?(needle) if needle.match?(%r{\A[\d/]+\z})
+
+          from = 0
+          while (i = stripped.index(needle, from))
+            return true if whole_word?(spaced, map[i], map[i + needle.length - 1])
+
+            from = i + 1
+          end
+          false
+        end
+
+        def whole_word?(spaced, first, last)
+          return false if first.positive? && spaced[first - 1].match?(/[\p{L}\p{N}]/)
+
+          tail = spaced[(last + 1)..][/\A\p{L}*/]
+          tail.empty? || CASE_ENDINGS.include?(tail)
         end
       end
     end

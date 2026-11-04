@@ -60,6 +60,58 @@ RSpec.describe Decidim::ContractsSk::Templates::RedactionVerifier do
     end
   end
 
+  describe "whole words only" do
+    def leaks_in(text, value) = verify(docx(para(text), core: clean_core), [value]).leaks
+
+    it "does not find the first name 'Jana' inside the public surname 'Janas'" do
+      expect(leaks_in("Starosta: Ing. Peter Janas", "Jana")).to be_empty
+    end
+
+    it "does not find 'Eva' inside 'Evanjelická' or 'Peter' inside 'Petržalka'" do
+      expect(leaks_in("Evanjelická ulica, Petržalka", "Eva")).to be_empty
+      expect(leaks_in("Evanjelická ulica, Petržalka", "Peter")).to be_empty
+    end
+
+    it "does not find a word of a multi-word value inside a longer public word" do
+      expect(leaks_in("Starosta Janas, #{hidden}", "Jana Testovacia")).to be_empty
+    end
+
+    it "finds 'Jana' standing alone, with punctuation around it and at the text edges" do
+      expect(leaks_in("Kupujúca: Jana, bytom", "Jana")).not_to be_empty
+      expect(leaks_in("Jana", "Jana")).not_to be_empty
+      expect(leaks_in("(Jana)", "Jana")).not_to be_empty
+    end
+
+    it "finds the surname when only a word of a multi-word value is printed" do
+      expect(leaks_in("Podpísala Testovacia.", "Jana Testovacia")).to include(have_attributes(kind: :word))
+    end
+
+    it "does not match a needle glued to a letter before it" do
+      expect(leaks_in("Zmluvajana", "Jana")).to be_empty
+    end
+
+    it "finds Slovak inflected forms of a surname" do
+      %w[Novákovi Novákom Nováka Novákovu Novákovej].each do |form|
+        expect(leaks_in("Kupujúci #{form}", "Novák")).not_to be_empty, form
+      end
+    end
+
+    it "does not treat other suffixes as inflection" do
+      %w[Novákstav Novákxia Novákský].each do |form|
+        expect(leaks_in("Firma #{form}", "Novák")).to be_empty, form
+      end
+    end
+
+    it "still finds a value split over a line break or with letter spacing" do
+      expect(leaks_in("Kupujúci Ján\nTestovací", "Ján Testovací")).not_to be_empty
+      expect(leaks_in("J á n  Testovací", "Ján Testovací")).not_to be_empty
+    end
+
+    it "keeps digits as substrings: a rodné číslo inside a longer digit run is still found" do
+      expect(leaks_in("Ref 9000000000009", "000000/0000")).not_to be_empty
+    end
+  end
+
   describe "a clean document" do
     it "passes" do
       result = verify(docx(para("Kupujúci: #{hidden}"), core: clean_core))
