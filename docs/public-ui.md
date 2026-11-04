@@ -168,6 +168,10 @@ The host's compiled Decidim admin bundle, not the gem source, decides how admin 
 - **A plain "Back to ..." link looks like body text.** Make it `button button__sm button__secondary cs-admin-choice--idle` (outlined, quiet). A back link must also never point at `edit` of a record that is no longer editable (it answers "not authorized"): link to the contract page.
 - **One primary action per page.** `button__primary` is red, so the main step is the solid `button__secondary` and the secondary one is outlined (`cs-admin-choice--idle`) and later in reading order.
 
+- **The admin does not define `--civora-*`.** The Civora host's admin chrome exposes `--desk-*` (paper, paper-light, cream, rule, ink, muted) and sets `--secondary` to Dvere indigo. The engine's admin tokens (`--csa-*` in `shared/_admin_styles`) therefore read `var(--civora-x, var(--desk-x, neutral))`; a bare `--civora-*` read silently falls back to white.
+- **Engine admin pages drop Decidim's white fill.** `.card` and `.card-section` are transparent on engine pages (this block only ever loads there), sections are separated by a hairline, and the host's own form-card panel still wins on the form pages. Panels are `.cs-panel` (paper-light, hairline, 8px).
+- **The contract page's next-step card has exactly one solid control.** The first control in reading order is the primary; every other control in the card (redaction confirm, archive, return, reject, handoff download) is outlined; the reject submit alone is `.cs-admin-danger`. The confirm dialog's OK/Cancel labels belong to the host bundle and cannot be set per button.
+
 Override points: (1) host or other modules can restyle the classes from their own CSS — selectors are single classes, no ids, no `!important`; (2) a host app can replace the whole partial by placing a file at `app/views/decidim/contracts_sk/shared/_admin_styles.html.erb` (host views win over engine views).
 
 ## Admin CRZ deadline badges

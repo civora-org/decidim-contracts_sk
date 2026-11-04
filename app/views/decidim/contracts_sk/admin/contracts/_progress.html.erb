@@ -7,7 +7,10 @@
     each step carries a screen-reader word ("done", "current step").
     Locals:
       contract - the record
-      yours    - true when this person has something to do on it right now %>
+      yours    - true when this person has something to do on it right now
+      sentence - false to leave out the "whose turn / what next" sentence
+                 (the contract page's next-step card says it instead);
+                 default true %>
 <% progress = contract_progress(contract) %>
 <% if progress.applicable? %>
   <% scope = "decidim.contracts_sk.admin.progress" %>
@@ -27,11 +30,13 @@
         </li>
       <% end %>
     </ol>
-    <p class="cs-steps__next">
-      <% if local_assigns.fetch(:yours, false) %>
-        <span class="label warning cs-steps__turn"><%= t("#{scope}.turn.you") %></span>
-      <% end %>
-      <%= t("#{scope}.next.#{progress.next_key}") %>
-    </p>
+    <% if local_assigns.fetch(:sentence, true) %>
+      <p class="cs-steps__next">
+        <% if local_assigns.fetch(:yours, false) %>
+          <span class="label warning cs-steps__turn"><%= t("#{scope}.turn.you") %></span>
+        <% end %>
+        <%= t("#{scope}.next.#{progress.next_key}") %>
+      </p>
+    <% end %>
   </div>
 <% end %>

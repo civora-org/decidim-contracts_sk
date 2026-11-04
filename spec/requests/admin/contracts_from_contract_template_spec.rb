@@ -233,9 +233,10 @@ RSpec.describe "admin contract from a contract template", :db, type: :request do
       expect(contract.template_entry.generated_documents.count).to eq(4)
 
       follow_redirect!
-      links = html.css("#cs-template-documents a[href*='generated_documents']").map { |a| [a.text.strip, a["href"]] }
+      links = html.css("#cs-template-documents a[href*='generated_documents']").map { |a| [a.text.squish, a["href"]] }
       expect(links.map(&:first)).to eq(["Internal contract (Word)", "Internal contract (PDF)",
-                                        "Version for publication (PDF)"])
+                                        "Version for publication (PDF) personal data hidden"])
+      expect(html.css("#cs-template-documents .cs-tile__badge").size).to eq(1)
       expect(links.map(&:last)).to all(match(%r{\A/admin/contracts/#{contract.id}/generated_documents/\d+\z}))
       expect(html.at_css("#cs-template-documents").text).to include("Internal number: 1/")
     end

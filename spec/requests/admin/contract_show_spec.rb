@@ -59,6 +59,12 @@ RSpec.describe "admin contract page", :db, type: :request do
        .map { |node| node["value"] || node.text.squish }
   end
 
+  # The controls in the next-step card that are not outlined: the primary(ies).
+  def solid_controls
+    doc.css("#cs-next-step a.button, #cs-next-step input[type=submit]")
+       .reject { |node| node["class"].include?("cs-admin-choice--idle") }
+  end
+
   describe "the step indicator" do
     {
       "draft" => { "Draft" => "current", "Check" => "upcoming", "Approved" => "upcoming",
@@ -185,7 +191,7 @@ RSpec.describe "admin contract page", :db, type: :request do
 
       get "/admin/contracts/#{record.id}"
 
-      expect(buttons).to eq(["Publish"])
+      expect(buttons).to eq(["Confirm redaction", "Publish"])
       expect(response.body).to include("A contract can be published only after you confirm that personal data")
       expect(response.body).to include("A published contract is public")
       expect(doc.css("form[action$='/confirm_redaction']").size).to eq(1)
@@ -193,7 +199,7 @@ RSpec.describe "admin contract page", :db, type: :request do
 
     # Referent walkthrough #4: publishing before the redaction is confirmed is
     # shown disabled with its reason, and the confirmation sits above it.
-    it "disables Publish with its reason until the redaction is confirmed, and puts the confirmation first" do
+    it "disables Publish with its reason until the redaction is confirmed, with the confirmation in the card" do
       Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
       record = contract!("approved")
 
@@ -203,7 +209,51 @@ RSpec.describe "admin contract page", :db, type: :request do
       expect(publish["disabled"]).not_to be_nil
       expect(publish["aria-describedby"]).to eq("cs-publish-blocked")
       expect(doc.at_css("#cs-publish-blocked").text).to include("only after you confirm")
-      expect(response.body.index('id="cs-redaction"')).to be < response.body.index('id="cs-next-step"')
+      item = doc.at_css("#cs-next-step li.cs-next__prereq--open#cs-redaction")
+      expect(item.at_css("form[action$='/confirm_redaction']")).not_to be_nil
+      expect(response.body.index('id="cs-redaction"')).to be < response.body.index('value="Publish"')
+    end
+
+    # Brief section 4: exactly one primary action, prerequisites as a checklist.
+    it "has exactly one primary action; every other control in the card is outlined" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
+      record = contract!("published")
+
+      get "/admin/contracts/#{record.id}"
+      solid = solid_controls
+      expect(solid.map { |node| node["value"] || node.text.strip }).to eq(["Record CRZ filing"])
+
+      pending_redaction = contract!("approved")
+      get "/admin/contracts/#{pending_redaction.id}"
+      solid = solid_controls
+      expect(solid.map { |node| node["value"] }).to eq(["Publish"])
+    end
+
+    it "shows the redaction prerequisite as done once confirmed, and drops it when Publish is not on offer" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[editor] }
+      confirmed = contract!("approved", redaction_confirmed_at: Time.current)
+
+      get "/admin/contracts/#{confirmed.id}"
+      expect(doc.css("#cs-next-step .cs-next__prereq--done").size).to eq(1)
+      expect(doc.css("#cs-next-step .cs-next__prereq--open")).to be_empty
+      expect(doc.css("#cs-next-step form[action$='/confirm_redaction']")).to be_empty
+
+      draft = contract!("draft")
+      get "/admin/contracts/#{draft.id}"
+      expect(doc.css(".cs-next__prereq")).to be_empty
+    end
+
+    it "marks a destructive reject submit as danger and leaves return and the others plain" do
+      Decidim::ContractsSk.role_resolver = ->(_user, _context) { %i[reviewer] }
+      record = contract!("in_review", decidim_submitted_by_id: colleague.id)
+
+      get "/admin/contracts/#{record.id}"
+
+      submits = doc.css("#cs-next-step .cs-show__reason input[type=submit]")
+      danger = submits.select { |node| node["class"].include?("cs-admin-danger") }
+      expect(danger.map { |node| node["value"] }).to eq(["Reject"])
+      expect(danger.first["data-confirm-title"]).to eq("Reject contract")
+      expect(submits.size).to eq(2)
     end
 
     it "enables Publish once the redaction is confirmed and shows no blocking hint" do
@@ -280,17 +330,34 @@ RSpec.describe "admin contract page", :db, type: :request do
       expect(doc.css(".cs-show__fact dd").map { |d| d.text.squish }).to include("missing")
     end
 
-    it "keeps notes, history, parties and amendments inside a closed details block" do
-      record = contract!("draft")
+    it "shows parties and attachments in the main column and the deadline, history and notes in the rail" do
+      record = contract!("draft", signed_on: Date.current - 3.days)
+      record.parties.create!(role: "contractor", name: "Stavby s. r. o.", ico: "00000001")
+      Decidim::ContractsSk::AuditEvent.create!(organization: organization, actor: me, action: "contract.note_added",
+                                               target: record)
 
       get "/admin/contracts/#{record.id}"
 
-      more = doc.at_css("details#cs-show-more")
-      expect(more["open"]).to be_nil
-      expect(more.css("a").map { |a| a["href"] }).to include(
-        "/admin/contracts/#{record.id}/notes", "/admin/contracts/#{record.id}/parties",
-        "/admin/contracts/#{record.id}/amendments"
+      expect(doc.css(".cs-ws__main #cs-parties").text).to include("Stavby s. r. o.")
+      expect(doc.css(".cs-ws__main #cs-parties details")).to be_empty
+      expect(doc.css(".cs-ws__rail a").map { |a| a["href"] }).to include(
+        "/admin/contracts/#{record.id}/notes", "/admin/audit_events?contract_id=#{record.id}"
       )
+      expect(doc.css(".cs-ws__main a").map { |a| a["href"] }).to include(
+        "/admin/contracts/#{record.id}/parties", "/admin/contracts/#{record.id}/amendments"
+      )
+      expect(doc.at_css("#cs-history").text).to include("Internal note added")
+      expected = I18n.l(record.crz_deadline, format: I18n.t("decidim.contracts_sk.date_formats.default"))
+      expect(doc.at_css(".cs-ws__rail .cs-rail__big").text).to eq(expected)
+    end
+
+    it "caps the rail history at the last five events" do
+      record = contract!("draft")
+      7.times { |index| Decidim::ContractsSk::AuditEvent.create!(organization: organization, actor: me, action: "contract.note_added", target: record, created_at: Time.current - index.minutes) }
+
+      get "/admin/contracts/#{record.id}"
+
+      expect(doc.css("#cs-history .cs-history__event").size).to eq(5)
     end
 
     it "is tenant-scoped: another organization's record is a 404" do

@@ -42,6 +42,9 @@ module Decidim
       # rather than simplify it.
       # rubocop:disable Metrics/ClassLength
       class ContractsController < Admin::ApplicationController
+        # The action/actor labels of the contract page's "History" rail.
+        include AuditEventPresentation
+
         # Exposes the per-record allowed events to the index view; derived
         # from the lifecycle table and the user's engine roles, never
         # hand-enumerated. The index filter option lists and the normalized
@@ -57,13 +60,18 @@ module Decidim
                       :index_deadline_options, :index_deadline_counts,
                       :index_deadline_counter_label, :index_deadline_counter_path,
                       :index_deadline_counter_classes, :index_today,
-                      :index_submitter_options, :contract_progress, :show_actions_available?
+                      :index_submitter_options, :contract_progress, :show_actions_available?,
+                      :next_step_controls?
 
         # Case-insensitive free-text match for the index :q filter over the
         # two editorial identity fields — the engine's shared TextSearch
         # (down-cased term, explicit ESCAPE, so user-supplied % and _ stay
         # literal on every database; civora-org/civora-platform#116).
         SEARCH_CONDITION = TextSearch::CONTRACT_CONDITION
+
+        # How many audit events the contract page's rail shows before it
+        # links to the full trail.
+        HISTORY_LIMIT = 5
 
         # Deterministic index ordering: newest records first, with the id as
         # the tiebreaker — a total order, so a page can never repeat or drop
@@ -120,6 +128,7 @@ module Decidim
           # Files generated from a contract template (#211); admin-only.
           @template_entry = @contract.template_entry
           @generated_documents = visible_generated_documents(@template_entry)
+          @history = recent_history(@contract)
         end
 
         def new
@@ -592,6 +601,25 @@ module Decidim
               allowed_to?(action, :contract, contract: contract) &&
                 !(action == :confirm_redaction && contract.redaction_confirmed_at.present?)
             end
+        end
+
+        # The contract page rail's short history: the last HISTORY_LIMIT audit
+        # events on the record, only for those who may read the trail at all.
+        def recent_history(contract)
+          return [] unless allowed_to?(:read, :audit_event)
+
+          contract.audit_events.includes(:actor).order(created_at: :desc, id: :desc).limit(HISTORY_LIMIT).to_a
+        end
+
+        # Whether the next-step card has anything to offer this person: a
+        # lifecycle step, the CRZ filing confirmation or the handoff download
+        # (the same three conditions the card itself renders on).
+        def next_step_controls?(contract)
+          return true if transition_events_for(contract).any?
+          return true if allowed_to?(:confirm_crz_filing, :contract, contract: contract)
+
+          allowed_to?(:download_crz_handoff, :contract, contract: contract) &&
+            contract.documents.find_by(kind: "crz_export")&.file&.attached? == true
         end
 
         # The events the acting user may trigger on this record right now: the

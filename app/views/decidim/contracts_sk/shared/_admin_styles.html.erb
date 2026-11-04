@@ -58,42 +58,74 @@
       .cs-admin-fieldset          a group of template-form fields (borderless fieldset with a legend)
       .cs-admin-header-facts      the read-only organization header block on the template form
       .cs-admin-words             the live "amount in words" line under a money field
-      .cs-admin-busy-note         the hint beside the generate button %>
+      .cs-admin-busy-note         the hint beside the generate button
+      .cs-admin-danger            the one destructive submit (reject): solid muted red, white text
+      --csa-* tokens              read --civora-* (paper, rule, ink, terracotta) and --secondary with neutral
+                                  fallbacks; on engine pages the Decidim .card and .card-section lose their
+                                  white fill (form cards keep the host's own panel)
+      .cs-ws .cs-panel .cs-next .cs-rail .cs-tile  the contract page workspace: header, panels, the next-step
+                                  card (one primary, inline prerequisites, quiet steps), the right rail, file tiles %>
 <% unless @cs_admin_styles_rendered %>
   <% @cs_admin_styles_rendered = true %>
   <% css = capture do %>
 <style>
+  /* Admin tokens. On the Civora host the --civora-* values (public theme) or
+     the admin chrome's --desk-* values (paper, rule, ink, cream) are set and the pages sit on warm
+     paper with paper-light panels and hairlines; anywhere else the fallbacks
+     give a neutral look. --secondary is the host's one action colour. */
+  :root {
+    --csa-ink: var(--civora-ink, var(--desk-ink, #111));
+    --csa-muted: var(--civora-muted, var(--desk-muted, #3e4c5c));
+    --csa-panel: var(--civora-paper-light, var(--desk-paper-light, #fff));
+    --csa-wash: var(--civora-cream, var(--desk-cream, #eef1f6));
+    --csa-rule: var(--civora-rule, var(--desk-rule, #e1e5ef));
+    --csa-edge: var(--civora-rule, var(--desk-rule, #c4ccd8));
+    --csa-accent: var(--secondary, rgb(21, 90, 191));
+    --csa-accent-deep: color-mix(in srgb, var(--csa-accent) 72%, #000);
+    --csa-alert: var(--civora-terracotta, #a1161b);
+    --csa-alert-text: #8a1c1c;
+    --csa-danger: #9b2c2c;
+    --csa-ok: #1e6b3a;
+    --csa-radius: 8px;
+  }
+  /* Panels on the ground: Decidim paints the admin .card and .card-section
+     white. On engine pages (this block is only ever added to those) the card
+     becomes part of the page and its sections are separated by a hairline;
+     form cards keep the host's own paper-light panel (higher specificity). */
+  .layout-content .card, .layout-content .card-section { background-color: transparent; }
+  .layout-content .card > .card-section + .card-section { border-top: 1px solid var(--csa-rule); }
+  .layout-content .table-list tbody tr { background-color: transparent; }
   .cs-admin-actions { display: flex; flex-wrap: nowrap; flex-shrink: 0; margin-left: auto; gap: .5rem; align-items: center; }
   .cs-admin-chips { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
   .cs-admin-more { margin-top: 1rem; }
   .cs-admin-hint { margin-top: .5rem; }
   .cs-admin-notes { list-style: none; margin: 0; padding: 0; max-width: 72ch; }
-  .cs-admin-note { padding: .875rem 0; border-top: 1px solid rgba(0, 0, 0, .1); }
+  .cs-admin-note { padding: .875rem 0; border-top: 1px solid var(--csa-rule); }
   .cs-admin-note:first-child { border-top: 0; padding-top: 0; }
   .cs-admin-note-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; margin: 0 0 .25rem; }
-  .cs-admin-note-meta time { font-size: .875rem; color: #3e4c5c; font-variant-numeric: tabular-nums; }
+  .cs-admin-note-meta time { font-size: .875rem; color: var(--csa-muted); font-variant-numeric: tabular-nums; }
   .cs-admin-note-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
-  .cs-admin-note-visibility { margin: 0; font-size: .875rem; color: #3e4c5c; }
+  .cs-admin-note-visibility { margin: 0; font-size: .875rem; color: var(--csa-muted); }
   .cs-admin-note-form { max-width: 72ch; }
   .cs-admin-note-form label { display: block; }
-  .cs-admin-template-note { margin: .75rem 0 0; font-size: .875rem; color: #3e4c5c; max-width: 72ch; }
+  .cs-admin-template-note { margin: .75rem 0 0; font-size: .875rem; color: var(--csa-muted); max-width: 72ch; }
   .cs-admin-template-section { margin: 0 0 .5rem; }
   .table-list.cs-admin-templates { width: 100%; }
   .table-list.cs-admin-templates th, .table-list.cs-admin-templates td { text-align: left; vertical-align: middle; padding: .75rem 1rem; }
   .cs-admin-prose { max-width: 72ch; margin: 0 0 1rem; line-height: 1.5; }
   .card-section.cs-admin-header-block { padding-left: 1rem; padding-right: 1rem; }
-  .cs-show__actions :is(button, input[type="submit"]):disabled, .cs-show__actions :is(button, input[type="submit"]):disabled:hover { background: #e1e5ef; color: #3e4c5c; box-shadow: none; cursor: not-allowed; }
+  .cs-show__actions :is(button, input[type="submit"]):disabled, .cs-show__actions :is(button, input[type="submit"]):disabled:hover { background: var(--csa-wash); color: var(--csa-muted); box-shadow: none; cursor: not-allowed; }
   .cs-admin-templates .table-list__actions > div { display: flex; flex-wrap: wrap; gap: .5rem; }
   .cs-admin-templates .table-list__actions form { margin: 0; }
   .table-list.cs-admin-templates td a.button:is(.button__secondary, .button__primary) { color: rgb(255, 255, 255); font-size: inherit; font-weight: inherit; }
-  .cs-admin-choice--idle, .cs-admin-choice--idle:hover { background: #fff; color: rgb(21, 90, 191); box-shadow: inset 0 0 0 1px rgb(21, 90, 191); }
+  .cs-admin-choice--idle, .cs-admin-choice--idle:hover { background: var(--csa-panel); color: var(--csa-accent); box-shadow: inset 0 0 0 1px var(--csa-accent); }
   .cs-admin-template-name { font-weight: 600; overflow-wrap: anywhere; }
-  .cs-admin-template-ico, .cs-admin-template-none { color: #3e4c5c; font-variant-numeric: tabular-nums; }
+  .cs-admin-template-ico, .cs-admin-template-none { color: var(--csa-muted); font-variant-numeric: tabular-nums; }
   .cs-admin-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   .cs-admin-fieldset legend { font-size: 1.125rem; font-weight: 700; margin: 0 0 .75rem; padding: 0 1rem; }
   .cs-admin-header-facts { margin-top: .75rem; }
-  .cs-admin-words { margin: .375rem 0 0; min-height: 1.5em; font-size: .9375rem; color: #3e4c5c; overflow-wrap: anywhere; }
-  .cs-admin-words strong { color: #111; }
+  .cs-admin-words { margin: .375rem 0 0; min-height: 1.5em; font-size: .9375rem; color: var(--csa-muted); overflow-wrap: anywhere; }
+  .cs-admin-words strong { color: var(--csa-ink); }
   .cs-admin-busy-note { display: inline-block; margin: 0 0 0 .75rem; }
   #cs-template-documents .cs-show__ref { margin: 0 0 .75rem; }
   .cs-admin-note-form textarea { display: block; width: 100%; margin: .375rem 0 .75rem; }
@@ -104,41 +136,41 @@
   .table-list.cs-admin-roles th, .table-list.cs-admin-roles td { text-align: left; vertical-align: middle; }
   .cs-admin-role-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
   .cs-admin-role-actions form { margin: 0; }
-  .cs-admin-dangling { color: #8a1c1c; font-weight: 600; }
+  .cs-admin-dangling { color: var(--csa-alert-text); font-weight: 600; }
   .cs-admin-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .cs-admin-rules { list-style: disc; margin: .5rem 0 0 1.25rem; padding: 0; max-width: 72ch; }
   .cs-admin-rules li { margin-bottom: .5rem; line-height: 1.5; }
   .table-list.cs-admin-import th, .table-list.cs-admin-import td { text-align: left; vertical-align: top; }
-  .table-list.cs-admin-import tbody th { font-variant-numeric: tabular-nums; color: #3e4c5c; }
+  .table-list.cs-admin-import tbody th { font-variant-numeric: tabular-nums; color: var(--csa-muted); }
   .table-list.cs-admin-import .cs-admin-import__num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .cs-admin-import__errors { list-style: none; margin: .375rem 0 0; padding: 0; font-size: .875rem; color: #8a1c1c; }
+  .cs-admin-import__errors { list-style: none; margin: .375rem 0 0; padding: 0; font-size: .875rem; color: var(--csa-alert-text); }
   .cs-admin-import__errors li + li { margin-top: .25rem; }
   .table-list.cs-admin-import td:nth-child(2) { white-space: nowrap; }
   .cs-admin-import caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   /* "What needs doing today" (admin home) */
-  .cs-today__lead { margin: 0 0 1.25rem; color: #3e4c5c; }
+  .cs-today__lead { margin: 0 0 1.25rem; color: var(--csa-muted); }
   .cs-today__group { margin: 0 0 2rem; }
   .cs-today__group-title { font-size: 1.25rem; font-weight: 700; margin: 0 0 .25rem; }
-  .cs-today__group-hint { margin: 0 0 .75rem; color: #3e4c5c; font-size: .9375rem; }
+  .cs-today__group-hint { margin: 0 0 .75rem; color: var(--csa-muted); font-size: .9375rem; }
   .cs-today__list { list-style: none; margin: 0; padding: 0; }
-  .cs-today__task { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding: 1rem 1.25rem; margin: 0 0 .75rem; background: #fafbfc; border: 1px solid #e1e5ef; border-left: 4px solid #3e4c5c; }
-  .cs-today__task--urgent { border-left-color: #a1161b; }
-  .cs-today__task--waiting { border-left-color: rgb(21, 90, 191); }
+  .cs-today__task { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding: 1rem 1.25rem; margin: 0 0 .75rem; background: var(--csa-panel); border: 1px solid var(--csa-rule); border-left: 4px solid var(--csa-muted); }
+  .cs-today__task--urgent { border-left-color: var(--csa-alert); }
+  .cs-today__task--waiting { border-left-color: var(--csa-accent); }
   .cs-today__text { flex: 1 1 22rem; min-width: 0; }
   .cs-today__sentence { margin: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.4; }
-  .cs-today__record { margin: .25rem 0 0; color: #3e4c5c; overflow-wrap: anywhere; }
-  .cs-today__ref { font-variant-numeric: tabular-nums; color: #3e4c5c; font-size: .875rem; }
-  .cs-today__hint { margin: .375rem 0 0; color: #3e4c5c; font-size: .9375rem; line-height: 1.45; max-width: 64ch; }
+  .cs-today__record { margin: .25rem 0 0; color: var(--csa-muted); overflow-wrap: anywhere; }
+  .cs-today__ref { font-variant-numeric: tabular-nums; color: var(--csa-muted); font-size: .875rem; }
+  .cs-today__hint { margin: .375rem 0 0; color: var(--csa-muted); font-size: .9375rem; line-height: 1.45; max-width: 64ch; }
   .cs-today__button { flex: 0 0 auto; min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
   .cs-today__more { margin: 0; }
-  .cs-today__done { padding: 2rem 1.25rem; background: #fafbfc; border: 1px solid #e1e5ef; border-left: 4px solid #1e6b3a; max-width: 48rem; }
-  .cs-today__done-title { margin: 0 0 .25rem; font-size: 1.5rem; font-weight: 700; color: #1e6b3a; }
+  .cs-today__done { padding: 2rem 1.25rem; background: var(--csa-panel); border: 1px solid var(--csa-rule); border-left: 4px solid var(--csa-ok); max-width: 48rem; }
+  .cs-today__done-title { margin: 0 0 .25rem; font-size: 1.5rem; font-weight: 700; color: var(--csa-ok); }
   .cs-today__done p { margin: 0; }
-  .cs-today__details > summary { cursor: pointer; font-weight: 600; color: rgb(21, 90, 191); padding: .5rem 0; list-style: none; }
+  .cs-today__details > summary { cursor: pointer; font-weight: 600; color: var(--csa-accent); padding: .5rem 0; list-style: none; }
   .cs-today__details > summary::-webkit-details-marker { display: none; }
   .cs-today__details > summary::before { content: "\25B8"; display: inline-block; width: 1.25rem; }
   .cs-today__details[open] > summary::before { content: "\25BE"; }
-  .cs-today__details > summary:focus-visible, .cs-row-more > summary:focus-visible { outline: 3px solid rgb(21, 90, 191); outline-offset: 2px; }
+  .cs-today__details > summary:focus-visible, .cs-row-more > summary:focus-visible { outline: 3px solid var(--csa-accent); outline-offset: 2px; }
   .cs-today__details > :not(summary) { margin-top: .5rem; }
   @media (max-width: 639px) {
     .cs-today__task { flex-direction: column; align-items: stretch; }
@@ -147,13 +179,13 @@
   }
   /* Contract page and step indicator */
   .cs-show__meta { display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: center; margin: 0 0 1rem; }
-  .cs-show__ref { font-variant-numeric: tabular-nums; color: #3e4c5c; }
+  .cs-show__ref { font-variant-numeric: tabular-nums; color: var(--csa-muted); }
   .cs-show__actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
   .cs-show__actions form { margin: 0; }
   .cs-show__reason { margin-top: .75rem; max-width: 48rem; }
   .cs-show__more { margin-top: .5rem; }
   .cs-show__facts { display: grid; grid-template-columns: 1fr; gap: 1rem 2rem; margin: 0; }
-  .cs-show__fact dt { font-size: .875rem; color: #3e4c5c; margin: 0 0 .125rem; }
+  .cs-show__fact dt { font-size: .875rem; font-weight: 600; color: var(--csa-muted); margin: 0 0 .125rem; }
   .cs-show__fact dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   .cs-show__list { list-style: none; margin: 0; padding: 0; }
   .cs-show__list li { margin: 0 0 .25rem; }
@@ -163,32 +195,113 @@
   }
   .cs-steps-wrap { max-width: 56rem; }
   .cs-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-  .cs-steps__step { display: flex; align-items: center; gap: .625rem; color: #3e4c5c; font-size: .9375rem; }
-  .cs-steps__marker { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 2px solid #3e4c5c; background: #fff; font-weight: 700; font-size: .875rem; font-variant-numeric: tabular-nums; }
-  .cs-steps__step--done .cs-steps__marker { background: rgb(21, 90, 191); border-color: rgb(21, 90, 191); color: rgb(255, 255, 255); }
-  .cs-steps__step--current { color: #111; font-weight: 700; }
-  .cs-steps__step--current .cs-steps__marker { background: #111; border-color: #111; color: rgb(255, 255, 255); box-shadow: 0 0 0 3px #fff, 0 0 0 5px #111; }
-  .cs-steps__step--stopped { color: #a1161b; font-weight: 700; }
-  .cs-steps__step--stopped .cs-steps__marker { border-color: #a1161b; color: #a1161b; }
+  .cs-steps__step { display: flex; align-items: center; gap: .625rem; color: var(--csa-muted); font-size: .9375rem; }
+  .cs-steps__marker { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 2px solid var(--csa-muted); background: var(--csa-panel); font-weight: 700; font-size: .875rem; font-variant-numeric: tabular-nums; }
+  .cs-steps__step--done .cs-steps__marker { background: var(--csa-accent); border-color: var(--csa-accent); color: rgb(255, 255, 255); }
+  .cs-steps__step--current { color: var(--csa-ink); font-weight: 700; }
+  .cs-steps__step--current .cs-steps__marker { background: #111; border-color: var(--csa-ink); color: rgb(255, 255, 255); box-shadow: 0 0 0 3px var(--csa-panel), 0 0 0 5px var(--csa-ink); }
+  .cs-steps__step--stopped { color: var(--csa-alert); font-weight: 700; }
+  .cs-steps__step--stopped .cs-steps__marker { border-color: var(--csa-alert); color: var(--csa-alert); }
   .cs-steps__flag { display: inline-block; margin-left: .5rem; padding: 0 .5rem; font-size: .8125rem; font-weight: 600; color: #6b3d00; background: #fff1d6; }
   .cs-steps__next { margin: 1rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: baseline; line-height: 1.45; }
   @media (min-width: 640px) {
     .cs-steps { flex-direction: row; gap: 0; }
     .cs-steps__step { flex: 1 1 0; position: relative; flex-direction: column; align-items: flex-start; gap: .375rem; padding-right: .5rem; }
-    .cs-steps__step + .cs-steps__step::before { content: ""; position: absolute; top: .875rem; left: calc(-100% + 2.5rem); width: calc(100% - 3rem); height: 2px; background: #c4ccd8; }
-    .cs-steps__step--done + .cs-steps__step::before, .cs-steps__step--current::before { background: rgb(21, 90, 191); }
+    .cs-steps__step + .cs-steps__step::before { content: ""; position: absolute; top: .875rem; left: calc(-100% + 2.5rem); width: calc(100% - 3rem); height: 2px; background: var(--csa-edge); }
+    .cs-steps__step--done + .cs-steps__step::before, .cs-steps__step--current::before { background: var(--csa-accent); }
   }
+  /* The contract page workspace ("Pracovný stôl") */
+  .cs-ws { max-width: 82rem; }
+  .cs-ws__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem 1.5rem; margin: 0 0 1.25rem; }
+  .cs-ws__title { flex: 1 1 24rem; min-width: 0; }
+  .cs-ws__h1 { margin: 0 0 .5rem; font-size: 1.75rem; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; color: var(--csa-ink); text-wrap: balance; overflow-wrap: anywhere; }
+  .cs-ws__head .cs-show__meta { margin: 0; }
+  .cs-ws__steps { margin: 0 0 1.5rem; padding: 0 0 1.5rem; border-bottom: 1px solid var(--csa-rule); }
+  .cs-ws__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+  .cs-ws__main { display: grid; gap: 1.25rem; min-width: 0; }
+  .cs-ws__rail { display: grid; gap: 0; min-width: 0; }
+  @media (min-width: 1100px) {
+    .cs-ws__grid { grid-template-columns: minmax(0, 1fr) 18.5rem; gap: 2rem; }
+    .cs-ws__rail { position: sticky; top: 1rem; }
+  }
+  .cs-panel { padding: 1.25rem 1.5rem; background: var(--csa-panel); border: 1px solid var(--csa-rule); border-radius: var(--csa-radius); }
+  .cs-panel__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin: 0 0 .75rem; }
+  .cs-panel__title { margin: 0 0 .75rem; font-size: 1.25rem; font-weight: 700; line-height: 1.25; color: var(--csa-ink); }
+  .cs-panel__head .cs-panel__title { margin: 0; }
+  .cs-panel__empty { margin: 0; color: var(--csa-muted); }
+  .cs-panel :is(h2, p, dl) { text-align: left; }
+  .cs-chip { padding: .125rem .75rem; border-radius: 999px; font-weight: 600; background: var(--csa-wash); color: var(--csa-ink); }
+  .cs-chip--approved, .cs-chip--published, .cs-chip--archived { background: color-mix(in srgb, var(--csa-ok) 14%, var(--csa-panel)); color: var(--csa-ok); }
+  .cs-chip--in_review, .cs-chip--returned { background: #fff1d6; color: #6b3d00; }
+  .cs-chip--rejected { background: color-mix(in srgb, var(--csa-alert) 14%, var(--csa-panel)); color: var(--csa-alert-text); }
+  .cs-show__meta .label, .cs-rail__days .label { border-radius: 999px; }
+  /* The next-step card: one primary, prerequisites inline, the rest quiet */
+  .cs-next { padding: 1.25rem 1.5rem 1.5rem; background: var(--csa-panel); border: 1px solid color-mix(in srgb, var(--csa-accent) 40%, var(--csa-rule)); border-radius: var(--csa-radius); }
+  .cs-next__title { margin: 0 0 .5rem; font-size: 1.25rem; font-weight: 700; line-height: 1.25; color: var(--csa-ink); }
+  .cs-next__lead { margin: 0 0 1rem; max-width: 62ch; font-size: 1.125rem; font-weight: 600; line-height: 1.4; color: var(--csa-ink); }
+  .cs-next__lead .label { margin-right: .75rem; vertical-align: .1em; }
+  .cs-next__prereqs { list-style: none; margin: 0 0 1.25rem; padding: 0; }
+  .cs-next__prereq { display: flex; gap: .75rem; align-items: flex-start; padding: .875rem 1rem; background: color-mix(in srgb, var(--csa-wash) 55%, transparent); border: 1px solid var(--csa-rule); border-radius: 6px; }
+  .cs-next__tick { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; margin-top: .0625rem; border: 2px solid var(--csa-muted); border-radius: 50%; background: var(--csa-panel); color: transparent; }
+  .cs-next__prereq--done .cs-next__tick { background: var(--csa-ok); border-color: var(--csa-ok); color: rgb(255, 255, 255); }
+  .cs-next__tick svg { width: 1rem; height: 1rem; }
+  .cs-next__prereq-body { flex: 1 1 auto; min-width: 0; }
+  .cs-next__prereq-title { margin: 0; font-weight: 600; line-height: 1.4; color: var(--csa-ink); }
+  .cs-next__prereq-body p { margin: .25rem 0 .5rem; max-width: 62ch; line-height: 1.5; }
+  .cs-next__prereq-body .cs-next__prereq-title { margin-top: 0; }
+  .cs-next__prereq--done .cs-next__prereq-body p:not(.cs-next__prereq-title) { margin-bottom: 0; color: var(--csa-muted); }
+  .cs-next__prereq-body .cs-admin-rules { margin-top: 0; margin-bottom: .75rem; }
+  .cs-next__prereq-body .form__wrapper { margin: 0; }
+  .cs-next__prereq-body label { display: flex; flex-direction: row; gap: .5rem; align-items: flex-start; margin: 0 0 .75rem; line-height: 1.45; }
+  .cs-next__prereq-body label input[type="checkbox"] { order: -1; flex: none; margin: .2rem 0 0; }
+  .cs-next__prereq-body input[type="submit"] { width: auto; align-self: flex-start; }
+  .cs-next__primary-row { margin: 0; }
+  .cs-next__primary { min-height: 2.75rem; padding-left: 1.5rem; padding-right: 1.5rem; font-size: 1rem; }
+  .cs-next__quiet { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: flex-start; margin: 1.25rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--csa-rule); }
+  .cs-next__quiet .cs-show__reason { margin: 0; max-width: none; }
+  .cs-next__quiet .cs-show__reason:has(details[open]) { flex: 1 1 100%; max-width: 40rem; }
+  .cs-next .cs-today__hint { margin-top: .5rem; }
+  .cs-show__reason summary { display: inline-flex; align-items: center; min-height: 2rem; padding: .25rem .75rem; cursor: pointer; font-weight: 600; color: var(--csa-accent); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--csa-accent); list-style: none; font-size: .875rem; }
+  .cs-show__reason summary::-webkit-details-marker { display: none; }
+  .cs-show__reason details[open] > summary { margin-bottom: .5rem; }
+  .cs-show__reason summary:focus-visible, .cs-rail__link:focus-visible, a.cs-tile:focus-visible { outline: 3px solid var(--csa-accent); outline-offset: 2px; }
+  .cs-admin-danger, .cs-admin-danger:hover { background: var(--csa-danger); color: rgb(255, 255, 255); box-shadow: none; }
+  /* File tiles */
+  .cs-tiles { list-style: none; margin: .75rem 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: .75rem; }
+  a.cs-tile, a.cs-tile:hover { display: flex; flex-direction: column; align-items: flex-start; gap: .375rem; height: 100%; padding: .875rem 1rem; background: color-mix(in srgb, var(--csa-wash) 55%, transparent); border: 1px solid var(--csa-rule); border-radius: 6px; color: var(--csa-ink); text-decoration: none; }
+  a.cs-tile:hover { border-color: var(--csa-accent); }
+  .cs-tile__icon { color: var(--csa-accent); font-size: 1.5rem; line-height: 1; }
+  .cs-tile__label { font-weight: 600; line-height: 1.3; }
+  .cs-tile__badge { display: inline-flex; align-items: center; gap: .25rem; padding: .0625rem .5rem; border-radius: 999px; font-size: .8125rem; font-weight: 600; background: color-mix(in srgb, var(--csa-ok) 14%, var(--csa-panel)); color: var(--csa-ok); }
+  .cs-parties { margin: 0; }
+  .cs-parties + .cs-parties { margin-top: .75rem; }
+  .cs-parties__party { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .125rem 1rem; padding: .625rem 0; margin: 0; border-top: 1px solid var(--csa-rule); }
+  .cs-parties__party:first-child { border-top: 0; padding-top: 0; }
+  .cs-parties__name { font-weight: 600; overflow-wrap: anywhere; }
+  /* The right rail: ruled sections, not another stack of panels */
+  .cs-rail { padding: 0 0 1.25rem; margin: 0 0 1.25rem; border-bottom: 1px solid var(--csa-rule); }
+  .cs-rail:last-child { border-bottom: 0; margin-bottom: 0; }
+  .cs-rail__title { margin: 0 0 .5rem; font-size: 1.0625rem; font-weight: 700; color: var(--csa-ink); }
+  .cs-rail__dl { margin: 0; }
+  .cs-rail__big { display: block; font-size: 1.5rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--csa-ink); }
+  .cs-rail__days { display: block; margin-top: .375rem; }
+  .cs-rail__hint { margin: .5rem 0 0; font-size: .875rem; line-height: 1.45; color: var(--csa-muted); }
+  .cs-rail__more { margin: .5rem 0 0; }
+  a.cs-rail__link { color: var(--csa-accent); font-weight: 600; text-underline-offset: .18em; }
+  .cs-history { list-style: none; margin: 0; padding: 0; }
+  .cs-history__event { display: grid; gap: .125rem; padding: .5rem 0; border-top: 1px solid var(--csa-rule); }
+  .cs-history__event:first-child { border-top: 0; padding-top: 0; }
+  .cs-history__what { line-height: 1.35; }
   /* Contracts list: filters and the per-row collapsed actions */
   .cs-admin-filters { margin: .5rem 0 .75rem; }
   .cs-admin-filter-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
   .cs-row-more { margin-top: .5rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-  .cs-row-more > summary { flex: 1 0 100%; cursor: pointer; font-size: .875rem; color: rgb(21, 90, 191); font-weight: 600; }
+  .cs-row-more > summary { flex: 1 0 100%; cursor: pointer; font-size: .875rem; color: var(--csa-accent); font-weight: 600; }
   .cs-row-more form { margin: 0; }
-  .cs-show__reason summary { cursor: pointer; font-weight: 600; color: rgb(21, 90, 191); padding: .25rem 0; }
   /* The Civora credit (shared/_civora_credit) at the foot of the admin home. */
-  .cs-credit { margin: 1.5rem 0 0; font-size: .875rem; line-height: 1.4; color: #5b576c; }
-  .cs-credit__link { display: inline-flex; align-items: center; gap: .5rem; color: #5b576c; text-decoration: none; }
-  .cs-credit__link:hover { color: #232c63; text-decoration: underline; text-underline-offset: .18em; }
+  .cs-credit { margin: 1.5rem 0 0; font-size: .875rem; line-height: 1.4; color: var(--csa-muted); }
+  .cs-credit__link { display: inline-flex; align-items: center; gap: .5rem; color: var(--csa-muted); text-decoration: none; }
+  .cs-credit__link:hover { color: var(--csa-accent-deep); text-decoration: underline; text-underline-offset: .18em; }
   .cs-credit__mark { flex: none; width: 16px; height: 16px; }
   /* Phones: header buttons wrap under the title, and the contracts list becomes one block per contract */
   @media (max-width: 639px) {
@@ -196,9 +309,9 @@
     .cs-admin-actions { flex-wrap: wrap; margin-left: 0; width: 100%; }
     .table-list.cs-rows thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .table-list.cs-rows, .table-list.cs-rows tbody, .table-list.cs-rows tr, .table-list.cs-rows td { display: block; width: 100%; }
-    .table-list.cs-rows tr { padding: .75rem 0; border-bottom: 1px solid #e1e5ef; }
+    .table-list.cs-rows tr { padding: .75rem 0; border-bottom: 1px solid var(--csa-rule); }
     .table-list.cs-rows td { text-align: left; padding: .125rem 0; border: 0; }
-    .table-list.cs-rows td[data-label]::before { content: attr(data-label) ": "; color: #3e4c5c; font-size: .875rem; }
+    .table-list.cs-rows td[data-label]::before { content: attr(data-label) ": "; color: var(--csa-muted); font-size: .875rem; }
     .table-list.cs-rows td:empty { display: none; }
     .table-list.cs-rows td.table-list__actions { margin-top: .5rem; }
   }

@@ -128,6 +128,11 @@ module Decidim
       # draws from) for the public pages. Inline, so the engine needs neither
       # Decidim's icon registry nor the host's sprite build to render them.
       CONTRACTS_ICON_PATHS = {
+        check: "M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z",
+        lock: [
+          "M19 10h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1h1V9a7 7 0 ",
+          "1 1 14 0v1zM5 12v8h14v-8H5zm6 2h2v4h-2v-4zm6-4V9A5 5 0 0 0 7 9v1h10z"
+        ].join,
         search: [
           "M18.031 16.617l4.283 4.282-1.415 1.415-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 ",
           "0-9-4.032-9-9s4.032-9 9-9 9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617zm-2.006-.742A6.977 ",
@@ -276,6 +281,18 @@ module Decidim
         { confirm: I18n.t("decidim.contracts_sk.admin.contracts.transition.confirm.#{event}"),
           "confirm-title": I18n.t("decidim.contracts_sk.admin.contracts.transition.confirm_title.#{event}"),
           "confirm-icon": CONFIRM_ICONS.fetch(event.to_sym) }
+      end
+
+      # One control of the contract page's next-step card: a link, or a POST
+      # button with its confirm dialog (transition_confirm_data) and, when it
+      # is blocked by an unmet prerequisite, disabled and described by the
+      # reason line (#cs-publish-blocked).
+      def next_step_control(control, css)
+        return link_to(control[:label], control[:path], class: css) if control[:kind] == :link
+
+        aria = control[:blocked] ? { describedby: "cs-publish-blocked" } : {}
+        button_to control[:label], control[:path], method: :post, class: css, disabled: control[:blocked],
+                                                   aria: aria, data: transition_confirm_data(control[:event])
       end
 
       def effectiveness_t(key, **options)
